@@ -1,0 +1,6431 @@
+Project Bokdy {
+  database_type: "PostgreSQL"
+}
+
+//////////////////////////////////////////////////////////////
+// INFRASTRUCTURE
+//////////////////////////////////////////////////////////////
+
+TableGroup "Infrastructure" {
+  infrastructure.domain_events
+
+  infrastructure.outbox_events
+  infrastructure.inbox_events
+  infrastructure.event_subscriptions
+
+  infrastructure.idempotency_keys
+  infrastructure.distributed_locks
+
+  infrastructure.feature_flags
+  infrastructure.tenant_feature_flags
+
+  infrastructure.system_configs
+  infrastructure.tenant_configs
+
+  infrastructure.job_definitions
+  infrastructure.job_schedules
+  infrastructure.job_executions
+
+  infrastructure.dead_letter_events
+}
+
+//////////////////////////////////////////////////////////////
+// ENUMS
+//////////////////////////////////////////////////////////////
+
+Enum event_status {
+  pending
+  published
+  failed
+  ignored
+}
+
+Enum inbox_status {
+  pending
+  processed
+  failed
+  ignored
+}
+
+Enum event_subscription_status {
+  active
+  disabled
+}
+
+Enum lock_status {
+  acquired
+  released
+  expired
+}
+
+Enum feature_flag_type {
+  boolean
+  integer
+  string
+  json
+}
+
+Enum job_schedule_type {
+  once
+  cron
+  interval
+}
+
+Enum job_execution_status {
+  queued
+  running
+  completed
+  failed
+  cancelled
+}
+
+//////////////////////////////////////////////////////////////
+// DOMAIN EVENTS
+//////////////////////////////////////////////////////////////
+
+Table infrastructure.domain_events {
+  id uuid [pk]
+
+  event_id uuid [not null]
+
+  event_name varchar(255) [not null]
+
+  aggregate_type varchar(100) [not null]
+
+  aggregate_id uuid [not null]
+
+  aggregate_version bigint [not null]
+
+  event_version int [not null, default: 1]
+
+  tenant_id uuid
+
+  payload jsonb [not null]
+
+  metadata jsonb
+
+  occurred_at timestamptz [not null]
+
+  created_at timestamptz [not null]
+
+  indexes {
+    event_id [unique]
+    aggregate_type
+    aggregate_id
+    tenant_id
+    event_name
+    occurred_at
+  }
+
+  Note: 'Append-only domain event store.'
+}
+
+//////////////////////////////////////////////////////////////
+// OUTBOX
+//////////////////////////////////////////////////////////////
+
+Table infrastructure.outbox_events {
+  id uuid [pk]
+
+  domain_event_id uuid [not null]
+
+  topic varchar(255) [not null]
+
+  partition_key varchar(255)
+
+  status event_status [not null]
+
+  retry_count int [not null, default: 0]
+
+  available_at timestamptz [not null]
+
+  published_at timestamptz
+
+  last_error text
+
+  created_at timestamptz [not null]
+
+  indexes {
+    domain_event_id [unique]
+    status
+    available_at
+    topic
+  }
+
+  Note: 'Transactional Outbox.'
+}
+
+//////////////////////////////////////////////////////////////
+// INBOX
+//////////////////////////////////////////////////////////////
+
+Table infrastructure.inbox_events {
+  id uuid [pk]
+
+  external_event_id varchar(255) [not null]
+
+  source varchar(100) [not null]
+
+  event_name varchar(255) [not null]
+
+  payload jsonb [not null]
+
+  status inbox_status [not null]
+
+  processed_at timestamptz
+
+  last_error text
+
+  created_at timestamptz [not null]
+
+  indexes {
+    external_event_id
+    source
+    status
+    (source, external_event_id) [unique]
+  }
+
+  Note: 'Idempotent consumer.'
+}
+
+//////////////////////////////////////////////////////////////
+// SUBSCRIPTIONS
+//////////////////////////////////////////////////////////////
+
+Table infrastructure.event_subscriptions {
+  id uuid [pk]
+
+  event_name varchar(255) [not null]
+
+  subscriber varchar(255) [not null]
+
+  status event_subscription_status [not null]
+
+  priority int [not null, default: 100]
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    event_name
+    subscriber
+    (event_name, subscriber) [unique]
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// IDEMPOTENCY
+//////////////////////////////////////////////////////////////
+
+Table infrastructure.idempotency_keys {
+  id uuid [pk]
+
+  tenant_id uuid
+
+  idempotency_key varchar(255) [not null]
+
+  request_hash varchar(255)
+
+  response_status int
+
+  response_body jsonb
+
+  expires_at timestamptz [not null]
+
+  created_at timestamptz [not null]
+
+  indexes {
+    tenant_id
+    expires_at
+    (tenant_id, idempotency_key) [unique]
+  }
+
+  Note: 'Stripe-style idempotency.'
+}
+
+//////////////////////////////////////////////////////////////
+// DISTRIBUTED LOCKS
+//////////////////////////////////////////////////////////////
+
+Table infrastructure.distributed_locks {
+  id uuid [pk]
+
+  lock_key varchar(255) [not null]
+
+  owner varchar(255)
+
+  status lock_status [not null]
+
+  acquired_at timestamptz [not null]
+
+  expires_at timestamptz [not null]
+
+  released_at timestamptz
+
+  indexes {
+    lock_key [unique]
+    status
+    expires_at
+  }
+
+  Note: 'Database fallback distributed lock.'
+}
+
+//////////////////////////////////////////////////////////////
+// FEATURE FLAGS
+//////////////////////////////////////////////////////////////
+
+Table infrastructure.feature_flags {
+  id uuid [pk]
+
+  code varchar(100) [not null]
+
+  name varchar(255) [not null]
+
+  description text
+
+  value_type feature_flag_type [not null]
+
+  default_value jsonb
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    code [unique]
+  }
+}
+
+Table infrastructure.tenant_feature_flags {
+  id uuid [pk]
+
+  tenant_id uuid [not null]
+
+  feature_flag_id uuid [not null]
+
+  value jsonb
+
+  enabled boolean [not null, default: true]
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    tenant_id
+    feature_flag_id
+    (tenant_id, feature_flag_id) [unique]
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// CONFIGURATION
+//////////////////////////////////////////////////////////////
+
+Table infrastructure.system_configs {
+  id uuid [pk]
+
+  config_key varchar(255) [not null]
+
+  config_value jsonb
+
+  description text
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    config_key [unique]
+  }
+}
+
+Table infrastructure.tenant_configs {
+  id uuid [pk]
+
+  tenant_id uuid [not null]
+
+  config_key varchar(255) [not null]
+
+  config_value jsonb
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    tenant_id
+    (tenant_id, config_key) [unique]
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// JOBS
+//////////////////////////////////////////////////////////////
+
+Table infrastructure.job_definitions {
+  id uuid [pk]
+
+  code varchar(100) [not null]
+
+  name varchar(255) [not null]
+
+  handler varchar(255) [not null]
+
+  timeout_seconds int [not null]
+
+  max_retries int [not null]
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    code [unique]
+  }
+}
+
+Table infrastructure.job_schedules {
+  id uuid [pk]
+
+  job_definition_id uuid [not null]
+
+  tenant_id uuid
+
+  schedule_type job_schedule_type [not null]
+
+  cron_expression varchar(255)
+
+  interval_seconds bigint
+
+  next_run_at timestamptz
+
+  enabled boolean [not null, default: true]
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    job_definition_id
+    tenant_id
+    enabled
+    next_run_at
+  }
+}
+
+Table infrastructure.job_executions {
+  id uuid [pk]
+
+  job_schedule_id uuid
+
+  job_definition_id uuid [not null]
+
+  status job_execution_status [not null]
+
+  started_at timestamptz
+
+  finished_at timestamptz
+
+  duration_ms bigint
+
+  retry_count int [not null, default: 0]
+
+  error_message text
+
+  payload jsonb
+
+  created_at timestamptz [not null]
+
+  indexes {
+    job_definition_id
+    job_schedule_id
+    status
+    started_at
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// DEAD LETTER
+//////////////////////////////////////////////////////////////
+
+Table infrastructure.dead_letter_events {
+  id uuid [pk]
+
+  source varchar(100) [not null]
+
+  reference_id uuid
+
+  event_name varchar(255)
+
+  payload jsonb
+
+  error_message text
+
+  retry_count int [not null]
+
+  failed_at timestamptz [not null]
+
+  indexes {
+    source
+    event_name
+    failed_at
+  }
+
+  Note: 'Unrecoverable events.'
+}
+
+//////////////////////////////////////////////////////////////
+// IDENTITY
+//////////////////////////////////////////////////////////////
+
+TableGroup "Identity" {
+  identity.users
+  identity.user_profiles
+
+  identity.identities
+  identity.identity_verifications
+
+  identity.roles
+  identity.permissions
+  identity.role_permissions
+  identity.user_roles
+
+  identity.sessions
+  identity.refresh_tokens
+  identity.personal_access_tokens
+
+  identity.password_credentials
+  identity.password_reset_tokens
+
+  identity.login_histories
+
+  identity.user_devices
+
+  identity.mfa_methods
+  identity.mfa_recovery_codes
+}
+
+//////////////////////////////////////////////////////////////
+// ENUMS
+//////////////////////////////////////////////////////////////
+
+Enum user_status {
+  pending
+  active
+  suspended
+  locked
+  deleted
+}
+
+Enum gender {
+  male
+  female
+  other
+  undisclosed
+}
+
+Enum identity_provider {
+  local
+  google
+  apple
+  facebook
+  github
+  microsoft
+  oidc
+  saml
+}
+
+Enum verification_status {
+  pending
+  verified
+  rejected
+}
+
+Enum role_scope {
+  system
+  tenant
+}
+
+Enum session_status {
+  active
+  expired
+  revoked
+}
+
+Enum device_type {
+  web
+  android
+  ios
+  desktop
+  api
+}
+
+Enum mfa_type {
+  totp
+  email
+  sms
+  passkey
+}
+
+//////////////////////////////////////////////////////////////
+// USERS
+//////////////////////////////////////////////////////////////
+
+Table identity.users {
+  id uuid [pk]
+
+  public_id varchar(32) [not null]
+
+  status user_status [not null]
+
+  is_system_admin boolean [not null, default: false]
+
+  last_login_at timestamptz
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  deleted_at timestamptz
+
+  indexes {
+    public_id [unique]
+    status
+    last_login_at
+  }
+}
+
+Table identity.user_profiles {
+  user_id uuid [pk]
+
+  first_name varchar(100)
+
+  last_name varchar(100)
+
+  full_name varchar(255) [not null]
+
+  display_name varchar(255)
+
+  avatar_file_id uuid
+
+  gender gender
+
+  date_of_birth date
+
+  timezone varchar(100)
+
+  locale varchar(20)
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+}
+
+//////////////////////////////////////////////////////////////
+// IDENTITIES
+//////////////////////////////////////////////////////////////
+
+Table identity.identities {
+  id uuid [pk]
+
+  user_id uuid [not null]
+
+  provider identity_provider [not null]
+
+  provider_subject varchar(255) [not null]
+
+  email varchar(255)
+
+  phone varchar(30)
+
+  is_primary boolean [not null, default: false]
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    user_id
+    provider
+    (provider, provider_subject) [unique]
+  }
+}
+
+Table identity.identity_verifications {
+  id uuid [pk]
+
+  identity_id uuid [not null]
+
+  status verification_status [not null]
+
+  verified_at timestamptz
+
+  expires_at timestamptz
+
+  created_at timestamptz [not null]
+
+  indexes {
+    identity_id
+    status
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// RBAC
+//////////////////////////////////////////////////////////////
+
+Table identity.roles {
+  id uuid [pk]
+
+  code varchar(100) [not null]
+
+  name varchar(255) [not null]
+
+  scope role_scope [not null]
+
+  description text
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    code [unique]
+    scope
+  }
+}
+
+Table identity.permissions {
+  id uuid [pk]
+
+  code varchar(150) [not null]
+
+  name varchar(255) [not null]
+
+  description text
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    code [unique]
+  }
+}
+
+Table identity.role_permissions {
+  role_id uuid [not null]
+
+  permission_id uuid [not null]
+
+  indexes {
+    (role_id, permission_id) [pk]
+  }
+}
+
+Table identity.user_roles {
+  id uuid [pk]
+
+  tenant_id uuid
+
+  user_id uuid [not null]
+
+  role_id uuid [not null]
+
+  assigned_by uuid
+
+  assigned_at timestamptz [not null]
+
+  expires_at timestamptz
+
+  indexes {
+    tenant_id
+    user_id
+    role_id
+    (tenant_id, user_id, role_id) [unique]
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// PASSWORD
+//////////////////////////////////////////////////////////////
+
+Table identity.password_credentials {
+  user_id uuid [pk]
+
+  password_hash text [not null]
+
+  password_changed_at timestamptz
+
+  password_expires_at timestamptz
+
+  failed_attempts int [not null, default: 0]
+
+  locked_until timestamptz
+
+  updated_at timestamptz [not null]
+}
+
+Table identity.password_reset_tokens {
+  id uuid [pk]
+
+  user_id uuid [not null]
+
+  token_hash varchar(255) [not null]
+
+  expires_at timestamptz [not null]
+
+  consumed_at timestamptz
+
+  created_at timestamptz [not null]
+
+  indexes {
+    user_id
+    expires_at
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// SESSIONS
+//////////////////////////////////////////////////////////////
+
+Table identity.sessions {
+  id uuid [pk]
+
+  user_id uuid [not null]
+
+  device_id uuid
+
+  status session_status [not null]
+
+  ip_address inet
+
+  user_agent text
+
+  last_activity_at timestamptz
+
+  expires_at timestamptz [not null]
+
+  created_at timestamptz [not null]
+
+  indexes {
+    user_id
+    device_id
+    status
+    expires_at
+  }
+}
+
+Table identity.refresh_tokens {
+  id uuid [pk]
+
+  session_id uuid [not null]
+
+  token_hash varchar(255) [not null]
+
+  expires_at timestamptz [not null]
+
+  revoked_at timestamptz
+
+  created_at timestamptz [not null]
+
+  indexes {
+    session_id
+    expires_at
+  }
+}
+
+Table identity.personal_access_tokens {
+  id uuid [pk]
+
+  user_id uuid [not null]
+
+  name varchar(255) [not null]
+
+  token_hash varchar(255) [not null]
+
+  abilities jsonb
+
+  last_used_at timestamptz
+
+  expires_at timestamptz
+
+  created_at timestamptz [not null]
+
+  indexes {
+    user_id
+    expires_at
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// LOGIN HISTORY
+//////////////////////////////////////////////////////////////
+
+Table identity.login_histories {
+  id uuid [pk]
+
+  user_id uuid [not null]
+
+  session_id uuid
+
+  provider identity_provider
+
+  ip_address inet
+
+  user_agent text
+
+  success boolean [not null]
+
+  reason varchar(255)
+
+  created_at timestamptz [not null]
+
+  indexes {
+    user_id
+    provider
+    success
+    created_at
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// DEVICES
+//////////////////////////////////////////////////////////////
+
+Table identity.user_devices {
+  id uuid [pk]
+
+  user_id uuid [not null]
+
+  device_type device_type [not null]
+
+  device_name varchar(255)
+
+  device_identifier varchar(255)
+
+  trusted boolean [not null, default: false]
+
+  last_seen_at timestamptz
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    user_id
+    device_identifier
+    trusted
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// MFA
+//////////////////////////////////////////////////////////////
+
+Table identity.mfa_methods {
+  id uuid [pk]
+
+  user_id uuid [not null]
+
+  method_type mfa_type [not null]
+
+  secret text
+
+  verified_at timestamptz
+
+  is_default boolean [not null, default: false]
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    user_id
+    method_type
+  }
+}
+
+Table identity.mfa_recovery_codes {
+  id uuid [pk]
+
+  mfa_method_id uuid [not null]
+
+  code_hash varchar(255) [not null]
+
+  used_at timestamptz
+
+  created_at timestamptz [not null]
+
+  indexes {
+    mfa_method_id
+    used_at
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// ORGANIZATION
+//////////////////////////////////////////////////////////////
+
+TableGroup "Organization" {
+  organization.tenants
+
+  organization.organizations
+  organization.organization_settings
+
+  organization.business_units
+
+  organization.locations
+  organization.location_addresses
+  organization.location_settings
+
+  organization.staff_members
+  organization.staff_profiles
+  organization.staff_invitations
+
+  organization.teams
+  organization.team_members
+
+  organization.organization_domains
+
+  organization.tenant_subscriptions
+  organization.tenant_usages
+  organization.tenant_limits
+}
+
+//////////////////////////////////////////////////////////////
+// ENUMS
+//////////////////////////////////////////////////////////////
+
+Enum tenant_status {
+  trial
+  active
+  suspended
+  cancelled
+}
+
+Enum organization_status {
+  active
+  inactive
+  suspended
+  archived
+}
+
+Enum organization_type {
+  company
+  club
+  school
+  government
+  individual
+  other
+}
+
+Enum business_unit_status {
+  active
+  inactive
+}
+
+Enum location_status {
+  active
+  inactive
+  maintenance
+}
+
+Enum staff_status {
+  invited
+  active
+  suspended
+  resigned
+}
+
+Enum invitation_status {
+  pending
+  accepted
+  expired
+  revoked
+}
+
+Enum subscription_status {
+  trial
+  active
+  past_due
+  suspended
+  cancelled
+}
+
+//////////////////////////////////////////////////////////////
+// TENANT
+//////////////////////////////////////////////////////////////
+
+Table organization.tenants {
+  id uuid [pk]
+
+  code varchar(100) [not null]
+
+  name varchar(255) [not null]
+
+  slug varchar(150) [not null]
+
+  status tenant_status [not null]
+
+  timezone varchar(100)
+
+  locale varchar(20)
+
+  currency varchar(10)
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    code [unique]
+    slug [unique]
+    status
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// ORGANIZATION
+//////////////////////////////////////////////////////////////
+
+Table organization.organizations {
+  id uuid [pk]
+
+  tenant_id uuid [not null]
+
+  code varchar(100) [not null]
+
+  name varchar(255) [not null]
+
+  legal_name varchar(255)
+
+  organization_type organization_type [not null]
+
+  tax_code varchar(100)
+
+  phone varchar(30)
+
+  email varchar(255)
+
+  website varchar(255)
+
+  logo_file_id uuid
+
+  status organization_status [not null]
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  deleted_at timestamptz
+
+  indexes {
+    tenant_id
+    status
+    (tenant_id, code) [unique]
+  }
+}
+
+Table organization.organization_settings {
+  organization_id uuid [pk]
+
+  booking_policy jsonb
+
+  cancellation_policy jsonb
+
+  operating_policy jsonb
+
+  branding jsonb
+
+  updated_at timestamptz [not null]
+}
+
+//////////////////////////////////////////////////////////////
+// BUSINESS UNIT
+//////////////////////////////////////////////////////////////
+
+Table organization.business_units {
+  id uuid [pk]
+
+  organization_id uuid [not null]
+
+  code varchar(100) [not null]
+
+  name varchar(255) [not null]
+
+  status business_unit_status [not null]
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    organization_id
+    status
+    (organization_id, code) [unique]
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// LOCATION
+//////////////////////////////////////////////////////////////
+
+Table organization.locations {
+  id uuid [pk]
+
+  business_unit_id uuid [not null]
+  organization_id uuid [not null]
+
+  code varchar(100) [not null]
+
+  name varchar(255) [not null]
+
+  phone varchar(30)
+
+  email varchar(255)
+
+  timezone varchar(100)
+
+  status location_status [not null]
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  deleted_at timestamptz
+
+  indexes {
+    business_unit_id
+    organization_id
+    status
+    (business_unit_id, code) [unique]
+  }
+}
+
+Table organization.location_addresses {
+  location_id uuid [pk]
+
+  country_code varchar(10)
+
+  state varchar(100)
+
+  city varchar(100)
+
+  district varchar(100)
+
+  ward varchar(100)
+
+  address_line_1 varchar(255)
+
+  address_line_2 varchar(255)
+
+  postal_code varchar(20)
+
+  latitude decimal(10,7)
+
+  longitude decimal(10,7)
+
+  updated_at timestamptz [not null]
+}
+
+Table organization.location_settings {
+  location_id uuid [pk]
+
+  booking_settings jsonb
+
+  pricing_settings jsonb
+
+  calendar_settings jsonb
+
+  notification_settings jsonb
+
+  updated_at timestamptz [not null]
+}
+
+//////////////////////////////////////////////////////////////
+// STAFF
+//////////////////////////////////////////////////////////////
+
+Table organization.staff_members {
+  id uuid [pk]
+
+  organization_id uuid [not null]
+
+  location_id uuid
+
+  user_id uuid [not null]
+
+  employee_code varchar(100)
+
+  title varchar(255)
+
+  status staff_status [not null]
+
+  joined_at date
+
+  left_at date
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    organization_id
+    location_id
+    user_id
+    status
+    (organization_id, employee_code) [unique]
+  }
+}
+
+Table organization.staff_profiles {
+  staff_member_id uuid [pk]
+
+  emergency_contact jsonb
+
+  payroll jsonb
+
+  employment jsonb
+
+  metadata jsonb
+
+  updated_at timestamptz [not null]
+}
+
+Table organization.staff_invitations {
+  id uuid [pk]
+
+  organization_id uuid [not null]
+
+  email varchar(255) [not null]
+
+  role_code varchar(100) [not null]
+
+  invitation_token varchar(255) [not null]
+
+  status invitation_status [not null]
+
+  expires_at timestamptz [not null]
+
+  invited_by uuid [not null]
+
+  accepted_by uuid
+
+  created_at timestamptz [not null]
+
+  indexes {
+    organization_id
+    email
+    status
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// TEAM
+//////////////////////////////////////////////////////////////
+
+Table organization.teams {
+  id uuid [pk]
+
+  organization_id uuid [not null]
+
+  code varchar(100) [not null]
+
+  name varchar(255) [not null]
+
+  description text
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    organization_id
+    (organization_id, code) [unique]
+  }
+}
+
+Table organization.team_members {
+  team_id uuid [not null]
+
+  staff_member_id uuid [not null]
+
+  indexes {
+    (team_id, staff_member_id) [pk]
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// DOMAIN
+//////////////////////////////////////////////////////////////
+
+Table organization.organization_domains {
+  id uuid [pk]
+
+  organization_id uuid [not null]
+
+  domain varchar(255) [not null]
+
+  verified boolean [not null, default: false]
+
+  is_primary boolean [not null, default: false]
+
+  verified_at timestamptz
+
+  created_at timestamptz [not null]
+
+  indexes {
+    domain [unique]
+    organization_id
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// TENANT BILLING
+//////////////////////////////////////////////////////////////
+
+Table organization.tenant_subscriptions {
+  id uuid [pk]
+
+  tenant_id uuid [not null]
+
+  plan_code varchar(100) [not null]
+
+  status subscription_status [not null]
+
+  starts_at timestamptz [not null]
+
+  expires_at timestamptz
+
+  trial_ends_at timestamptz
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    tenant_id
+    status
+  }
+}
+
+Table organization.tenant_limits {
+  id uuid [pk]
+
+  tenant_id uuid [not null]
+
+  limit_key varchar(100) [not null]
+
+  limit_value bigint [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    tenant_id
+    (tenant_id, limit_key) [unique]
+  }
+}
+
+Table organization.tenant_usages {
+  id uuid [pk]
+
+  tenant_id uuid [not null]
+
+  usage_key varchar(100) [not null]
+
+  current_value bigint [not null, default: 0]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    tenant_id
+    (tenant_id, usage_key) [unique]
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// CRM
+//////////////////////////////////////////////////////////////
+
+TableGroup "CRM" {
+  crm.customers
+  crm.customer_profiles
+
+  crm.customer_contacts
+
+  crm.customer_tags
+  crm.customer_tag_assignments
+
+  crm.customer_segments
+  crm.customer_segment_members
+
+  crm.customer_relationships
+
+  crm.customer_addresses
+
+  crm.customer_notes
+
+  crm.customer_activities
+
+  crm.customer_consents
+
+  crm.customer_blacklists
+
+  crm.customer_merge_histories
+}
+
+//////////////////////////////////////////////////////////////
+// ENUMS
+//////////////////////////////////////////////////////////////
+
+Enum customer_status {
+  lead
+  active
+  inactive
+  blacklisted
+  deleted
+}
+
+Enum customer_type {
+  individual
+  organization
+}
+
+Enum contact_type {
+  email
+  phone
+  whatsapp
+  zalo
+  telegram
+  facebook
+  other
+}
+
+Enum relationship_type {
+  parent
+  child
+  spouse
+  coach
+  guardian
+  emergency_contact
+  employee
+}
+
+Enum activity_type {
+  created
+  updated
+  booking
+  reservation
+  payment
+  refund
+  membership
+  check_in
+  note
+  login
+  custom
+}
+
+Enum consent_type {
+  terms
+  privacy
+  marketing_email
+  marketing_sms
+  marketing_push
+}
+
+Enum blacklist_scope {
+  booking
+  payment
+  marketing
+  system
+}
+
+//////////////////////////////////////////////////////////////
+// CUSTOMER
+//////////////////////////////////////////////////////////////
+
+Table crm.customers {
+  id uuid [pk]
+
+  tenant_id uuid [not null]
+
+  code varchar(100) [not null]
+
+  customer_type customer_type [not null]
+
+  status customer_status [not null]
+
+  user_id uuid
+
+  organization_name varchar(255)
+
+  owner_staff_id uuid
+
+  source varchar(100)
+
+  acquired_at timestamptz
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  deleted_at timestamptz
+
+  indexes {
+    tenant_id
+    status
+    owner_staff_id
+    user_id
+    (tenant_id, code) [unique]
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// PROFILE
+//////////////////////////////////////////////////////////////
+
+Table crm.customer_profiles {
+  customer_id uuid [pk]
+
+  first_name varchar(100)
+
+  last_name varchar(100)
+
+  full_name varchar(255)
+
+  gender varchar(20)
+
+  date_of_birth date
+
+  avatar_file_id uuid
+
+  occupation varchar(255)
+
+  company varchar(255)
+
+  tax_code varchar(100)
+
+  preferred_language varchar(20)
+
+  preferred_timezone varchar(100)
+
+  metadata jsonb
+
+  updated_at timestamptz [not null]
+}
+
+//////////////////////////////////////////////////////////////
+// CONTACTS
+//////////////////////////////////////////////////////////////
+
+Table crm.customer_contacts {
+  id uuid [pk]
+
+  customer_id uuid [not null]
+
+  contact_type contact_type [not null]
+
+  value varchar(255) [not null]
+
+  label varchar(100)
+
+  verified boolean [not null, default: false]
+
+  is_primary boolean [not null, default: false]
+
+  verified_at timestamptz
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    customer_id
+    contact_type
+    value
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// ADDRESS
+//////////////////////////////////////////////////////////////
+
+Table crm.customer_addresses {
+  id uuid [pk]
+
+  customer_id uuid [not null]
+
+  label varchar(100)
+
+  country_code varchar(10)
+
+  state varchar(100)
+
+  city varchar(100)
+
+  district varchar(100)
+
+  ward varchar(100)
+
+  address_line_1 varchar(255)
+
+  address_line_2 varchar(255)
+
+  postal_code varchar(20)
+
+  latitude decimal(10,7)
+
+  longitude decimal(10,7)
+
+  is_default boolean [not null, default: false]
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    customer_id
+    is_default
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// TAG
+//////////////////////////////////////////////////////////////
+
+Table crm.customer_tags {
+  id uuid [pk]
+
+  tenant_id uuid [not null]
+
+  name varchar(100) [not null]
+
+  color varchar(30)
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    tenant_id
+    (tenant_id, name) [unique]
+  }
+}
+
+Table crm.customer_tag_assignments {
+  customer_id uuid [not null]
+  tag_id uuid [not null]
+
+  indexes {
+    (customer_id, tag_id) [pk]
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// SEGMENT
+//////////////////////////////////////////////////////////////
+
+Table crm.customer_segments {
+  id uuid [pk]
+
+  tenant_id uuid [not null]
+
+  name varchar(255) [not null]
+
+  description text
+
+  filter_definition jsonb [not null]
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    tenant_id
+  }
+}
+
+Table crm.customer_segment_members {
+  customer_segment_id uuid [not null]
+  segment_id uuid [not null]
+  customer_id uuid [not null]
+  joined_at timestamptz [not null]
+
+  indexes {
+    (customer_segment_id, segment_id, customer_id) [pk]
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// RELATIONSHIP
+//////////////////////////////////////////////////////////////
+
+Table crm.customer_relationships {
+  id uuid [pk]
+
+  customer_id uuid [not null]
+
+  related_customer_id uuid [not null]
+
+  relationship_type relationship_type [not null]
+
+  created_at timestamptz [not null]
+
+  indexes {
+    customer_id
+    related_customer_id
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// NOTE
+//////////////////////////////////////////////////////////////
+
+Table crm.customer_notes {
+  id uuid [pk]
+
+  customer_id uuid [not null]
+
+  staff_member_id uuid
+
+  note text [not null]
+
+  is_private boolean [not null, default: false]
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    customer_id
+    staff_member_id
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// ACTIVITY
+//////////////////////////////////////////////////////////////
+
+Table crm.customer_activities {
+  id uuid [pk]
+
+  customer_id uuid [not null]
+
+  activity_type activity_type [not null]
+
+  actor_user_id uuid
+
+  entity_type varchar(100)
+
+  entity_id uuid
+
+  payload jsonb
+
+  occurred_at timestamptz [not null]
+
+  indexes {
+    customer_id
+    activity_type
+    entity_type
+    entity_id
+    occurred_at
+  }
+
+  Note: 'Append-only activity timeline.'
+}
+
+//////////////////////////////////////////////////////////////
+// CONSENT
+//////////////////////////////////////////////////////////////
+
+Table crm.customer_consents {
+  id uuid [pk]
+
+  customer_id uuid [not null]
+
+  consent_type consent_type [not null]
+
+  accepted boolean [not null]
+
+  accepted_at timestamptz
+
+  expires_at timestamptz
+
+  ip_address inet
+
+  user_agent text
+
+  created_at timestamptz [not null]
+
+  indexes {
+    customer_id
+    consent_type
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// BLACKLIST
+//////////////////////////////////////////////////////////////
+
+Table crm.customer_blacklists {
+  id uuid [pk]
+
+  customer_id uuid [not null]
+
+  scope blacklist_scope [not null]
+
+  reason text
+
+  starts_at timestamptz
+
+  ends_at timestamptz
+
+  created_by uuid
+
+  created_at timestamptz [not null]
+
+  indexes {
+    customer_id
+    scope
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// MERGE
+//////////////////////////////////////////////////////////////
+
+Table crm.customer_merge_histories {
+  id uuid [pk]
+
+  source_customer_id uuid [not null]
+
+  target_customer_id uuid [not null]
+
+  merged_by uuid [not null]
+
+  merged_at timestamptz [not null]
+
+  reason text
+
+  indexes {
+    source_customer_id
+    target_customer_id
+    merged_at
+  }
+
+  Note: 'Customer merge history.'
+}
+
+//////////////////////////////////////////////////////////////
+// CATALOG
+//////////////////////////////////////////////////////////////
+
+TableGroup "Catalog" {
+  catalog.sports
+
+  catalog.service_categories
+
+  catalog.services
+  catalog.service_resources
+
+  catalog.resource_categories
+
+  catalog.resources
+
+  catalog.resource_capabilities
+  catalog.resource_capability_assignments
+
+  catalog.resource_attributes
+  catalog.resource_attribute_values
+
+  catalog.resource_labels
+  catalog.resource_label_assignments
+
+  catalog.resource_groups
+  catalog.resource_group_members
+
+  catalog.resource_capacities
+
+  catalog.resource_maintenances
+
+  catalog.resource_costs
+
+  catalog.resource_media
+}
+
+//////////////////////////////////////////////////////////////
+// ENUMS
+//////////////////////////////////////////////////////////////
+
+Enum service_status {
+  draft
+  active
+  inactive
+  archived
+}
+
+Enum service_type {
+  booking
+  rental
+  lesson
+  membership
+  event
+}
+
+Enum pricing_model {
+  fixed
+  duration
+  dynamic
+}
+
+Enum resource_status {
+  active
+  inactive
+  maintenance
+  archived
+}
+
+Enum resource_type {
+  court
+  room
+  coach
+  equipment
+  facility
+}
+
+Enum capability_level {
+  beginner
+  intermediate
+  advanced
+  professional
+}
+
+Enum maintenance_status {
+  scheduled
+  in_progress
+  completed
+  cancelled
+}
+
+Enum cost_type {
+  hourly
+  daily
+  monthly
+  yearly
+}
+
+//////////////////////////////////////////////////////////////
+// SPORTS
+//////////////////////////////////////////////////////////////
+
+Table catalog.sports {
+  id uuid [pk]
+
+  code varchar(100) [not null]
+
+  name varchar(255) [not null]
+
+  icon varchar(255)
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    code [unique]
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// SERVICE CATEGORY
+//////////////////////////////////////////////////////////////
+
+Table catalog.service_categories {
+  id uuid [pk]
+
+  tenant_id uuid [not null]
+
+  parent_id uuid
+
+  sport_id uuid [not null]
+
+  code varchar(100) [not null]
+
+  name varchar(255) [not null]
+
+  description text
+
+  sort_order int [default: 0]
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    tenant_id
+    parent_id
+    sport_id
+    (tenant_id, code) [unique]
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// SERVICES
+//////////////////////////////////////////////////////////////
+
+Table catalog.services {
+  id uuid [pk]
+
+  tenant_id uuid [not null]
+
+  service_category_id uuid
+
+  sport_id uuid
+
+  code varchar(100) [not null]
+
+  name varchar(255) [not null]
+
+  description text
+
+  service_type service_type [not null]
+
+  pricing_model pricing_model [not null]
+
+  status service_status [not null]
+
+  duration_minutes int
+
+  min_booking_duration int
+
+  max_booking_duration int
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  deleted_at timestamptz
+
+  indexes {
+    tenant_id
+    sport_id
+    service_category_id
+    status
+    (tenant_id, code) [unique]
+  }
+}
+
+Table catalog.service_resources {
+  service_id uuid [not null]
+
+  resource_id uuid [not null]
+
+  required boolean [not null, default: true]
+
+  quantity int [not null, default: 1]
+
+  indexes {
+    (service_id, resource_id) [pk]
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// RESOURCE CATEGORY
+//////////////////////////////////////////////////////////////
+
+Table catalog.resource_categories {
+  id uuid [pk]
+
+  tenant_id uuid [not null]
+
+  parent_id uuid
+
+  code varchar(100) [not null]
+
+  name varchar(255) [not null]
+
+  resource_type resource_type [not null]
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    tenant_id
+    parent_id
+    (tenant_id, code) [unique]
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// RESOURCE
+//////////////////////////////////////////////////////////////
+
+Table catalog.resources {
+  id uuid [pk]
+
+  tenant_id uuid [not null]
+
+  location_id uuid [not null]
+
+  resource_category_ids uuid[]
+
+  code varchar(100) [not null]
+
+  name varchar(255) [not null]
+
+  resource_type resource_type [not null]
+
+  parent_resource_id uuid
+
+  status resource_status [not null]
+
+  bookable boolean [not null, default: true]
+
+  capacity int
+
+  sort_order int [default: 0]
+
+  metadata jsonb
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  deleted_at timestamptz
+
+  indexes {
+    tenant_id
+    location_id
+    resource_category_ids
+    parent_resource_id
+    status
+    (tenant_id, code) [unique]
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// CAPABILITY
+//////////////////////////////////////////////////////////////
+
+Table catalog.resource_capabilities {
+  id uuid [pk]
+
+  tenant_id uuid [not null]
+
+  code varchar(100) [not null]
+
+  name varchar(255) [not null]
+
+  description text
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    tenant_id
+    (tenant_id, code) [unique]
+  }
+}
+
+Table catalog.resource_capability_assignments {
+  resource_id uuid [not null]
+
+  capability_id uuid [not null]
+
+  level capability_level
+
+  indexes {
+    (resource_id, capability_id) [pk]
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// ATTRIBUTE
+//////////////////////////////////////////////////////////////
+
+Table catalog.resource_attributes {
+  id uuid [pk]
+
+  tenant_id uuid [not null]
+
+  code varchar(100) [not null]
+
+  name varchar(255) [not null]
+
+  value_type varchar(50) [not null]
+
+  unit varchar(50)
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    tenant_id
+    (tenant_id, code) [unique]
+  }
+}
+
+Table catalog.resource_attribute_values {
+  id uuid [pk]
+
+  resource_id uuid [not null]
+
+  attribute_id uuid [not null]
+
+  value jsonb [not null]
+
+  indexes {
+    resource_id
+    attribute_id
+    (resource_id, attribute_id) [unique]
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// LABEL
+//////////////////////////////////////////////////////////////
+
+Table catalog.resource_labels {
+  id uuid [pk]
+
+  tenant_id uuid [not null]
+
+  name varchar(100) [not null]
+
+  color varchar(30)
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    tenant_id
+    (tenant_id, name) [unique]
+  }
+}
+
+Table catalog.resource_label_assignments {
+  resource_id uuid [not null]
+
+  label_id uuid [not null]
+
+  indexes {
+    (resource_id, label_id) [pk]
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// GROUP
+//////////////////////////////////////////////////////////////
+
+Table catalog.resource_groups {
+  id uuid [pk]
+
+  tenant_id uuid [not null]
+
+  code varchar(100) [not null]
+
+  name varchar(255) [not null]
+
+  description text
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    tenant_id
+    (tenant_id, code) [unique]
+  }
+}
+
+Table catalog.resource_group_members {
+  group_id uuid [not null]
+  resource_id uuid [not null]
+
+  indexes {
+    (group_id, resource_id) [pk]
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// CAPACITY
+//////////////////////////////////////////////////////////////
+
+Table catalog.resource_capacities {
+  id uuid [pk]
+
+  resource_id uuid [not null]
+
+  capacity_type varchar(100) [not null]
+
+  capacity_value decimal(12,2) [not null]
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    resource_id
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// MAINTENANCE
+//////////////////////////////////////////////////////////////
+
+Table catalog.resource_maintenances {
+  id uuid [pk]
+
+  resource_id uuid [not null]
+
+  status maintenance_status [not null]
+
+  title varchar(255)
+
+  description text
+
+  started_at timestamptz
+
+  completed_at timestamptz
+
+  next_maintenance_at timestamptz
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    resource_id
+    status
+    next_maintenance_at
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// COST
+//////////////////////////////////////////////////////////////
+
+Table catalog.resource_costs {
+  id uuid [pk]
+
+  resource_id uuid [not null]
+
+  cost_type cost_type [not null]
+
+  amount decimal(18,2) [not null]
+
+  currency varchar(10) [not null]
+
+  effective_from timestamptz [not null]
+
+  effective_to timestamptz
+
+  created_at timestamptz [not null]
+
+  indexes {
+    resource_id
+    effective_from
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// MEDIA
+//////////////////////////////////////////////////////////////
+
+Table catalog.resource_media {
+  id uuid [pk]
+
+  resource_id uuid [not null]
+
+  file_id uuid [not null]
+
+  is_primary boolean [not null, default: false]
+
+  sort_order int [default: 0]
+
+  created_at timestamptz [not null]
+
+  indexes {
+    resource_id
+    is_primary
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// SCHEDULING
+//////////////////////////////////////////////////////////////
+
+TableGroup "Scheduling" {
+  scheduling.business_hours
+
+  scheduling.calendar_rules
+  scheduling.calendar_rule_resources
+
+  scheduling.calendar_exceptions
+  scheduling.calendar_holidays
+
+  scheduling.availability_rules
+
+  scheduling.resource_availability
+
+  scheduling.resource_blocks
+
+  scheduling.resource_maintenance_windows
+
+  scheduling.availability_projections
+
+  scheduling.time_slots
+}
+
+//////////////////////////////////////////////////////////////
+// ENUMS
+//////////////////////////////////////////////////////////////
+
+Enum recurrence_type {
+  none
+  daily
+  weekly
+  monthly
+  yearly
+}
+
+Enum availability_type {
+  available
+  unavailable
+}
+
+Enum block_type {
+  reservation
+  booking
+  maintenance
+  holiday
+  manual
+  system
+}
+
+Enum projection_status {
+  pending
+  generated
+  expired
+}
+
+//////////////////////////////////////////////////////////////
+// BUSINESS HOURS
+//////////////////////////////////////////////////////////////
+
+Table scheduling.business_hours {
+  id uuid [pk]
+
+  location_id uuid [not null]
+
+  weekday smallint [not null]
+
+  opens_at time [not null]
+
+  closes_at time [not null]
+
+  is_closed boolean [not null, default: false]
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    location_id
+    weekday
+    (location_id, weekday) [unique]
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// CALENDAR RULES
+//////////////////////////////////////////////////////////////
+
+Table scheduling.calendar_rules {
+  id uuid [pk]
+
+  tenant_id uuid [not null]
+
+  name varchar(255) [not null]
+
+  recurrence recurrence_type [not null]
+
+  rrule text
+
+  starts_at timestamptz [not null]
+
+  ends_at timestamptz
+
+  timezone varchar(100)
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    tenant_id
+    starts_at
+  }
+}
+
+Table scheduling.calendar_rule_resources {
+  calendar_rule_id uuid [not null]
+
+  resource_id uuid [not null]
+
+  indexes {
+    (calendar_rule_id, resource_id) [pk]
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// EXCEPTIONS
+//////////////////////////////////////////////////////////////
+
+Table scheduling.calendar_exceptions {
+  id uuid [pk]
+
+  calendar_rule_id uuid [not null]
+
+  exception_date date [not null]
+
+  created_at timestamptz [not null]
+
+  indexes {
+    calendar_rule_id
+    exception_date
+    (calendar_rule_id, exception_date) [unique]
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// HOLIDAYS
+//////////////////////////////////////////////////////////////
+
+Table scheduling.calendar_holidays {
+  id uuid [pk]
+
+  tenant_id uuid [not null]
+
+  location_id uuid
+
+  name varchar(255) [not null]
+
+  starts_at timestamptz [not null]
+
+  ends_at timestamptz [not null]
+
+  created_at timestamptz [not null]
+
+  indexes {
+    tenant_id
+    location_id
+    starts_at
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// AVAILABILITY RULES
+//////////////////////////////////////////////////////////////
+
+Table scheduling.availability_rules {
+  id uuid [pk]
+
+  resource_id uuid [not null]
+
+  availability_type availability_type [not null]
+
+  recurrence recurrence_type [not null]
+
+  rrule text
+
+  starts_at timestamptz [not null]
+
+  ends_at timestamptz
+
+  priority int [not null, default: 100]
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    resource_id
+    priority
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// RESOURCE AVAILABILITY
+//////////////////////////////////////////////////////////////
+
+Table scheduling.resource_availability {
+  id uuid [pk]
+
+  resource_id uuid [not null]
+
+  starts_at timestamptz [not null]
+
+  ends_at timestamptz [not null]
+
+  availability_type availability_type [not null]
+
+  source varchar(100)
+
+  created_at timestamptz [not null]
+
+  indexes {
+    resource_id
+    starts_at
+    ends_at
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// BLOCKS
+//////////////////////////////////////////////////////////////
+
+Table scheduling.resource_blocks {
+  id uuid [pk]
+
+  resource_id uuid [not null]
+
+  block_type block_type [not null]
+
+  reference_type varchar(100)
+
+  reference_id uuid
+
+  starts_at timestamptz [not null]
+
+  ends_at timestamptz [not null]
+
+  reason text
+
+  created_at timestamptz [not null]
+
+  indexes {
+    resource_id
+    block_type
+    starts_at
+    ends_at
+    reference_type
+    reference_id
+  }
+
+  Note: 'Source of truth for occupied time.'
+}
+
+//////////////////////////////////////////////////////////////
+// MAINTENANCE WINDOWS
+//////////////////////////////////////////////////////////////
+
+Table scheduling.resource_maintenance_windows {
+  id uuid [pk]
+
+  resource_id uuid [not null]
+
+  maintenance_id uuid
+
+  starts_at timestamptz [not null]
+
+  ends_at timestamptz [not null]
+
+  created_at timestamptz [not null]
+
+  indexes {
+    resource_id
+    starts_at
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// AVAILABILITY PROJECTION
+//////////////////////////////////////////////////////////////
+
+Table scheduling.availability_projections {
+  id uuid [pk]
+
+  resource_id uuid [not null]
+
+  projection_date date [not null]
+
+  available_minutes int [not null]
+
+  occupied_minutes int [not null]
+
+  status projection_status [not null]
+
+  generated_at timestamptz [not null]
+
+  indexes {
+    resource_id
+    projection_date
+    (resource_id, projection_date) [unique]
+  }
+
+  Note: 'Read model generated asynchronously.'
+}
+
+//////////////////////////////////////////////////////////////
+// TIME SLOT
+//////////////////////////////////////////////////////////////
+
+Table scheduling.time_slots {
+  id uuid [pk]
+
+  resource_id uuid [not null]
+
+  starts_at timestamptz [not null]
+
+  ends_at timestamptz [not null]
+
+  available boolean [not null]
+
+  source varchar(100)
+
+  projection_id uuid
+
+  generated_at timestamptz [not null]
+
+  indexes {
+    resource_id
+    starts_at
+    available
+    (resource_id, starts_at) [unique]
+  }
+
+  Note: 'Pre-generated booking slots for fast search.'
+}
+
+//////////////////////////////////////////////////////////////
+// PRICING
+//////////////////////////////////////////////////////////////
+
+TableGroup "Pricing" {
+  pricing.price_lists
+
+  pricing.price_versions
+
+  pricing.pricing_rule_sets
+
+  pricing.pricing_rules
+
+  pricing.pricing_conditions
+
+  pricing.pricing_adjustments
+
+  pricing.taxes
+
+  pricing.service_prices
+
+  pricing.resource_prices
+}
+
+//////////////////////////////////////////////////////////////
+// PROMOTION
+//////////////////////////////////////////////////////////////
+
+TableGroup "Promotion" {
+  promotion.campaigns
+
+  promotion.coupons
+
+  promotion.vouchers
+
+  promotion.promotion_rules
+
+  promotion.promotion_redemptions
+}
+
+//////////////////////////////////////////////////////////////
+// ENUMS
+//////////////////////////////////////////////////////////////
+
+Enum price_list_status {
+  draft
+  active
+  archived
+}
+
+Enum price_version_status {
+  draft
+  active
+  retired
+}
+
+Enum pricing_scope {
+  service
+  resource
+  booking
+}
+
+Enum pricing_rule_type {
+  fixed
+  percentage
+  formula
+}
+
+Enum adjustment_type {
+  surcharge
+  discount
+}
+
+Enum tax_type {
+  inclusive
+  exclusive
+}
+
+Enum campaign_status {
+  draft
+  scheduled
+  active
+  paused
+  expired
+}
+
+Enum coupon_type {
+  percentage
+  fixed
+}
+
+Enum voucher_status {
+  available
+  redeemed
+  expired
+  cancelled
+}
+
+//////////////////////////////////////////////////////////////
+// PRICE LIST
+//////////////////////////////////////////////////////////////
+
+Table pricing.price_lists {
+  id uuid [pk]
+
+  tenant_id uuid [not null]
+
+  code varchar(100) [not null]
+
+  name varchar(255) [not null]
+
+  currency varchar(10) [not null]
+
+  status price_list_status [not null]
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    tenant_id
+    status
+    (tenant_id, code) [unique]
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// PRICE VERSION
+//////////////////////////////////////////////////////////////
+
+Table pricing.price_versions {
+  id uuid [pk]
+
+  price_list_id uuid [not null]
+
+  version int [not null]
+
+  status price_version_status [not null]
+
+  effective_from timestamptz [not null]
+
+  effective_to timestamptz
+
+  published_at timestamptz
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    price_list_id
+    status
+    effective_from
+    (price_list_id, version) [unique]
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// RULE SET
+//////////////////////////////////////////////////////////////
+
+Table pricing.pricing_rule_sets {
+  id uuid [pk]
+
+  price_version_id uuid [not null]
+
+  name varchar(255) [not null]
+
+  priority int [not null, default: 100]
+
+  active boolean [not null, default: true]
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    price_version_id
+    priority
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// RULE
+//////////////////////////////////////////////////////////////
+
+Table pricing.pricing_rules {
+  id uuid [pk]
+
+  rule_set_id uuid [not null]
+
+  scope pricing_scope [not null]
+
+  rule_type pricing_rule_type [not null]
+
+  expression text
+
+  priority int [not null, default: 100]
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    rule_set_id
+    priority
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// CONDITION
+//////////////////////////////////////////////////////////////
+
+Table pricing.pricing_conditions {
+  id uuid [pk]
+
+  pricing_rule_id uuid [not null]
+
+  field varchar(100) [not null]
+
+  operator varchar(30) [not null]
+
+  value jsonb [not null]
+
+  indexes {
+    pricing_rule_id
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// ADJUSTMENT
+//////////////////////////////////////////////////////////////
+
+Table pricing.pricing_adjustments {
+  id uuid [pk]
+
+  pricing_rule_id uuid [not null]
+
+  adjustment_type adjustment_type [not null]
+
+  value decimal(18,2) [not null]
+
+  description varchar(255)
+
+  indexes {
+    pricing_rule_id
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// TAX
+//////////////////////////////////////////////////////////////
+
+Table pricing.taxes {
+  id uuid [pk]
+
+  tenant_id uuid [not null]
+
+  code varchar(50) [not null]
+
+  name varchar(255) [not null]
+
+  tax_type tax_type [not null]
+
+  rate decimal(8,4) [not null]
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    tenant_id
+    (tenant_id, code) [unique]
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// SERVICE PRICE
+//////////////////////////////////////////////////////////////
+
+Table pricing.service_prices {
+  id uuid [pk]
+
+  price_version_id uuid [not null]
+
+  service_id uuid [not null]
+
+  amount decimal(18,2) [not null]
+
+  created_at timestamptz [not null]
+
+  indexes {
+    service_id
+    price_version_id
+    (price_version_id, service_id) [unique]
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// RESOURCE PRICE
+//////////////////////////////////////////////////////////////
+
+Table pricing.resource_prices {
+  id uuid [pk]
+
+  price_version_id uuid [not null]
+
+  resource_id uuid [not null]
+
+  amount decimal(18,2) [not null]
+
+  created_at timestamptz [not null]
+
+  indexes {
+    resource_id
+    price_version_id
+    (price_version_id, resource_id) [unique]
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// PROMOTION
+//////////////////////////////////////////////////////////////
+
+Table promotion.campaigns {
+  id uuid [pk]
+
+  tenant_id uuid [not null]
+
+  code varchar(100) [not null]
+
+  name varchar(255) [not null]
+
+  status campaign_status [not null]
+
+  starts_at timestamptz
+
+  ends_at timestamptz
+
+  budget decimal(18,2)
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    tenant_id
+    status
+    (tenant_id, code) [unique]
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// COUPON
+//////////////////////////////////////////////////////////////
+
+Table promotion.coupons {
+  id uuid [pk]
+
+  campaign_id uuid [not null]
+
+  code varchar(100) [not null]
+
+  coupon_type coupon_type [not null]
+
+  value decimal(18,2) [not null]
+
+  usage_limit int
+
+  used_count int [not null, default: 0]
+
+  starts_at timestamptz
+
+  ends_at timestamptz
+
+  created_at timestamptz [not null]
+
+  indexes {
+    campaign_id
+    code [unique]
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// VOUCHER
+//////////////////////////////////////////////////////////////
+
+Table promotion.vouchers {
+  id uuid [pk]
+
+  coupon_id uuid [not null]
+  campaign_id uuid [not null]
+
+  customer_id uuid
+
+  code varchar(100) [not null]
+
+  status voucher_status [not null]
+
+  redeemed_at timestamptz
+
+  expires_at timestamptz
+
+  created_at timestamptz [not null]
+
+  indexes {
+    coupon_id
+    campaign_id
+    customer_id
+    code [unique]
+    status
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// PROMOTION RULE
+//////////////////////////////////////////////////////////////
+
+Table promotion.promotion_rules {
+  id uuid [pk]
+
+  campaign_id uuid [not null]
+
+  priority int [not null, default: 100]
+
+  conditions jsonb
+
+  rewards jsonb
+
+  created_at timestamptz [not null]
+
+  indexes {
+    campaign_id
+    priority
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// REDEMPTION
+//////////////////////////////////////////////////////////////
+
+Table promotion.promotion_redemptions {
+  id uuid [pk]
+
+  voucher_id uuid [not null]
+
+  booking_id uuid
+  coupon_id uuid
+
+  customer_id uuid
+
+  discount_amount decimal(18,2) [not null]
+
+  redeemed_at timestamptz [not null]
+
+  indexes {
+    voucher_id
+    booking_id
+    coupon_id
+    customer_id
+  }
+
+  Note: 'Immutable redemption history.'
+}
+
+//////////////////////////////////////////////////////////////
+// RESERVATION
+//////////////////////////////////////////////////////////////
+
+TableGroup "Reservation" {
+  reservation.reservations
+
+  reservation.reservation_items
+
+  reservation.reservation_resources
+
+  reservation.reservation_holds
+
+  reservation.reservation_guests
+
+  reservation.reservation_notes
+
+  reservation.reservation_status_histories
+
+  reservation.reservation_expirations
+}
+
+//////////////////////////////////////////////////////////////
+// ENUMS
+//////////////////////////////////////////////////////////////
+
+Enum reservation_status {
+  draft
+  pending
+  confirmed
+  expired
+  cancelled
+  completed
+}
+
+Enum reservation_source {
+  web
+  mobile
+  admin
+  api
+  integration
+}
+
+Enum reservation_hold_status {
+  active
+  released
+  expired
+  converted
+}
+
+//////////////////////////////////////////////////////////////
+// RESERVATION
+//////////////////////////////////////////////////////////////
+
+Table reservation.reservations {
+  id uuid [pk]
+
+  tenant_id uuid [not null]
+
+  reservation_no varchar(50) [not null]
+
+  customer_id uuid [not null]
+
+  source reservation_source [not null]
+
+  status reservation_status [not null]
+
+  currency varchar(10) [not null]
+
+  subtotal decimal(18,2) [not null, default: 0]
+
+  discount_amount decimal(18,2) [not null, default: 0]
+
+  tax_amount decimal(18,2) [not null, default: 0]
+
+  total_amount decimal(18,2) [not null, default: 0]
+
+  note text
+
+  expires_at timestamptz
+
+  confirmed_at timestamptz
+
+  cancelled_at timestamptz
+
+  created_by uuid
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    tenant_id
+    customer_id
+    status
+    expires_at
+    confirmed_at
+    reservation_no [unique]
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// ITEMS
+//////////////////////////////////////////////////////////////
+
+Table reservation.reservation_items {
+  id uuid [pk]
+
+  reservation_id uuid [not null]
+
+  service_id uuid [not null]
+
+  quantity int [not null, default: 1]
+
+  starts_at timestamptz [not null]
+
+  ends_at timestamptz [not null]
+
+  duration_minutes int [not null]
+
+  unit_price decimal(18,2) [not null]
+
+  subtotal decimal(18,2) [not null]
+
+  discount_amount decimal(18,2) [not null, default: 0]
+
+  tax_amount decimal(18,2) [not null, default: 0]
+
+  total_amount decimal(18,2) [not null]
+
+  created_at timestamptz [not null]
+
+  indexes {
+    reservation_id
+    service_id
+    starts_at
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// RESERVED RESOURCES
+//////////////////////////////////////////////////////////////
+
+Table reservation.reservation_resources {
+  id uuid [pk]
+
+  reservation_item_id uuid [not null]
+
+  resource_id uuid [not null]
+
+  quantity int [not null, default: 1]
+
+  starts_at timestamptz [not null]
+
+  ends_at timestamptz [not null]
+
+  created_at timestamptz [not null]
+
+  indexes {
+    reservation_item_id
+    resource_id
+    starts_at
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// HOLD
+//////////////////////////////////////////////////////////////
+
+Table reservation.reservation_holds {
+  id uuid [pk]
+
+  reservation_id uuid [not null]
+
+  resource_id uuid [not null]
+
+  status reservation_hold_status [not null]
+
+  lock_key varchar(255)
+
+  starts_at timestamptz [not null]
+
+  ends_at timestamptz [not null]
+
+  expires_at timestamptz [not null]
+
+  released_at timestamptz
+
+  created_at timestamptz [not null]
+
+  indexes {
+    reservation_id
+    resource_id
+    status
+    expires_at
+  }
+
+  Note: 'Temporary resource lock before booking confirmation.'
+}
+
+//////////////////////////////////////////////////////////////
+// GUESTS
+//////////////////////////////////////////////////////////////
+
+Table reservation.reservation_guests {
+  id uuid [pk]
+
+  reservation_item_id uuid [not null]
+
+  customer_id uuid
+
+  full_name varchar(255) [not null]
+
+  phone varchar(30)
+
+  email varchar(255)
+
+  created_at timestamptz [not null]
+
+  indexes {
+    reservation_item_id
+    customer_id
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// NOTES
+//////////////////////////////////////////////////////////////
+
+Table reservation.reservation_notes {
+  id uuid [pk]
+
+  reservation_id uuid [not null]
+
+  created_by uuid
+
+  is_internal boolean [not null, default: true]
+
+  note text [not null]
+
+  created_at timestamptz [not null]
+
+  indexes {
+    reservation_id
+    created_by
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// STATUS HISTORY
+//////////////////////////////////////////////////////////////
+
+Table reservation.reservation_status_histories {
+  id uuid [pk]
+
+  reservation_id uuid [not null]
+
+  from_status reservation_status
+
+  to_status reservation_status [not null]
+
+  changed_by uuid
+
+  reason text
+
+  created_at timestamptz [not null]
+
+  indexes {
+    reservation_id
+    created_at
+  }
+
+  Note: 'Append-only reservation state transitions.'
+}
+
+//////////////////////////////////////////////////////////////
+// EXPIRATION
+//////////////////////////////////////////////////////////////
+
+Table reservation.reservation_expirations {
+  id uuid [pk]
+
+  reservation_id uuid [not null]
+
+  scheduled_at timestamptz [not null]
+
+  processed_at timestamptz
+
+  created_at timestamptz [not null]
+
+  indexes {
+    reservation_id
+    scheduled_at
+    processed_at
+  }
+
+  Note: 'Background expiration scheduler.'
+}
+
+//////////////////////////////////////////////////////////////
+// BOOKING
+//////////////////////////////////////////////////////////////
+
+TableGroup "Booking" {
+  booking.bookings
+
+  booking.booking_items
+
+  booking.booking_resources
+
+  booking.booking_participants
+
+  booking.booking_assignments
+
+  booking.check_ins
+
+  booking.booking_workflows
+
+  booking.booking_timeline
+
+  booking.booking_status_histories
+}
+
+//////////////////////////////////////////////////////////////
+// ENUMS
+//////////////////////////////////////////////////////////////
+
+Enum booking_status {
+  pending
+  confirmed
+  checked_in
+  in_progress
+  completed
+  no_show
+  cancelled
+}
+
+Enum participant_role {
+  customer
+  guest
+  coach
+  staff
+}
+
+Enum assignment_type {
+  resource
+  coach
+  staff
+}
+
+Enum workflow_status {
+  pending
+  running
+  completed
+  cancelled
+}
+
+Enum check_in_status {
+  pending
+  checked_in
+  checked_out
+  no_show
+}
+
+//////////////////////////////////////////////////////////////
+// BOOKING
+//////////////////////////////////////////////////////////////
+
+Table booking.bookings {
+  id uuid [pk]
+
+  tenant_id uuid [not null]
+
+  booking_no varchar(50) [not null]
+
+  reservation_id uuid
+
+  customer_id uuid [not null]
+
+  location_id uuid [not null]
+
+  status booking_status [not null]
+
+  currency varchar(10) [not null]
+
+  subtotal decimal(18,2) [not null, default: 0]
+
+  discount_amount decimal(18,2) [not null, default: 0]
+
+  tax_amount decimal(18,2) [not null, default: 0]
+
+  total_amount decimal(18,2) [not null, default: 0]
+
+  confirmed_at timestamptz
+
+  cancelled_at timestamptz
+
+  completed_at timestamptz
+
+  created_by uuid
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    booking_no [unique]
+    tenant_id
+    reservation_id
+    customer_id
+    location_id
+    status
+    completed_at
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// BOOKING ITEMS
+//////////////////////////////////////////////////////////////
+
+Table booking.booking_items {
+  id uuid [pk]
+
+  booking_id uuid [not null]
+
+  service_id uuid [not null]
+
+  starts_at timestamptz [not null]
+
+  ends_at timestamptz [not null]
+
+  duration_minutes int [not null]
+
+  quantity int [not null, default: 1]
+
+  unit_price decimal(18,2) [not null]
+
+  subtotal decimal(18,2) [not null]
+
+  discount_amount decimal(18,2) [not null, default: 0]
+
+  tax_amount decimal(18,2) [not null, default: 0]
+
+  total_amount decimal(18,2) [not null]
+
+  created_at timestamptz [not null]
+
+  indexes {
+    booking_id
+    service_id
+    starts_at
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// BOOKING RESOURCES
+//////////////////////////////////////////////////////////////
+
+Table booking.booking_resources {
+  id uuid [pk]
+
+  booking_item_id uuid [not null]
+
+  resource_id uuid [not null]
+
+  quantity int [not null, default: 1]
+
+  starts_at timestamptz [not null]
+
+  ends_at timestamptz [not null]
+
+  created_at timestamptz [not null]
+
+  indexes {
+    booking_item_id
+    resource_id
+    starts_at
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// PARTICIPANTS
+//////////////////////////////////////////////////////////////
+
+Table booking.booking_participants {
+  id uuid [pk]
+
+  booking_item_id uuid [not null]
+
+  customer_id uuid
+
+  participant_role participant_role [not null]
+
+  full_name varchar(255) [not null]
+
+  phone varchar(30)
+
+  email varchar(255)
+
+  checked_in boolean [not null, default: false]
+
+  created_at timestamptz [not null]
+
+  indexes {
+    booking_item_id
+    customer_id
+    participant_role
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// ASSIGNMENTS
+//////////////////////////////////////////////////////////////
+
+Table booking.booking_assignments {
+  id uuid [pk]
+
+  booking_item_id uuid [not null]
+
+  assignment_type assignment_type [not null]
+
+  resource_id uuid
+
+  staff_member_id uuid
+
+  assigned_at timestamptz [not null]
+
+  assigned_by uuid
+
+  unassigned_at timestamptz
+
+  created_at timestamptz [not null]
+
+  indexes {
+    booking_item_id
+    assignment_type
+    resource_id
+    staff_member_id
+  }
+
+  Note: 'Assignment history for coaches, staff and resources.'
+}
+
+//////////////////////////////////////////////////////////////
+// CHECK IN
+//////////////////////////////////////////////////////////////
+
+Table booking.check_ins {
+  id uuid [pk]
+
+  booking_participant_id uuid [not null]
+
+  status check_in_status [not null]
+
+  checked_in_at timestamptz
+
+  checked_out_at timestamptz
+
+  verified_by uuid
+
+  created_at timestamptz [not null]
+
+  indexes {
+    booking_participant_id
+    status
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// WORKFLOW
+//////////////////////////////////////////////////////////////
+
+Table booking.booking_workflows {
+  id uuid [pk]
+
+  booking_id uuid [not null]
+
+  workflow_name varchar(255) [not null]
+
+  status workflow_status [not null]
+
+  current_step varchar(100)
+
+  payload jsonb
+
+  started_at timestamptz
+
+  completed_at timestamptz
+
+  created_at timestamptz [not null]
+
+  indexes {
+    booking_id
+    status
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// TIMELINE
+//////////////////////////////////////////////////////////////
+
+Table booking.booking_timeline {
+  id uuid [pk]
+
+  booking_id uuid [not null]
+
+  event_name varchar(100) [not null]
+
+  actor_type varchar(100)
+
+  actor_id uuid
+
+  payload jsonb
+
+  occurred_at timestamptz [not null]
+
+  indexes {
+    booking_id
+    event_name
+    occurred_at
+  }
+
+  Note: 'Immutable booking timeline.'
+}
+
+//////////////////////////////////////////////////////////////
+// STATUS HISTORY
+//////////////////////////////////////////////////////////////
+
+Table booking.booking_status_histories {
+  id uuid [pk]
+
+  booking_id uuid [not null]
+
+  from_status booking_status
+
+  to_status booking_status [not null]
+
+  changed_by uuid
+
+  reason text
+
+  created_at timestamptz [not null]
+
+  indexes {
+    booking_id
+    created_at
+  }
+
+  Note: 'Append-only booking state transitions.'
+}
+
+//////////////////////////////////////////////////////////////
+// MEMBERSHIP
+//////////////////////////////////////////////////////////////
+
+TableGroup "Membership" {
+  membership.membership_plans
+  membership.membership_plan_features
+  membership.membership_plan_benefits
+
+  membership.memberships
+
+  membership.membership_freezes
+
+  membership.membership_usages
+
+  membership.membership_transactions
+
+  membership.passes
+
+  membership.pass_entries
+
+  membership.pass_transactions
+}
+
+//////////////////////////////////////////////////////////////
+// ENUMS
+//////////////////////////////////////////////////////////////
+
+Enum membership_plan_type {
+  subscription
+  prepaid
+  unlimited
+}
+
+Enum membership_status {
+  pending
+  active
+  paused
+  frozen
+  expired
+  cancelled
+}
+
+Enum benefit_type {
+  discount
+  credit
+  free_booking
+  free_service
+  access
+}
+
+Enum transaction_type {
+  activation
+  renewal
+  upgrade
+  downgrade
+  freeze
+  unfreeze
+  cancellation
+  expiration
+  adjustment
+}
+
+Enum pass_status {
+  active
+  exhausted
+  expired
+  cancelled
+}
+
+//////////////////////////////////////////////////////////////
+// MEMBERSHIP PLAN
+//////////////////////////////////////////////////////////////
+
+Table membership.membership_plans {
+  id uuid [pk]
+
+  tenant_id uuid [not null]
+
+  code varchar(100) [not null]
+
+  name varchar(255) [not null]
+
+  membership_plan_type membership_plan_type [not null]
+
+  duration_days int
+
+  auto_renew boolean [not null, default: false]
+
+  price decimal(18,2) [not null]
+
+  currency varchar(10) [not null]
+
+  active boolean [not null, default: true]
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    tenant_id
+    active
+    (tenant_id, code) [unique]
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// PLAN FEATURES
+//////////////////////////////////////////////////////////////
+
+Table membership.membership_plan_features {
+  id uuid [pk]
+
+  membership_plan_id uuid [not null]
+
+  feature_key varchar(100) [not null]
+
+  feature_value jsonb
+
+  created_at timestamptz [not null]
+
+  indexes {
+    membership_plan_id
+    (membership_plan_id, feature_key) [unique]
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// PLAN BENEFITS
+//////////////////////////////////////////////////////////////
+
+Table membership.membership_plan_benefits {
+  id uuid [pk]
+
+  membership_plan_id uuid [not null]
+
+  benefit_type benefit_type [not null]
+
+  benefit_key varchar(100) [not null]
+
+  benefit_value jsonb
+
+  priority int [not null, default: 100]
+
+  created_at timestamptz [not null]
+
+  indexes {
+    membership_plan_id
+    priority
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// MEMBERSHIP
+//////////////////////////////////////////////////////////////
+
+Table membership.memberships {
+  id uuid [pk]
+
+  tenant_id uuid [not null]
+
+  membership_no varchar(50) [not null]
+
+  membership_plan_id uuid [not null]
+
+  customer_id uuid [not null]
+
+  status membership_status [not null]
+
+  starts_at timestamptz [not null]
+
+  expires_at timestamptz
+
+  cancelled_at timestamptz
+
+  auto_renew boolean [not null]
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    membership_no [unique]
+    tenant_id
+    customer_id
+    membership_plan_id
+    status
+    expires_at
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// FREEZE
+//////////////////////////////////////////////////////////////
+
+Table membership.membership_freezes {
+  id uuid [pk]
+
+  membership_id uuid [not null]
+
+  starts_at timestamptz [not null]
+
+  ends_at timestamptz [not null]
+
+  reason text
+
+  approved_by uuid
+
+  created_at timestamptz [not null]
+
+  indexes {
+    membership_id
+    starts_at
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// USAGE
+//////////////////////////////////////////////////////////////
+
+Table membership.membership_usages {
+  id uuid [pk]
+
+  membership_id uuid [not null]
+
+  booking_id uuid
+
+  service_id uuid
+
+  benefit_key varchar(100)
+
+  quantity decimal(12,2) [not null]
+
+  used_at timestamptz [not null]
+
+  created_at timestamptz [not null]
+
+  indexes {
+    membership_id
+    booking_id
+    service_id
+    used_at
+  }
+
+  Note: 'Immutable benefit usage history.'
+}
+
+//////////////////////////////////////////////////////////////
+// TRANSACTIONS
+//////////////////////////////////////////////////////////////
+
+Table membership.membership_transactions {
+  id uuid [pk]
+
+  membership_id uuid [not null]
+
+  transaction_type transaction_type [not null]
+
+  reference_type varchar(100)
+
+  reference_id uuid
+
+  payload jsonb
+
+  created_by uuid
+
+  created_at timestamptz [not null]
+
+  indexes {
+    membership_id
+    transaction_type
+    created_at
+  }
+
+  Note: 'Append-only membership lifecycle.'
+}
+
+//////////////////////////////////////////////////////////////
+// PASSES
+//////////////////////////////////////////////////////////////
+
+Table membership.passes {
+  id uuid [pk]
+
+  tenant_id uuid [not null]
+
+  customer_id uuid [not null]
+
+  code varchar(100) [not null]
+
+  name varchar(255)
+
+  total_entries int [not null]
+
+  remaining_entries int [not null]
+
+  expires_at timestamptz
+
+  status pass_status [not null]
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    code [unique]
+    tenant_id
+    customer_id
+    status
+    expires_at
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// PASS ENTRY
+//////////////////////////////////////////////////////////////
+
+Table membership.pass_entries {
+  id uuid [pk]
+
+  pass_id uuid [not null]
+
+  booking_id uuid
+
+  service_id uuid
+
+  quantity int [not null]
+
+  used_at timestamptz [not null]
+
+  created_at timestamptz [not null]
+
+  indexes {
+    pass_id
+    booking_id
+    service_id
+    used_at
+  }
+
+  Note: 'Immutable pass consumption.'
+}
+
+//////////////////////////////////////////////////////////////
+// PASS TRANSACTIONS
+//////////////////////////////////////////////////////////////
+
+Table membership.pass_transactions {
+  id uuid [pk]
+
+  pass_id uuid [not null]
+
+  transaction_type transaction_type [not null]
+
+  reference_type varchar(100)
+
+  reference_id uuid
+
+  quantity int
+
+  payload jsonb
+
+  created_by uuid
+
+  created_at timestamptz [not null]
+
+  indexes {
+    pass_id
+    transaction_type
+    created_at
+  }
+
+  Note: 'Append-only pass lifecycle.'
+}
+
+//////////////////////////////////////////////////////////////
+// BILLING
+//////////////////////////////////////////////////////////////
+
+TableGroup "Billing" {
+  billing.invoices
+  billing.invoice_items
+
+  billing.credit_notes
+  billing.credit_note_items
+
+  billing.debit_notes
+  billing.debit_note_items
+}
+
+//////////////////////////////////////////////////////////////
+// PAYMENT
+//////////////////////////////////////////////////////////////
+
+TableGroup "Payment" {
+  payment.payment_methods
+
+  payment.payment_intents
+
+  payment.payment_attempts
+
+  payment.payments
+
+  payment.payment_allocations
+
+  payment.refunds
+
+  payment.refund_items
+}
+
+//////////////////////////////////////////////////////////////
+// LEDGER
+//////////////////////////////////////////////////////////////
+
+TableGroup "Ledger" {
+  ledger.account_categories
+
+  ledger.accounts
+
+  ledger.journals
+
+  ledger.journal_entries
+}
+
+//////////////////////////////////////////////////////////////
+// ENUMS
+//////////////////////////////////////////////////////////////
+
+Enum invoice_status {
+  draft
+  issued
+  partially_paid
+  paid
+  void
+  cancelled
+}
+
+Enum payment_intent_status {
+  pending
+  requires_action
+  authorized
+  succeeded
+  failed
+  cancelled
+}
+
+Enum payment_status {
+  pending
+  completed
+  failed
+  refunded
+  cancelled
+}
+
+Enum refund_status {
+  pending
+  completed
+  failed
+  cancelled
+}
+
+Enum payment_method_type {
+  cash
+  bank_transfer
+  card
+  wallet
+  qr
+  other
+}
+
+Enum ledger_account_type {
+  asset
+  liability
+  equity
+  revenue
+  expense
+}
+
+//////////////////////////////////////////////////////////////
+// INVOICE
+//////////////////////////////////////////////////////////////
+
+Table billing.invoices {
+  id uuid [pk]
+
+  tenant_id uuid [not null]
+
+  invoice_no varchar(50) [not null]
+
+  booking_id uuid
+
+  customer_id uuid [not null]
+
+  currency varchar(10) [not null]
+
+  status invoice_status [not null]
+
+  subtotal decimal(18,2) [not null]
+
+  discount_amount decimal(18,2) [not null]
+
+  tax_amount decimal(18,2) [not null]
+
+  total_amount decimal(18,2) [not null]
+
+  issued_at timestamptz
+
+  due_at timestamptz
+
+  paid_at timestamptz
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    invoice_no [unique]
+    tenant_id
+    customer_id
+    booking_id
+    status
+    due_at
+  }
+}
+
+Table billing.invoice_items {
+  id uuid [pk]
+
+  invoice_id uuid [not null]
+
+  reference_type varchar(100)
+
+  reference_id uuid
+
+  description varchar(255)
+
+  quantity decimal(12,2)
+
+  unit_price decimal(18,2)
+
+  subtotal decimal(18,2)
+
+  tax_amount decimal(18,2)
+
+  total_amount decimal(18,2)
+
+  indexes {
+    invoice_id
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// CREDIT NOTE
+//////////////////////////////////////////////////////////////
+
+Table billing.credit_notes {
+  id uuid [pk]
+
+  invoice_id uuid [not null]
+
+  credit_note_no varchar(50) [not null]
+
+  reason text
+
+  amount decimal(18,2) [not null]
+
+  issued_at timestamptz
+
+  created_at timestamptz [not null]
+
+  indexes {
+    credit_note_no [unique]
+    invoice_id
+  }
+}
+
+Table billing.credit_note_items {
+  id uuid [pk]
+
+  credit_note_id uuid [not null]
+
+  invoice_item_id uuid
+
+  amount decimal(18,2) [not null]
+
+  indexes {
+    credit_note_id
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// DEBIT NOTE
+//////////////////////////////////////////////////////////////
+
+Table billing.debit_notes {
+  id uuid [pk]
+
+  invoice_id uuid [not null]
+
+  debit_note_no varchar(50) [not null]
+
+  reason text
+
+  amount decimal(18,2) [not null]
+
+  issued_at timestamptz
+
+  created_at timestamptz [not null]
+
+  indexes {
+    debit_note_no [unique]
+    invoice_id
+  }
+}
+
+Table billing.debit_note_items {
+  id uuid [pk]
+
+  debit_note_id uuid [not null]
+
+  invoice_item_id uuid
+
+  amount decimal(18,2) [not null]
+
+  indexes {
+    debit_note_id
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// PAYMENT METHOD
+//////////////////////////////////////////////////////////////
+
+Table payment.payment_methods {
+  id uuid [pk]
+
+  tenant_id uuid [not null]
+
+  code varchar(100) [not null]
+
+  name varchar(255) [not null]
+
+  payment_method_type payment_method_type [not null]
+
+  configuration jsonb
+
+  active boolean [not null, default: true]
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    tenant_id
+    (tenant_id, code) [unique]
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// PAYMENT INTENT
+//////////////////////////////////////////////////////////////
+
+Table payment.payment_intents {
+  id uuid [pk]
+
+  tenant_id uuid [not null]
+
+  invoice_id uuid
+
+  customer_id uuid [not null]
+
+  payment_method_id uuid
+
+  amount decimal(18,2) [not null]
+
+  currency varchar(10) [not null]
+
+  status payment_intent_status [not null]
+
+  provider varchar(100)
+
+  provider_reference varchar(255)
+
+  expires_at timestamptz
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    tenant_id
+    invoice_id
+    customer_id
+    status
+    provider_reference
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// PAYMENT ATTEMPT
+//////////////////////////////////////////////////////////////
+
+Table payment.payment_attempts {
+  id uuid [pk]
+
+  payment_intent_id uuid [not null]
+
+  attempt_no int [not null]
+
+  request_payload jsonb
+
+  response_payload jsonb
+
+  success boolean [not null]
+
+  error_message text
+
+  attempted_at timestamptz [not null]
+
+  indexes {
+    payment_intent_id
+    attempted_at
+    (payment_intent_id, attempt_no) [unique]
+  }
+
+  Note: 'Immutable gateway attempt history.'
+}
+
+//////////////////////////////////////////////////////////////
+// PAYMENT
+//////////////////////////////////////////////////////////////
+
+Table payment.payments {
+  id uuid [pk]
+
+  tenant_id uuid [not null]
+
+  payment_intent_id uuid
+
+  payment_no varchar(50) [not null]
+
+  status payment_status [not null]
+
+  amount decimal(18,2) [not null]
+
+  currency varchar(10) [not null]
+
+  provider_reference varchar(255)
+
+  completed_at timestamptz
+
+  created_at timestamptz [not null]
+
+  indexes {
+    payment_no [unique]
+    tenant_id
+    payment_intent_id
+    status
+    completed_at
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// PAYMENT ALLOCATION
+//////////////////////////////////////////////////////////////
+
+Table payment.payment_allocations {
+  id uuid [pk]
+
+  payment_id uuid [not null]
+
+  invoice_id uuid [not null]
+
+  allocated_amount decimal(18,2) [not null]
+
+  created_at timestamptz [not null]
+
+  indexes {
+    payment_id
+    invoice_id
+    (payment_id, invoice_id) [unique]
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// REFUND
+//////////////////////////////////////////////////////////////
+
+Table payment.refunds {
+  id uuid [pk]
+
+  payment_id uuid [not null]
+
+  refund_no varchar(50) [not null]
+
+  status refund_status [not null]
+
+  amount decimal(18,2) [not null]
+
+  reason text
+
+  provider_reference varchar(255)
+
+  completed_at timestamptz
+
+  created_at timestamptz [not null]
+
+  indexes {
+    refund_no [unique]
+    payment_id
+    status
+  }
+}
+
+Table payment.refund_items {
+  id uuid [pk]
+
+  refund_id uuid [not null]
+
+  invoice_item_id uuid
+
+  amount decimal(18,2) [not null]
+
+  indexes {
+    refund_id
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// ACCOUNT CATEGORY
+//////////////////////////////////////////////////////////////
+
+Table ledger.account_categories {
+  id uuid [pk]
+
+  code varchar(50) [not null]
+
+  name varchar(255) [not null]
+
+  ledger_account_type ledger_account_type [not null]
+
+  indexes {
+    code [unique]
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// ACCOUNT
+//////////////////////////////////////////////////////////////
+
+Table ledger.accounts {
+  id uuid [pk]
+
+  tenant_id uuid [not null]
+
+  account_category_id uuid [not null]
+
+  code varchar(50) [not null]
+
+  name varchar(255) [not null]
+
+  currency varchar(10) [not null]
+
+  active boolean [not null, default: true]
+
+  created_at timestamptz [not null]
+
+  indexes {
+    tenant_id
+    account_category_id
+    (tenant_id, code) [unique]
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// JOURNAL
+//////////////////////////////////////////////////////////////
+
+Table ledger.journals {
+  id uuid [pk]
+
+  tenant_id uuid [not null]
+
+  journal_no varchar(50) [not null]
+
+  reference_type varchar(100)
+
+  reference_id uuid
+
+  description text
+
+  journal_date timestamptz [not null]
+
+  posted_at timestamptz
+
+  created_at timestamptz [not null]
+
+  indexes {
+    journal_no [unique]
+    tenant_id
+    journal_date
+  }
+
+  Note: 'Immutable accounting journal.'
+}
+
+//////////////////////////////////////////////////////////////
+// JOURNAL ENTRY
+//////////////////////////////////////////////////////////////
+
+Table ledger.journal_entries {
+  id uuid [pk]
+
+  journal_id uuid [not null]
+
+  account_id uuid [not null]
+
+  debit decimal(18,2) [not null, default: 0]
+
+  credit decimal(18,2) [not null, default: 0]
+
+  currency varchar(10) [not null]
+
+  description varchar(255)
+
+  created_at timestamptz [not null]
+
+  indexes {
+    journal_id
+    account_id
+  }
+
+  Note: 'Double-entry accounting. Sum(debit)=Sum(credit).'
+}
+
+//////////////////////////////////////////////////////////////
+// INTEGRATION
+//////////////////////////////////////////////////////////////
+
+TableGroup "Integration" {
+  integration.providers
+
+  integration.connections
+
+  integration.credentials
+
+  integration.webhook_endpoints
+
+  integration.sync_profiles
+
+  integration.sync_jobs
+
+  integration.sync_executions
+
+  integration.entity_mappings
+
+  integration.integration_events
+
+  integration.api_logs
+}
+
+//////////////////////////////////////////////////////////////
+// ENUMS
+//////////////////////////////////////////////////////////////
+
+Enum provider_type {
+  payment
+  calendar
+  communication
+  crm
+  erp
+  accounting
+  storage
+  identity
+  custom
+}
+
+Enum connection_status {
+  pending
+  connected
+  disconnected
+  suspended
+}
+
+Enum credential_type {
+  api_key
+  oauth2
+  bearer
+  basic
+  jwt
+}
+
+Enum sync_direction {
+  import
+  export
+  bidirectional
+}
+
+Enum sync_status {
+  pending
+  queued
+  running
+  completed
+  failed
+  cancelled
+}
+
+Enum webhook_status {
+  active
+  disabled
+}
+
+Enum api_log_status {
+  success
+  failed
+}
+
+//////////////////////////////////////////////////////////////
+// PROVIDER
+//////////////////////////////////////////////////////////////
+
+Table integration.providers {
+  id uuid [pk]
+
+  code varchar(100) [not null]
+
+  name varchar(255) [not null]
+
+  provider_type provider_type [not null]
+
+  base_url varchar(500)
+
+  documentation_url varchar(500)
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    code [unique]
+    provider_type
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// CONNECTION
+//////////////////////////////////////////////////////////////
+
+Table integration.connections {
+  id uuid [pk]
+
+  tenant_id uuid [not null]
+
+  provider_id uuid [not null]
+
+  name varchar(255) [not null]
+
+  status connection_status [not null]
+
+  last_connected_at timestamptz
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    tenant_id
+    provider_id
+    status
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// CREDENTIAL
+//////////////////////////////////////////////////////////////
+
+Table integration.credentials {
+  id uuid [pk]
+
+  connection_id uuid [not null]
+
+  credential_type credential_type [not null]
+
+  encrypted_secret text [not null]
+
+  refresh_token text
+
+  expires_at timestamptz
+
+  rotated_at timestamptz
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    connection_id
+    expires_at
+  }
+
+  Note: 'Secrets encrypted using KMS/Vault.'
+}
+
+//////////////////////////////////////////////////////////////
+// WEBHOOK
+//////////////////////////////////////////////////////////////
+
+Table integration.webhook_endpoints {
+  id uuid [pk]
+
+  connection_id uuid [not null]
+
+  endpoint_url varchar(500) [not null]
+
+  secret_hash varchar(255)
+
+  status webhook_status [not null]
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    connection_id
+    status
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// SYNC PROFILE
+//////////////////////////////////////////////////////////////
+
+Table integration.sync_profiles {
+  id uuid [pk]
+
+  connection_id uuid [not null]
+
+  name varchar(255) [not null]
+
+  sync_direction sync_direction [not null]
+
+  source_entity varchar(100) [not null]
+
+  destination_entity varchar(100) [not null]
+
+  schedule varchar(100)
+
+  enabled boolean [not null, default: true]
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    connection_id
+    enabled
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// SYNC JOB
+//////////////////////////////////////////////////////////////
+
+Table integration.sync_jobs {
+  id uuid [pk]
+
+  sync_profile_id uuid [not null]
+
+  status sync_status [not null]
+
+  queued_at timestamptz
+
+  started_at timestamptz
+
+  finished_at timestamptz
+
+  total_records int
+
+  success_records int
+
+  failed_records int
+
+  created_at timestamptz [not null]
+
+  indexes {
+    sync_profile_id
+    status
+    queued_at
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// SYNC EXECUTION
+//////////////////////////////////////////////////////////////
+
+Table integration.sync_executions {
+  id uuid [pk]
+
+  sync_job_id uuid [not null]
+
+  entity_type varchar(100) [not null]
+
+  entity_id uuid
+
+  external_id varchar(255)
+
+  status sync_status [not null]
+
+  request_payload jsonb
+
+  response_payload jsonb
+
+  error_message text
+
+  executed_at timestamptz [not null]
+
+  indexes {
+    sync_job_id
+    status
+    entity_type
+    external_id
+  }
+
+  Note: 'Per-record synchronization.'
+}
+
+//////////////////////////////////////////////////////////////
+// ENTITY MAPPING
+//////////////////////////////////////////////////////////////
+
+Table integration.entity_mappings {
+  id uuid [pk]
+
+  connection_id uuid [not null]
+
+  entity_type varchar(100) [not null]
+
+  internal_id uuid [not null]
+
+  external_id varchar(255) [not null]
+
+  synced_at timestamptz
+
+  created_at timestamptz [not null]
+
+  indexes {
+    connection_id
+    entity_type
+    internal_id
+    external_id
+    (connection_id, entity_type, internal_id) [unique]
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// INTEGRATION EVENT
+//////////////////////////////////////////////////////////////
+
+Table integration.integration_events {
+  id uuid [pk]
+
+  connection_id uuid [not null]
+
+  direction sync_direction [not null]
+
+  event_name varchar(255) [not null]
+
+  payload jsonb [not null]
+
+  processed boolean [not null, default: false]
+
+  processed_at timestamptz
+
+  created_at timestamptz [not null]
+
+  indexes {
+    connection_id
+    direction
+    processed
+    created_at
+  }
+
+  Note: 'Inbound & outbound integration events.'
+}
+
+//////////////////////////////////////////////////////////////
+// API LOG
+//////////////////////////////////////////////////////////////
+
+Table integration.api_logs {
+  id uuid [pk]
+
+  connection_id uuid [not null]
+
+  method varchar(20) [not null]
+
+  endpoint varchar(500) [not null]
+
+  request_headers jsonb
+
+  request_body jsonb
+
+  response_status int
+
+  response_body jsonb
+
+  duration_ms bigint
+
+  status api_log_status [not null]
+
+  created_at timestamptz [not null]
+
+  indexes {
+    connection_id
+    status
+    response_status
+    created_at
+  }
+
+  Note: 'Append-only external API audit log.'
+}
+
+//////////////////////////////////////////////////////////////
+// PLATFORM
+//////////////////////////////////////////////////////////////
+
+TableGroup "Platform" {
+  platform.audit_logs
+
+  platform.notifications
+
+  platform.notification_templates
+
+  platform.notification_deliveries
+
+  platform.files
+
+  platform.file_references
+
+  platform.tags
+
+  platform.tag_assignments
+
+  platform.comments
+
+  platform.activity_logs
+
+  platform.saved_searches
+
+  platform.custom_fields
+
+  platform.custom_field_values
+}
+
+//////////////////////////////////////////////////////////////
+// ANALYTICS
+//////////////////////////////////////////////////////////////
+
+TableGroup "Analytics" {
+  analytics.metric_definitions
+
+  analytics.metric_snapshots
+
+  analytics.fact_bookings
+
+  analytics.fact_revenue
+
+  analytics.fact_customers
+
+  analytics.fact_resources
+
+  analytics.dimension_dates
+
+  analytics.dimension_locations
+
+  analytics.dimension_services
+
+  analytics.dimension_customers
+}
+
+//////////////////////////////////////////////////////////////
+// ENUMS
+//////////////////////////////////////////////////////////////
+
+Enum notification_channel {
+  email
+  sms
+  push
+  webhook
+  in_app
+}
+
+Enum notification_status {
+  pending
+  queued
+  sent
+  delivered
+  failed
+  cancelled
+}
+
+Enum file_storage {
+  local
+  s3
+  gcs
+  azure
+}
+
+Enum audit_log_activity_type {
+  created
+  updated
+  deleted
+  viewed
+  exported
+  imported
+}
+
+Enum metric_type {
+  counter
+  gauge
+  monetary
+  percentage
+  duration
+}
+
+//////////////////////////////////////////////////////////////
+// AUDIT LOG
+//////////////////////////////////////////////////////////////
+
+Table platform.audit_logs {
+  id uuid [pk]
+
+  tenant_id uuid [not null]
+
+  actor_type varchar(100)
+
+  actor_id uuid
+
+  entity_type varchar(100) [not null]
+
+  entity_id uuid [not null]
+
+  action varchar(100) [not null]
+
+  before_data jsonb
+
+  after_data jsonb
+
+  ip_address inet
+
+  user_agent text
+
+  created_at timestamptz [not null]
+
+  indexes {
+    tenant_id
+    entity_type
+    entity_id
+    action
+    created_at
+  }
+
+  Note: 'Immutable audit trail.'
+}
+
+//////////////////////////////////////////////////////////////
+// NOTIFICATION TEMPLATE
+//////////////////////////////////////////////////////////////
+
+Table platform.notification_templates {
+  id uuid [pk]
+
+  tenant_id uuid
+
+  code varchar(100) [not null]
+
+  name varchar(255) [not null]
+
+  notification_channel notification_channel [not null]
+
+  subject varchar(255)
+
+  content text [not null]
+
+  active boolean [not null, default: true]
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    tenant_id
+    code
+    (tenant_id, code) [unique]
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// NOTIFICATION
+//////////////////////////////////////////////////////////////
+
+Table platform.notifications {
+  id uuid [pk]
+
+  tenant_id uuid [not null]
+
+  template_id uuid
+
+  recipient_type varchar(100)
+
+  recipient_id uuid
+
+  notification_channel notification_channel [not null]
+
+  subject varchar(255)
+
+  content text
+
+  status notification_status [not null]
+
+  scheduled_at timestamptz
+
+  sent_at timestamptz
+
+  created_at timestamptz [not null]
+
+  indexes {
+    tenant_id
+    template_id
+    recipient_id
+    status
+    scheduled_at
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// DELIVERY
+//////////////////////////////////////////////////////////////
+
+Table platform.notification_deliveries {
+  id uuid [pk]
+
+  notification_id uuid [not null]
+
+  provider varchar(100)
+
+  provider_reference varchar(255)
+
+  status notification_status [not null]
+
+  response_payload jsonb
+
+  delivered_at timestamptz
+
+  created_at timestamptz [not null]
+
+  indexes {
+    notification_id
+    status
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// FILE
+//////////////////////////////////////////////////////////////
+
+Table platform.files {
+  id uuid [pk]
+
+  tenant_id uuid [not null]
+
+  storage file_storage [not null]
+
+  bucket varchar(255)
+
+  path varchar(1000) [not null]
+
+  filename varchar(255)
+
+  mime_type varchar(255)
+
+  extension varchar(20)
+
+  size bigint
+
+  checksum varchar(255)
+
+  created_by uuid
+
+  created_at timestamptz [not null]
+
+  indexes {
+    tenant_id
+    checksum
+    mime_type
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// FILE REFERENCE
+//////////////////////////////////////////////////////////////
+
+Table platform.file_references {
+  id uuid [pk]
+
+  file_id uuid [not null]
+
+  entity_type varchar(100) [not null]
+
+  entity_id uuid [not null]
+
+  created_at timestamptz [not null]
+
+  indexes {
+    file_id
+    entity_type
+    entity_id
+    (file_id, entity_type, entity_id) [unique]
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// TAG
+//////////////////////////////////////////////////////////////
+
+Table platform.tags {
+  id uuid [pk]
+
+  tenant_id uuid [not null]
+
+  name varchar(100) [not null]
+
+  color varchar(20)
+
+  created_at timestamptz [not null]
+
+  indexes {
+    tenant_id
+    (tenant_id, name) [unique]
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// TAG ASSIGNMENT
+//////////////////////////////////////////////////////////////
+
+Table platform.tag_assignments {
+  id uuid [pk]
+
+  tag_id uuid [not null]
+
+  entity_type varchar(100) [not null]
+
+  entity_id uuid [not null]
+
+  created_at timestamptz [not null]
+
+  indexes {
+    tag_id
+    entity_type
+    entity_id
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// COMMENT
+//////////////////////////////////////////////////////////////
+
+Table platform.comments {
+  id uuid [pk]
+
+  tenant_id uuid [not null]
+
+  entity_type varchar(100) [not null]
+
+  entity_id uuid [not null]
+
+  author_id uuid
+
+  content text [not null]
+
+  parent_comment_id uuid
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz
+
+  indexes {
+    tenant_id
+    entity_type
+    entity_id
+    parent_comment_id
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// ACTIVITY LOG
+//////////////////////////////////////////////////////////////
+
+Table platform.activity_logs {
+  id uuid [pk]
+
+  tenant_id uuid [not null]
+
+  actor_id uuid
+
+  activity_type audit_log_activity_type [not null]
+
+  entity_type varchar(100)
+
+  entity_id uuid
+
+  payload jsonb
+
+  created_at timestamptz [not null]
+
+  indexes {
+    tenant_id
+    actor_id
+    activity_type
+    created_at
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// SAVED SEARCH
+//////////////////////////////////////////////////////////////
+
+Table platform.saved_searches {
+  id uuid [pk]
+
+  tenant_id uuid [not null]
+
+  user_id uuid [not null]
+
+  name varchar(255)
+
+  filters jsonb [not null]
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    tenant_id
+    user_id
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// CUSTOM FIELD
+//////////////////////////////////////////////////////////////
+
+Table platform.custom_fields {
+  id uuid [pk]
+
+  tenant_id uuid [not null]
+
+  entity_type varchar(100) [not null]
+
+  code varchar(100) [not null]
+
+  name varchar(255) [not null]
+
+  data_type varchar(50) [not null]
+
+  configuration jsonb
+
+  created_at timestamptz [not null]
+
+  indexes {
+    tenant_id
+    entity_type
+    (tenant_id, entity_type, code) [unique]
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// CUSTOM FIELD VALUE
+//////////////////////////////////////////////////////////////
+
+Table platform.custom_field_values {
+  id uuid [pk]
+
+  custom_field_id uuid [not null]
+
+  entity_id uuid [not null]
+
+  value jsonb
+
+  created_at timestamptz [not null]
+
+  indexes {
+    custom_field_id
+    entity_id
+    (custom_field_id, entity_id) [unique]
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// METRIC DEFINITION
+//////////////////////////////////////////////////////////////
+
+Table analytics.metric_definitions {
+  id uuid [pk]
+
+  code varchar(100) [not null]
+
+  name varchar(255) [not null]
+
+  metric_type metric_type [not null]
+
+  unit varchar(50)
+
+  indexes {
+    code [unique]
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// METRIC SNAPSHOT
+//////////////////////////////////////////////////////////////
+
+Table analytics.metric_snapshots {
+  id uuid [pk]
+
+  tenant_id uuid [not null]
+
+  metric_definition_id uuid [not null]
+
+  dimension_key varchar(255)
+
+  snapshot_date date [not null]
+
+  metric_value decimal(24,6) [not null]
+
+  created_at timestamptz [not null]
+
+  indexes {
+    tenant_id
+    metric_definition_id
+    snapshot_date
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// FACT TABLES
+//////////////////////////////////////////////////////////////
+
+Table analytics.fact_bookings {
+  id bigint [pk, increment]
+
+  tenant_id uuid [not null]
+
+  booking_id uuid [not null]
+
+  date_key date [not null]
+
+  customer_id uuid
+
+  location_id uuid
+
+  service_id uuid
+
+  revenue decimal(18,2)
+
+  duration_minutes int
+
+  created_at timestamptz [not null]
+
+  indexes {
+    tenant_id
+    date_key
+    service_id
+    location_id
+  }
+}
+
+Table analytics.fact_revenue {
+  id bigint [pk, increment]
+
+  tenant_id uuid [not null]
+
+  payment_id uuid
+
+  invoice_id uuid
+
+  date_key date [not null]
+
+  amount decimal(18,2)
+
+  tax_amount decimal(18,2)
+
+  created_at timestamptz [not null]
+
+  indexes {
+    tenant_id
+    date_key
+  }
+}
+
+Table analytics.fact_customers {
+  id bigint [pk, increment]
+
+  tenant_id uuid [not null]
+
+  customer_id uuid [not null]
+
+  date_key date [not null]
+
+  bookings int
+
+  revenue decimal(18,2)
+
+  visits int
+
+  created_at timestamptz [not null]
+
+  indexes {
+    tenant_id
+    customer_id
+    date_key
+  }
+}
+
+Table analytics.fact_resources {
+  id bigint [pk, increment]
+
+  tenant_id uuid [not null]
+
+  resource_id uuid [not null]
+
+  date_key date [not null]
+
+  utilization_rate decimal(8,2)
+
+  booking_count int
+
+  occupied_minutes int
+
+  created_at timestamptz [not null]
+
+  indexes {
+    tenant_id
+    resource_id
+    date_key
+  }
+}
+
+//////////////////////////////////////////////////////////////
+// DIMENSIONS
+//////////////////////////////////////////////////////////////
+
+Table analytics.dimension_dates {
+  date_key date [pk]
+
+  year int
+
+  quarter int
+
+  month int
+
+  week int
+
+  day int
+
+  weekday int
+}
+
+Table analytics.dimension_locations {
+  id uuid [pk]
+
+  location_name varchar(255)
+
+  city varchar(255)
+
+  country varchar(255)
+}
+
+Table analytics.dimension_services {
+  id uuid [pk]
+
+  service_name varchar(255)
+
+  category varchar(255)
+}
+
+Table analytics.dimension_customers {
+  id uuid [pk]
+
+  customer_type varchar(100)
+
+  segment varchar(100)
+}
+
+//////////////////////////////////////////////////////////////
+// REFERENCES
+//////////////////////////////////////////////////////////////
+
+Ref: identity.users.id > identity.user_profiles.user_id
+
+Ref: identity.users.id > identity.identities.user_id
+Ref: identity.identities.id > identity.identity_verifications.identity_id
+
+Ref: identity.roles.id > identity.role_permissions.role_id
+Ref: identity.permissions.id > identity.role_permissions.permission_id
+
+Ref: identity.users.id > identity.user_roles.user_id
+Ref: identity.roles.id > identity.user_roles.role_id
+
+Ref: identity.users.id > identity.sessions.user_id
+Ref: identity.sessions.id > identity.refresh_tokens.session_id
+
+Ref: identity.users.id > identity.personal_access_tokens.user_id
+Ref: identity.users.id > identity.password_credentials.user_id
+Ref: identity.users.id > identity.login_histories.user_id
+Ref: identity.users.id > identity.user_devices.user_id
+Ref: identity.users.id > identity.mfa_methods.user_id
+Ref: identity.mfa_methods.id > identity.mfa_recovery_codes.mfa_method_id
+
+//////////////////////////////////////////////////////////////
+// ORGANIZATION
+//////////////////////////////////////////////////////////////
+
+Ref: organization.tenants.id > organization.organizations.tenant_id
+Ref: organization.organizations.id > organization.organization_settings.organization_id
+
+Ref: organization.organizations.id > organization.business_units.organization_id
+
+Ref: organization.organizations.id > organization.locations.organization_id
+Ref: organization.locations.id > organization.location_addresses.location_id
+Ref: organization.locations.id > organization.location_settings.location_id
+
+Ref: organization.organizations.id > organization.staff_members.organization_id
+Ref: identity.users.id > organization.staff_members.user_id
+
+Ref: organization.staff_members.id > organization.staff_profiles.staff_member_id
+
+Ref: organization.organizations.id > organization.staff_invitations.organization_id
+
+Ref: organization.organizations.id > organization.teams.organization_id
+Ref: organization.teams.id > organization.team_members.team_id
+Ref: organization.staff_members.id > organization.team_members.staff_member_id
+
+Ref: organization.organizations.id > organization.organization_domains.organization_id
+
+Ref: organization.tenants.id > organization.tenant_subscriptions.tenant_id
+Ref: organization.tenants.id > organization.tenant_usages.tenant_id
+Ref: organization.tenants.id > organization.tenant_limits.tenant_id
+
+//////////////////////////////////////////////////////////////
+// CRM
+//////////////////////////////////////////////////////////////
+
+Ref: organization.tenants.id > crm.customers.tenant_id
+
+Ref: crm.customers.id > crm.customer_profiles.customer_id
+Ref: crm.customers.id > crm.customer_contacts.customer_id
+Ref: crm.customers.id > crm.customer_addresses.customer_id
+
+Ref: organization.tenants.id > crm.customer_tags.tenant_id
+Ref: crm.customer_tags.id > crm.customer_tag_assignments.tag_id
+Ref: crm.customers.id > crm.customer_tag_assignments.customer_id
+
+Ref: organization.tenants.id > crm.customer_segments.tenant_id
+Ref: crm.customer_segments.id > crm.customer_segment_members.segment_id
+Ref: crm.customers.id > crm.customer_segment_members.customer_id
+
+Ref: crm.customers.id > crm.customer_relationships.customer_id
+Ref: crm.customers.id > crm.customer_relationships.related_customer_id
+
+Ref: crm.customers.id > crm.customer_notes.customer_id
+Ref: crm.customers.id > crm.customer_activities.customer_id
+Ref: crm.customers.id > crm.customer_consents.customer_id
+Ref: crm.customers.id > crm.customer_blacklists.customer_id
+
+//////////////////////////////////////////////////////////////
+// CATALOG
+//////////////////////////////////////////////////////////////
+
+Ref: catalog.sports.id > catalog.service_categories.sport_id
+
+Ref: catalog.service_categories.id > catalog.services.service_category_id
+
+Ref: catalog.services.id > catalog.service_resources.service_id
+Ref: catalog.resources.id > catalog.service_resources.resource_id
+
+Ref: catalog.resource_categories.id > catalog.resources.resource_category_ids
+
+Ref: catalog.resources.id > catalog.resource_capability_assignments.resource_id
+Ref: catalog.resource_capabilities.id > catalog.resource_capability_assignments.capability_id
+
+Ref: catalog.resources.id > catalog.resource_attribute_values.resource_id
+Ref: catalog.resource_attributes.id > catalog.resource_attribute_values.attribute_id
+
+Ref: catalog.resources.id > catalog.resource_label_assignments.resource_id
+Ref: catalog.resource_labels.id > catalog.resource_label_assignments.label_id
+
+Ref: catalog.resource_groups.id > catalog.resource_group_members.group_id
+Ref: catalog.resources.id > catalog.resource_group_members.resource_id
+
+Ref: catalog.resources.id > catalog.resource_capacities.resource_id
+Ref: catalog.resources.id > catalog.resource_maintenances.resource_id
+Ref: catalog.resources.id > catalog.resource_costs.resource_id
+Ref: catalog.resources.id > catalog.resource_media.resource_id
+
+//////////////////////////////////////////////////////////////
+// SCHEDULING
+//////////////////////////////////////////////////////////////
+
+Ref: organization.locations.id > scheduling.business_hours.location_id
+
+Ref: scheduling.calendar_rules.id > scheduling.calendar_rule_resources.calendar_rule_id
+Ref: catalog.resources.id > scheduling.calendar_rule_resources.resource_id
+
+Ref: scheduling.calendar_rules.id > scheduling.calendar_exceptions.calendar_rule_id
+
+Ref: organization.locations.id > scheduling.calendar_holidays.location_id
+
+Ref: catalog.resources.id > scheduling.availability_rules.resource_id
+
+Ref: catalog.resources.id > scheduling.resource_availability.resource_id
+
+Ref: catalog.resources.id > scheduling.resource_blocks.resource_id
+
+Ref: catalog.resources.id > scheduling.resource_maintenance_windows.resource_id
+
+Ref: catalog.resources.id > scheduling.availability_projections.resource_id
+
+Ref: catalog.resources.id > scheduling.time_slots.resource_id
+
+//////////////////////////////////////////////////////////////
+// PRICING
+//////////////////////////////////////////////////////////////
+
+Ref: organization.tenants.id > pricing.price_lists.tenant_id
+Ref: pricing.price_lists.id > pricing.price_versions.price_list_id
+
+Ref: pricing.price_versions.id > pricing.pricing_rule_sets.price_version_id
+Ref: pricing.pricing_rule_sets.id > pricing.pricing_rules.rule_set_id
+Ref: pricing.pricing_rules.id > pricing.pricing_conditions.pricing_rule_id
+Ref: pricing.pricing_rules.id > pricing.pricing_adjustments.pricing_rule_id
+
+Ref: catalog.services.id > pricing.service_prices.service_id
+Ref: pricing.price_versions.id > pricing.service_prices.price_version_id
+
+Ref: catalog.resources.id > pricing.resource_prices.resource_id
+Ref: pricing.price_versions.id > pricing.resource_prices.price_version_id
+
+//////////////////////////////////////////////////////////////
+// PROMOTION
+//////////////////////////////////////////////////////////////
+
+Ref: organization.tenants.id > promotion.campaigns.tenant_id
+
+Ref: promotion.campaigns.id > promotion.coupons.campaign_id
+Ref: promotion.campaigns.id > promotion.vouchers.campaign_id
+Ref: promotion.campaigns.id > promotion.promotion_rules.campaign_id
+
+Ref: promotion.coupons.id > promotion.promotion_redemptions.coupon_id
+Ref: crm.customers.id > promotion.promotion_redemptions.customer_id
+
+//////////////////////////////////////////////////////////////
+// RESERVATION
+//////////////////////////////////////////////////////////////
+
+Ref: organization.tenants.id > reservation.reservations.tenant_id
+Ref: crm.customers.id > reservation.reservations.customer_id
+
+Ref: reservation.reservations.id > reservation.reservation_items.reservation_id
+Ref: catalog.services.id > reservation.reservation_items.service_id
+
+Ref: reservation.reservation_items.id > reservation.reservation_resources.reservation_item_id
+Ref: catalog.resources.id > reservation.reservation_resources.resource_id
+
+Ref: reservation.reservations.id > reservation.reservation_holds.reservation_id
+Ref: catalog.resources.id > reservation.reservation_holds.resource_id
+
+Ref: reservation.reservation_items.id > reservation.reservation_guests.reservation_item_id
+
+Ref: reservation.reservations.id > reservation.reservation_notes.reservation_id
+Ref: reservation.reservations.id > reservation.reservation_status_histories.reservation_id
+Ref: reservation.reservations.id > reservation.reservation_expirations.reservation_id
+
+//////////////////////////////////////////////////////////////
+// BOOKING
+//////////////////////////////////////////////////////////////
+
+Ref: organization.tenants.id > booking.bookings.tenant_id
+Ref: reservation.reservations.id > booking.bookings.reservation_id
+Ref: crm.customers.id > booking.bookings.customer_id
+Ref: organization.locations.id > booking.bookings.location_id
+
+Ref: booking.bookings.id > booking.booking_items.booking_id
+Ref: catalog.services.id > booking.booking_items.service_id
+
+Ref: booking.booking_items.id > booking.booking_resources.booking_item_id
+Ref: catalog.resources.id > booking.booking_resources.resource_id
+
+Ref: booking.booking_items.id > booking.booking_participants.booking_item_id
+
+Ref: booking.booking_items.id > booking.booking_assignments.booking_item_id
+Ref: catalog.resources.id > booking.booking_assignments.resource_id
+Ref: organization.staff_members.id > booking.booking_assignments.staff_member_id
+
+Ref: booking.booking_participants.id > booking.check_ins.booking_participant_id
+
+Ref: booking.bookings.id > booking.booking_workflows.booking_id
+Ref: booking.bookings.id > booking.booking_timeline.booking_id
+Ref: booking.bookings.id > booking.booking_status_histories.booking_id
+
+//////////////////////////////////////////////////////////////
+// MEMBERSHIP
+//////////////////////////////////////////////////////////////
+
+Ref: organization.tenants.id > membership.membership_plans.tenant_id
+
+Ref: membership.membership_plans.id > membership.membership_plan_features.membership_plan_id
+Ref: membership.membership_plans.id > membership.membership_plan_benefits.membership_plan_id
+
+Ref: organization.tenants.id > membership.memberships.tenant_id
+Ref: membership.membership_plans.id > membership.memberships.membership_plan_id
+Ref: crm.customers.id > membership.memberships.customer_id
+
+Ref: membership.memberships.id > membership.membership_freezes.membership_id
+Ref: membership.memberships.id > membership.membership_usages.membership_id
+Ref: membership.memberships.id > membership.membership_transactions.membership_id
+
+Ref: organization.tenants.id > membership.passes.tenant_id
+Ref: crm.customers.id > membership.passes.customer_id
+
+Ref: membership.passes.id > membership.pass_entries.pass_id
+Ref: membership.passes.id > membership.pass_transactions.pass_id
+
+//////////////////////////////////////////////////////////////
+// BILLING / PAYMENT / LEDGER
+//////////////////////////////////////////////////////////////
+
+Ref: organization.tenants.id > billing.invoices.tenant_id
+Ref: booking.bookings.id > billing.invoices.booking_id
+Ref: crm.customers.id > billing.invoices.customer_id
+
+Ref: billing.invoices.id > billing.invoice_items.invoice_id
+
+Ref: billing.invoices.id > billing.credit_notes.invoice_id
+Ref: billing.credit_notes.id > billing.credit_note_items.credit_note_id
+
+Ref: billing.invoices.id > billing.debit_notes.invoice_id
+Ref: billing.debit_notes.id > billing.debit_note_items.debit_note_id
+
+Ref: organization.tenants.id > payment.payment_methods.tenant_id
+
+Ref: organization.tenants.id > payment.payment_intents.tenant_id
+Ref: billing.invoices.id > payment.payment_intents.invoice_id
+Ref: crm.customers.id > payment.payment_intents.customer_id
+Ref: payment.payment_methods.id > payment.payment_intents.payment_method_id
+
+Ref: payment.payment_intents.id > payment.payment_attempts.payment_intent_id
+
+Ref: organization.tenants.id > payment.payments.tenant_id
+Ref: payment.payment_intents.id > payment.payments.payment_intent_id
+
+Ref: payment.payments.id > payment.payment_allocations.payment_id
+Ref: billing.invoices.id > payment.payment_allocations.invoice_id
+
+Ref: payment.payments.id > payment.refunds.payment_id
+Ref: payment.refunds.id > payment.refund_items.refund_id
+
+Ref: ledger.account_categories.id > ledger.accounts.account_category_id
+Ref: organization.tenants.id > ledger.accounts.tenant_id
+
+Ref: organization.tenants.id > ledger.journals.tenant_id
+
+Ref: ledger.journals.id > ledger.journal_entries.journal_id
+Ref: ledger.accounts.id > ledger.journal_entries.account_id
+
+//////////////////////////////////////////////////////////////
+// INTEGRATION
+//////////////////////////////////////////////////////////////
+
+Ref: integration.providers.id > integration.connections.provider_id
+Ref: organization.tenants.id > integration.connections.tenant_id
+
+Ref: integration.connections.id > integration.credentials.connection_id
+Ref: integration.connections.id > integration.webhook_endpoints.connection_id
+Ref: integration.connections.id > integration.sync_profiles.connection_id
+
+Ref: integration.sync_profiles.id > integration.sync_jobs.sync_profile_id
+Ref: integration.sync_jobs.id > integration.sync_executions.sync_job_id
+
+Ref: integration.connections.id > integration.entity_mappings.connection_id
+Ref: integration.connections.id > integration.integration_events.connection_id
+Ref: integration.connections.id > integration.api_logs.connection_id
+
+//////////////////////////////////////////////////////////////
+// PLATFORM
+//////////////////////////////////////////////////////////////
+
+Ref: organization.tenants.id > platform.audit_logs.tenant_id
+
+Ref: platform.notification_templates.id > platform.notifications.template_id
+Ref: organization.tenants.id > platform.notifications.tenant_id
+
+Ref: platform.notifications.id > platform.notification_deliveries.notification_id
+
+Ref: organization.tenants.id > platform.files.tenant_id
+Ref: platform.files.id > platform.file_references.file_id
+
+Ref: organization.tenants.id > platform.tags.tenant_id
+Ref: platform.tags.id > platform.tag_assignments.tag_id
+
+Ref: organization.tenants.id > platform.comments.tenant_id
+Ref: organization.tenants.id > platform.activity_logs.tenant_id
+
+Ref: organization.tenants.id > platform.saved_searches.tenant_id
+Ref: identity.users.id > platform.saved_searches.user_id
+
+Ref: organization.tenants.id > platform.custom_fields.tenant_id
+Ref: platform.custom_fields.id > platform.custom_field_values.custom_field_id
+
+//////////////////////////////////////////////////////////////
+// ANALYTICS
+//////////////////////////////////////////////////////////////
+
+Ref: analytics.metric_definitions.id > analytics.metric_snapshots.metric_definition_id
+Ref: organization.tenants.id > analytics.metric_snapshots.tenant_id
+
+Ref: organization.tenants.id > analytics.fact_bookings.tenant_id
+Ref: booking.bookings.id > analytics.fact_bookings.booking_id
+Ref: crm.customers.id > analytics.fact_bookings.customer_id
+Ref: organization.locations.id > analytics.fact_bookings.location_id
+Ref: catalog.services.id > analytics.fact_bookings.service_id
+
+Ref: organization.tenants.id > analytics.fact_revenue.tenant_id
+Ref: payment.payments.id > analytics.fact_revenue.payment_id
+Ref: billing.invoices.id > analytics.fact_revenue.invoice_id
+
+Ref: organization.tenants.id > analytics.fact_customers.tenant_id
+Ref: crm.customers.id > analytics.fact_customers.customer_id
+
+Ref: organization.tenants.id > analytics.fact_resources.tenant_id
+Ref: catalog.resources.id > analytics.fact_resources.resource_id
+
+//////////////////////////////////////////////////////////////
+// PRODUCTION NOTES
+//////////////////////////////////////////////////////////////
+
+// ==========================================================
+// VERSION
+// ==========================================================
+//
+// Bokdy Database
+// Version 4 Production Edition
+//
+// PostgreSQL
+// DDD
+// CQRS Ready
+// Event Driven
+// Multi Tenant
+// Event Sourcing Friendly
+// Outbox / Inbox Pattern
+// Double Entry Ledger
+// Resource Engine V2
+// Pricing Engine V2
+// Promotion Engine
+// Availability Projection
+//
+// ==========================================================
+
+//////////////////////////////////////////////////////////////
+// SCHEMAS
+//////////////////////////////////////////////////////////////
+
+// infrastructure
+// identity
+// organization
+// crm
+// catalog
+// scheduling
+// pricing
+// promotion
+// reservation
+// booking
+// membership
+// billing
+// payment
+// ledger
+// integration
+// platform
+// analytics
+
+//////////////////////////////////////////////////////////////
+// AGGREGATE ROOTS
+//////////////////////////////////////////////////////////////
+
+// Identity
+// - User
+// - Role
+
+// Organization
+// - Tenant
+// - Organization
+// - Location
+// - StaffMember
+
+// CRM
+// - Customer
+
+// Catalog
+// - Service
+// - Resource
+
+// Pricing
+// - PriceList
+// - PriceVersion
+
+// Promotion
+// - Campaign
+
+// Reservation
+// - Reservation
+
+// Booking
+// - Booking
+
+// Membership
+// - Membership
+// - Pass
+
+// Billing
+// - Invoice
+
+// Payment
+// - PaymentIntent
+// - Payment
+
+// Ledger
+// - Journal
+
+// Integration
+// - Connection
+
+//////////////////////////////////////////////////////////////
+// EVENT SOURCES
+//////////////////////////////////////////////////////////////
+
+// domain_events
+// outbox_events
+// inbox_events
+// integration_events
+// booking_timeline
+// reservation_status_histories
+// booking_status_histories
+// membership_transactions
+// pass_transactions
+// journal_entries
+// audit_logs
+
+//////////////////////////////////////////////////////////////
+// IMMUTABLE TABLES
+//////////////////////////////////////////////////////////////
+
+// infrastructure.domain_events
+// infrastructure.outbox_events
+// infrastructure.inbox_events
+// booking.booking_timeline
+// booking.booking_status_histories
+// reservation.reservation_status_histories
+// membership.membership_transactions
+// membership.pass_transactions
+// payment.payment_attempts
+// ledger.journals
+// ledger.journal_entries
+// platform.audit_logs
+// integration.api_logs
+
+//////////////////////////////////////////////////////////////
+// DERIVED / PROJECTION TABLES
+//////////////////////////////////////////////////////////////
+
+// scheduling.availability_projections
+// scheduling.time_slots
+// analytics.metric_snapshots
+// analytics.fact_bookings
+// analytics.fact_customers
+// analytics.fact_resources
+// analytics.fact_revenue
+
+//////////////////////////////////////////////////////////////
+// DESIGN RULES
+//////////////////////////////////////////////////////////////
+
+// • UUID primary keys for OLTP tables
+// • BIGINT surrogate keys only for analytics fact tables
+// • Monetary values use decimal(18,2)
+// • JSONB for extensibility
+// • Immutable financial records
+// • Soft-delete omitted unless business requires it
+// • Audit trail stored separately
+// • All timestamps use timestamptz
+// • Tenant isolation via tenant_id
+// • Business identifiers (booking_no, invoice_no, etc.) are unique
+// • Availability is projection-based, not computed on every query
+// • Ledger follows double-entry accounting
+// • External integrations are idempotent
+// • Event publishing via Outbox Pattern
+// • Read models can be rebuilt from immutable events
+
+//////////////////////////////////////////////////////////////
+// END OF DBML
+//////////////////////////////////////////////////////////////
