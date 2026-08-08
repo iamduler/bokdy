@@ -20,6 +20,20 @@ docs/00-ai-context.md
 
 Always read that document first, then follow its required reading order.
 
+When adding or changing a backend feature or HTTP API, also read:
+
+```text
+docs/architecture/backend-feature-playbook.md
+```
+
+When adding or changing a frontend screen or UI feature, also read:
+
+```text
+docs/architecture/frontend-feature-playbook.md
+```
+
+Read the matching playbook after domain docs and before generating code.
+
 ---
 
 # Product
@@ -81,6 +95,18 @@ Do not implement booking, court, payment, or CRM Customer in the foundation laye
 
 ---
 
+# Backend feature playbook
+
+Implementation order, module layout, API conventions, and done checklist:
+
+```text
+docs/architecture/backend-feature-playbook.md
+```
+
+Follow that workflow for every new or changed backend use case or route. Do not start from the handler or OpenAPI.
+
+---
+
 # OpenAPI
 
 Public HTTP API docs live in `api/openapi/openapi.yaml`.
@@ -91,16 +117,31 @@ Regenerate SDK: `pnpm --filter @bokdy/sdk generate`.
 
 ---
 
+# Frontend feature playbook
+
+Implementation order, app layout, BFF rules, and done checklist:
+
+```text
+docs/architecture/frontend-feature-playbook.md
+```
+
+Follow that workflow for every new or changed screen. Do not start from a fat `page.tsx` that calls `fetch`.
+
+---
+
 # Frontend
 
 * Every user-facing string goes through next-intl (`en` + `vi`)
 * Mobile-first layouts
 * Browser never holds JWT; use Next `/api/auth/*` and `/api/go/*`
+* Page → Component → Hook → `lib/api` → BFF; types from `@bokdy/sdk`; primitives from `@bokdy/ui`
 
 ---
 
 # Before Completing Any Task
 
+* Backend feature/API changes followed `docs/architecture/backend-feature-playbook.md`
+* Frontend screen/UI changes followed `docs/architecture/frontend-feature-playbook.md`
 * Architecture respected
 * Package boundaries respected
 * Business rules remain in Domain

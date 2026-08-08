@@ -169,6 +169,34 @@ Never skip this order.
 
 ---
 
+# Backend Feature Implementation
+
+When implementing a backend feature or HTTP API, after the required reading order above and **before generating code**, read:
+
+```text
+docs/architecture/backend-feature-playbook.md
+```
+
+That playbook defines the frozen implementation order (Domain first), module layout, API conventions, and done checklist.
+
+It does not replace this document or `docs/domain/development-rules.md`.
+
+---
+
+# Frontend Feature Implementation
+
+When implementing a frontend screen or UI feature, after the required reading order above and **before generating code**, read:
+
+```text
+docs/architecture/frontend-feature-playbook.md
+```
+
+That playbook defines the frozen implementation order (OpenAPI + SDK first, thin pages last), app vs package layout, BFF auth rules, i18n, and done checklist.
+
+It does not replace this document, `docs/domain/domain-glossary.md`, or `api/openapi/openapi.yaml`.
+
+---
+
 # Source of Truth Priority
 
 If multiple documents define the same concept,
