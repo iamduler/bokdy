@@ -1,0 +1,30 @@
+{
+  "name": "bokdy",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "pnpm@10.32.1",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "player": "pnpm --filter @bokdy/player-web",
+    "owner": "pnpm --filter @bokdy/owner-web",
+    "admin": "pnpm --filter @bokdy/admin-web"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@swc/core",
+      "esbuild",
+      "sharp",
+      "@parcel/watcher",
+      "unrs-resolver"
+    ]
+  }
+}

@@ -1,0 +1,38 @@
+# Local secrets — do not commit.
+backend/configs/.env
+backend/.env
+.env
+
+# Build artifacts
+backend/bin/
+*.exe
+/tmp/
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+
+# Optional local tooling / generated sqlc
+backend/db/generated/
+backend/tools/
+
+# Node / Next
+node_modules/
+.turbo/
+**/.next/
+**/out/
+**/dist/
+*.tsbuildinfo
+next-env.d.ts
+
+# Logs
+**/logs/
+*.log
+
+# Coverage / test
+coverage/
+*.out
+
+# PNPM
+.pnpm-store/

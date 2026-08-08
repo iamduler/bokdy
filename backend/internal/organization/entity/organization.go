@@ -1,0 +1,86 @@
+package entity
+
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
+
+type TenantStatus string
+
+const (
+	TenantTrial  TenantStatus = "trial"
+	TenantActive TenantStatus = "active"
+)
+
+type OrganizationStatus string
+
+const (
+	OrganizationActive OrganizationStatus = "active"
+)
+
+type OrganizationType string
+
+const (
+	OrganizationTypeClub OrganizationType = "club"
+)
+
+type StaffStatus string
+
+const (
+	StaffActive  StaffStatus = "active"
+	StaffInvited StaffStatus = "invited"
+)
+
+type InvitationStatus string
+
+const (
+	InvitationPending  InvitationStatus = "pending"
+	InvitationAccepted InvitationStatus = "accepted"
+	InvitationRevoked  InvitationStatus = "revoked"
+)
+
+type Tenant struct {
+	ID        uuid.UUID
+	Code      string
+	Name      string
+	Slug      string
+	Status    TenantStatus
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+type Organization struct {
+	ID               uuid.UUID
+	TenantID         uuid.UUID
+	Code             string
+	Name             string
+	OrganizationType OrganizationType
+	Email            string
+	Status           OrganizationStatus
+	CreatedAt        time.Time
+	UpdatedAt        time.Time
+}
+
+type StaffMember struct {
+	ID             uuid.UUID
+	OrganizationID uuid.UUID
+	UserID         uuid.UUID
+	Title          string
+	Status         StaffStatus
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+}
+
+type StaffInvitation struct {
+	ID              uuid.UUID
+	OrganizationID  uuid.UUID
+	Email           string
+	RoleCode        string
+	InvitationToken string
+	Status          InvitationStatus
+	ExpiresAt       time.Time
+	InvitedBy       uuid.UUID
+	AcceptedBy      *uuid.UUID
+	CreatedAt       time.Time
+}

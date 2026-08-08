@@ -1,0 +1,23 @@
+{
+  "common": {
+    "appName": "Bokdy Admin",
+    "loading": "Đang tải…",
+    "logout": "Đăng xuất"
+  },
+  "auth": {
+    "loginTitle": "Đăng nhập",
+    "registerTitle": "Tạo tài khoản",
+    "email": "Email",
+    "password": "Mật khẩu",
+    "fullName": "Họ tên",
+    "submitLogin": "Đăng nhập",
+    "submitRegister": "Đăng ký",
+    "noAccount": "Chưa có tài khoản?",
+    "hasAccount": "Đã có tài khoản?"
+  },
+  "shell": {
+    "dashboard": "Bảng điều khiển",
+    "welcome": "Chào mừng đến Bokdy Admin",
+    "subtitle": "Scaffold nền tảng — chưa có domain nghiệp vụ."
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "common": {
+    "appName": "Bokdy Owner",
+    "loading": "Loading…",
+    "logout": "Log out"
+  },
+  "auth": {
+    "loginTitle": "Sign in",
+    "registerTitle": "Create account",
+    "email": "Email",
+    "password": "Password",
+    "fullName": "Full name",
+    "submitLogin": "Sign in",
+    "submitRegister": "Register",
+    "noAccount": "Need an account?",
+    "hasAccount": "Already have an account?"
+  },
+  "shell": {
+    "dashboard": "Dashboard",
+    "welcome": "Welcome to Bokdy Owner",
+    "subtitle": "Foundation scaffold — no business domain yet."
+  }
+}

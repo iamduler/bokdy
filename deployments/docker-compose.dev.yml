@@ -1,0 +1,54 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${DB_USER:-bokdy}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-bokdy}
+      POSTGRES_DB: ${DB_NAME:-bokdy}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - bokdy_pg_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:8-alpine
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+
+  api:
+    build:
+      context: ..
+      dockerfile: deployments/Dockerfile.api
+    env_file:
+      - ../.env
+    environment:
+      DB_HOST: postgres
+      REDIS_HOST: redis
+      DATABASE_URL: postgres://${DB_USER:-bokdy}:${DB_PASSWORD:-bokdy}@postgres:5432/${DB_NAME:-bokdy}?sslmode=disable
+    ports:
+      - "${SERVER_PORT:-8088}:8088"
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ../backend:/app/backend
+      - ../api:/app/api
+
+  worker:
+    build:
+      context: ..
+      dockerfile: deployments/Dockerfile.worker
+    env_file:
+      - ../.env
+    environment:
+      DB_HOST: postgres
+      REDIS_HOST: redis
+      DATABASE_URL: postgres://${DB_USER:-bokdy}:${DB_PASSWORD:-bokdy}@postgres:5432/${DB_NAME:-bokdy}?sslmode=disable
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ../backend:/app/backend
+
+volumes:
+  bokdy_pg_data:
