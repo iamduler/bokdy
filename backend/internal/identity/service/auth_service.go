@@ -101,7 +101,7 @@ func (s *AuthService) Register(ctx context.Context, in RegisterInput) (*entity.U
 		fullName = email
 	}
 	profile := &entity.UserProfile{
-		UserID: userID, FirstName: in.FirstName, LastName: in.LastName,
+		ID: id.MustNewUUID(), UserID: userID, FirstName: in.FirstName, LastName: in.LastName,
 		FullName: fullName, DisplayName: fullName, Locale: "en", CreatedAt: now, UpdatedAt: now,
 	}
 	ident := &entity.Identity{

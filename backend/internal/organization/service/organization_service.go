@@ -57,11 +57,11 @@ func (s *OrganizationService) Create(ctx context.Context, ownerID uuid.UUID, in 
 	tenantID := id.MustNewUUID()
 	orgID := id.MustNewUUID()
 	tenant := &entity.Tenant{
-		ID: tenantID, Code: code, Name: name, Slug: code,
+		ID: tenantID, PublicID: id.MustNewPublicID(), Code: code, Name: name, Slug: code,
 		Status: entity.TenantTrial, CreatedAt: now, UpdatedAt: now,
 	}
 	org := &entity.Organization{
-		ID: orgID, TenantID: tenantID, Code: code, Name: name,
+		ID: orgID, PublicID: id.MustNewPublicID(), TenantID: tenantID, Code: code, Name: name,
 		OrganizationType: entity.OrganizationTypeClub, Email: in.Email,
 		Status: entity.OrganizationActive, CreatedAt: now, UpdatedAt: now,
 	}

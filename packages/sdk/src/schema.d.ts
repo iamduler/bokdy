@@ -365,7 +365,11 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["MeResponse"];
+                        };
+                    };
                 };
             };
         };
@@ -399,7 +403,11 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["Organization"][];
+                        };
+                    };
                 };
             };
         };
@@ -423,7 +431,11 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["Organization"];
+                        };
+                    };
                 };
             };
         };
@@ -619,6 +631,18 @@ export interface components {
             token: string;
             new_password: string;
         };
+        Organization: {
+            /** Format: uuid */
+            id: string;
+            public_id: string;
+            /** Format: uuid */
+            tenant_id: string;
+            code: string;
+            name: string;
+            /** Format: email */
+            email?: string;
+            status: string;
+        };
         CreateOrganizationRequest: {
             name: string;
             code?: string;
@@ -633,6 +657,20 @@ export interface components {
         AcceptInviteRequest: {
             token: string;
         };
+        User: {
+            /** Format: uuid */
+            id: string;
+            public_id: string;
+            /** Format: email */
+            email?: string;
+            full_name?: string;
+            status: string;
+            is_system_admin: boolean;
+            roles?: string[];
+        };
+        MeResponse: {
+            user?: components["schemas"]["User"];
+        };
         TokenResponseEnvelope: {
             data?: {
                 access_token?: string;
@@ -640,6 +678,7 @@ export interface components {
                 /** Format: date-time */
                 expires_at?: string;
                 token_type?: string;
+                user?: components["schemas"]["User"];
             };
         };
     };

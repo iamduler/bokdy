@@ -166,7 +166,7 @@ Booking
 
 Trigger
 
-Booking is cancelled.
+Booking is canceled.
 
 Consumers
 

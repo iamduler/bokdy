@@ -41,7 +41,7 @@ Confirmed        │
     ▼            │
 Converted        │
                  │
-Cancelled ◄──────┘
+Canceled ◄──────┘
                  │
 Expired ◄────────┘
 ```
@@ -54,7 +54,7 @@ Expired ◄────────┘
 | pending | Resources are temporarily held |
 | confirmed | Ready to create Booking |
 | converted | Booking has been created |
-| cancelled | Cancelled by customer or staff |
+| canceled | Canceled by customer or staff |
 | expired | Hold timeout reached |
 
 ## Rules
@@ -64,7 +64,7 @@ Expired ◄────────┘
 - Pending expires automatically.
 - Confirmed creates Booking.
 - Converted is immutable.
-- Cancelled releases resources.
+- Canceled releases resources.
 - Expired releases resources.
 
 ---
@@ -110,7 +110,7 @@ Alternative transitions
 ```
 Pending
    │
-Cancelled
+Canceled
 
 Confirmed
    │
@@ -118,7 +118,7 @@ No Show
 
 Confirmed
    │
-Cancelled
+Canceled
 ```
 
 ## Status
@@ -132,14 +132,14 @@ Cancelled
 | in_progress | Service started |
 | completed | Finished |
 | archived | Closed |
-| cancelled | Cancelled |
+| canceled | Canceled |
 | no_show | Customer absent |
 
 ## Rules
 
 Completed cannot return to previous status.
 
-Cancelled is terminal.
+Canceled is terminal.
 
 No Show is terminal.
 
@@ -174,7 +174,7 @@ Issued
 
 ↓
 
-Cancelled
+Canceled
 ```
 
 or
@@ -196,13 +196,13 @@ Overdue
 | partially_paid |
 | paid |
 | overdue |
-| cancelled |
+| canceled |
 
 ## Rules
 
 Paid invoices cannot be modified.
 
-Cancelled invoices cannot receive payments.
+Canceled invoices cannot receive payments.
 
 ---
 
@@ -301,7 +301,7 @@ Active
 
 ↓
 
-Cancelled
+Canceled
 ```
 
 ## Status
@@ -313,7 +313,7 @@ Cancelled
 | active |
 | suspended |
 | expired |
-| cancelled |
+| canceled |
 
 ---
 
@@ -344,7 +344,7 @@ Created
 
 ↓
 
-Cancelled
+Canceled
 ```
 
 ---
@@ -478,7 +478,7 @@ Draft
 
 ↓
 
-Cancelled
+Canceled
 ```
 
 ---

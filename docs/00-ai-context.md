@@ -155,7 +155,7 @@ permission-matrix.md
 
 9.
 
-erd.dbml
+erd.dbml (read the CONVENTIONS block first)
 
 ↓
 

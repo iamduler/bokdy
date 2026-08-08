@@ -90,7 +90,7 @@ Events
 
 Result
 
-- Invoice cancelled.
+- Invoice canceled.
 
 ---
 

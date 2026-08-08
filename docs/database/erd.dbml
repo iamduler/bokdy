@@ -3,6 +3,61 @@ Project Bokdy {
 }
 
 //////////////////////////////////////////////////////////////
+// CONVENTIONS
+//////////////////////////////////////////////////////////////
+//
+// Cross-cutting rules for this ERD. Domain tables follow these unless a
+// table Note documents an explicit exception.
+//
+// Language
+// - Database, API and domain identifiers use American English.
+// - Status / timestamp tokens use canceled / canceled_at (not cancelled).
+// - User-facing copy is localized in next-intl (en + vi), not in DB columns.
+//
+// I18n (P3)
+// - Master data is stored in English only.
+// - Do not add name_vi / name_en or *_translations unless a use case requires it.
+// - If catalog translation is needed later, use Strategy A:
+//   locale_id FK + {entity}_translations, unique (entity_id, locale_id).
+//
+// Identifiers
+// - OLTP PK is always id uuid (UUIDv7). Never use {entity}_id as PK.
+// - 1:1 satellites use id PK + unique FK to the parent.
+// - Composite PK is allowed only on pure join tables.
+// - public_id varchar(26) (Crockford) is required on every aggregate exposed
+//   by a public HTTP API. Never expose internal numeric IDs.
+// - Exception: ISO reference catalogs may use a natural PK
+//   (reference.currencies.code).
+//
+// Booleans
+// - Columns start with is_ or has_. Never bare active / enabled / trusted.
+//
+// Time and money
+// - All timestamps are timestamptz.
+// - Monetary amounts are decimal(18,2). Currency codes are ISO 4217.
+//
+// Multi-tenant
+// - tenant_id is the isolation key. MVP: 1 tenant = 1 organization.
+// - Soft-delete unique keys are partial: WHERE deleted_at IS NULL.
+//
+// Files
+// - Uploaded bytes live in platform.files. Business tables store file_id.
+// - External URLs (website, video) are varchar, not file_id.
+// - File lifecycle: temporary -> active -> archived. Unreferenced temporary
+//   files may be purged.
+//
+// Jobs
+// - Asynq task types live in code. infrastructure.job_definitions is optional
+//   discovery/override, not the source of truth for handlers.
+//
+// Out of scope (P3)
+// - Do not merge reservation and booking aggregates.
+// - Do not flatten resource -> court.
+// - Do not encode every business rule as a DB constraint.
+// - Phase 2 domains stay out: inventory, POS / cash shift, loyalty, ads, review.
+//
+
+//////////////////////////////////////////////////////////////
 // INFRASTRUCTURE
 //////////////////////////////////////////////////////////////
 
@@ -76,7 +131,7 @@ Enum job_execution_status {
   running
   completed
   failed
-  cancelled
+  canceled
 }
 
 //////////////////////////////////////////////////////////////
@@ -307,7 +362,7 @@ Table infrastructure.tenant_feature_flags {
 
   value jsonb
 
-  enabled boolean [not null, default: true]
+  is_enabled boolean [not null, default: true]
 
   created_at timestamptz [not null]
 
@@ -381,6 +436,8 @@ Table infrastructure.job_definitions {
   indexes {
     code [unique]
   }
+
+  Note: 'Optional discovery/override catalog. Asynq task types in code are the source of truth.'
 }
 
 Table infrastructure.job_schedules {
@@ -398,7 +455,7 @@ Table infrastructure.job_schedules {
 
   next_run_at timestamptz
 
-  enabled boolean [not null, default: true]
+  is_enabled boolean [not null, default: true]
 
   created_at timestamptz [not null]
 
@@ -407,7 +464,7 @@ Table infrastructure.job_schedules {
   indexes {
     job_definition_id
     tenant_id
-    enabled
+    is_enabled
     next_run_at
   }
 }
@@ -573,7 +630,7 @@ Enum mfa_type {
 Table identity.users {
   id uuid [pk]
 
-  public_id varchar(32) [not null]
+  public_id varchar(26) [not null]
 
   status user_status [not null]
 
@@ -595,7 +652,9 @@ Table identity.users {
 }
 
 Table identity.user_profiles {
-  user_id uuid [pk]
+  id uuid [pk]
+
+  user_id uuid [not null, unique]
 
   first_name varchar(100)
 
@@ -750,7 +809,9 @@ Table identity.user_roles {
 //////////////////////////////////////////////////////////////
 
 Table identity.password_credentials {
-  user_id uuid [pk]
+  id uuid [pk]
+
+  user_id uuid [not null, unique]
 
   password_hash text [not null]
 
@@ -874,7 +935,7 @@ Table identity.login_histories {
 
   user_agent text
 
-  success boolean [not null]
+  is_success boolean [not null]
 
   reason varchar(255)
 
@@ -883,7 +944,7 @@ Table identity.login_histories {
   indexes {
     user_id
     provider
-    success
+    is_success
     created_at
   }
 }
@@ -903,7 +964,7 @@ Table identity.user_devices {
 
   device_identifier varchar(255)
 
-  trusted boolean [not null, default: false]
+  is_trusted boolean [not null, default: false]
 
   last_seen_at timestamptz
 
@@ -914,7 +975,7 @@ Table identity.user_devices {
   indexes {
     user_id
     device_identifier
-    trusted
+    is_trusted
   }
 }
 
@@ -1000,7 +1061,7 @@ Enum tenant_status {
   trial
   active
   suspended
-  cancelled
+  canceled
 }
 
 Enum organization_status {
@@ -1049,7 +1110,7 @@ Enum subscription_status {
   active
   past_due
   suspended
-  cancelled
+  canceled
 }
 
 //////////////////////////////////////////////////////////////
@@ -1058,6 +1119,8 @@ Enum subscription_status {
 
 Table organization.tenants {
   id uuid [pk]
+
+  public_id varchar(26) [not null, unique]
 
   code varchar(100) [not null]
 
@@ -1090,6 +1153,8 @@ Table organization.tenants {
 
 Table organization.organizations {
   id uuid [pk]
+
+  public_id varchar(26) [not null, unique]
 
   tenant_id uuid [not null]
 
@@ -1124,10 +1189,14 @@ Table organization.organizations {
     status
     (tenant_id, code) [unique]
   }
+
+  Note: 'Partial unique (tenant_id, code) WHERE deleted_at IS NULL.'
 }
 
 Table organization.organization_settings {
-  organization_id uuid [pk]
+  id uuid [pk]
+
+  organization_id uuid [not null, unique]
 
   booking_policy jsonb
 
@@ -1138,6 +1207,8 @@ Table organization.organization_settings {
   branding jsonb
 
   updated_at timestamptz [not null]
+
+  Note: 'Policy JSON is versioned in domain docs. Not a free-form bag.'
 }
 
 //////////////////////////////////////////////////////////////
@@ -1173,6 +1244,8 @@ Table organization.business_units {
 Table organization.locations {
   id uuid [pk]
 
+  public_id varchar(26) [not null, unique]
+
   business_unit_id uuid [not null]
   organization_id uuid [not null]
 
@@ -1200,12 +1273,16 @@ Table organization.locations {
     status
     (business_unit_id, code) [unique]
   }
+
+  Note: 'Partial unique (business_unit_id, code) WHERE deleted_at IS NULL. Business name: Branch.'
 }
 
 Table organization.location_addresses {
-  location_id uuid [pk]
+  id uuid [pk]
 
-  country_code varchar(10)
+  location_id uuid [not null, unique]
+
+  country_id uuid
 
   state varchar(100)
 
@@ -1229,7 +1306,9 @@ Table organization.location_addresses {
 }
 
 Table organization.location_settings {
-  location_id uuid [pk]
+  id uuid [pk]
+
+  location_id uuid [not null, unique]
 
   booking_settings jsonb
 
@@ -1279,7 +1358,9 @@ Table organization.staff_members {
 }
 
 Table organization.staff_profiles {
-  staff_member_id uuid [pk]
+  id uuid [pk]
+
+  staff_member_id uuid [not null, unique]
 
   emergency_contact jsonb
 
@@ -1366,7 +1447,7 @@ Table organization.organization_domains {
 
   domain varchar(255) [not null]
 
-  verified boolean [not null, default: false]
+  is_verified boolean [not null, default: false]
 
   is_primary boolean [not null, default: false]
 
@@ -1547,6 +1628,8 @@ Enum blacklist_scope {
 Table crm.customers {
   id uuid [pk]
 
+  public_id varchar(26) [not null, unique]
+
   tenant_id uuid [not null]
 
   code varchar(100) [not null]
@@ -1578,6 +1661,8 @@ Table crm.customers {
     user_id
     (tenant_id, code) [unique]
   }
+
+  Note: 'Partial unique (tenant_id, code) WHERE deleted_at IS NULL.'
 }
 
 //////////////////////////////////////////////////////////////
@@ -1585,7 +1670,9 @@ Table crm.customers {
 //////////////////////////////////////////////////////////////
 
 Table crm.customer_profiles {
-  customer_id uuid [pk]
+  id uuid [pk]
+
+  customer_id uuid [not null, unique]
 
   first_name varchar(100)
 
@@ -1629,7 +1716,7 @@ Table crm.customer_contacts {
 
   label varchar(100)
 
-  verified boolean [not null, default: false]
+  is_verified boolean [not null, default: false]
 
   is_primary boolean [not null, default: false]
 
@@ -1657,7 +1744,7 @@ Table crm.customer_addresses {
 
   label varchar(100)
 
-  country_code varchar(10)
+  country_id uuid
 
   state varchar(100)
 
@@ -1845,7 +1932,7 @@ Table crm.customer_consents {
 
   consent_type consent_type [not null]
 
-  accepted boolean [not null]
+  is_accepted boolean [not null]
 
   accepted_at timestamptz
 
@@ -1931,6 +2018,7 @@ TableGroup "Catalog" {
   catalog.resource_categories
 
   catalog.resources
+  catalog.resource_category_assignments
 
   catalog.resource_capabilities
   catalog.resource_capability_assignments
@@ -2004,7 +2092,7 @@ Enum maintenance_status {
   scheduled
   in_progress
   completed
-  cancelled
+  canceled
 }
 
 Enum cost_type {
@@ -2076,6 +2164,8 @@ Table catalog.service_categories {
 Table catalog.services {
   id uuid [pk]
 
+  public_id varchar(26) [not null, unique]
+
   tenant_id uuid [not null]
 
   service_category_id uuid
@@ -2113,6 +2203,8 @@ Table catalog.services {
     status
     (tenant_id, code) [unique]
   }
+
+  Note: 'Partial unique (tenant_id, code) WHERE deleted_at IS NULL.'
 }
 
 Table catalog.service_resources {
@@ -2120,7 +2212,7 @@ Table catalog.service_resources {
 
   resource_id uuid [not null]
 
-  required boolean [not null, default: true]
+  is_required boolean [not null, default: true]
 
   quantity int [not null, default: 1]
 
@@ -2164,11 +2256,11 @@ Table catalog.resource_categories {
 Table catalog.resources {
   id uuid [pk]
 
+  public_id varchar(26) [not null, unique]
+
   tenant_id uuid [not null]
 
   location_id uuid [not null]
-
-  resource_category_ids uuid[]
 
   code varchar(100) [not null]
 
@@ -2180,7 +2272,7 @@ Table catalog.resources {
 
   status resource_status [not null]
 
-  bookable boolean [not null, default: true]
+  is_bookable boolean [not null, default: true]
 
   capacity int
 
@@ -2197,10 +2289,21 @@ Table catalog.resources {
   indexes {
     tenant_id
     location_id
-    resource_category_ids
     parent_resource_id
     status
     (tenant_id, code) [unique]
+  }
+
+  Note: 'Partial unique (tenant_id, code) WHERE deleted_at IS NULL. Business name: Court when resource_type = court.'
+}
+
+Table catalog.resource_category_assignments {
+  resource_id uuid [not null]
+
+  resource_category_id uuid [not null]
+
+  indexes {
+    (resource_id, resource_category_id) [pk]
   }
 }
 
@@ -2784,7 +2887,7 @@ Table scheduling.time_slots {
 
   ends_at timestamptz [not null]
 
-  available boolean [not null]
+  is_available boolean [not null]
 
   source varchar(100)
 
@@ -2795,7 +2898,7 @@ Table scheduling.time_slots {
   indexes {
     resource_id
     starts_at
-    available
+    is_available
     (resource_id, starts_at) [unique]
   }
 
@@ -2897,7 +3000,7 @@ Enum voucher_status {
   available
   redeemed
   expired
-  cancelled
+  canceled
 }
 
 //////////////////////////////////////////////////////////////
@@ -2972,7 +3075,7 @@ Table pricing.pricing_rule_sets {
 
   priority int [not null, default: 100]
 
-  active boolean [not null, default: true]
+  is_active boolean [not null, default: true]
 
   created_at timestamptz [not null]
 
@@ -3298,7 +3401,7 @@ Enum reservation_status {
   pending
   confirmed
   expired
-  cancelled
+  canceled
   completed
 }
 
@@ -3323,6 +3426,8 @@ Enum reservation_hold_status {
 
 Table reservation.reservations {
   id uuid [pk]
+
+  public_id varchar(26) [not null, unique]
 
   tenant_id uuid [not null]
 
@@ -3350,7 +3455,7 @@ Table reservation.reservations {
 
   confirmed_at timestamptz
 
-  cancelled_at timestamptz
+  canceled_at timestamptz
 
   created_by uuid
 
@@ -3601,7 +3706,7 @@ Enum booking_status {
   in_progress
   completed
   no_show
-  cancelled
+  canceled
 }
 
 Enum participant_role {
@@ -3621,7 +3726,7 @@ Enum workflow_status {
   pending
   running
   completed
-  cancelled
+  canceled
 }
 
 Enum check_in_status {
@@ -3637,6 +3742,8 @@ Enum check_in_status {
 
 Table booking.bookings {
   id uuid [pk]
+
+  public_id varchar(26) [not null, unique]
 
   tenant_id uuid [not null]
 
@@ -3662,7 +3769,7 @@ Table booking.bookings {
 
   confirmed_at timestamptz
 
-  cancelled_at timestamptz
+  canceled_at timestamptz
 
   completed_at timestamptz
 
@@ -3766,7 +3873,7 @@ Table booking.booking_participants {
 
   email varchar(255)
 
-  checked_in boolean [not null, default: false]
+  is_checked_in boolean [not null, default: false]
 
   created_at timestamptz [not null]
 
@@ -3959,7 +4066,7 @@ Enum membership_status {
   paused
   frozen
   expired
-  cancelled
+  canceled
 }
 
 Enum benefit_type {
@@ -3986,7 +4093,7 @@ Enum pass_status {
   active
   exhausted
   expired
-  cancelled
+  canceled
 }
 
 //////////////////////////////////////////////////////////////
@@ -4006,13 +4113,13 @@ Table membership.membership_plans {
 
   duration_days int
 
-  auto_renew boolean [not null, default: false]
+  is_auto_renew boolean [not null, default: false]
 
   price decimal(18,2) [not null]
 
   currency varchar(10) [not null]
 
-  active boolean [not null, default: true]
+  is_active boolean [not null, default: true]
 
   created_at timestamptz [not null]
 
@@ -4020,7 +4127,7 @@ Table membership.membership_plans {
 
   indexes {
     tenant_id
-    active
+    is_active
     (tenant_id, code) [unique]
   }
 }
@@ -4078,6 +4185,8 @@ Table membership.membership_plan_benefits {
 Table membership.memberships {
   id uuid [pk]
 
+  public_id varchar(26) [not null, unique]
+
   tenant_id uuid [not null]
 
   membership_no varchar(50) [not null]
@@ -4092,9 +4201,9 @@ Table membership.memberships {
 
   expires_at timestamptz
 
-  cancelled_at timestamptz
+  canceled_at timestamptz
 
-  auto_renew boolean [not null]
+  is_auto_renew boolean [not null]
 
   created_at timestamptz [not null]
 
@@ -4202,6 +4311,8 @@ Table membership.membership_transactions {
 
 Table membership.passes {
   id uuid [pk]
+
+  public_id varchar(26) [not null, unique]
 
   tenant_id uuid [not null]
 
@@ -4352,7 +4463,7 @@ Enum invoice_status {
   partially_paid
   paid
   void
-  cancelled
+  canceled
 }
 
 Enum payment_intent_status {
@@ -4361,7 +4472,7 @@ Enum payment_intent_status {
   authorized
   succeeded
   failed
-  cancelled
+  canceled
 }
 
 Enum payment_status {
@@ -4369,14 +4480,14 @@ Enum payment_status {
   completed
   failed
   refunded
-  cancelled
+  canceled
 }
 
 Enum refund_status {
   pending
   completed
   failed
-  cancelled
+  canceled
 }
 
 Enum payment_method_type {
@@ -4402,6 +4513,8 @@ Enum ledger_account_type {
 
 Table billing.invoices {
   id uuid [pk]
+
+  public_id varchar(26) [not null, unique]
 
   tenant_id uuid [not null]
 
@@ -4564,7 +4677,7 @@ Table payment.payment_methods {
 
   configuration jsonb
 
-  active boolean [not null, default: true]
+  is_active boolean [not null, default: true]
 
   created_at timestamptz [not null]
 
@@ -4631,7 +4744,7 @@ Table payment.payment_attempts {
 
   response_payload jsonb
 
-  success boolean [not null]
+  is_success boolean [not null]
 
   error_message text
 
@@ -4781,7 +4894,7 @@ Table ledger.accounts {
 
   currency varchar(10) [not null]
 
-  active boolean [not null, default: true]
+  is_active boolean [not null, default: true]
 
   created_at timestamptz [not null]
 
@@ -4922,7 +5035,7 @@ Enum sync_status {
   running
   completed
   failed
-  cancelled
+  canceled
 }
 
 Enum webhook_status {
@@ -5065,7 +5178,7 @@ Table integration.sync_profiles {
 
   schedule varchar(100)
 
-  enabled boolean [not null, default: true]
+  is_enabled boolean [not null, default: true]
 
   created_at timestamptz [not null]
 
@@ -5073,7 +5186,7 @@ Table integration.sync_profiles {
 
   indexes {
     connection_id
-    enabled
+    is_enabled
   }
 }
 
@@ -5187,7 +5300,7 @@ Table integration.integration_events {
 
   payload jsonb [not null]
 
-  processed boolean [not null, default: false]
+  is_processed boolean [not null, default: false]
 
   processed_at timestamptz
 
@@ -5196,7 +5309,7 @@ Table integration.integration_events {
   indexes {
     connection_id
     direction
-    processed
+    is_processed
     created_at
   }
 
@@ -5238,6 +5351,65 @@ Table integration.api_logs {
   }
 
   Note: 'Append-only external API audit log.'
+}
+
+//////////////////////////////////////////////////////////////
+// REFERENCE
+//////////////////////////////////////////////////////////////
+
+TableGroup "Reference" {
+  reference.countries
+  reference.currencies
+}
+
+Table reference.countries {
+  id uuid [pk]
+
+  iso2 varchar(2) [not null]
+
+  iso3 varchar(3)
+
+  name varchar(255) [not null]
+
+  phone_code varchar(10)
+
+  is_active boolean [not null, default: true]
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    iso2 [unique]
+    iso3 [unique]
+    is_active
+  }
+
+  Note: 'ISO 3166-1 country catalog. Addresses store country_id, not free-text country_code.'
+}
+
+Table reference.currencies {
+  code varchar(3) [pk]
+
+  name varchar(255) [not null]
+
+  symbol varchar(10) [not null]
+
+  decimal_places smallint [not null, default: 2]
+
+  is_default boolean [not null, default: false]
+
+  is_active boolean [not null, default: true]
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    is_active
+  }
+
+  Note: 'ISO 4217. English display name only.'
 }
 
 //////////////////////////////////////////////////////////////
@@ -5316,7 +5488,7 @@ Enum notification_status {
   sent
   delivered
   failed
-  cancelled
+  canceled
 }
 
 Enum file_storage {
@@ -5326,13 +5498,37 @@ Enum file_storage {
   azure
 }
 
+Enum file_visibility {
+  public
+  private
+}
+
+Enum file_status {
+  temporary
+  active
+  archived
+}
+
+Enum audit_actor_type {
+  user
+  staff
+  system
+  integration
+}
+
 Enum audit_log_activity_type {
   created
   updated
   deleted
+  restored
   viewed
   exported
   imported
+  status_change
+  assign
+  login
+  logout
+  other
 }
 
 Enum metric_type {
@@ -5352,7 +5548,7 @@ Table platform.audit_logs {
 
   tenant_id uuid [not null]
 
-  actor_type varchar(100)
+  actor_type audit_actor_type
 
   actor_id uuid
 
@@ -5360,7 +5556,7 @@ Table platform.audit_logs {
 
   entity_id uuid [not null]
 
-  action varchar(100) [not null]
+  action audit_log_activity_type [not null]
 
   before_data jsonb
 
@@ -5402,7 +5598,7 @@ Table platform.notification_templates {
 
   content text [not null]
 
-  active boolean [not null, default: true]
+  is_active boolean [not null, default: true]
 
   created_at timestamptz [not null]
 
@@ -5495,6 +5691,8 @@ Table platform.files {
 
   path varchar(1000) [not null]
 
+  original_name varchar(255)
+
   filename varchar(255)
 
   mime_type varchar(255)
@@ -5505,15 +5703,25 @@ Table platform.files {
 
   checksum varchar(255)
 
+  visibility file_visibility [not null]
+
+  status file_status [not null]
+
   created_by uuid
 
   created_at timestamptz [not null]
+
+  deleted_at timestamptz
 
   indexes {
     tenant_id
     checksum
     mime_type
+    visibility
+    status
   }
+
+  Note: 'Uploaded bytes only. External URLs stay on the owning business table.'
 }
 
 //////////////////////////////////////////////////////////////
@@ -5537,6 +5745,8 @@ Table platform.file_references {
     entity_id
     (file_id, entity_type, entity_id) [unique]
   }
+
+  Note: 'entity_type is a known aggregate name (user, organization, location, resource, booking, ...).'
 }
 
 //////////////////////////////////////////////////////////////
@@ -5949,6 +6159,7 @@ Ref: organization.organizations.id > organization.business_units.organization_id
 
 Ref: organization.organizations.id > organization.locations.organization_id
 Ref: organization.locations.id > organization.location_addresses.location_id
+Ref: reference.countries.id > organization.location_addresses.country_id
 Ref: organization.locations.id > organization.location_settings.location_id
 
 Ref: organization.organizations.id > organization.staff_members.organization_id
@@ -5977,6 +6188,7 @@ Ref: organization.tenants.id > crm.customers.tenant_id
 Ref: crm.customers.id > crm.customer_profiles.customer_id
 Ref: crm.customers.id > crm.customer_contacts.customer_id
 Ref: crm.customers.id > crm.customer_addresses.customer_id
+Ref: reference.countries.id > crm.customer_addresses.country_id
 
 Ref: organization.tenants.id > crm.customer_tags.tenant_id
 Ref: crm.customer_tags.id > crm.customer_tag_assignments.tag_id
@@ -6005,7 +6217,8 @@ Ref: catalog.service_categories.id > catalog.services.service_category_id
 Ref: catalog.services.id > catalog.service_resources.service_id
 Ref: catalog.resources.id > catalog.service_resources.resource_id
 
-Ref: catalog.resource_categories.id > catalog.resources.resource_category_ids
+Ref: catalog.resources.id > catalog.resource_category_assignments.resource_id
+Ref: catalog.resource_categories.id > catalog.resource_category_assignments.resource_category_id
 
 Ref: catalog.resources.id > catalog.resource_capability_assignments.resource_id
 Ref: catalog.resource_capabilities.id > catalog.resource_capability_assignments.capability_id
@@ -6307,6 +6520,7 @@ Ref: catalog.resources.id > analytics.fact_resources.resource_id
 // ledger
 // integration
 // platform
+// reference
 // analytics
 
 //////////////////////////////////////////////////////////////

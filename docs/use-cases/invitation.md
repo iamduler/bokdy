@@ -120,7 +120,7 @@ Events
 
 Result
 
-- Invitation cancelled.
+- Invitation canceled.
 
 ---
 

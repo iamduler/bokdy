@@ -28,9 +28,9 @@ func (r *UserRepo) Create(ctx context.Context, tx pgx.Tx, user *entity.User, pro
 		return err
 	}
 	_, err = tx.Exec(ctx, `
-		INSERT INTO identity.user_profiles (user_id, first_name, last_name, full_name, display_name, locale, timezone, created_at, updated_at)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
-		profile.UserID, nullStr(profile.FirstName), nullStr(profile.LastName), profile.FullName,
+		INSERT INTO identity.user_profiles (id, user_id, first_name, last_name, full_name, display_name, locale, timezone, created_at, updated_at)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+		profile.ID, profile.UserID, nullStr(profile.FirstName), nullStr(profile.LastName), profile.FullName,
 		nullStr(profile.DisplayName), nullStr(profile.Locale), nullStr(profile.Timezone),
 		profile.CreatedAt, profile.UpdatedAt)
 	return err

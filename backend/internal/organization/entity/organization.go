@@ -9,8 +9,10 @@ import (
 type TenantStatus string
 
 const (
-	TenantTrial  TenantStatus = "trial"
-	TenantActive TenantStatus = "active"
+	TenantTrial     TenantStatus = "trial"
+	TenantActive    TenantStatus = "active"
+	TenantSuspended TenantStatus = "suspended"
+	TenantCanceled  TenantStatus = "canceled"
 )
 
 type OrganizationStatus string
@@ -42,6 +44,7 @@ const (
 
 type Tenant struct {
 	ID        uuid.UUID
+	PublicID  string
 	Code      string
 	Name      string
 	Slug      string
@@ -52,6 +55,7 @@ type Tenant struct {
 
 type Organization struct {
 	ID               uuid.UUID
+	PublicID         string
 	TenantID         uuid.UUID
 	Code             string
 	Name             string

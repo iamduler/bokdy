@@ -1,7 +1,7 @@
 -- +goose Up
 CREATE SCHEMA IF NOT EXISTS organization;
 
-CREATE TYPE organization.tenant_status AS ENUM ('trial', 'active', 'suspended', 'cancelled');
+CREATE TYPE organization.tenant_status AS ENUM ('trial', 'active', 'suspended', 'canceled');
 CREATE TYPE organization.organization_status AS ENUM ('active', 'inactive', 'suspended', 'archived');
 CREATE TYPE organization.organization_type AS ENUM ('company', 'club', 'school', 'government', 'individual', 'other');
 CREATE TYPE organization.staff_status AS ENUM ('invited', 'active', 'suspended', 'resigned');
@@ -9,6 +9,7 @@ CREATE TYPE organization.invitation_status AS ENUM ('pending', 'accepted', 'expi
 
 CREATE TABLE organization.tenants (
     id         uuid PRIMARY KEY,
+    public_id  varchar(26) NOT NULL UNIQUE,
     code       varchar(100) NOT NULL,
     name       varchar(255) NOT NULL,
     slug       varchar(150) NOT NULL,
@@ -25,6 +26,7 @@ CREATE UNIQUE INDEX tenants_slug_uidx ON organization.tenants (slug);
 
 CREATE TABLE organization.organizations (
     id                uuid PRIMARY KEY,
+    public_id         varchar(26) NOT NULL UNIQUE,
     tenant_id         uuid NOT NULL REFERENCES organization.tenants (id),
     code              varchar(100) NOT NULL,
     name              varchar(255) NOT NULL,
@@ -41,12 +43,13 @@ CREATE TABLE organization.organizations (
     deleted_at        timestamptz
 );
 
-CREATE UNIQUE INDEX organizations_tenant_code_uidx ON organization.organizations (tenant_id, code);
+CREATE UNIQUE INDEX organizations_tenant_code_uidx ON organization.organizations (tenant_id, code) WHERE deleted_at IS NULL;
 CREATE INDEX organizations_tenant_id_idx ON organization.organizations (tenant_id);
 CREATE INDEX organizations_status_idx ON organization.organizations (status);
 
 CREATE TABLE organization.organization_settings (
-    organization_id     uuid PRIMARY KEY REFERENCES organization.organizations (id),
+    id                  uuid PRIMARY KEY,
+    organization_id     uuid NOT NULL UNIQUE REFERENCES organization.organizations (id),
     booking_policy      jsonb,
     cancellation_policy jsonb,
     operating_policy    jsonb,

@@ -36,6 +36,7 @@ type acceptInviteRequest struct {
 
 type orgDTO struct {
 	ID       string `json:"id"`
+	PublicID string `json:"public_id"`
 	TenantID string `json:"tenant_id"`
 	Code     string `json:"code"`
 	Name     string `json:"name"`
@@ -88,7 +89,7 @@ func (h *OrganizationHandler) Create(c *gin.Context) {
 		return
 	}
 	httpx.Created(c, orgDTO{
-		ID: org.ID.String(), TenantID: org.TenantID.String(), Code: org.Code,
+		ID: org.ID.String(), PublicID: org.PublicID, TenantID: org.TenantID.String(), Code: org.Code,
 		Name: org.Name, Email: org.Email, Status: string(org.Status),
 	})
 }
@@ -107,7 +108,7 @@ func (h *OrganizationHandler) ListMine(c *gin.Context) {
 	out := make([]orgDTO, 0, len(orgs))
 	for _, o := range orgs {
 		out = append(out, orgDTO{
-			ID: o.ID.String(), TenantID: o.TenantID.String(), Code: o.Code,
+			ID: o.ID.String(), PublicID: o.PublicID, TenantID: o.TenantID.String(), Code: o.Code,
 			Name: o.Name, Email: o.Email, Status: string(o.Status),
 		})
 	}

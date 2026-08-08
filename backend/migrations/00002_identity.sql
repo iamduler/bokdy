@@ -11,7 +11,7 @@ CREATE TYPE identity.mfa_type AS ENUM ('totp', 'sms', 'email');
 
 CREATE TABLE identity.users (
     id               uuid PRIMARY KEY,
-    public_id        varchar(32) NOT NULL,
+    public_id        varchar(26) NOT NULL,
     status           identity.user_status NOT NULL,
     is_system_admin  boolean NOT NULL DEFAULT false,
     last_login_at    timestamptz,
@@ -24,7 +24,8 @@ CREATE UNIQUE INDEX users_public_id_uidx ON identity.users (public_id);
 CREATE INDEX users_status_idx ON identity.users (status);
 
 CREATE TABLE identity.user_profiles (
-    user_id       uuid PRIMARY KEY REFERENCES identity.users (id),
+    id            uuid PRIMARY KEY,
+    user_id       uuid NOT NULL UNIQUE REFERENCES identity.users (id),
     first_name    varchar(100),
     last_name     varchar(100),
     full_name     varchar(255) NOT NULL,
@@ -109,7 +110,8 @@ CREATE UNIQUE INDEX user_roles_unique_uidx ON identity.user_roles (tenant_id, us
 CREATE INDEX user_roles_user_id_idx ON identity.user_roles (user_id);
 
 CREATE TABLE identity.password_credentials (
-    user_id              uuid PRIMARY KEY REFERENCES identity.users (id),
+    id                   uuid PRIMARY KEY,
+    user_id              uuid NOT NULL UNIQUE REFERENCES identity.users (id),
     password_hash        text NOT NULL,
     password_changed_at  timestamptz,
     password_expires_at  timestamptz,
@@ -160,7 +162,7 @@ CREATE TABLE identity.login_histories (
     id          uuid PRIMARY KEY,
     user_id     uuid NOT NULL REFERENCES identity.users (id),
     session_id  uuid REFERENCES identity.sessions (id),
-    success     boolean NOT NULL,
+    is_success  boolean NOT NULL,
     ip_address  inet,
     user_agent  text,
     created_at  timestamptz NOT NULL DEFAULT now()

@@ -143,7 +143,7 @@ Events
 
 Result
 
-- Booking cancelled.
+- Booking canceled.
 - Slots released.
 
 ---
@@ -214,7 +214,7 @@ Queries
 
 Validations
 
-- Booking not cancelled.
+- Booking not canceled.
 
 Flow
 

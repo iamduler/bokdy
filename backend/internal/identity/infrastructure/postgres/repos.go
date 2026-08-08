@@ -79,10 +79,10 @@ var _ repository.CredentialRepository = (*CredentialRepo)(nil)
 
 func (r *CredentialRepo) UpsertPassword(ctx context.Context, tx pgx.Tx, userID uuid.UUID, passwordHash string) error {
 	_, err := tx.Exec(ctx, `
-		INSERT INTO identity.password_credentials (user_id, password_hash, password_changed_at, updated_at)
-		VALUES ($1,$2,now(),now())
+		INSERT INTO identity.password_credentials (id, user_id, password_hash, password_changed_at, updated_at)
+		VALUES ($1,$2,$3,now(),now())
 		ON CONFLICT (user_id) DO UPDATE SET password_hash=EXCLUDED.password_hash, password_changed_at=now(), failed_attempts=0, locked_until=NULL, updated_at=now()`,
-		userID, passwordHash)
+		id.MustNewUUID(), userID, passwordHash)
 	return err
 }
 
@@ -172,7 +172,7 @@ func (r *SessionRepo) RevokeRefresh(ctx context.Context, tx pgx.Tx, refreshID uu
 
 func (r *SessionRepo) RecordLogin(ctx context.Context, tx pgx.Tx, userID uuid.UUID, sessionID *uuid.UUID, success bool, ip, ua *string) error {
 	_, err := tx.Exec(ctx, `
-		INSERT INTO identity.login_histories (id, user_id, session_id, success, ip_address, user_agent, created_at)
+		INSERT INTO identity.login_histories (id, user_id, session_id, is_success, ip_address, user_agent, created_at)
 		VALUES ($1,$2,$3,$4,$5::inet,$6,now())`, id.MustNewUUID(), userID, sessionID, success, ip, ua)
 	return err
 }

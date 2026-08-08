@@ -36,7 +36,7 @@ Read in this order for the feature:
 2. Module scope — `docs/modules/`
 3. Aggregate and invariants — `docs/domain/domain-model.md`
 4. Status transitions — `docs/domain/status-lifecycle.md`
-5. Tables and enums — `docs/database/erd.dbml`
+5. Tables and enums — `docs/database/erd.dbml` (CONVENTIONS block first)
 6. Permissions — `docs/domain/permission-matrix.md` (when the action is gated)
 7. Engineering rules — `docs/domain/development-rules.md`
 8. Code style — `docs/architecture/coding-style.md`

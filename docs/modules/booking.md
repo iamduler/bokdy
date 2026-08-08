@@ -10,7 +10,7 @@ Status: Active
 
 Manage the complete booking lifecycle, including pricing, promotions, invoicing and payment.
 
-This module is responsible for everything from creating a booking until the booking is completed or cancelled.
+This module is responsible for everything from creating a booking until the booking is completed or canceled.
 
 ---
 

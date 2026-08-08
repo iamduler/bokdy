@@ -217,13 +217,11 @@ organization_id as primary key
 
 Always
 
-public_id
-
-UUIDv7
+public_id varchar(26) (Crockford Base32)
 
 Visible to API.
 
-Never expose internal numeric IDs.
+Internal PK is `id` uuid (UUIDv7). Never expose internal numeric IDs.
 
 ---
 
@@ -309,7 +307,7 @@ expired_at
 
 confirmed_at
 
-cancelled_at
+canceled_at
 
 completed_at
 
@@ -578,7 +576,7 @@ confirmed
 
 completed
 
-cancelled
+canceled
 
 expired
 

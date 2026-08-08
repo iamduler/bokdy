@@ -129,6 +129,13 @@ paths:
       responses:
         "200":
           description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/MeResponse"
   /api/v1/organizations:
     get:
       tags: [Organizations]
@@ -138,6 +145,15 @@ paths:
       responses:
         "200":
           description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Organization"
     post:
       tags: [Organizations]
       summary: Create organization
@@ -152,6 +168,13 @@ paths:
       responses:
         "201":
           description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Organization"
   /api/v1/organizations/{id}/staff:
     get:
       tags: [Organizations]
@@ -257,6 +280,17 @@ components:
       properties:
         token: { type: string }
         new_password: { type: string, minLength: 8 }
+    Organization:
+      type: object
+      required: [id, public_id, tenant_id, code, name, status]
+      properties:
+        id: { type: string, format: uuid }
+        public_id: { type: string, minLength: 26, maxLength: 26 }
+        tenant_id: { type: string, format: uuid }
+        code: { type: string }
+        name: { type: string }
+        email: { type: string, format: email }
+        status: { type: string }
     CreateOrganizationRequest:
       type: object
       required: [name]
@@ -275,6 +309,24 @@ components:
       required: [token]
       properties:
         token: { type: string }
+    User:
+      type: object
+      required: [id, public_id, status, is_system_admin]
+      properties:
+        id: { type: string, format: uuid }
+        public_id: { type: string, minLength: 26, maxLength: 26 }
+        email: { type: string, format: email }
+        full_name: { type: string }
+        status: { type: string }
+        is_system_admin: { type: boolean }
+        roles:
+          type: array
+          items: { type: string }
+    MeResponse:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
     TokenResponseEnvelope:
       type: object
       properties:
@@ -285,3 +337,5 @@ components:
             refresh_token: { type: string }
             expires_at: { type: string, format: date-time }
             token_type: { type: string }
+            user:
+              $ref: "#/components/schemas/User"
