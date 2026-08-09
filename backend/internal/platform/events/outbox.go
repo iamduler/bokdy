@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"bokdy/internal/platform/id"
+	"bokdy/internal/platform/otelx"
+	"bokdy/internal/platform/requestctx"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -42,6 +44,12 @@ func Append(ctx context.Context, tx pgx.Tx, ev Event) (outboxID uuid.UUID, err e
 	}
 	if ev.ActorID != nil {
 		meta["actor_id"] = ev.ActorID.String()
+	}
+	if sc := otelx.SpanContext(ctx); sc.IsValid() {
+		meta["trace_id"] = sc.TraceID().String()
+		meta["span_id"] = sc.SpanID().String()
+	} else if tid := requestctx.TraceID(ctx); tid != "" {
+		meta["trace_id"] = tid
 	}
 	metaBytes, err := json.Marshal(meta)
 	if err != nil {

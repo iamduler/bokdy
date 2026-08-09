@@ -76,7 +76,7 @@ func (c *Consumer) HandleSweepTask(ctx context.Context, _ *asynq.Task) error {
 	}
 	for _, id := range ids {
 		if err := c.ProcessOutbox(ctx, id); err != nil {
-			logging.Log.Error().Err(err).Str("outbox_id", id.String()).Msg("audit sweep item failed")
+			logging.From(ctx).Error().Err(err).Str("event", "audit_sweep").Str("outbox_id", id.String()).Msg("audit sweep item failed")
 		}
 	}
 	return nil

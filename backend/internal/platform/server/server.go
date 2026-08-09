@@ -14,6 +14,7 @@ import (
 	"bokdy/internal/platform/docsui"
 	"bokdy/internal/platform/logging"
 	"bokdy/internal/platform/mail"
+	"bokdy/internal/platform/metrics"
 	"bokdy/internal/platform/middleware"
 	"bokdy/internal/platform/persistence"
 	"bokdy/internal/platform/queue"
@@ -63,10 +64,12 @@ func NewApplication(cfg *config.Config, register DomainRegistrar) (*Application,
 		DB:       db,
 		Redis:    redisClient,
 		Tokens:   auth.NewJWTService(cfg),
-		Mailer:   mail.NewLogMailer(),
+		Mailer:   mail.NewLogMailer(logging.Channel("mail.log", "mail")),
 		Asynq:    queue.NewClient(cfg),
 		register: register,
 	}
+
+	registerRuntimeMetrics(app)
 
 	router := gin.New()
 	app.Router = router
@@ -75,14 +78,43 @@ func NewApplication(cfg *config.Config, register DomainRegistrar) (*Application,
 	return app, nil
 }
 
+func registerRuntimeMetrics(app *Application) {
+	pool := app.DB.Pool
+	metrics.Default.RegisterDBPool(
+		func() float64 { return float64(pool.Stat().AcquiredConns()) },
+		func() float64 { return float64(pool.Stat().IdleConns()) },
+		func() float64 { return float64(pool.Stat().MaxConns()) },
+	)
+	inspector := asynq.NewInspector(queue.RedisOpt(app.Config))
+	metrics.Default.RegisterQueueDepth(func() float64 {
+		return queue.QueueDepth(inspector, queue.DefaultQueue)
+	})
+}
+
+func (a *Application) otelServiceName() string {
+	if a.Config.OTel.ServiceName != "" {
+		return a.Config.OTel.ServiceName
+	}
+	if a.Config.App.Name != "" {
+		return a.Config.App.Name + "-api"
+	}
+	return "bokdy-api"
+}
+
 func (a *Application) registerMiddleware(router *gin.Engine) {
 	origins := a.Config.CORSOrigins()
+	accessLog := logging.Channel("access.log", "access")
+	recoveryLog := logging.Channel("recovery.log", "recovery")
+	rateLog := logging.Channel("rate_limiter.log", "rate_limiter")
 	router.Use(
-		middleware.Recovery(),
-		middleware.RequestID(),
-		middleware.Locale(),
-		middleware.AccessLog(),
+		middleware.Recovery(recoveryLog),
+		middleware.OTel(a.otelServiceName()),
+		middleware.Trace(),
+		middleware.RateLimit(a.Redis, a.Config.RateLimit, rateLog),
 		middleware.CORS(origins),
+		middleware.Locale(),
+		middleware.AccessLog(accessLog),
+		middleware.Metrics(metrics.Default),
 		gzip.Gzip(gzip.DefaultCompression),
 	)
 }
@@ -111,6 +143,8 @@ func (a *Application) registerRoutes(router *gin.Engine) {
 	})
 
 	docsui.Register(router, a.Config)
+
+	router.GET("/metrics", gin.WrapH(metrics.Handler()))
 
 	api := router.Group("/api/v1")
 	if a.register != nil {

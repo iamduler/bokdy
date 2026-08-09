@@ -79,6 +79,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Prometheus metrics (unauthenticated) */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Prometheus text exposition format */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/register": {
         parameters: {
             query?: never;
@@ -700,6 +734,10 @@ export interface components {
         OrganizationId: string;
         /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
         AcceptLanguage: string;
+        /** @description 32-char hex OpenTelemetry trace id (Loki join key). Echoed on the response. Prefer traceparent; if only this header is sent (UUID or hex), Go synthesizes a traceparent. */
+        TraceID: string;
+        /** @description W3C Trace Context. Propagated BFF → API → Asynq. Echoed on the response when a span is active. */
+        Traceparent: string;
     };
     requestBodies: never;
     headers: never;

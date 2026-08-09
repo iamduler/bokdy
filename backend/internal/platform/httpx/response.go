@@ -4,12 +4,17 @@
 package httpx
 
 import (
+	"context"
 	"net/http"
 
 	"bokdy/internal/platform/apperr"
+	"bokdy/internal/platform/logging"
 
 	"github.com/gin-gonic/gin"
 )
+
+// ErrorCodeKey is the gin context key for access logs / metrics.
+const ErrorCodeKey = "error_code"
 
 // SuccessResponse is the envelope for a successful response with a payload.
 type SuccessResponse struct {
@@ -41,18 +46,32 @@ func NoContent(c *gin.Context) {
 // Error writes an error response, deriving the HTTP status from err's
 // apperr.Code when possible and defaulting to 500 otherwise.
 func Error(c *gin.Context, err error) {
-	code := apperr.GetCode(err)
-	c.JSON(statusFromCode(code), ErrorResponse{
-		Error:   string(code),
-		Code:    string(code),
-		Message: err.Error(),
-	})
+	writeError(c, apperr.GetCode(err), err.Error(), err)
 }
 
 // Fail writes an error response with an explicit code/message pair, useful
 // for handler-level validation failures that never touched the Domain.
 func Fail(c *gin.Context, code apperr.Code, message string) {
-	c.JSON(statusFromCode(code), ErrorResponse{
+	writeError(c, code, message, nil)
+}
+
+func writeError(c *gin.Context, code apperr.Code, message string, cause error) {
+	status := statusFromCode(code)
+	c.Set(ErrorCodeKey, string(code))
+	ctx := context.Background()
+	if c.Request != nil {
+		ctx = c.Request.Context()
+	}
+	evt := logging.From(ctx).Warn()
+	if status >= 500 {
+		evt = logging.From(ctx).Error()
+	}
+	evt = evt.Str("event", "http_error").Str("error_code", string(code)).Int("status", status)
+	if cause != nil {
+		evt = evt.Err(cause)
+	}
+	evt.Msg("request error")
+	c.JSON(status, ErrorResponse{
 		Error:   string(code),
 		Code:    string(code),
 		Message: message,
@@ -73,6 +92,8 @@ func statusFromCode(code apperr.Code) int {
 		return http.StatusUnprocessableEntity
 	case apperr.CodeBadRequest:
 		return http.StatusBadRequest
+	case apperr.CodeTooManyRequests:
+		return http.StatusTooManyRequests
 	default:
 		return http.StatusInternalServerError
 	}

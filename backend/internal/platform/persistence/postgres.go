@@ -6,11 +6,14 @@ package persistence
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"bokdy/internal/platform/config"
+	"bokdy/internal/platform/logging"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5/tracelog"
 )
 
 // Database wraps the process-wide PostgreSQL pool owned by the Application.
@@ -72,6 +75,17 @@ func NewPool(ctx context.Context, cfg *config.Config) (*pgxpool.Pool, error) {
 	poolConfig.MaxConns = cfg.Database.MaxOpenConns
 	poolConfig.MinConns = cfg.Database.MinConns
 	poolConfig.MaxConnLifetime = cfg.Database.MaxConnLifetime
+
+	if cfg.App.IsDevelopment() {
+		sqlLogger := logging.Channel("sql.log", "sql")
+		poolConfig.ConnConfig.Tracer = &tracelog.TraceLog{
+			Logger: &PgxZerologTracer{
+				Logger:         *sqlLogger,
+				SlowQueryLimit: 500 * time.Millisecond,
+			},
+			LogLevel: tracelog.LogLevelDebug,
+		}
+	}
 
 	pool, err := pgxpool.NewWithConfig(ctx, poolConfig)
 	if err != nil {

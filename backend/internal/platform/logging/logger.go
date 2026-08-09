@@ -1,5 +1,5 @@
-// Package logging provides a process-wide structured logger (zerolog) with
-// file rotation in production and pretty console output in development.
+// Package logging provides structured zerolog loggers with rotating JSON files
+// (Grafana/Loki-ready) and optional pretty console output in development.
 package logging
 
 import (
@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"bokdy/internal/platform/config"
+	"bokdy/internal/platform/requestctx"
 
 	"github.com/natefinch/lumberjack"
 	"github.com/rs/zerolog"
@@ -17,18 +18,24 @@ import (
 
 type contextKey string
 
-// CorrelationIDKey is the context key used to correlate log lines with a request.
+// TraceIDKey stashes the request trace id for pgx / non-requestctx callers.
+const TraceIDKey contextKey = "trace_id"
+
+// CorrelationIDKey is kept for older call sites; prefer requestctx.
 const CorrelationIDKey contextKey = "correlation_id"
 
-// Log is the process-wide logger. It is set once by InitLogger during
-// startup and treated as read-only afterwards.
+// Log is the process-wide logger. Set once by InitLogger.
 var Log *zerolog.Logger
 
-// Options configures NewLogger / InitLogger.
+var (
+	logDir  string
+	logCfg  *config.Config
+	logOpts Options
+)
+
+// Options configures NewLogger / InitLogger / Channel.
 type Options struct {
-	// Dir is the directory log files are written to in production.
-	Dir string
-	// Filename is the base log file name (e.g. "app.log").
+	Dir        string
 	Filename   string
 	MaxSizeMB  int
 	MaxBackups int
@@ -36,57 +43,112 @@ type Options struct {
 	Compress   bool
 }
 
-// DefaultOptions returns sane file-rotation defaults for filename.
+// DefaultOptions returns 10 MB × 10 rotating files for filename.
 func DefaultOptions(dir, filename string) Options {
 	return Options{
 		Dir:        dir,
 		Filename:   filename,
-		MaxSizeMB:  50,
-		MaxBackups: 5,
+		MaxSizeMB:  10,
+		MaxBackups: 10,
 		MaxAgeDays: 30,
 		Compress:   true,
 	}
 }
 
-// InitLogger builds the logger for cfg and stores it in the package-level Log.
+func (o Options) normalized() Options {
+	if o.MaxSizeMB <= 0 {
+		o.MaxSizeMB = 10
+	}
+	if o.MaxBackups <= 0 {
+		o.MaxBackups = 10
+	}
+	if o.MaxAgeDays <= 0 {
+		o.MaxAgeDays = 30
+	}
+	return o
+}
+
+// InitLogger builds the process logger and remembers the log directory for Channel.
 func InitLogger(cfg *config.Config, opts Options) {
+	opts = opts.normalized()
+	_ = os.MkdirAll(opts.Dir, 0o755)
+	logDir = opts.Dir
+	logCfg = cfg
+	logOpts = opts
 	Log = NewLogger(cfg, opts)
 }
 
-// NewLogger builds a *zerolog.Logger. In development it writes pretty console
-// output to stderr; in production it writes JSON to a rotating file, with
-// warn+ level entries duplicated to stderr so process supervisors can surface
-// crashes without tailing the log file.
+// NewLogger builds the process logger: JSON file always; pretty stderr in
+// development; warn+ stderr in production.
 func NewLogger(cfg *config.Config, opts Options) *zerolog.Logger {
+	opts = opts.normalized()
 	zerolog.TimeFieldFormat = time.RFC3339
+	zerolog.TimestampFunc = func() time.Time { return time.Now().UTC() }
+	_ = os.MkdirAll(opts.Dir, 0o755)
 
-	var writer io.Writer
-	if cfg.App.IsDevelopment() {
-		writer = zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339}
-	} else {
-		fileWriter := &lumberjack.Logger{
-			Filename:   filepath.Join(opts.Dir, opts.Filename),
-			MaxSize:    opts.MaxSizeMB,
-			MaxBackups: opts.MaxBackups,
-			MaxAge:     opts.MaxAgeDays,
-			Compress:   opts.Compress,
-		}
-		writer = zerolog.MultiLevelWriter(
-			fileWriter,
-			levelFilterWriter{Writer: os.Stderr, MinLevel: zerolog.WarnLevel},
-		)
+	// File + JSON stdout (12-factor / Promtail). Warn+ also to stderr in prod
+	// so supervisors surface crashes without scraping stdout.
+	writers := []io.Writer{rotatingFile(opts), os.Stdout}
+	if cfg == nil || !cfg.App.IsDevelopment() {
+		writers = append(writers, levelFilterWriter{Writer: os.Stderr, MinLevel: zerolog.WarnLevel})
 	}
+	writer := zerolog.MultiLevelWriter(writers...)
 
+	service, envName := "bokdy", "development"
+	if cfg != nil {
+		service = cfg.App.Name
+		envName = cfg.App.Env
+	}
 	logger := zerolog.New(writer).With().
 		Timestamp().
-		Str("service", cfg.App.Name).
-		Str("env", cfg.App.Env).
+		Str("service", service).
+		Str("env", envName).
+		Str("component", "app").
 		Logger()
-
 	return &logger
 }
 
-// levelFilterWriter forwards only entries at or above MinLevel.
+// Channel returns a JSON rotating logger for a dedicated file (access, sql, …).
+func Channel(filename, component string) *zerolog.Logger {
+	opts := logOpts.normalized()
+	if logDir != "" {
+		opts.Dir = logDir
+	}
+	if opts.Dir == "" {
+		opts.Dir = "logs"
+	}
+	opts.Filename = filename
+	_ = os.MkdirAll(opts.Dir, 0o755)
+
+	service, envName := "bokdy", "development"
+	if logCfg != nil {
+		service = logCfg.App.Name
+		envName = logCfg.App.Env
+	}
+	var writer io.Writer = rotatingFile(opts)
+	if logCfg != nil && logCfg.App.LogStdoutChannels {
+		writer = zerolog.MultiLevelWriter(writer, os.Stdout)
+	}
+	logger := zerolog.New(writer).With().
+		Timestamp().
+		Str("service", service).
+		Str("env", envName).
+		Str("component", component).
+		Logger()
+	return &logger
+}
+
+func rotatingFile(opts Options) io.Writer {
+	return &lumberjack.Logger{
+		Filename:   filepath.Join(opts.Dir, opts.Filename),
+		MaxSize:    opts.MaxSizeMB,
+		MaxBackups: opts.MaxBackups,
+		MaxAge:     opts.MaxAgeDays,
+		Compress:   opts.Compress,
+		LocalTime:  false,
+	}
+}
+
 type levelFilterWriter struct {
 	Writer   io.Writer
 	MinLevel zerolog.Level
@@ -103,10 +165,49 @@ func (w levelFilterWriter) WriteLevel(level zerolog.Level, p []byte) (int, error
 	return w.Writer.Write(p)
 }
 
-// CorrelationID extracts the correlation id stashed on ctx, if any.
+// GetTraceID reads the trace id from logging.TraceIDKey or requestctx.
+func GetTraceID(ctx context.Context) string {
+	if ctx == nil {
+		return ""
+	}
+	if v, ok := ctx.Value(TraceIDKey).(string); ok && v != "" {
+		return v
+	}
+	return requestctx.TraceID(ctx)
+}
+
+// WithTrace returns a logger enriched with trace_id / request_id / correlation_id.
+func WithTrace(logger *zerolog.Logger, ctx context.Context) *zerolog.Logger {
+	if logger == nil {
+		logger = Log
+	}
+	if logger == nil {
+		nop := zerolog.Nop()
+		return &nop
+	}
+	c := logger.With()
+	if id := GetTraceID(ctx); id != "" {
+		c = c.Str("trace_id", id)
+	}
+	if id := requestctx.RequestID(ctx); id != "" {
+		c = c.Str("request_id", id)
+	}
+	if id := requestctx.CorrelationID(ctx); id != "" {
+		c = c.Str("correlation_id", id)
+	}
+	out := c.Logger()
+	return &out
+}
+
+// From is Log + trace fields from ctx.
+func From(ctx context.Context) *zerolog.Logger {
+	return WithTrace(Log, ctx)
+}
+
+// CorrelationID extracts a correlation id from ctx (legacy helper).
 func CorrelationID(ctx context.Context) string {
 	if v, ok := ctx.Value(CorrelationIDKey).(string); ok {
 		return v
 	}
-	return ""
+	return requestctx.CorrelationID(ctx)
 }

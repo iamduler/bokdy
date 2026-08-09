@@ -13,9 +13,10 @@ import (
 
 // AppConfig describes the running application/environment.
 type AppConfig struct {
-	Name    string
-	Env     string
-	Version string
+	Name              string
+	Env               string
+	Version           string
+	LogStdoutChannels bool
 }
 
 // IsDevelopment reports whether APP_ENV is "development" (or unset).
@@ -85,6 +86,24 @@ type AuthConfig struct {
 	Issuer             string
 }
 
+// RateLimitConfig is Redis fixed-window per-IP limiting.
+type RateLimitConfig struct {
+	RequestsPerSec int
+	Burst          int
+	Window         time.Duration
+}
+
+// Limit is the max hits allowed per Window (Burst wins, else RequestsPerSec).
+func (c RateLimitConfig) Limit() int {
+	if c.Burst > 0 {
+		return c.Burst
+	}
+	if c.RequestsPerSec > 0 {
+		return c.RequestsPerSec
+	}
+	return 10
+}
+
 // DocsConfig configures the Scalar API docs UI.
 type DocsConfig struct {
 	Enabled     bool
@@ -98,18 +117,28 @@ type BootstrapAdminConfig struct {
 	Name     string
 }
 
+// OTelConfig configures OpenTelemetry export. Empty Endpoint still creates
+// local spans (valid trace ids) but does not send OTLP.
+type OTelConfig struct {
+	ServiceName string
+	Endpoint    string
+}
+
 // Config aggregates every platform configuration section.
 type Config struct {
-	App          AppConfig
-	HTTP         HTTPConfig
-	Database     DatabaseConfig
-	Redis        RedisConfig
-	Auth         AuthConfig
-	Docs         DocsConfig
-	Bootstrap    BootstrapAdminConfig
-	PlayerWebURL string
-	OwnerWebURL  string
-	AdminWebURL  string
+	App               AppConfig
+	HTTP              HTTPConfig
+	Database          DatabaseConfig
+	Redis             RedisConfig
+	Auth              AuthConfig
+	RateLimit         RateLimitConfig
+	Docs              DocsConfig
+	Bootstrap         BootstrapAdminConfig
+	OTel              OTelConfig
+	PlayerWebURL      string
+	OwnerWebURL       string
+	AdminWebURL       string
+	WorkerMetricsAddr string
 }
 
 // RedisAddr returns host:port for Redis / Asynq clients.
@@ -129,9 +158,10 @@ func Load() *Config {
 
 	return &Config{
 		App: AppConfig{
-			Name:    env.GetEnv("APP_NAME", "bokdy"),
-			Env:     appEnv,
-			Version: env.GetEnv("APP_VERSION", "0.1.0"),
+			Name:              env.GetEnv("APP_NAME", "bokdy"),
+			Env:               appEnv,
+			Version:           env.GetEnv("APP_VERSION", "0.1.0"),
+			LogStdoutChannels: env.GetBoolEnv("LOG_STDOUT", true),
 		},
 		HTTP: HTTPConfig{
 			Host:         env.GetEnv("HTTP_HOST", "0.0.0.0"),
@@ -165,6 +195,11 @@ func Load() *Config {
 			SessionTTL:         env.GetDurationEnv("AUTH_SESSION_TTL", 720*time.Hour),
 			Issuer:             env.GetEnv("AUTH_ISSUER", "bokdy"),
 		},
+		RateLimit: RateLimitConfig{
+			RequestsPerSec: env.GetIntEnv("RATE_LIMIT_REQUESTS_SEC", 5),
+			Burst:          env.GetIntEnv("RATE_LIMIT_BURST", 10),
+			Window:         env.GetDurationEnv("RATE_LIMIT_WINDOW", time.Second),
+		},
 		Docs: DocsConfig{
 			Enabled:     env.GetBoolEnv("ENABLE_API_DOCS", appEnv == "development"),
 			OpenAPIPath: env.GetEnv("OPENAPI_PATH", ""),
@@ -174,9 +209,14 @@ func Load() *Config {
 			Password: env.GetEnv("BOOTSTRAP_ADMIN_PASSWORD", ""),
 			Name:     env.GetEnv("BOOTSTRAP_ADMIN_NAME", "System Admin"),
 		},
-		PlayerWebURL: env.GetEnv("PLAYER_WEB_URL", "http://localhost:3000"),
-		OwnerWebURL:  env.GetEnv("OWNER_WEB_URL", "http://localhost:3001"),
-		AdminWebURL:  env.GetEnv("ADMIN_WEB_URL", "http://localhost:3002"),
+		PlayerWebURL:      env.GetEnv("PLAYER_WEB_URL", "http://localhost:3000"),
+		OwnerWebURL:       env.GetEnv("OWNER_WEB_URL", "http://localhost:3001"),
+		AdminWebURL:       env.GetEnv("ADMIN_WEB_URL", "http://localhost:3002"),
+		WorkerMetricsAddr: env.GetEnv("WORKER_METRICS_ADDR", ":9091"),
+		OTel: OTelConfig{
+			ServiceName: env.GetEnv("OTEL_SERVICE_NAME", ""),
+			Endpoint:    env.GetEnv("OTEL_EXPORTER_OTLP_ENDPOINT", ""),
+		},
 	}
 }
 

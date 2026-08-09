@@ -12,6 +12,7 @@ import (
 type contextKey string
 
 const (
+	KeyTraceID        contextKey = "trace_id"
 	KeyCorrelationID  contextKey = "correlation_id"
 	KeyRequestID      contextKey = "request_id"
 	KeyUserID         contextKey = "user_id"
@@ -40,6 +41,12 @@ func Get(ctx context.Context, key contextKey) string {
 	}
 	return ""
 }
+
+func WithTraceID(ctx context.Context, v string) context.Context {
+	return With(ctx, KeyTraceID, v)
+}
+
+func TraceID(ctx context.Context) string { return Get(ctx, KeyTraceID) }
 
 func WithCorrelationID(ctx context.Context, v string) context.Context {
 	return With(ctx, KeyCorrelationID, v)

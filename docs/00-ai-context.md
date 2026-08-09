@@ -123,6 +123,12 @@ i18n.md
 
 ↓
 
+2c.
+
+observability.md
+
+↓
+
 3.
 
 domain-glossary.md

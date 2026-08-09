@@ -6,6 +6,7 @@ info:
     Bokdy foundation API (Identity + Organization).
     Locale is taken from Accept-Language (missing → vi). Read models return a resolved name;
     owner edit payloads use name_en + name_vi.
+    Trace: W3C traceparent (preferred) and X-Trace-ID (32-hex OTel id, generated when missing). Rate limit: 429 too_many_requests.
 servers:
   - url: http://localhost:8088
     description: Local
@@ -32,6 +33,13 @@ paths:
           description: Ready
         "503":
           description: Not ready
+  /metrics:
+    get:
+      tags: [Health]
+      summary: Prometheus metrics (unauthenticated)
+      responses:
+        "200":
+          description: Prometheus text exposition format
   /api/v1/auth/register:
     post:
       tags: [Auth]
@@ -259,6 +267,22 @@ components:
         default: vi
         example: vi
       description: BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi.
+    TraceID:
+      name: X-Trace-ID
+      in: header
+      required: false
+      schema:
+        type: string
+        example: 0af7651916cd43dd8448eb211c80319c
+      description: 32-char hex OpenTelemetry trace id (Loki join key). Echoed on the response. Prefer traceparent; if only this header is sent (UUID or hex), Go synthesizes a traceparent.
+    Traceparent:
+      name: traceparent
+      in: header
+      required: false
+      schema:
+        type: string
+        example: 00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01
+      description: W3C Trace Context. Propagated BFF → API → Asynq. Echoed on the response when a span is active.
   schemas:
     RegisterRequest:
       type: object

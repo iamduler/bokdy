@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"bokdy/internal/platform/logging"
+
+	"github.com/rs/zerolog"
 )
 
 type Message struct {
@@ -16,19 +18,23 @@ type Mailer interface {
 	Send(ctx context.Context, msg Message) error
 }
 
-type LogMailer struct{}
+type LogMailer struct {
+	log *zerolog.Logger
+}
 
-func NewLogMailer() *LogMailer {
-	return &LogMailer{}
+func NewLogMailer(logger *zerolog.Logger) *LogMailer {
+	return &LogMailer{log: logger}
 }
 
 func (m *LogMailer) Send(ctx context.Context, msg Message) error {
-	_ = ctx
-	if logging.Log != nil {
-		logging.Log.Info().
-			Str("to", msg.To).
-			Str("subject", msg.Subject).
-			Msg("mail (log provider)")
+	logger := m.log
+	if logger == nil {
+		logger = logging.Log
 	}
+	logging.WithTrace(logger, ctx).Info().
+		Str("event", "mail_send").
+		Str("to", msg.To).
+		Str("subject", msg.Subject).
+		Msg("mail sent")
 	return nil
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
+	"bokdy/internal/platform/otelx"
 	"bokdy/internal/platform/queue"
 
 	"github.com/google/uuid"
@@ -29,7 +30,10 @@ func (e *AsynqEnqueuer) EnqueueAudit(ctx context.Context, outboxID uuid.UUID) er
 	if e == nil || e.client == nil || outboxID == uuid.Nil {
 		return nil
 	}
-	body, err := json.Marshal(queue.OutboxPayload{OutboxID: outboxID.String()})
+	body, err := json.Marshal(queue.OutboxPayload{
+		OutboxID: outboxID.String(),
+		Trace:    otelx.InjectMap(ctx),
+	})
 	if err != nil {
 		return err
 	}

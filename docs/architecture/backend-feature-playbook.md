@@ -212,6 +212,9 @@ POST /api/v1/bookings/{id}/check-in
 - Public APIs expose `public_id` where the ERD defines it
 - Owner tenant context: header `X-Organization-ID` (`middleware.OptionalOrganization`)
 - Locale: `Accept-Language` via `middleware.Locale` (default `vi`). Read DTOs use `i18n.DisplayName`. See `docs/architecture/i18n.md`
+- Trace: W3C `traceparent` via `middleware.OTel` + `middleware.Trace`. `X-Trace-ID` is the 32-hex OTel trace id (Loki join). Attach `trace_id` on logs with `logging.From(ctx)` / `logging.WithTrace`. Outbox metadata and Asynq `OutboxPayload.trace` must carry the same context. Errors go through `httpx` so access logs get `error_code` + `route`. See `docs/architecture/observability.md`
+- Rate limit: Redis per-IP (`middleware.RateLimit`); 429 `too_many_requests`. Skip `/health` `/ready` `/metrics`
+- Metrics: unauthenticated `GET /metrics` (Prometheus). RED on HTTP (`route` template, not raw path). Worker scrapes `WORKER_METRICS_ADDR` (default `:9091`). No business KPIs here.
 - Admin routes: `middleware.JWTAuth` + `middleware.RequireSystemAdmin`
 - Repositories never generate IDs
 - Never leak PostgreSQL or Redis errors to clients

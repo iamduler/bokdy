@@ -460,29 +460,21 @@ Avoid long nil chains.
 
 # Logging
 
-Structured logging only.
+Structured JSON only (zerolog). Timestamps are UTC RFC3339. Files live under `backend/logs/` with 10 MB × 10 rotation. The process logger also writes JSON to stdout (12-factor). Channel loggers (`access`, `sql`, …) mirror stdout when `LOG_STDOUT=true` (default).
 
-Every log should include
+Channels: `app.log` / `worker.log`, `access.log`, `rate_limiter.log`, `recovery.log`, `sql.log` (development only), `queue.log`, `mail.log`.
 
-public_id
+Every HTTP-path line includes `trace_id` (32-hex OpenTelemetry id, also echoed as `X-Trace-ID`). Access lines include `route` (Gin template) and `error_code` when `httpx.Error` / `Fail` ran. Include `public_id`, `organization_id`, `branch_id`, `booking_id` when applicable. Prefer `logging.From(ctx)` over bare `logging.Log`.
 
-organization_id
+Do not log full request/response bodies or headers. Never log password, token, OTP, or payment secrets.
 
-branch_id
+`sql.log` interpolates `$n` args and exists only in development.
 
-booking_id
+Promtail / Loki: scrape stdout or `backend/logs/*.log`. Loki **labels** only `service`, `env`, `component`, `level`. Keep `path`, `ip`, `user_agent`, `trace_id`, `route` as JSON fields — never labels.
 
-when applicable.
+Prometheus: scrape API `GET /metrics` and worker `WORKER_METRICS_ADDR/metrics`. Alert on counters/histograms (`bokdy_http_*`, `bokdy_rate_limited_total`, `bokdy_asynq_*`, `bokdy_db_pool_*`); drill down with Loki `trace_id`.
 
-Never log
-
-password
-
-token
-
-OTP
-
-payment secret
+Traces: OTLP/HTTP when `OTEL_EXPORTER_OTLP_ENDPOINT` is set (Tempo). Same `trace_id` hex joins Loki ↔ Tempo. Propagate W3C `traceparent` across BFF, API, and Asynq. See `docs/architecture/observability.md`.
 
 ---
 

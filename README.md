@@ -43,3 +43,23 @@ See [AGENTS.md](./AGENTS.md) and [docs/00-ai-context.md](./docs/00-ai-context.md
 Included: Platform, Identity (auth/session/RBAC), Organization (create/list/staff invite), three Next BFF apps.
 
 Not included: Branch/Court/Booking/Payment/CRM/mobile.
+
+## Observability
+
+Three pillars. Details: [docs/architecture/observability.md](./docs/architecture/observability.md).
+
+| Pillar | What | Where |
+| --- | --- | --- |
+| Logs | zerolog JSON UTC, channel files + stdout | `backend/logs/*.log`, Loki-ready |
+| Metrics | Prometheus RED + Asynq + DB pool | API `GET /metrics`, worker `:9091/metrics` |
+| Traces | OpenTelemetry, W3C `traceparent` | OTLP/HTTP → Tempo when configured |
+
+`X-Trace-ID` is the 32-char hex OTel trace id (Loki join key). BFF `/api/go/*` mints `traceparent` + `X-Trace-ID` when the browser omits them.
+
+```bash
+# Optional — leave empty to keep local span ids without export
+OTEL_SERVICE_NAME=bokdy-api
+OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
+```
+
+Worker default service name is `bokdy-worker`. Empty `OTEL_EXPORTER_OTLP_ENDPOINT` still generates valid ids for logs; it does not require a collector.

@@ -2,13 +2,11 @@ package middleware
 
 import (
 	"strings"
-	"time"
 
 	"bokdy/internal/platform/apperr"
 	"bokdy/internal/platform/auth"
 	"bokdy/internal/platform/httpx"
 	"bokdy/internal/platform/i18n"
-	"bokdy/internal/platform/logging"
 	"bokdy/internal/platform/requestctx"
 
 	"github.com/gin-gonic/gin"
@@ -16,51 +14,6 @@ import (
 )
 
 const OrganizationHeader = "X-Organization-ID"
-
-func Recovery() gin.HandlerFunc {
-	return gin.CustomRecovery(func(c *gin.Context, recovered any) {
-		if logging.Log != nil {
-			logging.Log.Error().Interface("panic", recovered).Msg("panic recovered")
-		}
-		httpx.Error(c, apperr.Internal("internal server error"))
-	})
-}
-
-func RequestID() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		reqID := c.GetHeader("X-Request-ID")
-		if reqID == "" {
-			reqID = uuid.NewString()
-		}
-		corrID := c.GetHeader("X-Correlation-ID")
-		if corrID == "" {
-			corrID = reqID
-		}
-		ctx := requestctx.WithRequestID(c.Request.Context(), reqID)
-		ctx = requestctx.WithCorrelationID(ctx, corrID)
-		c.Request = c.Request.WithContext(ctx)
-		c.Header("X-Request-ID", reqID)
-		c.Header("X-Correlation-ID", corrID)
-		c.Next()
-	}
-}
-
-func AccessLog() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		start := time.Now()
-		c.Next()
-		if logging.Log == nil {
-			return
-		}
-		logging.Log.Info().
-			Str("method", c.Request.Method).
-			Str("path", c.Request.URL.Path).
-			Int("status", c.Writer.Status()).
-			Dur("latency", time.Since(start)).
-			Str("request_id", requestctx.RequestID(c.Request.Context())).
-			Msg("http_access")
-	}
-}
 
 func CORS(allowedOrigins []string) gin.HandlerFunc {
 	originSet := map[string]struct{}{}
@@ -73,7 +26,7 @@ func CORS(allowedOrigins []string) gin.HandlerFunc {
 			if _, ok := originSet[strings.TrimRight(origin, "/")]; ok || len(allowedOrigins) == 0 {
 				c.Header("Access-Control-Allow-Origin", origin)
 				c.Header("Access-Control-Allow-Credentials", "true")
-				c.Header("Access-Control-Allow-Headers", "Authorization, Content-Type, Accept-Language, X-Organization-ID, X-Request-ID, X-Correlation-ID")
+				c.Header("Access-Control-Allow-Headers", "Authorization, Content-Type, Accept-Language, X-Organization-ID, X-Request-ID, X-Correlation-ID, X-Trace-ID, traceparent, tracestate")
 				c.Header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS")
 			}
 		}

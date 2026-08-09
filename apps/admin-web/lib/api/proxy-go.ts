@@ -62,6 +62,67 @@ export async function clearAuthCookiesOnStore() {
   store.delete(AUTH_PRESENT_COOKIE);
 }
 
+const ZERO_TRACE = "0".repeat(32);
+
+function hex32(raw: string | null): string | null {
+  if (!raw) return null;
+  const hex = raw.replace(/-/g, "").toLowerCase();
+  if (!/^[0-9a-f]{32}$/.test(hex) || hex === ZERO_TRACE) return null;
+  return hex;
+}
+
+function randomHex(byteLen: number): string {
+  const bytes = new Uint8Array(byteLen);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/** Headers to forward to Go, minting W3C traceparent + X-Trace-ID when omitted. */
+export function goProxyHeaders(req: { headers: Headers }): Record<string, string> {
+  const headers: Record<string, string> = {
+    "Content-Type": req.headers.get("Content-Type") ?? "application/json",
+  };
+  const acceptLanguage = req.headers.get("Accept-Language");
+  if (acceptLanguage) {
+    headers["Accept-Language"] = acceptLanguage;
+  }
+  const incomingTP = req.headers.get("traceparent");
+  const incomingTS = req.headers.get("tracestate");
+  let traceId = hex32(req.headers.get("X-Trace-ID"));
+  let traceparent = incomingTP;
+  if (!traceparent) {
+    if (!traceId) traceId = randomHex(16);
+    traceparent = `00-${traceId}-${randomHex(8)}-01`;
+  } else if (!traceId) {
+    const match = /^00-([0-9a-f]{32})-[0-9a-f]{16}-[0-9a-f]{2}$/i.exec(traceparent);
+    if (match) traceId = match[1].toLowerCase();
+  }
+  headers.traceparent = traceparent;
+  if (incomingTS) headers.tracestate = incomingTS;
+  if (traceId) headers["X-Trace-ID"] = traceId;
+  for (const name of ["X-Request-ID", "X-Correlation-ID"] as const) {
+    const value = req.headers.get(name);
+    if (value) headers[name] = value;
+  }
+  return headers;
+}
+
+export function goClientResponseHeaders(res: Response, fallbackTrace?: string): Headers {
+  const out = new Headers();
+  out.set("Content-Type", res.headers.get("Content-Type") ?? "application/json");
+  const trace = res.headers.get("X-Trace-ID") || fallbackTrace;
+  if (trace) out.set("X-Trace-ID", trace);
+  const traceparent = res.headers.get("traceparent");
+  if (traceparent) out.set("traceparent", traceparent);
+  const tracestate = res.headers.get("tracestate");
+  if (tracestate) out.set("tracestate", tracestate);
+  for (const name of ["X-Request-ID", "X-Correlation-ID"] as const) {
+    const value = res.headers.get(name);
+    if (value) out.set(name, value);
+  }
+  return out;
+}
+
 export async function proxyToGo(
   path: string,
   init: RequestInit = {},

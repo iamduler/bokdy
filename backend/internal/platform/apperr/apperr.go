@@ -13,13 +13,14 @@ import (
 type Code string
 
 const (
-	CodeUnauthorized Code = "unauthorized"
-	CodeForbidden    Code = "forbidden"
-	CodeNotFound     Code = "not_found"
-	CodeConflict     Code = "conflict"
-	CodeValidation   Code = "validation"
-	CodeBadRequest   Code = "bad_request"
-	CodeInternal     Code = "internal"
+	CodeUnauthorized    Code = "unauthorized"
+	CodeForbidden       Code = "forbidden"
+	CodeNotFound        Code = "not_found"
+	CodeConflict        Code = "conflict"
+	CodeValidation      Code = "validation"
+	CodeBadRequest      Code = "bad_request"
+	CodeTooManyRequests Code = "too_many_requests"
+	CodeInternal        Code = "internal"
 )
 
 // Error is the platform's business error type. Message is safe to show to
@@ -83,3 +84,6 @@ func BadRequest(message string) *Error { return New(CodeBadRequest, message) }
 
 // Internal is a convenience constructor for CodeInternal errors.
 func Internal(message string) *Error { return New(CodeInternal, message) }
+
+// TooManyRequests is a convenience constructor for CodeTooManyRequests errors.
+func TooManyRequests(message string) *Error { return New(CodeTooManyRequests, message) }
