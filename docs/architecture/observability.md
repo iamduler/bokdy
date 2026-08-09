@@ -26,6 +26,8 @@ Promtail / Loki: scrape stdout or `backend/logs/*.log`. Loki **labels** only `se
 
 Unauthenticated `GET /metrics` on the API. Worker scrapes `WORKER_METRICS_ADDR` (default `:9091`).
 
+Scrapers receive Prometheus / OpenMetrics text. Browsers (`Accept: text/html`) get a grouped HTML view. Override with `?format=prometheus` or `?format=html`.
+
 RED on HTTP (`route` template, not raw path). Asynq counters + queue depth. DB pool gauges. No business KPIs on this endpoint.
 
 Alert on `bokdy_http_*`, `bokdy_rate_limited_total`, `bokdy_asynq_*`, `bokdy_db_pool_*`. Drill down in Loki with `trace_id`.

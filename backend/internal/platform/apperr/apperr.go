@@ -13,15 +13,30 @@ import (
 type Code string
 
 const (
-	CodeUnauthorized    Code = "unauthorized"
-	CodeForbidden       Code = "forbidden"
-	CodeNotFound        Code = "not_found"
-	CodeConflict        Code = "conflict"
-	CodeValidation      Code = "validation"
-	CodeBadRequest      Code = "bad_request"
-	CodeTooManyRequests Code = "too_many_requests"
-	CodeInternal        Code = "internal"
+	CodeUnauthorized    Code = "UNAUTHORIZED"
+	CodeForbidden       Code = "FORBIDDEN"
+	CodeNotFound        Code = "NOT_FOUND"
+	CodeConflict        Code = "CONFLICT"
+	CodeValidation      Code = "VALIDATION"
+	CodeBadRequest      Code = "BAD_REQUEST"
+	CodeTooManyRequests Code = "TOO_MANY_REQUESTS"
+	CodeInternal        Code = "INTERNAL"
 )
+
+// EnvelopeCodes is the frozen HTTP error.code catalog. Must match
+// packages/config/error-codes.json envelope[].
+func EnvelopeCodes() []Code {
+	return []Code{
+		CodeUnauthorized,
+		CodeForbidden,
+		CodeNotFound,
+		CodeConflict,
+		CodeValidation,
+		CodeBadRequest,
+		CodeTooManyRequests,
+		CodeInternal,
+	}
+}
 
 // Error is the platform's business error type. Message is safe to show to
 // clients; Err (when set) carries the wrapped cause for logs only.

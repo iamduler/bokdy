@@ -463,9 +463,11 @@ Audit records are immutable.
 
 # Time
 
-Store all timestamps in UTC.
+Store all timestamps in UTC (`timestamptz`).
 
-Convert to Branch timezone only when presenting data.
+Public HTTP APIs return RFC3339 UTC (`Z`). The frontend converts for display using the browser timezone or `user_profiles.timezone` when set.
+
+Branch timezone is only for venue business clocks (opening hours, slots). Do not convert identity or audit timestamps on the API.
 
 ---
 

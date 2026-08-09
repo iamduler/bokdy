@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "exports": {
-    "./tsconfig.base.json": "./tsconfig.base.json"
+    "./tsconfig.base.json": "./tsconfig.base.json",
+    "./error-codes.json": "./error-codes.json"
   },
-  "files": ["tsconfig.base.json"]
+  "files": ["tsconfig.base.json", "error-codes.json"]
 }

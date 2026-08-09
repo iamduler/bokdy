@@ -6,9 +6,12 @@ import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { errorMessageKey, readApiError } from "@/lib/api/errors";
+
 export default function LoginPage() {
   const t = useTranslations("auth");
   const tc = useTranslations("common");
+  const te = useTranslations("errors");
   const locale = useLocale();
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -27,7 +30,8 @@ export default function LoginPage() {
     });
     setPending(false);
     if (!res.ok) {
-      setError(await res.text());
+      const err = await readApiError(res);
+      setError(te(errorMessageKey(err)));
       return;
     }
     router.push(`/${locale}/dashboard`);

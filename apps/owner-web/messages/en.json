@@ -9,6 +9,7 @@
     "registerTitle": "Create account",
     "email": "Email",
     "password": "Password",
+    "passwordHint": "At least 8 characters, with uppercase, lowercase, a number, and a special character",
     "fullName": "Full name",
     "submitLogin": "Sign in",
     "submitRegister": "Register",
@@ -19,5 +20,23 @@
     "dashboard": "Dashboard",
     "welcome": "Welcome to Bokdy Owner",
     "subtitle": "Foundation scaffold — no business domain yet."
+  },
+  "errors": {
+    "UNAUTHORIZED": "Please sign in to continue",
+    "FORBIDDEN": "You do not have access",
+    "NOT_FOUND": "Not found",
+    "CONFLICT": "This resource already exists",
+    "VALIDATION": "Please check the highlighted fields",
+    "BAD_REQUEST": "Invalid request",
+    "TOO_MANY_REQUESTS": "Too many requests. Try again later",
+    "INTERNAL": "Something went wrong",
+    "REQUIRED": "This field is required",
+    "EMAIL_INVALID": "Enter a valid email address",
+    "TOO_SHORT": "This value is too short",
+    "TOO_LONG": "This value is too long",
+    "UUID_INVALID": "Invalid identifier",
+    "ONE_OF": "Select a valid option",
+    "INVALID": "This value is invalid",
+    "PASSWORD_POLICY": "Password must be at least 8 characters and include uppercase, lowercase, a number, and a special character"
   }
 }

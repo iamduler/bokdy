@@ -6,6 +6,8 @@ import {
   SESSION_COOKIE,
 } from "@/lib/auth";
 
+export const GO_X_CLIENT = "admin";
+
 export function goBaseUrl(): string {
   return (
     process.env.API_INTERNAL_URL ??

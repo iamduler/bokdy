@@ -6,9 +6,12 @@ import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { errorMessageKey, readApiError } from "@/lib/api/errors";
+
 export default function RegisterPage() {
   const t = useTranslations("auth");
   const tc = useTranslations("common");
+  const te = useTranslations("errors");
   const locale = useLocale();
   const router = useRouter();
   const [fullName, setFullName] = useState("");
@@ -28,7 +31,8 @@ export default function RegisterPage() {
     });
     setPending(false);
     if (!res.ok) {
-      setError(await res.text());
+      const err = await readApiError(res);
+      setError(te(errorMessageKey(err)));
       return;
     }
     const login = await fetch("/api/auth/login", {
@@ -59,6 +63,7 @@ export default function RegisterPage() {
           <div className="space-y-2">
             <Label htmlFor="password">{t("password")}</Label>
             <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} />
+            <p className="text-xs text-zinc-500">{t("passwordHint")}</p>
           </div>
           {error ? <p className="text-sm text-red-600">{error}</p> : null}
           <Button type="submit" className="w-full" disabled={pending}>

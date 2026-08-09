@@ -189,6 +189,15 @@ Must not import Gin, pgx, Redis, JSON tags as transport, or SQL.
 - interface in `<module>/repository`
 - implementation in `<module>/infrastructure/postgres`
 
+**One repository type = one file** (interface and adapter). Do not dump several adapters into `repos.go`.
+
+```text
+backend/internal/<module>/repository/<name>.go
+backend/internal/<module>/infrastructure/postgres/<name>_repo.go
+```
+
+Shared scan/null helpers may live in `infrastructure/postgres/helpers.go` in the same package. Shared SQL across repository types is not a reason to merge files.
+
 Must not contain `CalculatePrice`, `CheckAvailability`, or other business verbs.
 
 ---
@@ -207,14 +216,14 @@ POST /api/v1/bookings/{id}/check-in
 ```
 
 - Envelope success: `{ "data": ... }`
-- Envelope error: `{ "error": { "code": "...", "message": "..." } }`
+- Envelope error: `{ "code": "VALIDATION", "message": "invalid request", "details": [{ "field", "code", "message" }] }`. Codes are UPPERCASE; catalog: `packages/config/error-codes.json`. No duplicate `error` field.
 - Internal IDs: UUID v7 generated in the application layer (`bokdy/internal/platform/id`)
 - Public APIs expose `public_id` where the ERD defines it
 - Owner tenant context: header `X-Organization-ID` (`middleware.OptionalOrganization`)
 - Locale: `Accept-Language` via `middleware.Locale` (default `vi`). Read DTOs use `i18n.DisplayName`. See `docs/architecture/i18n.md`
 - Trace: W3C `traceparent` via `middleware.OTel` + `middleware.Trace`. `X-Trace-ID` is the 32-hex OTel trace id (Loki join). Attach `trace_id` on logs with `logging.From(ctx)` / `logging.WithTrace`. Outbox metadata and Asynq `OutboxPayload.trace` must carry the same context. Errors go through `httpx` so access logs get `error_code` + `route`. See `docs/architecture/observability.md`
-- Rate limit: Redis per-IP (`middleware.RateLimit`); 429 `too_many_requests`. Skip `/health` `/ready` `/metrics`
-- Metrics: unauthenticated `GET /metrics` (Prometheus). RED on HTTP (`route` template, not raw path). Worker scrapes `WORKER_METRICS_ADDR` (default `:9091`). No business KPIs here.
+- Rate limit: Redis per-IP (`middleware.RateLimit`); 429 `TOO_MANY_REQUESTS`. Skip `/health` `/ready` `/metrics`
+- Metrics: unauthenticated `GET /metrics` (Prometheus text for scrapers; HTML when `Accept: text/html`). RED on HTTP (`route` template, not raw path). Worker scrapes `WORKER_METRICS_ADDR` (default `:9091`). No business KPIs here.
 - Admin routes: `middleware.JWTAuth` + `middleware.RequireSystemAdmin`
 - Repositories never generate IDs
 - Never leak PostgreSQL or Redis errors to clients
@@ -319,6 +328,8 @@ Before finishing:
 - [ ] Audit consumer covers the event (destination `platform.audit`)
 - [ ] `go test ./...` and build succeed
 - [ ] No placeholder repositories or TODO business logic
+- [ ] One postgres adapter file per repository interface (no catch-all `repos.go`)
+- [ ] Matching flow row: `Done` `[x]` and `status` `done` (`docs/checklists/flows/`)
 
 ---
 
@@ -330,6 +341,7 @@ Do not:
 - put business rules in handlers, middleware, DTOs, or repositories
 - introduce GORM, Ent, XORM, GraphQL, gRPC, Kafka, or RabbitMQ
 - create a generic repository or service locator
+- dump several repository adapters into `repos.go`
 - create a new bounded context without an explicit request
 - access another module’s tables from a repository
 - update two bounded contexts in one transaction

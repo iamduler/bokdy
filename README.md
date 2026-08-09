@@ -29,10 +29,11 @@ API docs (dev): [http://localhost:8088/docs](http://localhost:8088/docs)
 
 ### Smoke path
 
-1. Register/login via Owner web (`http://localhost:3001/en/login`)
-2. `POST /api/v1/organizations` with Bearer token (create org)
-3. Login as bootstrap admin (`BOOTSTRAP_ADMIN_EMAIL`) → `GET /api/v1/admin/health`
-4. Non-admin calling admin health → `403`
+1. Register via Owner web (`http://localhost:3001/en/login`) — account stays `pending`
+2. Verify email: token is in `backend/logs/mail.log` → `POST /api/v1/auth/verify`
+3. Login (BFF sends `X-Client: owner`) → `POST /api/v1/organizations` with Bearer token
+4. Login as bootstrap admin (`BOOTSTRAP_ADMIN_EMAIL`, `X-Client: admin`) → `GET /api/v1/admin/health`
+5. Non-admin calling admin health → `403`
 
 ## Layout
 
@@ -51,7 +52,7 @@ Three pillars. Details: [docs/architecture/observability.md](./docs/architecture
 | Pillar | What | Where |
 | --- | --- | --- |
 | Logs | zerolog JSON UTC, channel files + stdout | `backend/logs/*.log`, Loki-ready |
-| Metrics | Prometheus RED + Asynq + DB pool | API `GET /metrics`, worker `:9091/metrics` |
+| Metrics | Prometheus RED + Asynq + DB pool | API `GET /metrics` (HTML in browser), worker `:9091/metrics` |
 | Traces | OpenTelemetry, W3C `traceparent` | OTLP/HTTP → Tempo when configured |
 
 `X-Trace-ID` is the 32-char hex OTel trace id (Loki join key). BFF `/api/go/*` mints `traceparent` + `X-Trace-ID` when the browser omits them.

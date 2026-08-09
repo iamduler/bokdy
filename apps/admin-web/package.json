@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@bokdy/config": "workspace:*",
     "@bokdy/ui": "workspace:*",
     "@tanstack/react-query": "^5.101.0",
     "next": "16.2.9",

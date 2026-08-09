@@ -9,6 +9,7 @@
     "registerTitle": "Tạo tài khoản",
     "email": "Email",
     "password": "Mật khẩu",
+    "passwordHint": "Ít nhất 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt",
     "fullName": "Họ tên",
     "submitLogin": "Đăng nhập",
     "submitRegister": "Đăng ký",
@@ -19,5 +20,23 @@
     "dashboard": "Bảng điều khiển",
     "welcome": "Chào mừng đến Bokdy Player",
     "subtitle": "Scaffold nền tảng — chưa có domain nghiệp vụ."
+  },
+  "errors": {
+    "UNAUTHORIZED": "Vui lòng đăng nhập để tiếp tục",
+    "FORBIDDEN": "Bạn không có quyền truy cập",
+    "NOT_FOUND": "Không tìm thấy",
+    "CONFLICT": "Tài nguyên đã tồn tại",
+    "VALIDATION": "Vui lòng kiểm tra các trường được đánh dấu",
+    "BAD_REQUEST": "Yêu cầu không hợp lệ",
+    "TOO_MANY_REQUESTS": "Quá nhiều yêu cầu. Thử lại sau",
+    "INTERNAL": "Đã xảy ra lỗi",
+    "REQUIRED": "Trường này là bắt buộc",
+    "EMAIL_INVALID": "Nhập địa chỉ email hợp lệ",
+    "TOO_SHORT": "Giá trị quá ngắn",
+    "TOO_LONG": "Giá trị quá dài",
+    "UUID_INVALID": "Định danh không hợp lệ",
+    "ONE_OF": "Chọn một giá trị hợp lệ",
+    "INVALID": "Giá trị không hợp lệ",
+    "PASSWORD_POLICY": "Mật khẩu phải có ít nhất 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt"
   }
 }

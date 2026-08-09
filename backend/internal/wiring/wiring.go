@@ -1,6 +1,7 @@
 package wiring
 
 import (
+	"bokdy/internal/identity/entity"
 	identityhandler "bokdy/internal/identity/handler"
 	identitypg "bokdy/internal/identity/infrastructure/postgres"
 	identityservice "bokdy/internal/identity/service"
@@ -10,11 +11,17 @@ import (
 	"bokdy/internal/platform/events"
 	"bokdy/internal/platform/middleware"
 	"bokdy/internal/platform/server"
+	"bokdy/internal/platform/validation"
 
 	"github.com/gin-gonic/gin"
 )
 
 func RegisterRoutes(api *gin.RouterGroup, app *server.Application) {
+	if err := validation.RegisterStringRule("password_policy", func(s string) bool {
+		return entity.ValidatePassword(s) == nil
+	}); err != nil {
+		panic(err)
+	}
 	userRepo := identitypg.NewUserRepo(app.DB.Pool)
 	identRepo := identitypg.NewIdentityRepo(app.DB.Pool)
 	credRepo := identitypg.NewCredentialRepo(app.DB.Pool)

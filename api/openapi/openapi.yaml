@@ -6,7 +6,9 @@ info:
     Bokdy foundation API (Identity + Organization).
     Locale is taken from Accept-Language (missing → vi). Read models return a resolved name;
     owner edit payloads use name_en + name_vi.
-    Trace: W3C traceparent (preferred) and X-Trace-ID (32-hex OTel id, generated when missing). Rate limit: 429 too_many_requests.
+    Auth: send X-Client (player|owner|admin) on register, login, refresh, logout.
+    Timestamps are UTC RFC3339. Rate limit: 429 TOO_MANY_REQUESTS.
+    Error envelope: { code, message, details? }. Codes are UPPERCASE; see packages/config/error-codes.json.
 servers:
   - url: http://localhost:8088
     description: Local
@@ -37,13 +39,33 @@ paths:
     get:
       tags: [Health]
       summary: Prometheus metrics (unauthenticated)
+      parameters:
+        - name: format
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [html, prometheus, prom, text, openmetrics]
+          description: Force HTML browse view or Prometheus text. Browsers default to HTML via Accept.
       responses:
         "200":
-          description: Prometheus text exposition format
+          description: Prometheus text for scrapers. Browsers (Accept text/html) get a grouped HTML view.
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/openmetrics-text:
+              schema:
+                type: string
+            text/html:
+              schema:
+                type: string
   /api/v1/auth/register:
     post:
       tags: [Auth]
       summary: Register user
+      parameters:
+        - $ref: "#/components/parameters/XClient"
       requestBody:
         required: true
         content:
@@ -53,10 +75,16 @@ paths:
       responses:
         "201":
           description: Created
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
   /api/v1/auth/login:
     post:
       tags: [Auth]
       summary: Login
+      parameters:
+        - $ref: "#/components/parameters/XClient"
       requestBody:
         required: true
         content:
@@ -70,10 +98,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TokenResponseEnvelope"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
   /api/v1/auth/refresh:
     post:
       tags: [Auth]
       summary: Refresh tokens
+      parameters:
+        - $ref: "#/components/parameters/XClient"
       requestBody:
         required: true
         content:
@@ -83,6 +119,10 @@ paths:
       responses:
         "200":
           description: OK
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
   /api/v1/auth/verify:
     post:
       tags: [Auth]
@@ -96,6 +136,10 @@ paths:
       responses:
         "204":
           description: Verified
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
   /api/v1/auth/password/forgot:
     post:
       tags: [Auth]
@@ -109,6 +153,10 @@ paths:
       responses:
         "204":
           description: Accepted
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
   /api/v1/auth/password/reset:
     post:
       tags: [Auth]
@@ -122,12 +170,18 @@ paths:
       responses:
         "204":
           description: Reset
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
   /api/v1/auth/logout:
     post:
       tags: [Auth]
       summary: Logout
       security:
         - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XClient"
       responses:
         "204":
           description: Logged out
@@ -147,6 +201,35 @@ paths:
                 properties:
                   data:
                     $ref: "#/components/schemas/MeResponse"
+        "401":
+          $ref: "#/components/responses/Error"
+    patch:
+      tags: [Identity]
+      summary: Update own profile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProfileRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/MeResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
   /api/v1/organizations:
     get:
       tags: [Organizations]
@@ -190,6 +273,12 @@ paths:
                 properties:
                   data:
                     $ref: "#/components/schemas/Organization"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
   /api/v1/organizations/{id}/staff:
     get:
       tags: [Organizations]
@@ -218,6 +307,12 @@ paths:
       responses:
         "201":
           description: Created
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
   /api/v1/organizations/invitations/accept:
     post:
       tags: [Organizations]
@@ -233,6 +328,12 @@ paths:
       responses:
         "204":
           description: Accepted
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
   /api/v1/admin/health:
     get:
       tags: [Admin]
@@ -283,16 +384,95 @@ components:
         type: string
         example: 00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01
       description: W3C Trace Context. Propagated BFF → API → Asynq. Echoed on the response when a span is active.
+    XClient:
+      name: X-Client
+      in: header
+      required: true
+      schema:
+        type: string
+        enum: [player, owner, admin]
+      description: Audience BFF. Required on register, login, refresh, logout. Missing → 400. Admin register forbidden. Admin login requires is_system_admin.
+  responses:
+    Error:
+      description: Error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    BadRequest:
+      description: Malformed JSON body
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            code: BAD_REQUEST
+            message: invalid json body
+    ValidationFailed:
+      description: Field validation failed
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            code: VALIDATION
+            message: invalid request
+            details:
+              - field: email
+                code: REQUIRED
+                message: email is required
   schemas:
+    ErrorResponse:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          enum:
+            - UNAUTHORIZED
+            - FORBIDDEN
+            - NOT_FOUND
+            - CONFLICT
+            - VALIDATION
+            - BAD_REQUEST
+            - TOO_MANY_REQUESTS
+            - INTERNAL
+        message:
+          type: string
+        details:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorDetail"
+    ErrorDetail:
+      type: object
+      required: [field, code, message]
+      properties:
+        field: { type: string }
+        code:
+          type: string
+          enum:
+            - REQUIRED
+            - EMAIL_INVALID
+            - TOO_SHORT
+            - TOO_LONG
+            - UUID_INVALID
+            - ONE_OF
+            - INVALID
+            - PASSWORD_POLICY
+        message: { type: string }
     RegisterRequest:
       type: object
       required: [email, password]
       properties:
         email: { type: string, format: email }
-        password: { type: string, minLength: 8 }
+        password:
+          type: string
+          minLength: 8
+          description: At least 8 characters; must include uppercase, lowercase, a number, and a special character.
         full_name: { type: string }
         first_name: { type: string }
         last_name: { type: string }
+        phone: { type: string }
     LoginRequest:
       type: object
       required: [email, password]
@@ -319,7 +499,10 @@ components:
       required: [token, new_password]
       properties:
         token: { type: string }
-        new_password: { type: string, minLength: 8 }
+        new_password:
+          type: string
+          minLength: 8
+          description: At least 8 characters; must include uppercase, lowercase, a number, and a special character.
     Organization:
       type: object
       required: [id, public_id, tenant_id, code, name, status]
@@ -361,11 +544,37 @@ components:
         public_id: { type: string, minLength: 26, maxLength: 26 }
         email: { type: string, format: email }
         full_name: { type: string }
+        first_name: { type: string }
+        last_name: { type: string }
+        display_name: { type: string }
+        phone: { type: string }
         status: { type: string }
         is_system_admin: { type: boolean }
+        email_verified_at: { type: string, format: date-time, description: UTC }
+        phone_verified_at: { type: string, format: date-time, description: UTC }
+        locale_id: { type: string, format: uuid }
+        timezone: { type: string }
+        country_id: { type: string, format: uuid }
+        preferred_currency_code: { type: string }
+        theme: { type: string, enum: [light, dark, system] }
+        date_format: { type: string, enum: [dmy, mdy, ymd] }
         roles:
           type: array
           items: { type: string }
+    UpdateProfileRequest:
+      type: object
+      properties:
+        first_name: { type: string }
+        last_name: { type: string }
+        full_name: { type: string }
+        display_name: { type: string }
+        phone: { type: string }
+        locale_id: { type: string, format: uuid }
+        timezone: { type: string }
+        country_id: { type: string, format: uuid }
+        preferred_currency_code: { type: string }
+        theme: { type: string, enum: [light, dark, system] }
+        date_format: { type: string, enum: [dmy, mdy, ymd] }
     MeResponse:
       type: object
       properties:

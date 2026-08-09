@@ -246,7 +246,7 @@ export async function apiGo<T>(path: string, init?: RequestInit): Promise<T> {
   if (res.status === 204) return undefined as T;
   const json = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new ApiError(json.code ?? json.error ?? "internal", json.message, res.status);
+    throw new ApiError(json.code ?? "INTERNAL", json.message, res.status, json.details);
   }
   return (json.data ?? json) as T;
 }
@@ -254,9 +254,11 @@ export async function apiGo<T>(path: string, init?: RequestInit): Promise<T> {
 
 Success envelope (live `httpx`): `{ "data": ... }`.
 
-Error envelope (live `httpx`): `{ "error": "<code>", "code": "<code>", "message": "..." }`.
+Error envelope (live `httpx`): `{ "code": "VALIDATION", "message": "...", "details?": [{ "field", "code", "message" }] }`.
 
-Known `code` values today: `unauthorized`, `forbidden`, `not_found`, `conflict`, `validation`, `bad_request`, `internal`. Map them through next-intl (`errors.*` or equivalent). **Never** show raw `message` to the user as the only copy.
+Codes are UPPERCASE. Source of truth: `packages/config/error-codes.json` (import `@bokdy/config/error-codes.json`). Envelope: `UNAUTHORIZED`, `FORBIDDEN`, `NOT_FOUND`, `CONFLICT`, `VALIDATION`, `BAD_REQUEST`, `TOO_MANY_REQUESTS`, `INTERNAL`. Field `details[].code`: `REQUIRED`, `EMAIL_INVALID`, `TOO_SHORT`, `TOO_LONG`, `UUID_INVALID`, `ONE_OF`, `INVALID`.
+
+Map `code` through next-intl `errors.*` (same key as the catalog). Form fields: `t("errors." + details[].code)`. **Never** show raw `message` to the user as the only copy. Use `lib/api/errors.ts` (`readApiError`).
 
 Types: import from `@bokdy/sdk`. Prefer `components["schemas"]["CreateOrganizationRequest"]` (or the generated `paths` operation types). Do not hand-write a parallel DTO file.
 
@@ -304,7 +306,7 @@ Existing BFF (do not replace):
 
 | Route | Role |
 | --- | --- |
-| `POST /api/auth/login` `register` `refresh` `logout` | Set / clear httpOnly cookies |
+| `POST /api/auth/login` `register` `refresh` `logout` | Set / clear httpOnly cookies; send `X-Client` (`player` / `owner` / `admin`) |
 | `GET /api/auth/session` | Proxies `GET /api/v1/identity/me` |
 | `/api/go/[...path]` | Proxies `/api/v1/{path}` with Bearer + `X-Organization-ID` + `Accept-Language` + `traceparent` + `X-Trace-ID` |
 
@@ -331,10 +333,10 @@ Permissions:
 
 - Library: next-intl. Locales: `en` (default), `vi`. `localePrefix: "always"`.
 - Every user-facing string goes through translations. No hardcoded English or Vietnamese in JSX (except brand name already in `common.appName`).
-- Keep the current two files: `messages/en.json`, `messages/vi.json`. Nest keys by namespace (`auth`, `shell`, `organization`, `errors`, `validation`, …). Do not invent a `messages/*/enums/` tree unless a backend enum sync pipeline exists.
+- Keep the current two files: `messages/en.json`, `messages/vi.json`. Nest keys by namespace (`auth`, `shell`, `organization`, `errors`, …). API error codes live under `errors` keyed exactly as `packages/config/error-codes.json`. Do not invent a `messages/*/enums/` tree unless a backend enum sync pipeline exists.
 - Status / enum **values** come from domain docs and the API. Labels live in i18n keyed by that value. Prefer an API `*_label` field when present.
 - Add both `en` and `vi` in the **same change**.
-- Zod messages are injected from `t("validation.*")`, not hardcoded in the schema file.
+- Zod messages are injected from `t("errors.REQUIRED")` (same catalog keys), not hardcoded in the schema file.
 
 Navigation: add `i18n/navigation.ts` with next-intl `createNavigation(routing)` and use `Link` / `useRouter` / `usePathname` from there. Do not keep concatenating `` `/${locale}/...` `` on new screens. Do not use raw `next/link` for in-app locale routes.
 
@@ -348,7 +350,7 @@ Stack (frozen): Next.js App Router, TypeScript, Tailwind CSS, shadcn-style `@bok
 - Mobile-first layouts (`AGENTS.md`).
 - Icon-only controls need `aria-label` (and a tooltip when one exists).
 - Every screen that loads remote data implements **Loading**, **Empty**, and **Error** (with retry where a refetch exists).
-- Dates from the API are UTC ISO-8601; display in the user’s locale. Do not invent a timezone store until product prefs exist.
+- Dates from the API are UTC ISO-8601 (`Z`). Display in the browser timezone, or `user_profiles.timezone` when the user has set one. Do not convert timestamps in the BFF.
 
 ---
 

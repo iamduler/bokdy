@@ -2,14 +2,17 @@ package handler
 
 import (
 	"net/http"
+	"time"
 
 	"bokdy/internal/identity/dto"
+	"bokdy/internal/identity/entity"
 	"bokdy/internal/identity/service"
 	"bokdy/internal/platform/httpx"
 	"bokdy/internal/platform/middleware"
 	"bokdy/internal/platform/requestctx"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type AuthHandler struct {
@@ -35,18 +38,27 @@ func (h *AuthHandler) RegisterRoutes(rg *gin.RouterGroup, jwt gin.HandlerFunc) {
 	identity := rg.Group("/identity", jwt, middleware.OptionalOrganization())
 	{
 		identity.GET("/me", h.Me)
+		identity.PATCH("/me", h.UpdateMe)
 	}
 }
 
+func parseClient(c *gin.Context) (entity.Client, error) {
+	return entity.ParseClient(c.GetHeader(entity.HeaderClient))
+}
+
 func (h *AuthHandler) Register(c *gin.Context) {
+	client, err := parseClient(c)
+	if err != nil {
+		httpx.Error(c, err)
+		return
+	}
 	var req dto.RegisterRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		httpx.Error(c, errValidation(err))
+	if !httpx.BindJSON(c, &req) {
 		return
 	}
 	user, err := h.auth.Register(c.Request.Context(), service.RegisterInput{
-		Email: req.Email, Password: req.Password, FullName: req.FullName,
-		FirstName: req.FirstName, LastName: req.LastName,
+		Client: client, Email: req.Email, Password: req.Password, FullName: req.FullName,
+		FirstName: req.FirstName, LastName: req.LastName, Phone: req.Phone,
 	})
 	if err != nil {
 		httpx.Error(c, err)
@@ -58,15 +70,19 @@ func (h *AuthHandler) Register(c *gin.Context) {
 }
 
 func (h *AuthHandler) Login(c *gin.Context) {
+	client, err := parseClient(c)
+	if err != nil {
+		httpx.Error(c, err)
+		return
+	}
 	var req dto.LoginRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		httpx.Error(c, errValidation(err))
+	if !httpx.BindJSON(c, &req) {
 		return
 	}
 	ip := c.ClientIP()
 	ua := c.Request.UserAgent()
 	result, err := h.auth.Login(c.Request.Context(), service.LoginInput{
-		Email: req.Email, Password: req.Password, IPAddress: &ip, UserAgent: &ua,
+		Client: client, Email: req.Email, Password: req.Password, IPAddress: &ip, UserAgent: &ua,
 	})
 	if err != nil {
 		httpx.Error(c, err)
@@ -76,14 +92,18 @@ func (h *AuthHandler) Login(c *gin.Context) {
 }
 
 func (h *AuthHandler) Refresh(c *gin.Context) {
+	client, err := parseClient(c)
+	if err != nil {
+		httpx.Error(c, err)
+		return
+	}
 	var req dto.RefreshRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		httpx.Error(c, errValidation(err))
+	if !httpx.BindJSON(c, &req) {
 		return
 	}
 	ip := c.ClientIP()
 	ua := c.Request.UserAgent()
-	result, err := h.auth.Refresh(c.Request.Context(), req.RefreshToken, &ip, &ua)
+	result, err := h.auth.Refresh(c.Request.Context(), client, req.RefreshToken, &ip, &ua)
 	if err != nil {
 		httpx.Error(c, err)
 		return
@@ -93,8 +113,7 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 
 func (h *AuthHandler) Verify(c *gin.Context) {
 	var req dto.VerifyRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		httpx.Error(c, errValidation(err))
+	if !httpx.BindJSON(c, &req) {
 		return
 	}
 	if err := h.auth.VerifyEmail(c.Request.Context(), req.Token); err != nil {
@@ -106,8 +125,7 @@ func (h *AuthHandler) Verify(c *gin.Context) {
 
 func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 	var req dto.PasswordResetRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		httpx.Error(c, errValidation(err))
+	if !httpx.BindJSON(c, &req) {
 		return
 	}
 	if err := h.auth.RequestPasswordReset(c.Request.Context(), req.Email); err != nil {
@@ -119,8 +137,7 @@ func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 
 func (h *AuthHandler) ResetPassword(c *gin.Context) {
 	var req dto.PasswordResetConfirmRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		httpx.Error(c, errValidation(err))
+	if !httpx.BindJSON(c, &req) {
 		return
 	}
 	if err := h.auth.ResetPassword(c.Request.Context(), req.Token, req.NewPassword); err != nil {
@@ -131,12 +148,21 @@ func (h *AuthHandler) ResetPassword(c *gin.Context) {
 }
 
 func (h *AuthHandler) Logout(c *gin.Context) {
+	client, err := parseClient(c)
+	if err != nil {
+		httpx.Error(c, err)
+		return
+	}
 	sid, ok := requestctx.SessionID(c.Request.Context())
 	if !ok {
 		httpx.NoContent(c)
 		return
 	}
-	_ = h.auth.Logout(c.Request.Context(), sid)
+	uid, _ := requestctx.UserID(c.Request.Context())
+	if err := h.auth.Logout(c.Request.Context(), client, uid, sid); err != nil {
+		httpx.Error(c, err)
+		return
+	}
 	httpx.NoContent(c)
 }
 
@@ -146,39 +172,91 @@ func (h *AuthHandler) Me(c *gin.Context) {
 		httpx.Error(c, errUnauthorized())
 		return
 	}
-	user, profile, roles, err := h.auth.Me(c.Request.Context(), uid)
+	user, profile, ident, roles, err := h.auth.Me(c.Request.Context(), uid)
 	if err != nil {
 		httpx.Error(c, err)
 		return
 	}
+	httpx.OK(c, dto.MeResponse{User: toUserDTO(user, profile, ident, roles, requestctx.Email(c.Request.Context()))})
+}
+
+func (h *AuthHandler) UpdateMe(c *gin.Context) {
+	uid, ok := requestctx.UserID(c.Request.Context())
+	if !ok {
+		httpx.Error(c, errUnauthorized())
+		return
+	}
+	var req dto.UpdateProfileRequest
+	if !httpx.BindJSON(c, &req) {
+		return
+	}
+	user, profile, ident, err := h.auth.UpdateProfile(c.Request.Context(), uid, service.UpdateProfileInput{
+		FirstName: req.FirstName, LastName: req.LastName, FullName: req.FullName, DisplayName: req.DisplayName,
+		Phone: req.Phone, LocaleID: req.LocaleID, Timezone: req.Timezone, CountryID: req.CountryID,
+		PreferredCurrencyCode: req.PreferredCurrencyCode, Theme: req.Theme, DateFormat: req.DateFormat,
+	})
+	if err != nil {
+		httpx.Error(c, err)
+		return
+	}
+	_, _, _, roles, err := h.auth.Me(c.Request.Context(), uid)
+	if err != nil {
+		roles = nil
+	}
+	httpx.OK(c, dto.MeResponse{User: toUserDTO(user, profile, ident, roles, requestctx.Email(c.Request.Context()))})
+}
+
+func toUserDTO(user *entity.User, profile *entity.UserProfile, ident *entity.Identity, roles []entity.UserRole, email string) dto.UserDTO {
 	roleCodes := make([]string, 0, len(roles))
 	for _, r := range roles {
 		roleCodes = append(roleCodes, r.RoleCode)
 	}
-	fullName := ""
-	if profile != nil {
-		fullName = profile.FullName
+	out := dto.UserDTO{
+		ID: user.ID.String(), PublicID: user.PublicID, Email: email,
+		Status: string(user.Status), IsSystemAdmin: user.IsSystemAdmin, Roles: roleCodes,
+		EmailVerifiedAt: formatUTC(user.EmailVerifiedAt), PhoneVerifiedAt: formatUTC(user.PhoneVerifiedAt),
 	}
-	httpx.OK(c, dto.MeResponse{User: dto.UserDTO{
-		ID: user.ID.String(), PublicID: user.PublicID, FullName: fullName,
-		Email: requestctx.Email(c.Request.Context()), Status: string(user.Status),
-		IsSystemAdmin: user.IsSystemAdmin, Roles: roleCodes,
-	}})
+	if profile != nil {
+		out.FullName = profile.FullName
+		out.FirstName = profile.FirstName
+		out.LastName = profile.LastName
+		out.DisplayName = profile.DisplayName
+		out.Timezone = profile.Timezone
+		out.PreferredCurrencyCode = profile.PreferredCurrencyCode
+		out.Theme = string(profile.Theme)
+		out.DateFormat = string(profile.DateFormat)
+		out.LocaleID = uuidPtrString(profile.LocaleID)
+		out.CountryID = uuidPtrString(profile.CountryID)
+	}
+	if ident != nil {
+		if out.Email == "" {
+			out.Email = ident.Email
+		}
+		out.Phone = ident.Phone
+	}
+	return out
 }
 
 func toTokenResponse(result *service.AuthResult, email string) dto.TokenResponse {
-	fullName := ""
-	if result.Profile != nil {
-		fullName = result.Profile.FullName
-	}
 	return dto.TokenResponse{
 		AccessToken: result.AccessToken, RefreshToken: result.RefreshToken,
-		ExpiresAt: result.ExpiresAt.UTC().Format(timeRFC3339), TokenType: "Bearer",
-		User: dto.UserDTO{
-			ID: result.User.ID.String(), PublicID: result.User.PublicID, Email: email,
-			FullName: fullName, Status: string(result.User.Status), IsSystemAdmin: result.User.IsSystemAdmin,
-		},
+		ExpiresAt: result.ExpiresAt.UTC().Format(time.RFC3339), TokenType: "Bearer",
+		User: toUserDTO(result.User, result.Profile, nil, nil, email),
 	}
 }
 
-const timeRFC3339 = "2006-01-02T15:04:05Z07:00"
+func formatUTC(t *time.Time) *string {
+	if t == nil || t.IsZero() {
+		return nil
+	}
+	s := t.UTC().Format(time.RFC3339)
+	return &s
+}
+
+func uuidPtrString(id *uuid.UUID) *string {
+	if id == nil || *id == uuid.Nil {
+		return nil
+	}
+	s := id.String()
+	return &s
+}

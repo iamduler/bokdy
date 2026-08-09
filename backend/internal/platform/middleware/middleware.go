@@ -26,7 +26,7 @@ func CORS(allowedOrigins []string) gin.HandlerFunc {
 			if _, ok := originSet[strings.TrimRight(origin, "/")]; ok || len(allowedOrigins) == 0 {
 				c.Header("Access-Control-Allow-Origin", origin)
 				c.Header("Access-Control-Allow-Credentials", "true")
-				c.Header("Access-Control-Allow-Headers", "Authorization, Content-Type, Accept-Language, X-Organization-ID, X-Request-ID, X-Correlation-ID, X-Trace-ID, traceparent, tracestate")
+				c.Header("Access-Control-Allow-Headers", "Authorization, Content-Type, Accept-Language, X-Organization-ID, X-Client, X-Request-ID, X-Correlation-ID, X-Trace-ID, traceparent, tracestate")
 				c.Header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS")
 			}
 		}

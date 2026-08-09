@@ -24,4 +24,5 @@ Foundation goose migrations implement `infrastructure`, `identity`, `organizatio
 - Addresses store `country_id` → `reference.countries`.
 - Money uses ISO 4217 codes; `reference.currencies` is the catalog (`code` natural PK).
 - Display names: `name_en` + `name_vi`. Locale 3+ → `*_translations`. See `docs/architecture/i18n.md`.
-- `reference.locales`: `vi` is default. API `Accept-Language`, missing → `vi`.
+- `reference.locales`: `name` + `native_name` (not `name_en`/`name_vi`). `vi` is default. API `Accept-Language`, missing → `vi`.
+- Timestamps are UTC. API returns `Z`. FE converts.

@@ -40,6 +40,18 @@ Every in-scope and out-of-MVP capability has a row. Do not delete post-MVP rows 
 | `done` | Backend DoD met (below). |
 | `deferred` | Explicitly post-MVP or moved during development. |
 
+# Done checkbox
+
+Every flow row has a **Done** column. Tick it only when Backend DoD is met and `status` is `done`.
+
+| Mark | Meaning |
+| --- | --- |
+| `[ ]` | MVP row, not DoD-complete (includes `ready` and `partial`) |
+| `[x]` | MVP row complete — same change must set `status` to `done` |
+| `—` | Post-MVP / deferred. Do not implement in W1–W9. Do not tick. |
+
+Update the matching row in the flow file **and** [backend-api-tracker.md](backend-api-tracker.md) when a wave finishes.
+
 ---
 
 # Backend DoD (one checklist row)
@@ -63,7 +75,7 @@ FE screens, BFF cookies beyond existing `/api/auth/*`, and i18n copy are **not**
 # API conventions
 
 - Prefix `/api/v1`
-- Success `{ "data": ... }` · error `{ "error": { "code", "message" } }`
+- Success `{ "data": ... }` · error `{ "code", "message", "details?" }` (UPPERCASE codes; `packages/config/error-codes.json`)
 - Owner/staff: JWT + `X-Organization-ID`
 - Admin: JWT + `is_system_admin`
 - Public aggregates expose `public_id`

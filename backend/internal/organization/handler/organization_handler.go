@@ -85,8 +85,7 @@ func (h *OrganizationHandler) Create(c *gin.Context) {
 		return
 	}
 	var req createOrgRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		httpx.Error(c, apperr.Wrap(err, apperr.CodeValidation, "invalid request"))
+	if !httpx.BindJSON(c, &req) {
 		return
 	}
 	org, err := h.orgs.Create(c.Request.Context(), uid, service.CreateOrganizationInput{
@@ -162,8 +161,7 @@ func (h *OrganizationHandler) Invite(c *gin.Context) {
 		return
 	}
 	var req inviteRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		httpx.Error(c, apperr.Wrap(err, apperr.CodeValidation, "invalid request"))
+	if !httpx.BindJSON(c, &req) {
 		return
 	}
 	inv, err := h.orgs.Invite(c.Request.Context(), orgID, uid, service.InviteInput{
@@ -186,8 +184,7 @@ func (h *OrganizationHandler) AcceptInvitation(c *gin.Context) {
 		return
 	}
 	var req acceptInviteRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		httpx.Error(c, apperr.Wrap(err, apperr.CodeValidation, "invalid request"))
+	if !httpx.BindJSON(c, &req) {
 		return
 	}
 	if err := h.orgs.AcceptInvitation(c.Request.Context(), req.Token, uid); err != nil {

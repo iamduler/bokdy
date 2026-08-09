@@ -81,6 +81,8 @@ Handler → Application Service → Domain → Repository → Database
 
 Domain must never depend on Infrastructure, Gin, or SQL drivers.
 
+One repository interface = one file; one postgres adapter = `<name>_repo.go`. Do not dump several adapters into `repos.go`.
+
 ---
 
 # Foundation Modules

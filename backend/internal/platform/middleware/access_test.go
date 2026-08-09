@@ -28,7 +28,7 @@ func TestAccessLogIncludesRouteAndErrorCode(t *testing.T) {
 	if !strings.Contains(line, `"route":"/api/v1/items/:id"`) {
 		t.Fatalf("missing route: %s", line)
 	}
-	if !strings.Contains(line, `"error_code":"not_found"`) {
+	if !strings.Contains(line, `"error_code":"NOT_FOUND"`) {
 		t.Fatalf("missing error_code: %s", line)
 	}
 }

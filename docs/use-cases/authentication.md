@@ -20,7 +20,7 @@ Validations
 
 - Email is unique.
 - Phone number is unique.
-- Password policy satisfied.
+- Password policy satisfied (BR-806): at least 8 characters, including uppercase, lowercase, a number, and a special character.
 
 Flow
 
@@ -167,7 +167,7 @@ Preconditions
 Validations
 
 - Reset token valid.
-- Password policy satisfied.
+- Password policy satisfied (BR-806): at least 8 characters, including uppercase, lowercase, a number, and a special character.
 
 Flow
 
@@ -215,4 +215,7 @@ Result
 Notes
 
 - Identity profile only. Customer display name syncs in CRM via event after W3.
-- Phone is optional. When present it must be unique.
+- Phone is optional. When present it must be unique. Changing phone clears `phone_verified_at`.
+- Editable: names, phone, `locale_id`, `timezone`, `country_id`, `preferred_currency_code`, `theme`, `date_format`.
+- Not editable: `email_verified_at`, `phone_verified_at` (system-set; email verify sets the former).
+- Timestamps are UTC. FE converts for display.

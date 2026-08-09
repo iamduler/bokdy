@@ -1,0 +1,22 @@
+{
+  "envelope": [
+    "UNAUTHORIZED",
+    "FORBIDDEN",
+    "NOT_FOUND",
+    "CONFLICT",
+    "VALIDATION",
+    "BAD_REQUEST",
+    "TOO_MANY_REQUESTS",
+    "INTERNAL"
+  ],
+  "details": [
+    "REQUIRED",
+    "EMAIL_INVALID",
+    "TOO_SHORT",
+    "TOO_LONG",
+    "UUID_INVALID",
+    "ONE_OF",
+    "INVALID",
+    "PASSWORD_POLICY"
+  ]
+}

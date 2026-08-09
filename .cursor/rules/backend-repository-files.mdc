@@ -1,0 +1,24 @@
+---
+description: One Go repository interface and postgres adapter per file; no catch-all repos.go
+globs:
+  - backend/internal/**/repository/**/*.go
+  - backend/internal/**/infrastructure/postgres/**/*.go
+alwaysApply: false
+---
+
+# Repository file layout
+
+One repository **type** = one file on each side.
+
+```text
+backend/internal/<module>/repository/<name>.go
+backend/internal/<module>/infrastructure/postgres/<name>_repo.go
+```
+
+Identity: `user_repo.go`, `identity_repo.go`, `credential_repo.go`, `session_repo.go`, `role_repo.go`.
+
+Do **not** add a new adapter into `repos.go` or merge unrelated SQL into an existing `*_repo.go`.
+
+Shared `nullStr` / scan helpers: `infrastructure/postgres/helpers.go` only.
+
+Full text: `docs/architecture/backend-feature-playbook.md` (Repository) and `docs/architecture/coding-style.md` (Repository files).

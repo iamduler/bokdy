@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 // Collector is a process-local registry of platform metrics.
@@ -46,10 +45,6 @@ func NewCollector() *Collector {
 	}, []string{"type", "result"})
 	reg.MustRegister(c.HTTPRequests, c.HTTPDuration, c.RateLimited, c.AsynqTasks)
 	return c
-}
-
-func (c *Collector) Handler() http.Handler {
-	return promhttp.HandlerFor(c.Registry, promhttp.HandlerOpts{EnableOpenMetrics: true})
 }
 
 func (c *Collector) ObserveHTTP(method, route, status string, d time.Duration) {

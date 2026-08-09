@@ -324,6 +324,18 @@ unless explicitly justified.
 
 ---
 
+## Repository files (Go)
+
+One repository interface = one file under `<module>/repository/`.
+
+One postgres adapter = one `<name>_repo.go` under `<module>/infrastructure/postgres/`.
+
+Do not accumulate unrelated adapters in `repos.go`. Package-level helpers (`nullStr`, scan helpers) belong in `helpers.go`, not in a second repository type.
+
+Identity example: `user_repo.go`, `identity_repo.go`, `credential_repo.go`, `session_repo.go`, `role_repo.go`.
+
+---
+
 # Interfaces
 
 Define interfaces where they are consumed.
@@ -477,6 +489,8 @@ Prometheus: scrape API `GET /metrics` and worker `WORKER_METRICS_ADDR/metrics`. 
 Traces: OTLP/HTTP when `OTEL_EXPORTER_OTLP_ENDPOINT` is set (Tempo). Same `trace_id` hex joins Loki ↔ Tempo. Propagate W3C `traceparent` across BFF, API, and Asynq. See `docs/architecture/observability.md`.
 
 ---
+
+Timestamps in Postgres and JSON APIs are UTC. FE converts for display. Branch TZ is for venue clocks only. See `docs/domain/development-rules.md` Time.
 
 # Context
 

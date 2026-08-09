@@ -17,8 +17,14 @@ const (
 
 // Seeded in 00004_reference.sql.
 var (
-	LocaleVIID = uuid.MustParse("01900000-0000-7000-8000-000000000010")
-	LocaleENID = uuid.MustParse("01900000-0000-7000-8000-000000000011")
+	LocaleVIID  = uuid.MustParse("01900000-0000-7000-8000-000000000010")
+	LocaleENID  = uuid.MustParse("01900000-0000-7000-8000-000000000011")
+	CountryVNID = uuid.MustParse("01900000-0000-7000-8000-000000000001")
+)
+
+const (
+	DefaultCurrencyCode = "VND"
+	DefaultTimezone     = "Asia/Ho_Chi_Minh"
 )
 
 func ParseLocale(header string) string {

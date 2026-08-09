@@ -312,6 +312,14 @@ Public registration must not create `is_system_admin`.
 
 ---
 
+## BR-806
+
+A password must be at least 8 characters and include at least one uppercase letter, one lowercase letter, one digit, and one special character (punctuation or symbol).
+
+Applies to register and password reset. Login compares the hash only.
+
+---
+
 # Event Rules
 
 ## BR-850

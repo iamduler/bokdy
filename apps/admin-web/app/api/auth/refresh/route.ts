@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { goBaseUrl, setAuthCookiesOnStore } from "@/lib/api/proxy-go";
+import { GO_X_CLIENT, goBaseUrl, setAuthCookiesOnStore } from "@/lib/api/proxy-go";
 
 export async function POST(req: Request) {
   const body = await req.text();
   const upstream = await fetch(`${goBaseUrl().replace(/\/$/, "")}/auth/refresh`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    headers: { "Content-Type": "application/json", Accept: "application/json", "X-Client": GO_X_CLIENT },
     body,
     cache: "no-store",
   });

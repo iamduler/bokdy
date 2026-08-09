@@ -60,11 +60,13 @@ func NewAuthService(
 }
 
 type RegisterInput struct {
+	Client    entity.Client
 	Email     string
 	Password  string
 	FullName  string
 	FirstName string
 	LastName  string
+	Phone     string
 }
 
 type AuthResult struct {
@@ -76,19 +78,32 @@ type AuthResult struct {
 }
 
 func (s *AuthService) Register(ctx context.Context, in RegisterInput) (*entity.User, error) {
+	if !in.Client.AllowsRegister() {
+		return nil, iderrors.ErrRegisterForbidden
+	}
 	email := strings.ToLower(strings.TrimSpace(in.Email))
 	if email == "" || !strings.Contains(email, "@") {
 		return nil, apperr.New(apperr.CodeValidation, "invalid email")
 	}
-	if len(in.Password) < 8 {
-		return nil, iderrors.ErrWeakPassword
+	if err := entity.ValidatePassword(in.Password); err != nil {
+		return nil, err
 	}
+	phone := strings.TrimSpace(in.Phone)
 	existing, err := s.users.FindByEmail(ctx, email)
 	if err != nil {
 		return nil, apperr.Wrap(err, apperr.CodeInternal, "lookup email")
 	}
 	if existing != nil {
 		return nil, iderrors.ErrEmailTaken
+	}
+	if phone != "" {
+		taken, err := s.idents.FindByPhone(ctx, phone)
+		if err != nil {
+			return nil, apperr.Wrap(err, apperr.CodeInternal, "lookup phone")
+		}
+		if taken != nil {
+			return nil, iderrors.ErrPhoneTaken
+		}
 	}
 
 	now := time.Now().UTC()
@@ -105,13 +120,18 @@ func (s *AuthService) Register(ctx context.Context, in RegisterInput) (*entity.U
 		fullName = email
 	}
 	localeID := i18n.LocaleVIID
+	countryID := i18n.CountryVNID
 	profile := &entity.UserProfile{
 		ID: id.MustNewUUID(), UserID: userID, FirstName: in.FirstName, LastName: in.LastName,
-		FullName: fullName, DisplayName: fullName, LocaleID: &localeID, CreatedAt: now, UpdatedAt: now,
+		FullName: fullName, DisplayName: fullName, LocaleID: &localeID,
+		Timezone: i18n.DefaultTimezone, CountryID: &countryID,
+		PreferredCurrencyCode: i18n.DefaultCurrencyCode,
+		Theme:                 entity.ThemeSystem, DateFormat: entity.DateFormatDMY,
+		CreatedAt: now, UpdatedAt: now,
 	}
 	ident := &entity.Identity{
 		ID: id.MustNewUUID(), UserID: userID, Provider: entity.ProviderLocal,
-		ProviderSubject: email, Email: email, IsPrimary: true, CreatedAt: now, UpdatedAt: now,
+		ProviderSubject: email, Email: email, Phone: phone, IsPrimary: true, CreatedAt: now, UpdatedAt: now,
 	}
 	hash, err := bcrypt.GenerateFromPassword([]byte(in.Password), bcrypt.DefaultCost)
 	if err != nil {
@@ -164,7 +184,7 @@ func (s *AuthService) VerifyEmail(ctx context.Context, token string) error {
 			}
 			return err
 		}
-		if err := s.users.UpdateStatus(ctx, tx, userID, entity.UserStatusActive); err != nil {
+		if err := s.users.MarkEmailVerified(ctx, tx, userID, time.Now().UTC()); err != nil {
 			return err
 		}
 		oid, err := events.Append(ctx, tx, events.Event{
@@ -182,6 +202,7 @@ func (s *AuthService) VerifyEmail(ctx context.Context, token string) error {
 }
 
 type LoginInput struct {
+	Client    entity.Client
 	Email     string
 	Password  string
 	IPAddress *string
@@ -196,6 +217,9 @@ func (s *AuthService) Login(ctx context.Context, in LoginInput) (*AuthResult, er
 	}
 	if user == nil {
 		return nil, iderrors.ErrInvalidCredentials
+	}
+	if !in.Client.AllowsLogin(user.IsSystemAdmin) {
+		return nil, iderrors.ErrClientForbidden
 	}
 	hash, err := s.creds.GetPasswordHash(ctx, user.ID)
 	if err != nil || hash == "" {
@@ -220,20 +244,13 @@ func (s *AuthService) Login(ctx context.Context, in LoginInput) (*AuthResult, er
 		events.AfterCommit(ctx, s.outbox, outboxID)
 		return nil, iderrors.ErrInvalidCredentials
 	}
-	if user.Status != entity.UserStatusActive && user.Status != entity.UserStatusPending {
+	if user.Status != entity.UserStatusActive {
 		return nil, iderrors.ErrUserNotActive
-	}
-	// Auto-activate pending users on successful login in development scaffold.
-	if user.Status == entity.UserStatusPending {
-		_ = persistence.WithinTx(ctx, s.pool, func(tx pgx.Tx) error {
-			return s.users.UpdateStatus(ctx, tx, user.ID, entity.UserStatusActive)
-		})
-		user.Status = entity.UserStatusActive
 	}
 	return s.issueSession(ctx, user, in.IPAddress, in.UserAgent, "UserLoggedIn")
 }
 
-func (s *AuthService) Refresh(ctx context.Context, refreshToken string, ip, ua *string) (*AuthResult, error) {
+func (s *AuthService) Refresh(ctx context.Context, client entity.Client, refreshToken string, ip, ua *string) (*AuthResult, error) {
 	hash := hashToken(refreshToken)
 	rt, session, err := s.sessions.FindRefreshByHash(ctx, hash)
 	if err != nil {
@@ -246,6 +263,9 @@ func (s *AuthService) Refresh(ctx context.Context, refreshToken string, ip, ua *
 	if err != nil || user == nil {
 		return nil, iderrors.ErrInvalidToken
 	}
+	if !client.AllowsLogin(user.IsSystemAdmin) {
+		return nil, iderrors.ErrClientForbidden
+	}
 	err = persistence.WithinTx(ctx, s.pool, func(tx pgx.Tx) error {
 		return s.sessions.RevokeSession(ctx, tx, session.ID)
 	})
@@ -255,15 +275,22 @@ func (s *AuthService) Refresh(ctx context.Context, refreshToken string, ip, ua *
 	return s.issueSession(ctx, user, ip, ua, "SessionRefreshed")
 }
 
-func (s *AuthService) Logout(ctx context.Context, sessionID uuid.UUID) error {
+func (s *AuthService) Logout(ctx context.Context, client entity.Client, userID, sessionID uuid.UUID) error {
+	user, err := s.users.FindByID(ctx, userID)
+	if err != nil {
+		return apperr.Wrap(err, apperr.CodeInternal, "lookup user")
+	}
+	if user != nil && !client.AllowsLogin(user.IsSystemAdmin) {
+		return iderrors.ErrClientForbidden
+	}
 	var outboxID uuid.UUID
-	err := persistence.WithinTx(ctx, s.pool, func(tx pgx.Tx) error {
+	err = persistence.WithinTx(ctx, s.pool, func(tx pgx.Tx) error {
 		if err := s.sessions.RevokeSession(ctx, tx, sessionID); err != nil {
 			return err
 		}
 		oid, err := events.Append(ctx, tx, events.Event{
 			Type: "UserLoggedOut", AggregateType: "Session", AggregateID: sessionID,
-			ActorType: events.ActorUser, EntityType: "Session", EntityID: sessionID,
+			ActorType: events.ActorUser, ActorID: &userID, EntityType: "Session", EntityID: sessionID,
 		})
 		outboxID = oid
 		return err
@@ -309,8 +336,8 @@ func (s *AuthService) RequestPasswordReset(ctx context.Context, email string) er
 }
 
 func (s *AuthService) ResetPassword(ctx context.Context, token, newPassword string) error {
-	if len(newPassword) < 8 {
-		return iderrors.ErrWeakPassword
+	if err := entity.ValidatePassword(newPassword); err != nil {
+		return err
 	}
 	hash := hashToken(token)
 	pwHash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
@@ -329,6 +356,9 @@ func (s *AuthService) ResetPassword(ctx context.Context, token, newPassword stri
 		if err := s.creds.UpsertPassword(ctx, tx, userID, string(pwHash)); err != nil {
 			return err
 		}
+		if err := s.sessions.RevokeAllForUser(ctx, tx, userID); err != nil {
+			return err
+		}
 		oid, err := events.Append(ctx, tx, events.Event{
 			Type: "PasswordReset", AggregateType: "User", AggregateID: userID,
 			ActorType: events.ActorUser, ActorID: &userID, EntityType: "User", EntityID: userID,
@@ -343,23 +373,171 @@ func (s *AuthService) ResetPassword(ctx context.Context, token, newPassword stri
 	return nil
 }
 
-func (s *AuthService) Me(ctx context.Context, userID uuid.UUID) (*entity.User, *entity.UserProfile, []entity.UserRole, error) {
+func (s *AuthService) Me(ctx context.Context, userID uuid.UUID) (*entity.User, *entity.UserProfile, *entity.Identity, []entity.UserRole, error) {
 	user, err := s.users.FindByID(ctx, userID)
 	if err != nil {
-		return nil, nil, nil, apperr.Wrap(err, apperr.CodeInternal, "lookup user")
+		return nil, nil, nil, nil, apperr.Wrap(err, apperr.CodeInternal, "lookup user")
 	}
 	if user == nil {
-		return nil, nil, nil, iderrors.ErrUserNotFound
+		return nil, nil, nil, nil, iderrors.ErrUserNotFound
 	}
 	profile, err := s.users.GetProfile(ctx, userID)
 	if err != nil {
-		return nil, nil, nil, apperr.Wrap(err, apperr.CodeInternal, "lookup profile")
+		return nil, nil, nil, nil, apperr.Wrap(err, apperr.CodeInternal, "lookup profile")
+	}
+	ident, err := s.idents.FindPrimaryByUserID(ctx, userID)
+	if err != nil {
+		return nil, nil, nil, nil, apperr.Wrap(err, apperr.CodeInternal, "lookup identity")
 	}
 	roles, err := s.roles.ListByUser(ctx, userID)
 	if err != nil {
-		return nil, nil, nil, apperr.Wrap(err, apperr.CodeInternal, "lookup roles")
+		return nil, nil, nil, nil, apperr.Wrap(err, apperr.CodeInternal, "lookup roles")
 	}
-	return user, profile, roles, nil
+	return user, profile, ident, roles, nil
+}
+
+type UpdateProfileInput struct {
+	FirstName             *string
+	LastName              *string
+	FullName              *string
+	DisplayName           *string
+	Phone                 *string
+	LocaleID              *string
+	Timezone              *string
+	CountryID             *string
+	PreferredCurrencyCode *string
+	Theme                 *string
+	DateFormat            *string
+}
+
+func (s *AuthService) UpdateProfile(ctx context.Context, userID uuid.UUID, in UpdateProfileInput) (*entity.User, *entity.UserProfile, *entity.Identity, error) {
+	user, profile, ident, _, err := s.Me(ctx, userID)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	if profile == nil {
+		return nil, nil, nil, iderrors.ErrUserNotFound
+	}
+	if in.FirstName != nil {
+		profile.FirstName = strings.TrimSpace(*in.FirstName)
+	}
+	if in.LastName != nil {
+		profile.LastName = strings.TrimSpace(*in.LastName)
+	}
+	if in.FullName != nil {
+		profile.FullName = strings.TrimSpace(*in.FullName)
+	}
+	if in.DisplayName != nil {
+		profile.DisplayName = strings.TrimSpace(*in.DisplayName)
+	}
+	if profile.FullName == "" {
+		profile.FullName = strings.TrimSpace(profile.FirstName + " " + profile.LastName)
+	}
+	if in.Timezone != nil {
+		profile.Timezone = strings.TrimSpace(*in.Timezone)
+	}
+	if in.PreferredCurrencyCode != nil {
+		code := strings.ToUpper(strings.TrimSpace(*in.PreferredCurrencyCode))
+		if code != "" && len(code) != 3 {
+			return nil, nil, nil, apperr.Validation("invalid preferred_currency_code")
+		}
+		profile.PreferredCurrencyCode = code
+	}
+	if in.Theme != nil {
+		theme, ok := entity.ParseTheme(*in.Theme)
+		if !ok {
+			return nil, nil, nil, apperr.Validation("invalid theme")
+		}
+		profile.Theme = theme
+	}
+	if in.DateFormat != nil {
+		df, ok := entity.ParseDateFormat(*in.DateFormat)
+		if !ok {
+			return nil, nil, nil, apperr.Validation("invalid date_format")
+		}
+		profile.DateFormat = df
+	}
+	if in.LocaleID != nil {
+		idVal, err := parseOptionalUUID(*in.LocaleID)
+		if err != nil {
+			return nil, nil, nil, apperr.Validation("invalid locale_id")
+		}
+		profile.LocaleID = idVal
+	}
+	if in.CountryID != nil {
+		idVal, err := parseOptionalUUID(*in.CountryID)
+		if err != nil {
+			return nil, nil, nil, apperr.Validation("invalid country_id")
+		}
+		profile.CountryID = idVal
+	}
+
+	phoneChanged := false
+	newPhone := ""
+	if ident != nil {
+		newPhone = ident.Phone
+	}
+	if in.Phone != nil {
+		newPhone = strings.TrimSpace(*in.Phone)
+		oldPhone := ""
+		if ident != nil {
+			oldPhone = ident.Phone
+		}
+		phoneChanged = newPhone != oldPhone
+		if phoneChanged && newPhone != "" {
+			taken, err := s.idents.FindByPhone(ctx, newPhone)
+			if err != nil {
+				return nil, nil, nil, apperr.Wrap(err, apperr.CodeInternal, "lookup phone")
+			}
+			if taken != nil && taken.UserID != userID {
+				return nil, nil, nil, iderrors.ErrPhoneTaken
+			}
+		}
+	}
+
+	now := time.Now().UTC()
+	var outboxID uuid.UUID
+	err = persistence.WithinTx(ctx, s.pool, func(tx pgx.Tx) error {
+		if err := s.users.UpdateProfile(ctx, tx, profile); err != nil {
+			return err
+		}
+		if phoneChanged {
+			if err := s.idents.UpdatePrimaryPhone(ctx, tx, userID, newPhone); err != nil {
+				return err
+			}
+			if err := s.users.ClearPhoneVerified(ctx, tx, userID); err != nil {
+				return err
+			}
+			user.PhoneVerifiedAt = nil
+			if ident != nil {
+				ident.Phone = newPhone
+			}
+		}
+		oid, err := events.Append(ctx, tx, events.Event{
+			Type: "UserProfileUpdated", AggregateType: "User", AggregateID: userID,
+			ActorType: events.ActorUser, ActorID: &userID, EntityType: "User", EntityID: userID,
+			OccurredAt: now,
+		})
+		outboxID = oid
+		return err
+	})
+	if err != nil {
+		return nil, nil, nil, apperr.Wrap(err, apperr.CodeInternal, "update profile")
+	}
+	events.AfterCommit(ctx, s.outbox, outboxID)
+	return user, profile, ident, nil
+}
+
+func parseOptionalUUID(raw string) (*uuid.UUID, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return nil, nil
+	}
+	parsed, err := uuid.Parse(raw)
+	if err != nil {
+		return nil, err
+	}
+	return &parsed, nil
 }
 
 func (s *AuthService) issueSession(ctx context.Context, user *entity.User, ip, ua *string, eventType string) (*AuthResult, error) {

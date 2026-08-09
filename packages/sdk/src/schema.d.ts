@@ -89,19 +89,26 @@ export interface paths {
         /** Prometheus metrics (unauthenticated) */
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    /** @description Force HTML browse view or Prometheus text. Browsers default to HTML via Accept. */
+                    format?: "html" | "prometheus" | "prom" | "text" | "openmetrics";
+                };
                 header?: never;
                 path?: never;
                 cookie?: never;
             };
             requestBody?: never;
             responses: {
-                /** @description Prometheus text exposition format */
+                /** @description Prometheus text for scrapers. Browsers (Accept text/html) get a grouped HTML view. */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "text/plain": string;
+                        "application/openmetrics-text": string;
+                        "text/html": string;
+                    };
                 };
             };
         };
@@ -126,7 +133,10 @@ export interface paths {
         post: {
             parameters: {
                 query?: never;
-                header?: never;
+                header: {
+                    /** @description Audience BFF. Required on register, login, refresh, logout. Missing → 400. Admin register forbidden. Admin login requires is_system_admin. */
+                    "X-Client": components["parameters"]["XClient"];
+                };
                 path?: never;
                 cookie?: never;
             };
@@ -143,6 +153,8 @@ export interface paths {
                     };
                     content?: never;
                 };
+                400: components["responses"]["BadRequest"];
+                422: components["responses"]["ValidationFailed"];
             };
         };
         delete?: never;
@@ -164,7 +176,10 @@ export interface paths {
         post: {
             parameters: {
                 query?: never;
-                header?: never;
+                header: {
+                    /** @description Audience BFF. Required on register, login, refresh, logout. Missing → 400. Admin register forbidden. Admin login requires is_system_admin. */
+                    "X-Client": components["parameters"]["XClient"];
+                };
                 path?: never;
                 cookie?: never;
             };
@@ -183,6 +198,9 @@ export interface paths {
                         "application/json": components["schemas"]["TokenResponseEnvelope"];
                     };
                 };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
             };
         };
         delete?: never;
@@ -204,7 +222,10 @@ export interface paths {
         post: {
             parameters: {
                 query?: never;
-                header?: never;
+                header: {
+                    /** @description Audience BFF. Required on register, login, refresh, logout. Missing → 400. Admin register forbidden. Admin login requires is_system_admin. */
+                    "X-Client": components["parameters"]["XClient"];
+                };
                 path?: never;
                 cookie?: never;
             };
@@ -221,6 +242,8 @@ export interface paths {
                     };
                     content?: never;
                 };
+                400: components["responses"]["BadRequest"];
+                422: components["responses"]["ValidationFailed"];
             };
         };
         delete?: never;
@@ -259,6 +282,8 @@ export interface paths {
                     };
                     content?: never;
                 };
+                400: components["responses"]["BadRequest"];
+                422: components["responses"]["ValidationFailed"];
             };
         };
         delete?: never;
@@ -297,6 +322,8 @@ export interface paths {
                     };
                     content?: never;
                 };
+                400: components["responses"]["BadRequest"];
+                422: components["responses"]["ValidationFailed"];
             };
         };
         delete?: never;
@@ -335,6 +362,8 @@ export interface paths {
                     };
                     content?: never;
                 };
+                400: components["responses"]["BadRequest"];
+                422: components["responses"]["ValidationFailed"];
             };
         };
         delete?: never;
@@ -356,7 +385,10 @@ export interface paths {
         post: {
             parameters: {
                 query?: never;
-                header?: never;
+                header: {
+                    /** @description Audience BFF. Required on register, login, refresh, logout. Missing → 400. Admin register forbidden. Admin login requires is_system_admin. */
+                    "X-Client": components["parameters"]["XClient"];
+                };
                 path?: never;
                 cookie?: never;
             };
@@ -405,6 +437,7 @@ export interface paths {
                         };
                     };
                 };
+                401: components["responses"]["Error"];
             };
         };
         put?: never;
@@ -412,7 +445,36 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /** Update own profile */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateProfileRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["MeResponse"];
+                        };
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
         trace?: never;
     };
     "/api/v1/organizations": {
@@ -477,6 +539,9 @@ export interface paths {
                         };
                     };
                 };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
             };
         };
         delete?: never;
@@ -553,6 +618,9 @@ export interface paths {
                     };
                     content?: never;
                 };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
             };
         };
         delete?: never;
@@ -591,6 +659,9 @@ export interface paths {
                     };
                     content?: never;
                 };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
             };
         };
         delete?: never;
@@ -644,13 +715,27 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        ErrorResponse: {
+            /** @enum {string} */
+            code: "UNAUTHORIZED" | "FORBIDDEN" | "NOT_FOUND" | "CONFLICT" | "VALIDATION" | "BAD_REQUEST" | "TOO_MANY_REQUESTS" | "INTERNAL";
+            message: string;
+            details?: components["schemas"]["ErrorDetail"][];
+        };
+        ErrorDetail: {
+            field: string;
+            /** @enum {string} */
+            code: "REQUIRED" | "EMAIL_INVALID" | "TOO_SHORT" | "TOO_LONG" | "UUID_INVALID" | "ONE_OF" | "INVALID" | "PASSWORD_POLICY";
+            message: string;
+        };
         RegisterRequest: {
             /** Format: email */
             email: string;
+            /** @description At least 8 characters; must include uppercase, lowercase, a number, and a special character. */
             password: string;
             full_name?: string;
             first_name?: string;
             last_name?: string;
+            phone?: string;
         };
         LoginRequest: {
             /** Format: email */
@@ -669,6 +754,7 @@ export interface components {
         };
         PasswordResetRequest: {
             token: string;
+            /** @description At least 8 characters; must include uppercase, lowercase, a number, and a special character. */
             new_password: string;
         };
         Organization: {
@@ -711,9 +797,50 @@ export interface components {
             /** Format: email */
             email?: string;
             full_name?: string;
+            first_name?: string;
+            last_name?: string;
+            display_name?: string;
+            phone?: string;
             status: string;
             is_system_admin: boolean;
+            /**
+             * Format: date-time
+             * @description UTC
+             */
+            email_verified_at?: string;
+            /**
+             * Format: date-time
+             * @description UTC
+             */
+            phone_verified_at?: string;
+            /** Format: uuid */
+            locale_id?: string;
+            timezone?: string;
+            /** Format: uuid */
+            country_id?: string;
+            preferred_currency_code?: string;
+            /** @enum {string} */
+            theme?: "light" | "dark" | "system";
+            /** @enum {string} */
+            date_format?: "dmy" | "mdy" | "ymd";
             roles?: string[];
+        };
+        UpdateProfileRequest: {
+            first_name?: string;
+            last_name?: string;
+            full_name?: string;
+            display_name?: string;
+            phone?: string;
+            /** Format: uuid */
+            locale_id?: string;
+            timezone?: string;
+            /** Format: uuid */
+            country_id?: string;
+            preferred_currency_code?: string;
+            /** @enum {string} */
+            theme?: "light" | "dark" | "system";
+            /** @enum {string} */
+            date_format?: "dmy" | "mdy" | "ymd";
         };
         MeResponse: {
             user?: components["schemas"]["User"];
@@ -729,7 +856,54 @@ export interface components {
             };
         };
     };
-    responses: never;
+    responses: {
+        /** @description Error */
+        Error: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description Malformed JSON body */
+        BadRequest: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "code": "BAD_REQUEST",
+                 *       "message": "invalid json body"
+                 *     }
+                 */
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description Field validation failed */
+        ValidationFailed: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                /**
+                 * @example {
+                 *       "code": "VALIDATION",
+                 *       "message": "invalid request",
+                 *       "details": [
+                 *         {
+                 *           "field": "email",
+                 *           "code": "REQUIRED",
+                 *           "message": "email is required"
+                 *         }
+                 *       ]
+                 *     }
+                 */
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+    };
     parameters: {
         OrganizationId: string;
         /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
@@ -738,6 +912,8 @@ export interface components {
         TraceID: string;
         /** @description W3C Trace Context. Propagated BFF → API → Asynq. Echoed on the response when a span is active. */
         Traceparent: string;
+        /** @description Audience BFF. Required on register, login, refresh, logout. Missing → 400. Admin register forbidden. Admin login requires is_system_admin. */
+        XClient: "player" | "owner" | "admin";
     };
     requestBodies: never;
     headers: never;

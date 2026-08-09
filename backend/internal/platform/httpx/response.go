@@ -5,10 +5,12 @@ package httpx
 
 import (
 	"context"
+	"errors"
 	"net/http"
 
 	"bokdy/internal/platform/apperr"
 	"bokdy/internal/platform/logging"
+	"bokdy/internal/platform/validation"
 
 	"github.com/gin-gonic/gin"
 )
@@ -23,9 +25,9 @@ type SuccessResponse struct {
 
 // ErrorResponse is the envelope for a failed response.
 type ErrorResponse struct {
-	Error   string `json:"error"`
-	Code    string `json:"code"`
-	Message string `json:"message,omitempty"`
+	Code    string                  `json:"code"`
+	Message string                  `json:"message"`
+	Details []validation.FieldError `json:"details,omitempty"`
 }
 
 // OK writes a 200 response with data as the payload.
@@ -46,13 +48,36 @@ func NoContent(c *gin.Context) {
 // Error writes an error response, deriving the HTTP status from err's
 // apperr.Code when possible and defaulting to 500 otherwise.
 func Error(c *gin.Context, err error) {
-	writeError(c, apperr.GetCode(err), err.Error(), err)
+	var app *apperr.Error
+	if errors.As(err, &app) {
+		writeError(c, app.Code, app.Message, err)
+		return
+	}
+	writeError(c, apperr.CodeInternal, "internal error", err)
 }
 
 // Fail writes an error response with an explicit code/message pair, useful
 // for handler-level validation failures that never touched the Domain.
 func Fail(c *gin.Context, code apperr.Code, message string) {
 	writeError(c, code, message, nil)
+}
+
+// BindJSON binds the request body into dest. On failure it writes the error
+// envelope and returns false. Field validation → 422 VALIDATION; malformed
+// JSON → 400 BAD_REQUEST.
+func BindJSON(c *gin.Context, dest any) bool {
+	if err := c.ShouldBindJSON(dest); err != nil {
+		Error(c, bindError(err))
+		return false
+	}
+	return true
+}
+
+func bindError(err error) error {
+	if validation.IsFieldValidation(err) {
+		return apperr.Wrap(err, apperr.CodeValidation, "invalid request")
+	}
+	return apperr.Wrap(err, apperr.CodeBadRequest, "invalid json body")
 }
 
 func writeError(c *gin.Context, code apperr.Code, message string, cause error) {
@@ -71,11 +96,13 @@ func writeError(c *gin.Context, code apperr.Code, message string, cause error) {
 		evt = evt.Err(cause)
 	}
 	evt.Msg("request error")
-	c.JSON(status, ErrorResponse{
-		Error:   string(code),
-		Code:    string(code),
-		Message: message,
-	})
+	resp := ErrorResponse{Code: string(code), Message: message}
+	if cause != nil {
+		if details := validation.Details(cause); len(details) > 0 {
+			resp.Details = details
+		}
+	}
+	c.JSON(status, resp)
 }
 
 func statusFromCode(code apperr.Code) int {

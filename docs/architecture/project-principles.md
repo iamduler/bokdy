@@ -292,11 +292,11 @@ if role == "owner"
 
 ## 5.5 Time
 
-Always use timezone-aware timestamps.
+Always use timezone-aware timestamps stored in UTC.
 
-Branch timezone determines business time.
+API responses are UTC. The frontend converts for display.
 
-Never assume UTC for business calculations.
+Branch timezone determines venue business clocks (hours, slots), not identity timestamps.
 
 ---
 

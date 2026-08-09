@@ -17,26 +17,32 @@ const (
 )
 
 type User struct {
-	ID            uuid.UUID
-	PublicID      string
-	Status        UserStatus
-	IsSystemAdmin bool
-	LastLoginAt   *time.Time
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
+	ID              uuid.UUID
+	PublicID        string
+	Status          UserStatus
+	IsSystemAdmin   bool
+	LastLoginAt     *time.Time
+	EmailVerifiedAt *time.Time
+	PhoneVerifiedAt *time.Time
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
 }
 
 type UserProfile struct {
-	ID          uuid.UUID
-	UserID      uuid.UUID
-	FirstName   string
-	LastName    string
-	FullName    string
-	DisplayName string
-	LocaleID    *uuid.UUID
-	Timezone    string
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	ID                    uuid.UUID
+	UserID                uuid.UUID
+	FirstName             string
+	LastName              string
+	FullName              string
+	DisplayName           string
+	LocaleID              *uuid.UUID
+	Timezone              string
+	CountryID             *uuid.UUID
+	PreferredCurrencyCode string
+	Theme                 Theme
+	DateFormat            DateFormat
+	CreatedAt             time.Time
+	UpdatedAt             time.Time
 }
 
 type IdentityProvider string

@@ -130,13 +130,16 @@ func seedBootstrapAdmin(ctx context.Context, db *persistence.Database, cfg *conf
 		return err
 	}
 	localeID := i18n.LocaleVIID
+	countryID := i18n.CountryVNID
 	user := &entity.User{
 		ID: userID, PublicID: id.MustNewPublicID(), Status: entity.UserStatusActive,
-		IsSystemAdmin: true, CreatedAt: now, UpdatedAt: now,
+		IsSystemAdmin: true, EmailVerifiedAt: &now, CreatedAt: now, UpdatedAt: now,
 	}
 	profile := &entity.UserProfile{
-		UserID: userID, FullName: cfg.Bootstrap.Name, DisplayName: cfg.Bootstrap.Name,
-		LocaleID: &localeID, CreatedAt: now, UpdatedAt: now,
+		ID: id.MustNewUUID(), UserID: userID, FullName: cfg.Bootstrap.Name, DisplayName: cfg.Bootstrap.Name,
+		LocaleID: &localeID, CountryID: &countryID, Timezone: i18n.DefaultTimezone,
+		PreferredCurrencyCode: i18n.DefaultCurrencyCode, Theme: entity.ThemeSystem, DateFormat: entity.DateFormatDMY,
+		CreatedAt: now, UpdatedAt: now,
 	}
 	ident := &entity.Identity{
 		ID: id.MustNewUUID(), UserID: userID, Provider: entity.ProviderLocal,
