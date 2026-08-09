@@ -48,6 +48,18 @@ DoPayment
 
 UpdateInventory
 
+Status tokens in event names use American English (`canceled`, not `cancelled`).
+
+Never use
+
+CreateBooking
+
+CancelBooking
+
+DoPayment
+
+UpdateInventory
+
 ---
 
 # Event Metadata
@@ -514,6 +526,192 @@ Organization Rating
 
 ---
 
+# UserRegistered
+
+Publisher
+
+Identity
+
+Aggregate
+
+User
+
+Trigger
+
+User registered.
+
+Consumers
+
+Audit
+
+Notification
+
+---
+
+# UserVerified
+
+Publisher
+
+Identity
+
+Aggregate
+
+User
+
+Trigger
+
+Email verification succeeded.
+
+Consumers
+
+Audit
+
+---
+
+# UserLoggedIn
+
+Publisher
+
+Identity
+
+Aggregate
+
+Session
+
+Trigger
+
+Credentials accepted and session created.
+
+Consumers
+
+Audit
+
+---
+
+# UserLoginFailed
+
+Publisher
+
+Identity
+
+Aggregate
+
+User
+
+Trigger
+
+Login attempted with invalid credentials.
+
+Consumers
+
+Audit
+
+---
+
+# UserLoggedOut
+
+Publisher
+
+Identity
+
+Aggregate
+
+Session
+
+Trigger
+
+Session revoked by logout.
+
+Consumers
+
+Audit
+
+---
+
+# SessionRefreshed
+
+Publisher
+
+Identity
+
+Aggregate
+
+Session
+
+Trigger
+
+Refresh token rotated.
+
+Consumers
+
+Audit
+
+---
+
+# PasswordResetRequested
+
+Publisher
+
+Identity
+
+Aggregate
+
+User
+
+Trigger
+
+Password reset token issued.
+
+Consumers
+
+Audit
+
+Notification
+
+---
+
+# PasswordReset
+
+Publisher
+
+Identity
+
+Aggregate
+
+User
+
+Trigger
+
+Password updated via reset token.
+
+Consumers
+
+Audit
+
+---
+
+# UserProfileUpdated
+
+Publisher
+
+Identity
+
+Aggregate
+
+User
+
+Trigger
+
+Authenticated user updated own profile.
+
+Consumers
+
+Audit
+
+CRM (after W3)
+
+---
+
 # OrganizationCreated
 
 Publisher
@@ -535,6 +733,68 @@ Subscription
 Analytics
 
 Notification
+
+---
+
+# InvitationCreated
+
+Publisher
+
+Organization
+
+Aggregate
+
+Invitation
+
+Trigger
+
+Staff invitation created.
+
+Consumers
+
+Audit
+
+Notification
+
+---
+
+# InvitationAccepted
+
+Publisher
+
+Organization
+
+Aggregate
+
+Invitation
+
+Trigger
+
+Invitee accepted invitation.
+
+Consumers
+
+Audit
+
+---
+
+# StaffAdded
+
+Publisher
+
+Organization
+
+Aggregate
+
+StaffMember
+
+Trigger
+
+Staff member joined the organization.
+
+Consumers
+
+Audit
 
 ---
 

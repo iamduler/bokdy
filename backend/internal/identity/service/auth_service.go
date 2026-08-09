@@ -16,6 +16,7 @@ import (
 	"bokdy/internal/platform/apperr"
 	"bokdy/internal/platform/auth"
 	"bokdy/internal/platform/config"
+	"bokdy/internal/platform/events"
 	"bokdy/internal/platform/id"
 	"bokdy/internal/platform/mail"
 	"bokdy/internal/platform/persistence"
@@ -36,6 +37,7 @@ type AuthService struct {
 	tokens   auth.TokenService
 	mailer   mail.Mailer
 	cfg      *config.Config
+	outbox   events.Enqueuer
 }
 
 func NewAuthService(
@@ -48,10 +50,11 @@ func NewAuthService(
 	tokens auth.TokenService,
 	mailer mail.Mailer,
 	cfg *config.Config,
+	outbox events.Enqueuer,
 ) *AuthService {
 	return &AuthService{
 		pool: pool, users: users, idents: idents, creds: creds,
-		sessions: sessions, roles: roles, tokens: tokens, mailer: mailer, cfg: cfg,
+		sessions: sessions, roles: roles, tokens: tokens, mailer: mailer, cfg: cfg, outbox: outbox,
 	}
 }
 
@@ -114,6 +117,7 @@ func (s *AuthService) Register(ctx context.Context, in RegisterInput) (*entity.U
 	}
 	verifyToken, verifyHash := randomToken()
 
+	var outboxID uuid.UUID
 	err = persistence.WithinTx(ctx, s.pool, func(tx pgx.Tx) error {
 		if err := s.users.Create(ctx, tx, user, profile); err != nil {
 			return err
@@ -124,12 +128,21 @@ func (s *AuthService) Register(ctx context.Context, in RegisterInput) (*entity.U
 		if err := s.creds.UpsertPassword(ctx, tx, userID, string(hash)); err != nil {
 			return err
 		}
-		_, err := s.idents.CreateVerification(ctx, tx, ident.ID, verifyHash, now.Add(24*time.Hour))
+		if _, err := s.idents.CreateVerification(ctx, tx, ident.ID, verifyHash, now.Add(24*time.Hour)); err != nil {
+			return err
+		}
+		oid, err := events.Append(ctx, tx, events.Event{
+			Type: "UserRegistered", AggregateType: "User", AggregateID: userID,
+			ActorType: events.ActorUser, ActorID: &userID, EntityType: "User", EntityID: userID,
+			Payload: map[string]any{"email": email}, OccurredAt: now,
+		})
+		outboxID = oid
 		return err
 	})
 	if err != nil {
 		return nil, apperr.Wrap(err, apperr.CodeInternal, "register user")
 	}
+	events.AfterCommit(ctx, s.outbox, outboxID)
 
 	_ = s.mailer.Send(ctx, mail.Message{
 		To: email, Subject: "Verify your Bokdy account",
@@ -140,7 +153,8 @@ func (s *AuthService) Register(ctx context.Context, in RegisterInput) (*entity.U
 
 func (s *AuthService) VerifyEmail(ctx context.Context, token string) error {
 	hash := hashToken(token)
-	return persistence.WithinTx(ctx, s.pool, func(tx pgx.Tx) error {
+	var outboxID uuid.UUID
+	err := persistence.WithinTx(ctx, s.pool, func(tx pgx.Tx) error {
 		_, userID, err := s.idents.VerifyByTokenHash(ctx, tx, hash)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
@@ -148,8 +162,21 @@ func (s *AuthService) VerifyEmail(ctx context.Context, token string) error {
 			}
 			return err
 		}
-		return s.users.UpdateStatus(ctx, tx, userID, entity.UserStatusActive)
+		if err := s.users.UpdateStatus(ctx, tx, userID, entity.UserStatusActive); err != nil {
+			return err
+		}
+		oid, err := events.Append(ctx, tx, events.Event{
+			Type: "UserVerified", AggregateType: "User", AggregateID: userID,
+			ActorType: events.ActorUser, ActorID: &userID, EntityType: "User", EntityID: userID,
+		})
+		outboxID = oid
+		return err
 	})
+	if err != nil {
+		return err
+	}
+	events.AfterCommit(ctx, s.outbox, outboxID)
+	return nil
 }
 
 type LoginInput struct {
@@ -173,9 +200,22 @@ func (s *AuthService) Login(ctx context.Context, in LoginInput) (*AuthResult, er
 		return nil, iderrors.ErrInvalidCredentials
 	}
 	if bcrypt.CompareHashAndPassword([]byte(hash), []byte(in.Password)) != nil {
+		var outboxID uuid.UUID
+		uid := user.ID
 		_ = persistence.WithinTx(ctx, s.pool, func(tx pgx.Tx) error {
-			return s.sessions.RecordLogin(ctx, tx, user.ID, nil, false, in.IPAddress, in.UserAgent)
+			if err := s.sessions.RecordLogin(ctx, tx, user.ID, nil, false, in.IPAddress, in.UserAgent); err != nil {
+				return err
+			}
+			oid, err := events.Append(ctx, tx, events.Event{
+				Type: "UserLoginFailed", AggregateType: "User", AggregateID: uid,
+				ActorType: events.ActorUser, ActorID: &uid, EntityType: "User", EntityID: uid,
+				IPAddress: in.IPAddress, UserAgent: in.UserAgent,
+				Payload: map[string]any{"email": email},
+			})
+			outboxID = oid
+			return err
 		})
+		events.AfterCommit(ctx, s.outbox, outboxID)
 		return nil, iderrors.ErrInvalidCredentials
 	}
 	if user.Status != entity.UserStatusActive && user.Status != entity.UserStatusPending {
@@ -188,7 +228,7 @@ func (s *AuthService) Login(ctx context.Context, in LoginInput) (*AuthResult, er
 		})
 		user.Status = entity.UserStatusActive
 	}
-	return s.issueSession(ctx, user, in.IPAddress, in.UserAgent)
+	return s.issueSession(ctx, user, in.IPAddress, in.UserAgent, "UserLoggedIn")
 }
 
 func (s *AuthService) Refresh(ctx context.Context, refreshToken string, ip, ua *string) (*AuthResult, error) {
@@ -210,13 +250,27 @@ func (s *AuthService) Refresh(ctx context.Context, refreshToken string, ip, ua *
 	if err != nil {
 		return nil, apperr.Wrap(err, apperr.CodeInternal, "revoke old session")
 	}
-	return s.issueSession(ctx, user, ip, ua)
+	return s.issueSession(ctx, user, ip, ua, "SessionRefreshed")
 }
 
 func (s *AuthService) Logout(ctx context.Context, sessionID uuid.UUID) error {
-	return persistence.WithinTx(ctx, s.pool, func(tx pgx.Tx) error {
-		return s.sessions.RevokeSession(ctx, tx, sessionID)
+	var outboxID uuid.UUID
+	err := persistence.WithinTx(ctx, s.pool, func(tx pgx.Tx) error {
+		if err := s.sessions.RevokeSession(ctx, tx, sessionID); err != nil {
+			return err
+		}
+		oid, err := events.Append(ctx, tx, events.Event{
+			Type: "UserLoggedOut", AggregateType: "Session", AggregateID: sessionID,
+			ActorType: events.ActorUser, EntityType: "Session", EntityID: sessionID,
+		})
+		outboxID = oid
+		return err
 	})
+	if err != nil {
+		return err
+	}
+	events.AfterCommit(ctx, s.outbox, outboxID)
+	return nil
 }
 
 func (s *AuthService) RequestPasswordReset(ctx context.Context, email string) error {
@@ -229,12 +283,24 @@ func (s *AuthService) RequestPasswordReset(ctx context.Context, email string) er
 		return nil // do not leak existence
 	}
 	token, tokenHash := randomToken()
+	var outboxID uuid.UUID
+	uid := user.ID
 	err = persistence.WithinTx(ctx, s.pool, func(tx pgx.Tx) error {
-		return s.creds.CreateResetToken(ctx, tx, user.ID, tokenHash, time.Now().UTC().Add(time.Hour))
+		if err := s.creds.CreateResetToken(ctx, tx, user.ID, tokenHash, time.Now().UTC().Add(time.Hour)); err != nil {
+			return err
+		}
+		oid, err := events.Append(ctx, tx, events.Event{
+			Type: "PasswordResetRequested", AggregateType: "User", AggregateID: uid,
+			ActorType: events.ActorUser, ActorID: &uid, EntityType: "User", EntityID: uid,
+			Payload: map[string]any{"email": email},
+		})
+		outboxID = oid
+		return err
 	})
 	if err != nil {
 		return apperr.Wrap(err, apperr.CodeInternal, "create reset token")
 	}
+	events.AfterCommit(ctx, s.outbox, outboxID)
 	return s.mailer.Send(ctx, mail.Message{
 		To: email, Subject: "Reset your Bokdy password", Body: "Reset token: " + token,
 	})
@@ -249,7 +315,8 @@ func (s *AuthService) ResetPassword(ctx context.Context, token, newPassword stri
 	if err != nil {
 		return apperr.Wrap(err, apperr.CodeInternal, "hash password")
 	}
-	return persistence.WithinTx(ctx, s.pool, func(tx pgx.Tx) error {
+	var outboxID uuid.UUID
+	err = persistence.WithinTx(ctx, s.pool, func(tx pgx.Tx) error {
 		userID, err := s.creds.ConsumeResetToken(ctx, tx, hash)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
@@ -257,8 +324,21 @@ func (s *AuthService) ResetPassword(ctx context.Context, token, newPassword stri
 			}
 			return err
 		}
-		return s.creds.UpsertPassword(ctx, tx, userID, string(pwHash))
+		if err := s.creds.UpsertPassword(ctx, tx, userID, string(pwHash)); err != nil {
+			return err
+		}
+		oid, err := events.Append(ctx, tx, events.Event{
+			Type: "PasswordReset", AggregateType: "User", AggregateID: userID,
+			ActorType: events.ActorUser, ActorID: &userID, EntityType: "User", EntityID: userID,
+		})
+		outboxID = oid
+		return err
 	})
+	if err != nil {
+		return err
+	}
+	events.AfterCommit(ctx, s.outbox, outboxID)
+	return nil
 }
 
 func (s *AuthService) Me(ctx context.Context, userID uuid.UUID) (*entity.User, *entity.UserProfile, []entity.UserRole, error) {
@@ -280,7 +360,7 @@ func (s *AuthService) Me(ctx context.Context, userID uuid.UUID) (*entity.User, *
 	return user, profile, roles, nil
 }
 
-func (s *AuthService) issueSession(ctx context.Context, user *entity.User, ip, ua *string) (*AuthResult, error) {
+func (s *AuthService) issueSession(ctx context.Context, user *entity.User, ip, ua *string, eventType string) (*AuthResult, error) {
 	now := time.Now().UTC()
 	sessionID := id.MustNewUUID()
 	refreshRaw, refreshHash := randomToken()
@@ -300,6 +380,8 @@ func (s *AuthService) issueSession(ctx context.Context, user *entity.User, ip, u
 		return nil, err
 	}
 
+	var outboxID uuid.UUID
+	uid := user.ID
 	err = persistence.WithinTx(ctx, s.pool, func(tx pgx.Tx) error {
 		if err := s.sessions.Create(ctx, tx, session, refresh); err != nil {
 			return err
@@ -307,11 +389,21 @@ func (s *AuthService) issueSession(ctx context.Context, user *entity.User, ip, u
 		if err := s.users.TouchLastLogin(ctx, tx, user.ID, now); err != nil {
 			return err
 		}
-		return s.sessions.RecordLogin(ctx, tx, user.ID, &sessionID, true, ip, ua)
+		if err := s.sessions.RecordLogin(ctx, tx, user.ID, &sessionID, true, ip, ua); err != nil {
+			return err
+		}
+		oid, err := events.Append(ctx, tx, events.Event{
+			Type: eventType, AggregateType: "Session", AggregateID: sessionID,
+			ActorType: events.ActorUser, ActorID: &uid, EntityType: "User", EntityID: uid,
+			IPAddress: ip, UserAgent: ua,
+		})
+		outboxID = oid
+		return err
 	})
 	if err != nil {
 		return nil, apperr.Wrap(err, apperr.CodeInternal, "create session")
 	}
+	events.AfterCommit(ctx, s.outbox, outboxID)
 
 	profile, _ := s.users.GetProfile(ctx, user.ID)
 	return &AuthResult{

@@ -7,6 +7,7 @@ import (
 	orghandler "bokdy/internal/organization/handler"
 	orgpg "bokdy/internal/organization/infrastructure/postgres"
 	orgservice "bokdy/internal/organization/service"
+	"bokdy/internal/platform/events"
 	"bokdy/internal/platform/middleware"
 	"bokdy/internal/platform/server"
 
@@ -20,14 +21,15 @@ func RegisterRoutes(api *gin.RouterGroup, app *server.Application) {
 	sessionRepo := identitypg.NewSessionRepo(app.DB.Pool)
 	roleRepo := identitypg.NewRoleRepo(app.DB.Pool)
 
+	outbox := events.NewAsynqEnqueuer(app.Asynq)
 	authSvc := identityservice.NewAuthService(
 		app.DB.Pool, userRepo, identRepo, credRepo, sessionRepo, roleRepo,
-		app.Tokens, app.Mailer, app.Config,
+		app.Tokens, app.Mailer, app.Config, outbox,
 	)
 	authHandler := identityhandler.NewAuthHandler(authSvc)
 
 	orgRepo := orgpg.NewOrgRepo(app.DB.Pool)
-	orgSvc := orgservice.NewOrganizationService(app.DB.Pool, orgRepo, roleRepo, app.Mailer)
+	orgSvc := orgservice.NewOrganizationService(app.DB.Pool, orgRepo, roleRepo, app.Mailer, outbox)
 	orgHandler := orghandler.NewOrganizationHandler(orgSvc)
 
 	jwt := middleware.JWTAuth(app.Tokens)

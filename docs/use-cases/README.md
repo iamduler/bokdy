@@ -78,3 +78,21 @@ HTTP
 Database schema
 
 Framework code
+
+API mapping lives in `docs/checklists/`, not in this folder.
+
+---
+
+# Files
+
+Authentication, invitation, staff, role — `authentication.md`, `invitation.md`, `staff.md`, `role.md`
+
+Organization, branch, court, court type, schedule — `organization.md`, `branch.md`, `court.md`, `court-type.md`, `schedule.md`
+
+Marketplace and availability — `marketplace.md`, `availability.md`
+
+Reservation and booking — `reservation.md`, `booking.md`
+
+Customer, pricing, invoice, payment — `customer.md`, `pricing.md`, `invoice.md`, `payment.md`
+
+Post-MVP domains (UC exist; APIs deferred) — `promotion.md`, `membership.md`, `inventory.md`, `review.md`, `media.md`, `kyc.md`, `subscription.md`, `analytics.md`, `audit.md`, `notification.md`

@@ -288,14 +288,68 @@ Cross-organization access is forbidden.
 
 ---
 
+## BR-803
+
+There is one User account per email.
+
+Player, Owner, and Admin are application clients (`X-Client`), not separate user tables.
+
+---
+
+## BR-804
+
+A User with an Owner staff membership may authenticate on player-web.
+
+A system administrator must not authenticate on player-web or owner-web.
+
+---
+
+## BR-805
+
+Admin users are provisioned by seed or internal process.
+
+Public registration must not create `is_system_admin`.
+
+---
+
+# Event Rules
+
+## BR-850
+
+Every successful mutating use case publishes exactly the domain events named in its use case.
+
+Events are appended in the same database transaction as the aggregate write.
+
+---
+
+## BR-851
+
+GET and other read models do not publish domain events.
+
+---
+
+## BR-852
+
+Handlers must never publish domain events.
+
+Cross-context reactions happen only through outbox consumers.
+
+---
+
 # Audit Rules
 
 ## BR-900
 
-Business-critical operations must generate Audit Logs.
+Every published domain event is recorded in the immutable audit log by an outbox consumer.
 
 ---
 
 ## BR-901
 
 Audit Logs are immutable.
+
+---
+
+## BR-902
+
+Audit search and export APIs are not required for MVP. Recording audit logs is required.

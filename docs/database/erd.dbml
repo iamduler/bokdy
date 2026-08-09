@@ -5546,7 +5546,9 @@ Enum metric_type {
 Table platform.audit_logs {
   id uuid [pk]
 
-  tenant_id uuid [not null]
+  domain_event_id uuid [not null, unique]
+
+  tenant_id uuid
 
   actor_type audit_actor_type
 
@@ -5576,7 +5578,7 @@ Table platform.audit_logs {
     created_at
   }
 
-  Note: 'Immutable audit trail.'
+  Note: 'Immutable audit trail. tenant_id NULL = platform-scoped identity action. domain_event_id enforces idempotent consumers.'
 }
 
 //////////////////////////////////////////////////////////////

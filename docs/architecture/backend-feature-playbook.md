@@ -33,15 +33,18 @@ Do not invent tables, terms, or synonyms.
 Read in this order for the feature:
 
 1. Use case — `docs/use-cases/`
-2. Module scope — `docs/modules/`
-3. Aggregate and invariants — `docs/domain/domain-model.md`
-4. Status transitions — `docs/domain/status-lifecycle.md`
-5. Tables and enums — `docs/database/erd.dbml` (CONVENTIONS block first)
-6. Permissions — `docs/domain/permission-matrix.md` (when the action is gated)
-7. Engineering rules — `docs/domain/development-rules.md`
-8. Code style — `docs/architecture/coding-style.md`
+2. Flow checklist — `docs/checklists/` (row must be `phase: mvp` and not `deferred`)
+3. Module scope — `docs/modules/`
+4. Aggregate and invariants — `docs/domain/domain-model.md`
+5. Status transitions — `docs/domain/status-lifecycle.md`
+6. Tables and enums — `docs/database/erd.dbml` (CONVENTIONS block first)
+7. Permissions — `docs/domain/permission-matrix.md` (when the action is gated)
+8. Engineering rules — `docs/domain/development-rules.md`
+9. Code style — `docs/architecture/coding-style.md`
 
-If the use case, aggregate, or ERD table is missing, **stop and ask**. Do not design a new schema or business term.
+If the use case, checklist row, aggregate, or ERD table is missing, **stop and ask**. Do not design a new schema or business term.
+
+Post-MVP checklist rows stay documented. Moving a row off MVP requires [docs/checklists/deferral-log.md](../checklists/deferral-log.md).
 
 ---
 
@@ -308,6 +311,8 @@ Before finishing:
 - [ ] Typed errors; no SQL leaked to HTTP
 - [ ] `api/openapi/openapi.yaml` updated; SDK regenerated
 - [ ] Table-driven tests for the application service
+- [ ] Mutation appended domain event + outbox in the same transaction
+- [ ] Audit consumer covers the event (destination `platform.audit`)
 - [ ] `go test ./...` and build succeed
 - [ ] No placeholder repositories or TODO business logic
 

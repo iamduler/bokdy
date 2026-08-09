@@ -6,7 +6,15 @@ import (
 	"github.com/hibiken/asynq"
 )
 
-const TaskPlatformHealth = "platform:health"
+const (
+	TaskPlatformHealth = "platform:health"
+	TaskOutboxAudit    = "outbox:audit"
+	TaskOutboxSweep    = "outbox:sweep"
+)
+
+type OutboxPayload struct {
+	OutboxID string `json:"outbox_id"`
+}
 
 func NewClient(cfg *config.Config) *asynq.Client {
 	return asynq.NewClient(asynq.RedisClientOpt{

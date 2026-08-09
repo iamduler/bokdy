@@ -181,3 +181,38 @@ Events
 Result
 
 - Password updated.
+
+---
+
+# UC-AUTH-007 Update Own Profile
+
+Actors
+
+- User
+
+Preconditions
+
+- User is authenticated.
+
+Validations
+
+- Editable profile fields only.
+- Phone unique when provided.
+
+Flow
+
+1. Update user profile.
+2. Publish UserProfileUpdated.
+
+Events
+
+- UserProfileUpdated
+
+Result
+
+- Profile updated.
+
+Notes
+
+- Identity profile only. Customer display name syncs in CRM via event after W3.
+- Phone is optional. When present it must be unique.

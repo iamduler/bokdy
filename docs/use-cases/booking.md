@@ -271,3 +271,102 @@ Result
 
 - Booking expired.
 - Slots released.
+
+---
+
+# UC-BOOKING-007 Create Walk-In Booking
+
+Actors
+
+- Staff
+
+Preconditions
+
+- Organization is active.
+- Branch is open.
+- Pricing version is active.
+
+Command
+
+- CreateWalkInBookingCommand
+
+Queries
+
+- GetBranchQuery
+- GetCourtQuery
+- CheckCourtAvailabilityQuery
+- GetCustomerQuery
+- CalculateBookingPriceQuery
+
+Validations
+
+- Court belongs to branch.
+- Requested slots are available.
+- Customer is not blacklisted.
+- Staff belongs to the organization.
+
+Flow
+
+1. Resolve or create guest customer.
+2. Check court availability.
+3. Calculate price.
+4. Create booking as confirmed. Skip reservation hold.
+5. Issue invoice.
+6. Publish BookingCreated and BookingConfirmed.
+
+Events
+
+- BookingCreated
+- BookingConfirmed
+- InvoiceIssued
+- GuestCustomerCreated
+
+Result
+
+- Booking confirmed without a reservation.
+- Invoice created.
+
+Notes
+
+- Walk-in must not create a reservation aggregate.
+- Payment may be collected immediately or marked pending per branch policy.
+
+---
+
+# UC-BOOKING-008 Check In Booking
+
+Actors
+
+- Staff
+
+Preconditions
+
+- Booking status is confirmed.
+- Booking start window is open per policy.
+
+Command
+
+- CheckInBookingCommand
+
+Queries
+
+- GetBookingQuery
+
+Validations
+
+- Booking is not canceled.
+- Booking is not a no-show.
+- Staff belongs to the organization.
+
+Flow
+
+1. Check in booking.
+2. Publish BookingCheckedIn.
+
+Events
+
+- BookingCheckedIn
+
+Result
+
+- Booking status is checked_in.

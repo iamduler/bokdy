@@ -11,7 +11,7 @@ Read the `CONVENTIONS` block at the top of that file before adding tables.
 | `identity` | Users, credentials, sessions, RBAC |
 | `organization` | Tenant, organization, staff (Branch/Court live later as location/resource) |
 | `reference` | Shared catalogs: `countries`, `currencies` |
-| `platform` | Cross-cutting files, audit, notifications |
+| `platform` | Cross-cutting files, audit (`00005`), notifications |
 | `catalog` | Services, resources (Court), categories |
 | `crm` | Customers |
 | `booking` | Reservation + booking aggregates (do not merge) |

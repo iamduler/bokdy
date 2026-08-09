@@ -13,6 +13,7 @@ import (
 	"bokdy/internal/organization/entity"
 	"bokdy/internal/organization/repository"
 	"bokdy/internal/platform/apperr"
+	"bokdy/internal/platform/events"
 	"bokdy/internal/platform/id"
 	"bokdy/internal/platform/mail"
 	"bokdy/internal/platform/persistence"
@@ -27,6 +28,7 @@ type OrganizationService struct {
 	orgs   repository.OrganizationRepository
 	roles  idrepo.RoleRepository
 	mailer mail.Mailer
+	outbox events.Enqueuer
 }
 
 func NewOrganizationService(
@@ -34,8 +36,9 @@ func NewOrganizationService(
 	orgs repository.OrganizationRepository,
 	roles idrepo.RoleRepository,
 	mailer mail.Mailer,
+	outbox events.Enqueuer,
 ) *OrganizationService {
-	return &OrganizationService{pool: pool, orgs: orgs, roles: roles, mailer: mailer}
+	return &OrganizationService{pool: pool, orgs: orgs, roles: roles, mailer: mailer, outbox: outbox}
 }
 
 type CreateOrganizationInput struct {
@@ -70,6 +73,7 @@ func (s *OrganizationService) Create(ctx context.Context, ownerID uuid.UUID, in 
 		return nil, apperr.New(apperr.CodeInternal, "org_owner role missing; run seed")
 	}
 
+	var outboxIDs []uuid.UUID
 	err = persistence.WithinTx(ctx, s.pool, func(tx pgx.Tx) error {
 		if err := s.orgs.CreateTenantAndOrg(ctx, tx, tenant, org); err != nil {
 			return err
@@ -82,13 +86,35 @@ func (s *OrganizationService) Create(ctx context.Context, ownerID uuid.UUID, in 
 			return err
 		}
 		tenantUUID := tenantID
-		return s.roles.Assign(ctx, tx, &identityentity.UserRole{
+		if err := s.roles.Assign(ctx, tx, &identityentity.UserRole{
 			ID: id.MustNewUUID(), TenantID: &tenantUUID, UserID: ownerID, RoleID: ownerRole.ID,
+		}); err != nil {
+			return err
+		}
+		oid, err := events.Append(ctx, tx, events.Event{
+			Type: "OrganizationCreated", AggregateType: "Organization", AggregateID: orgID,
+			TenantID: &tenantID, ActorType: events.ActorUser, ActorID: &ownerID,
+			EntityType: "Organization", EntityID: orgID,
+			Payload: map[string]any{"code": code, "name": name}, OccurredAt: now,
 		})
+		if err != nil {
+			return err
+		}
+		outboxIDs = append(outboxIDs, oid)
+		sid, err := events.Append(ctx, tx, events.Event{
+			Type: "StaffAdded", AggregateType: "StaffMember", AggregateID: member.ID,
+			TenantID: &tenantID, ActorType: events.ActorUser, ActorID: &ownerID,
+			EntityType: "StaffMember", EntityID: member.ID,
+			Payload: map[string]any{"organization_id": orgID.String(), "user_id": ownerID.String()},
+			OccurredAt: now,
+		})
+		outboxIDs = append(outboxIDs, sid)
+		return err
 	})
 	if err != nil {
 		return nil, apperr.Wrap(err, apperr.CodeInternal, "create organization")
 	}
+	events.AfterCommit(ctx, s.outbox, outboxIDs...)
 	return org, nil
 }
 
@@ -142,12 +168,29 @@ func (s *OrganizationService) Invite(ctx context.Context, orgID, inviter uuid.UU
 		InvitationToken: token, Status: entity.InvitationPending,
 		ExpiresAt: now.Add(7 * 24 * time.Hour), InvitedBy: inviter, CreatedAt: now,
 	}
-	err := persistence.WithinTx(ctx, s.pool, func(tx pgx.Tx) error {
-		return s.orgs.CreateInvitation(ctx, tx, inv)
+	org, err := s.orgs.FindByID(ctx, orgID)
+	if err != nil || org == nil {
+		return nil, apperr.New(apperr.CodeNotFound, "organization not found")
+	}
+	var outboxID uuid.UUID
+	err = persistence.WithinTx(ctx, s.pool, func(tx pgx.Tx) error {
+		if err := s.orgs.CreateInvitation(ctx, tx, inv); err != nil {
+			return err
+		}
+		oid, err := events.Append(ctx, tx, events.Event{
+			Type: "InvitationCreated", AggregateType: "Invitation", AggregateID: inv.ID,
+			TenantID: &org.TenantID, ActorType: events.ActorUser, ActorID: &inviter,
+			EntityType: "Invitation", EntityID: inv.ID,
+			Payload: map[string]any{"organization_id": orgID.String(), "email": email},
+			OccurredAt: now,
+		})
+		outboxID = oid
+		return err
 	})
 	if err != nil {
 		return nil, apperr.Wrap(err, apperr.CodeInternal, "create invitation")
 	}
+	events.AfterCommit(ctx, s.outbox, outboxID)
 	_ = s.mailer.Send(ctx, mail.Message{
 		To: email, Subject: "Bokdy organization invitation", Body: "Invitation token: " + token,
 	})
@@ -171,7 +214,8 @@ func (s *OrganizationService) AcceptInvitation(ctx context.Context, token string
 		return apperr.New(apperr.CodeNotFound, "organization not found")
 	}
 	now := time.Now().UTC()
-	return persistence.WithinTx(ctx, s.pool, func(tx pgx.Tx) error {
+	var outboxIDs []uuid.UUID
+	err = persistence.WithinTx(ctx, s.pool, func(tx pgx.Tx) error {
 		if err := s.orgs.AcceptInvitation(ctx, tx, inv.ID, userID); err != nil {
 			return err
 		}
@@ -183,10 +227,35 @@ func (s *OrganizationService) AcceptInvitation(ctx context.Context, token string
 			return err
 		}
 		tenantID := org.TenantID
-		return s.roles.Assign(ctx, tx, &identityentity.UserRole{
+		if err := s.roles.Assign(ctx, tx, &identityentity.UserRole{
 			ID: id.MustNewUUID(), TenantID: &tenantID, UserID: userID, RoleID: role.ID,
+		}); err != nil {
+			return err
+		}
+		oid, err := events.Append(ctx, tx, events.Event{
+			Type: "InvitationAccepted", AggregateType: "Invitation", AggregateID: inv.ID,
+			TenantID: &tenantID, ActorType: events.ActorUser, ActorID: &userID,
+			EntityType: "Invitation", EntityID: inv.ID, OccurredAt: now,
 		})
+		if err != nil {
+			return err
+		}
+		outboxIDs = append(outboxIDs, oid)
+		sid, err := events.Append(ctx, tx, events.Event{
+			Type: "StaffAdded", AggregateType: "StaffMember", AggregateID: member.ID,
+			TenantID: &tenantID, ActorType: events.ActorUser, ActorID: &userID,
+			EntityType: "StaffMember", EntityID: member.ID,
+			Payload: map[string]any{"organization_id": inv.OrganizationID.String()},
+			OccurredAt: now,
+		})
+		outboxIDs = append(outboxIDs, sid)
+		return err
 	})
+	if err != nil {
+		return err
+	}
+	events.AfterCommit(ctx, s.outbox, outboxIDs...)
+	return nil
 }
 
 var nonAlpha = regexp.MustCompile(`[^a-z0-9]+`)

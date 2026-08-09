@@ -161,7 +161,13 @@ erd.dbml (read the CONVENTIONS block first)
 
 10.
 
-api-spec/
+docs/checklists/ (README, matching flow, deferral-log if changing phase)
+
+↓
+
+11.
+
+api/openapi/openapi.yaml
 
 ---
 

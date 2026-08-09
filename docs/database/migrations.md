@@ -12,5 +12,6 @@ Foundation sequence:
 | `00002_identity.sql` | users, credentials, sessions, RBAC |
 | `00003_organization.sql` | tenants, organizations, staff |
 | `00004_reference.sql` | countries, currencies |
+| `00005_platform.sql` | audit_logs |
 
 Table shapes must match `docs/database/erd.dbml` (including the CONVENTIONS block).
