@@ -14,6 +14,7 @@ import (
 	"bokdy/internal/organization/repository"
 	"bokdy/internal/platform/apperr"
 	"bokdy/internal/platform/events"
+	"bokdy/internal/platform/i18n"
 	"bokdy/internal/platform/id"
 	"bokdy/internal/platform/mail"
 	"bokdy/internal/platform/persistence"
@@ -42,29 +43,37 @@ func NewOrganizationService(
 }
 
 type CreateOrganizationInput struct {
-	Name  string
-	Code  string
-	Email string
+	Name   string
+	NameEn string
+	NameVi string
+	Code   string
+	Email  string
 }
 
 func (s *OrganizationService) Create(ctx context.Context, ownerID uuid.UUID, in CreateOrganizationInput) (*entity.Organization, error) {
-	name := strings.TrimSpace(in.Name)
-	if name == "" {
-		return nil, apperr.New(apperr.CodeValidation, "name is required")
+	nameEn := strings.TrimSpace(in.NameEn)
+	nameVi := strings.TrimSpace(in.NameVi)
+	if nameEn == "" && nameVi == "" {
+		legacy := strings.TrimSpace(in.Name)
+		if legacy == "" {
+			return nil, apperr.New(apperr.CodeValidation, "name is required")
+		}
+		nameVi = legacy
 	}
 	code := strings.TrimSpace(in.Code)
 	if code == "" {
-		code = slugify(name)
+		code = slugify(i18n.FirstNonEmpty(nameVi, nameEn))
 	}
 	now := time.Now().UTC()
 	tenantID := id.MustNewUUID()
 	orgID := id.MustNewUUID()
+	localeID := i18n.LocaleVIID
 	tenant := &entity.Tenant{
-		ID: tenantID, PublicID: id.MustNewPublicID(), Code: code, Name: name, Slug: code,
-		Status: entity.TenantTrial, CreatedAt: now, UpdatedAt: now,
+		ID: tenantID, PublicID: id.MustNewPublicID(), Code: code, NameEn: nameEn, NameVi: nameVi, Slug: code,
+		Status: entity.TenantTrial, LocaleID: &localeID, CreatedAt: now, UpdatedAt: now,
 	}
 	org := &entity.Organization{
-		ID: orgID, PublicID: id.MustNewPublicID(), TenantID: tenantID, Code: code, Name: name,
+		ID: orgID, PublicID: id.MustNewPublicID(), TenantID: tenantID, Code: code, NameEn: nameEn, NameVi: nameVi,
 		OrganizationType: entity.OrganizationTypeClub, Email: in.Email,
 		Status: entity.OrganizationActive, CreatedAt: now, UpdatedAt: now,
 	}
@@ -95,7 +104,7 @@ func (s *OrganizationService) Create(ctx context.Context, ownerID uuid.UUID, in 
 			Type: "OrganizationCreated", AggregateType: "Organization", AggregateID: orgID,
 			TenantID: &tenantID, ActorType: events.ActorUser, ActorID: &ownerID,
 			EntityType: "Organization", EntityID: orgID,
-			Payload: map[string]any{"code": code, "name": name}, OccurredAt: now,
+			Payload: map[string]any{"code": code, "name_en": nameEn, "name_vi": nameVi}, OccurredAt: now,
 		})
 		if err != nil {
 			return err
@@ -105,7 +114,7 @@ func (s *OrganizationService) Create(ctx context.Context, ownerID uuid.UUID, in 
 			Type: "StaffAdded", AggregateType: "StaffMember", AggregateID: member.ID,
 			TenantID: &tenantID, ActorType: events.ActorUser, ActorID: &ownerID,
 			EntityType: "StaffMember", EntityID: member.ID,
-			Payload: map[string]any{"organization_id": orgID.String(), "user_id": ownerID.String()},
+			Payload:    map[string]any{"organization_id": orgID.String(), "user_id": ownerID.String()},
 			OccurredAt: now,
 		})
 		outboxIDs = append(outboxIDs, sid)
@@ -181,7 +190,7 @@ func (s *OrganizationService) Invite(ctx context.Context, orgID, inviter uuid.UU
 			Type: "InvitationCreated", AggregateType: "Invitation", AggregateID: inv.ID,
 			TenantID: &org.TenantID, ActorType: events.ActorUser, ActorID: &inviter,
 			EntityType: "Invitation", EntityID: inv.ID,
-			Payload: map[string]any{"organization_id": orgID.String(), "email": email},
+			Payload:    map[string]any{"organization_id": orgID.String(), "email": email},
 			OccurredAt: now,
 		})
 		outboxID = oid
@@ -245,7 +254,7 @@ func (s *OrganizationService) AcceptInvitation(ctx context.Context, token string
 			Type: "StaffAdded", AggregateType: "StaffMember", AggregateID: member.ID,
 			TenantID: &tenantID, ActorType: events.ActorUser, ActorID: &userID,
 			EntityType: "StaffMember", EntityID: member.ID,
-			Payload: map[string]any{"organization_id": inv.OrganizationID.String()},
+			Payload:    map[string]any{"organization_id": inv.OrganizationID.String()},
 			OccurredAt: now,
 		})
 		outboxIDs = append(outboxIDs, sid)

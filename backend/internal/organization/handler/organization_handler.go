@@ -1,9 +1,13 @@
 package handler
 
 import (
+	"context"
+
+	"bokdy/internal/organization/entity"
 	"bokdy/internal/organization/service"
 	"bokdy/internal/platform/apperr"
 	"bokdy/internal/platform/httpx"
+	"bokdy/internal/platform/i18n"
 	"bokdy/internal/platform/middleware"
 	"bokdy/internal/platform/requestctx"
 
@@ -20,9 +24,11 @@ func NewOrganizationHandler(orgs *service.OrganizationService) *OrganizationHand
 }
 
 type createOrgRequest struct {
-	Name  string `json:"name" binding:"required"`
-	Code  string `json:"code"`
-	Email string `json:"email"`
+	Name   string `json:"name"`
+	NameEn string `json:"name_en"`
+	NameVi string `json:"name_vi"`
+	Code   string `json:"code"`
+	Email  string `json:"email"`
 }
 
 type inviteRequest struct {
@@ -40,6 +46,8 @@ type orgDTO struct {
 	TenantID string `json:"tenant_id"`
 	Code     string `json:"code"`
 	Name     string `json:"name"`
+	NameEn   string `json:"name_en,omitempty"`
+	NameVi   string `json:"name_vi,omitempty"`
 	Email    string `json:"email,omitempty"`
 	Status   string `json:"status"`
 }
@@ -82,16 +90,13 @@ func (h *OrganizationHandler) Create(c *gin.Context) {
 		return
 	}
 	org, err := h.orgs.Create(c.Request.Context(), uid, service.CreateOrganizationInput{
-		Name: req.Name, Code: req.Code, Email: req.Email,
+		Name: req.Name, NameEn: req.NameEn, NameVi: req.NameVi, Code: req.Code, Email: req.Email,
 	})
 	if err != nil {
 		httpx.Error(c, err)
 		return
 	}
-	httpx.Created(c, orgDTO{
-		ID: org.ID.String(), PublicID: org.PublicID, TenantID: org.TenantID.String(), Code: org.Code,
-		Name: org.Name, Email: org.Email, Status: string(org.Status),
-	})
+	httpx.Created(c, toOrgDTO(c.Request.Context(), org))
 }
 
 func (h *OrganizationHandler) ListMine(c *gin.Context) {
@@ -106,13 +111,18 @@ func (h *OrganizationHandler) ListMine(c *gin.Context) {
 		return
 	}
 	out := make([]orgDTO, 0, len(orgs))
-	for _, o := range orgs {
-		out = append(out, orgDTO{
-			ID: o.ID.String(), PublicID: o.PublicID, TenantID: o.TenantID.String(), Code: o.Code,
-			Name: o.Name, Email: o.Email, Status: string(o.Status),
-		})
+	for i := range orgs {
+		out = append(out, toOrgDTO(c.Request.Context(), &orgs[i]))
 	}
 	httpx.OK(c, out)
+}
+
+func toOrgDTO(ctx context.Context, org *entity.Organization) orgDTO {
+	return orgDTO{
+		ID: org.ID.String(), PublicID: org.PublicID, TenantID: org.TenantID.String(), Code: org.Code,
+		Name:   i18n.DisplayName(i18n.FromContext(ctx), org.NameEn, org.NameVi),
+		NameEn: org.NameEn, NameVi: org.NameVi, Email: org.Email, Status: string(org.Status),
+	}
 }
 
 func (h *OrganizationHandler) ListStaff(c *gin.Context) {

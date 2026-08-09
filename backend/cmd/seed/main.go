@@ -10,6 +10,7 @@ import (
 	identitypg "bokdy/internal/identity/infrastructure/postgres"
 	"bokdy/internal/platform/config"
 	"bokdy/internal/platform/env"
+	"bokdy/internal/platform/i18n"
 	"bokdy/internal/platform/id"
 	"bokdy/internal/platform/logging"
 	"bokdy/internal/platform/persistence"
@@ -46,18 +47,18 @@ func main() {
 }
 
 func seedRoles(ctx context.Context, db *persistence.Database) error {
-	type roleDef struct{ code, name, scope, desc string }
+	type roleDef struct{ code, nameEn, nameVi, scope, descEn, descVi string }
 	roles := []roleDef{
-		{"system_admin", "System Admin", "system", "Platform administrator"},
-		{"org_owner", "Organization Owner", "tenant", "Owns an organization"},
-		{"org_staff", "Organization Staff", "tenant", "Staff member"},
-		{"player", "Player", "system", "End-user player"},
+		{"system_admin", "System Admin", "Quản trị hệ thống", "system", "Platform administrator", "Quản trị viên nền tảng"},
+		{"org_owner", "Organization Owner", "Chủ tổ chức", "tenant", "Owns an organization", "Chủ sở hữu tổ chức"},
+		{"org_staff", "Organization Staff", "Nhân viên tổ chức", "tenant", "Staff member", "Nhân viên"},
+		{"player", "Player", "Người chơi", "system", "End-user player", "Người chơi"},
 	}
-	perms := []struct{ code, name string }{
-		{"identity.read", "Read identity"},
-		{"organization.read", "Read organization"},
-		{"organization.write", "Write organization"},
-		{"admin.access", "Access admin console"},
+	perms := []struct{ code, nameEn, nameVi string }{
+		{"identity.read", "Read identity", "Xem danh tính"},
+		{"organization.read", "Read organization", "Xem tổ chức"},
+		{"organization.write", "Write organization", "Sửa tổ chức"},
+		{"admin.access", "Access admin console", "Truy cập quản trị"},
 	}
 
 	return persistence.WithinTx(ctx, db.Pool, func(tx pgx.Tx) error {
@@ -68,8 +69,8 @@ func seedRoles(ctx context.Context, db *persistence.Database) error {
 			if err != nil {
 				existing = id.MustNewUUID()
 				if _, err := tx.Exec(ctx, `
-					INSERT INTO identity.permissions (id, code, name, created_at, updated_at)
-					VALUES ($1,$2,$3,now(),now())`, existing, p.code, p.name); err != nil {
+					INSERT INTO identity.permissions (id, code, name_en, name_vi, created_at, updated_at)
+					VALUES ($1,$2,$3,$4,now(),now())`, existing, p.code, p.nameEn, p.nameVi); err != nil {
 					return err
 				}
 			}
@@ -82,8 +83,8 @@ func seedRoles(ctx context.Context, db *persistence.Database) error {
 			if err != nil {
 				roleID = id.MustNewUUID()
 				if _, err := tx.Exec(ctx, `
-					INSERT INTO identity.roles (id, code, name, scope, description, created_at, updated_at)
-					VALUES ($1,$2,$3,$4,$5,now(),now())`, roleID, r.code, r.name, r.scope, r.desc); err != nil {
+					INSERT INTO identity.roles (id, code, name_en, name_vi, scope, description_en, description_vi, created_at, updated_at)
+					VALUES ($1,$2,$3,$4,$5,$6,$7,now(),now())`, roleID, r.code, r.nameEn, r.nameVi, r.scope, r.descEn, r.descVi); err != nil {
 					return err
 				}
 			}
@@ -129,13 +130,14 @@ func seedBootstrapAdmin(ctx context.Context, db *persistence.Database, cfg *conf
 	if err != nil {
 		return err
 	}
+	localeID := i18n.LocaleVIID
 	user := &entity.User{
 		ID: userID, PublicID: id.MustNewPublicID(), Status: entity.UserStatusActive,
 		IsSystemAdmin: true, CreatedAt: now, UpdatedAt: now,
 	}
 	profile := &entity.UserProfile{
 		UserID: userID, FullName: cfg.Bootstrap.Name, DisplayName: cfg.Bootstrap.Name,
-		CreatedAt: now, UpdatedAt: now,
+		LocaleID: &localeID, CreatedAt: now, UpdatedAt: now,
 	}
 	ident := &entity.Identity{
 		ID: id.MustNewUUID(), UserID: userID, Provider: entity.ProviderLocal,

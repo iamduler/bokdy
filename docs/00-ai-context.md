@@ -117,6 +117,12 @@ naming-convention.md
 
 ↓
 
+2b.
+
+i18n.md
+
+↓
+
 3.
 
 domain-glossary.md

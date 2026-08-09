@@ -11,7 +11,8 @@ Foundation sequence:
 | `00001_infrastructure.sql` | outbox, idempotency, domain events |
 | `00002_identity.sql` | users, credentials, sessions, RBAC |
 | `00003_organization.sql` | tenants, organizations, staff |
-| `00004_reference.sql` | countries, currencies |
+| `00004_reference.sql` | locales, countries, country_translations, currencies |
 | `00005_platform.sql` | audit_logs |
+| `00006_i18n_locale_fk.sql` | reshape pre-i18n identity/org columns + locale FKs |
 
 Table shapes must match `docs/database/erd.dbml` (including the CONVENTIONS block).

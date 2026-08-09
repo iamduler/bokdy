@@ -184,9 +184,11 @@ func NewRoleRepo(pool *pgxpool.Pool) *RoleRepo { return &RoleRepo{pool: pool} }
 var _ repository.RoleRepository = (*RoleRepo)(nil)
 
 func (r *RoleRepo) FindByCode(ctx context.Context, code string) (*entity.Role, error) {
-	row := r.pool.QueryRow(ctx, `SELECT id, code, name, scope, COALESCE(description,'') FROM identity.roles WHERE code=$1`, code)
+	row := r.pool.QueryRow(ctx, `
+		SELECT id, code, name_en, name_vi, scope, COALESCE(description_en,''), COALESCE(description_vi,'')
+		FROM identity.roles WHERE code=$1`, code)
 	var role entity.Role
-	if err := row.Scan(&role.ID, &role.Code, &role.Name, &role.Scope, &role.Description); err != nil {
+	if err := row.Scan(&role.ID, &role.Code, &role.NameEn, &role.NameVi, &role.Scope, &role.DescriptionEn, &role.DescriptionVi); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
@@ -196,7 +198,7 @@ func (r *RoleRepo) FindByCode(ctx context.Context, code string) (*entity.Role, e
 }
 
 func (r *RoleRepo) Assign(ctx context.Context, tx pgx.Tx, assignment *entity.UserRole) error {
-		_, err := tx.Exec(ctx, `
+	_, err := tx.Exec(ctx, `
 		INSERT INTO identity.user_roles (id, tenant_id, user_id, role_id, assigned_at)
 		VALUES ($1,$2,$3,$4,now())
 		ON CONFLICT (tenant_id, user_id, role_id) DO NOTHING`, assignment.ID, assignment.TenantID, assignment.UserID, assignment.RoleID)

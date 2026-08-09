@@ -7,6 +7,7 @@ import (
 	"bokdy/internal/platform/apperr"
 	"bokdy/internal/platform/auth"
 	"bokdy/internal/platform/httpx"
+	"bokdy/internal/platform/i18n"
 	"bokdy/internal/platform/logging"
 	"bokdy/internal/platform/requestctx"
 
@@ -72,7 +73,7 @@ func CORS(allowedOrigins []string) gin.HandlerFunc {
 			if _, ok := originSet[strings.TrimRight(origin, "/")]; ok || len(allowedOrigins) == 0 {
 				c.Header("Access-Control-Allow-Origin", origin)
 				c.Header("Access-Control-Allow-Credentials", "true")
-				c.Header("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Organization-ID, X-Request-ID, X-Correlation-ID")
+				c.Header("Access-Control-Allow-Headers", "Authorization, Content-Type, Accept-Language, X-Organization-ID, X-Request-ID, X-Correlation-ID")
 				c.Header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS")
 			}
 		}
@@ -80,6 +81,14 @@ func CORS(allowedOrigins []string) gin.HandlerFunc {
 			c.AbortWithStatus(204)
 			return
 		}
+		c.Next()
+	}
+}
+
+func Locale() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		loc := i18n.ParseLocale(c.GetHeader("Accept-Language"))
+		c.Request = c.Request.WithContext(requestctx.WithLocale(c.Request.Context(), loc))
 		c.Next()
 	}
 }

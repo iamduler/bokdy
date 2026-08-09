@@ -392,7 +392,10 @@ export interface paths {
         get: {
             parameters: {
                 query?: never;
-                header?: never;
+                header?: {
+                    /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
+                    "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+                };
                 path?: never;
                 cookie?: never;
             };
@@ -416,7 +419,10 @@ export interface paths {
         post: {
             parameters: {
                 query?: never;
-                header?: never;
+                header?: {
+                    /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
+                    "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+                };
                 path?: never;
                 cookie?: never;
             };
@@ -638,13 +644,20 @@ export interface components {
             /** Format: uuid */
             tenant_id: string;
             code: string;
+            /** @description Resolved from Accept-Language */
             name: string;
+            name_en?: string;
+            name_vi?: string;
             /** Format: email */
             email?: string;
             status: string;
         };
+        /** @description At least one of name, name_en, or name_vi is required. */
         CreateOrganizationRequest: {
-            name: string;
+            /** @description Alias for name_vi when name_vi is omitted */
+            name?: string;
+            name_en?: string;
+            name_vi?: string;
             code?: string;
             /** Format: email */
             email?: string;
@@ -685,6 +698,8 @@ export interface components {
     responses: never;
     parameters: {
         OrganizationId: string;
+        /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
+        AcceptLanguage: string;
     };
     requestBodies: never;
     headers: never;

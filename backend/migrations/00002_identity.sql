@@ -34,7 +34,7 @@ CREATE TABLE identity.user_profiles (
     gender        identity.gender,
     date_of_birth date,
     timezone      varchar(100),
-    locale        varchar(20),
+    locale_id     uuid,
     created_at    timestamptz NOT NULL DEFAULT now(),
     updated_at    timestamptz NOT NULL DEFAULT now()
 );
@@ -68,24 +68,28 @@ CREATE TABLE identity.identity_verifications (
 CREATE INDEX identity_verifications_identity_id_idx ON identity.identity_verifications (identity_id);
 
 CREATE TABLE identity.roles (
-    id          uuid PRIMARY KEY,
-    code        varchar(100) NOT NULL,
-    name        varchar(255) NOT NULL,
-    scope       identity.role_scope NOT NULL,
-    description text,
-    created_at  timestamptz NOT NULL DEFAULT now(),
-    updated_at  timestamptz NOT NULL DEFAULT now()
+    id             uuid PRIMARY KEY,
+    code           varchar(100) NOT NULL,
+    name_en        varchar(255) NOT NULL,
+    name_vi        varchar(255) NOT NULL,
+    scope          identity.role_scope NOT NULL,
+    description_en text,
+    description_vi text,
+    created_at     timestamptz NOT NULL DEFAULT now(),
+    updated_at     timestamptz NOT NULL DEFAULT now()
 );
 
 CREATE UNIQUE INDEX roles_code_uidx ON identity.roles (code);
 
 CREATE TABLE identity.permissions (
-    id          uuid PRIMARY KEY,
-    code        varchar(150) NOT NULL,
-    name        varchar(255) NOT NULL,
-    description text,
-    created_at  timestamptz NOT NULL DEFAULT now(),
-    updated_at  timestamptz NOT NULL DEFAULT now()
+    id             uuid PRIMARY KEY,
+    code           varchar(150) NOT NULL,
+    name_en        varchar(255) NOT NULL,
+    name_vi        varchar(255) NOT NULL,
+    description_en text,
+    description_vi text,
+    created_at     timestamptz NOT NULL DEFAULT now(),
+    updated_at     timestamptz NOT NULL DEFAULT now()
 );
 
 CREATE UNIQUE INDEX permissions_code_uidx ON identity.permissions (code);

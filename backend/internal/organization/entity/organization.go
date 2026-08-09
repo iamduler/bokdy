@@ -46,9 +46,11 @@ type Tenant struct {
 	ID        uuid.UUID
 	PublicID  string
 	Code      string
-	Name      string
+	NameEn    string
+	NameVi    string
 	Slug      string
 	Status    TenantStatus
+	LocaleID  *uuid.UUID
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
@@ -58,7 +60,8 @@ type Organization struct {
 	PublicID         string
 	TenantID         uuid.UUID
 	Code             string
-	Name             string
+	NameEn           string
+	NameVi           string
 	OrganizationType OrganizationType
 	Email            string
 	Status           OrganizationStatus

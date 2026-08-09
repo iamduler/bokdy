@@ -10,7 +10,7 @@ Read the `CONVENTIONS` block at the top of that file before adding tables.
 | `infrastructure` | Outbox, idempotency, jobs, worker internals |
 | `identity` | Users, credentials, sessions, RBAC |
 | `organization` | Tenant, organization, staff (Branch/Court live later as location/resource) |
-| `reference` | Shared catalogs: `countries`, `currencies` |
+| `reference` | Shared catalogs: `locales`, `countries`, `currencies` |
 | `platform` | Cross-cutting files, audit (`00005`), notifications |
 | `catalog` | Services, resources (Court), categories |
 | `crm` | Customers |
@@ -23,4 +23,5 @@ Foundation goose migrations implement `infrastructure`, `identity`, `organizatio
 
 - Addresses store `country_id` → `reference.countries`.
 - Money uses ISO 4217 codes; `reference.currencies` is the catalog (`code` natural PK).
-- Display names are English only. Do not add `name_vi` / `name_en`.
+- Display names: `name_en` + `name_vi`. Locale 3+ → `*_translations`. See `docs/architecture/i18n.md`.
+- `reference.locales`: `vi` is default. API `Accept-Language`, missing → `vi`.

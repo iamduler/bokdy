@@ -2,7 +2,10 @@ openapi: 3.1.0
 info:
   title: Bokdy API
   version: 0.1.0
-  description: Bokdy foundation API (Identity + Organization)
+  description: |
+    Bokdy foundation API (Identity + Organization).
+    Locale is taken from Accept-Language (missing → vi). Read models return a resolved name;
+    owner edit payloads use name_en + name_vi.
 servers:
   - url: http://localhost:8088
     description: Local
@@ -142,6 +145,8 @@ paths:
       summary: List my organizations
       security:
         - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/AcceptLanguage"
       responses:
         "200":
           description: OK
@@ -159,6 +164,8 @@ paths:
       summary: Create organization
       security:
         - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/AcceptLanguage"
       requestBody:
         required: true
         content:
@@ -243,6 +250,15 @@ components:
       schema:
         type: string
         format: uuid
+    AcceptLanguage:
+      name: Accept-Language
+      in: header
+      required: false
+      schema:
+        type: string
+        default: vi
+        example: vi
+      description: BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi.
   schemas:
     RegisterRequest:
       type: object
@@ -288,14 +304,18 @@ components:
         public_id: { type: string, minLength: 26, maxLength: 26 }
         tenant_id: { type: string, format: uuid }
         code: { type: string }
-        name: { type: string }
+        name: { type: string, description: Resolved from Accept-Language }
+        name_en: { type: string }
+        name_vi: { type: string }
         email: { type: string, format: email }
         status: { type: string }
     CreateOrganizationRequest:
       type: object
-      required: [name]
+      description: At least one of name, name_en, or name_vi is required.
       properties:
-        name: { type: string }
+        name: { type: string, description: Alias for name_vi when name_vi is omitted }
+        name_en: { type: string }
+        name_vi: { type: string }
         code: { type: string }
         email: { type: string, format: email }
     InviteRequest:

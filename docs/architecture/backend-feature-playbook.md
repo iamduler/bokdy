@@ -211,6 +211,7 @@ POST /api/v1/bookings/{id}/check-in
 - Internal IDs: UUID v7 generated in the application layer (`bokdy/internal/platform/id`)
 - Public APIs expose `public_id` where the ERD defines it
 - Owner tenant context: header `X-Organization-ID` (`middleware.OptionalOrganization`)
+- Locale: `Accept-Language` via `middleware.Locale` (default `vi`). Read DTOs use `i18n.DisplayName`. See `docs/architecture/i18n.md`
 - Admin routes: `middleware.JWTAuth` + `middleware.RequireSystemAdmin`
 - Repositories never generate IDs
 - Never leak PostgreSQL or Redis errors to clients

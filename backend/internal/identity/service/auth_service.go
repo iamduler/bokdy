@@ -17,6 +17,7 @@ import (
 	"bokdy/internal/platform/auth"
 	"bokdy/internal/platform/config"
 	"bokdy/internal/platform/events"
+	"bokdy/internal/platform/i18n"
 	"bokdy/internal/platform/id"
 	"bokdy/internal/platform/mail"
 	"bokdy/internal/platform/persistence"
@@ -103,9 +104,10 @@ func (s *AuthService) Register(ctx context.Context, in RegisterInput) (*entity.U
 	if fullName == "" {
 		fullName = email
 	}
+	localeID := i18n.LocaleVIID
 	profile := &entity.UserProfile{
 		ID: id.MustNewUUID(), UserID: userID, FirstName: in.FirstName, LastName: in.LastName,
-		FullName: fullName, DisplayName: fullName, Locale: "en", CreatedAt: now, UpdatedAt: now,
+		FullName: fullName, DisplayName: fullName, LocaleID: &localeID, CreatedAt: now, UpdatedAt: now,
 	}
 	ident := &entity.Identity{
 		ID: id.MustNewUUID(), UserID: userID, Provider: entity.ProviderLocal,

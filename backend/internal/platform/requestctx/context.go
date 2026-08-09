@@ -21,6 +21,7 @@ const (
 	KeyIsSystemAdmin  contextKey = "is_system_admin"
 	KeyIP             contextKey = "ip"
 	KeyUserAgent      contextKey = "user_agent"
+	KeyLocale         contextKey = "locale"
 )
 
 // With returns a copy of ctx carrying value under key. Empty values are not
@@ -100,3 +101,9 @@ func WithUserAgent(ctx context.Context, v string) context.Context {
 	return With(ctx, KeyUserAgent, v)
 }
 func UserAgent(ctx context.Context) string { return Get(ctx, KeyUserAgent) }
+
+func WithLocale(ctx context.Context, v string) context.Context {
+	return With(ctx, KeyLocale, v)
+}
+
+func Locale(ctx context.Context) string { return Get(ctx, KeyLocale) }

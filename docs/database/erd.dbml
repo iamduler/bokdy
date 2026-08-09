@@ -12,13 +12,18 @@ Project Bokdy {
 // Language
 // - Database, API and domain identifiers use American English.
 // - Status / timestamp tokens use canceled / canceled_at (not cancelled).
-// - User-facing copy is localized in next-intl (en + vi), not in DB columns.
+// - L1 UI chrome (buttons, errors, status labels) is next-intl (en + vi), not DB.
 //
-// I18n (P3)
-// - Master data is stored in English only.
-// - Do not add name_vi / name_en or *_translations unless a use case requires it.
-// - If catalog translation is needed later, use Strategy A:
-//   locale_id FK + {entity}_translations, unique (entity_id, locale_id).
+// I18n
+// - Display names: name_en + name_vi. Never name_th or jsonb locale maps.
+// - L2 reference catalogs: both name_en and name_vi NOT NULL.
+// - L3 tenant-authored: CHECK (name_en IS NOT NULL OR name_vi IS NOT NULL).
+// - Locale 3+: {entity}_translations (locale_id FK), unique (entity_id, locale_id).
+//   Keep name_en/name_vi. See reference.country_translations.
+// - API: Accept-Language; missing → vi. Read DTOs return resolved name.
+// - Owner edit DTOs expose name_en + name_vi.
+// - Preference locale_id on user/tenant/customer does not override the header.
+// - Person names and technical names stay a single column (see docs/architecture/i18n.md).
 //
 // Identifiers
 // - OLTP PK is always id uuid (UUIDv7). Never use {entity}_id as PK.
@@ -672,7 +677,7 @@ Table identity.user_profiles {
 
   timezone varchar(100)
 
-  locale varchar(20)
+  locale_id uuid
 
   created_at timestamptz [not null]
 
@@ -737,11 +742,15 @@ Table identity.roles {
 
   code varchar(100) [not null]
 
-  name varchar(255) [not null]
+  name_en varchar(255) [not null]
+
+  name_vi varchar(255) [not null]
 
   scope role_scope [not null]
 
-  description text
+  description_en text
+
+  description_vi text
 
   created_at timestamptz [not null]
 
@@ -758,9 +767,13 @@ Table identity.permissions {
 
   code varchar(150) [not null]
 
-  name varchar(255) [not null]
+  name_en varchar(255) [not null]
 
-  description text
+  name_vi varchar(255) [not null]
+
+  description_en text
+
+  description_vi text
 
   created_at timestamptz [not null]
 
@@ -1124,7 +1137,9 @@ Table organization.tenants {
 
   code varchar(100) [not null]
 
-  name varchar(255) [not null]
+  name_en varchar(255)
+
+  name_vi varchar(255)
 
   slug varchar(150) [not null]
 
@@ -1132,7 +1147,7 @@ Table organization.tenants {
 
   timezone varchar(100)
 
-  locale varchar(20)
+  locale_id uuid
 
   currency varchar(10)
 
@@ -1160,7 +1175,9 @@ Table organization.organizations {
 
   code varchar(100) [not null]
 
-  name varchar(255) [not null]
+  name_en varchar(255)
+
+  name_vi varchar(255)
 
   legal_name varchar(255)
 
@@ -1222,7 +1239,9 @@ Table organization.business_units {
 
   code varchar(100) [not null]
 
-  name varchar(255) [not null]
+  name_en varchar(255)
+
+  name_vi varchar(255)
 
   status business_unit_status [not null]
 
@@ -1251,7 +1270,9 @@ Table organization.locations {
 
   code varchar(100) [not null]
 
-  name varchar(255) [not null]
+  name_en varchar(255)
+
+  name_vi varchar(255)
 
   phone varchar(30)
 
@@ -1412,9 +1433,13 @@ Table organization.teams {
 
   code varchar(100) [not null]
 
-  name varchar(255) [not null]
+  name_en varchar(255)
 
-  description text
+  name_vi varchar(255)
+
+  description_en text
+
+  description_vi text
 
   created_at timestamptz [not null]
 
@@ -1692,7 +1717,7 @@ Table crm.customer_profiles {
 
   tax_code varchar(100)
 
-  preferred_language varchar(20)
+  preferred_locale_id uuid
 
   preferred_timezone varchar(100)
 
@@ -1785,7 +1810,9 @@ Table crm.customer_tags {
 
   tenant_id uuid [not null]
 
-  name varchar(100) [not null]
+  name_en varchar(100)
+
+  name_vi varchar(100)
 
   color varchar(30)
 
@@ -1795,7 +1822,8 @@ Table crm.customer_tags {
 
   indexes {
     tenant_id
-    (tenant_id, name) [unique]
+    (tenant_id, name_en) [unique]
+    (tenant_id, name_vi) [unique]
   }
 }
 
@@ -1817,9 +1845,13 @@ Table crm.customer_segments {
 
   tenant_id uuid [not null]
 
-  name varchar(255) [not null]
+  name_en varchar(255)
 
-  description text
+  name_vi varchar(255)
+
+  description_en text
+
+  description_vi text
 
   filter_definition jsonb [not null]
 
@@ -2111,7 +2143,9 @@ Table catalog.sports {
 
   code varchar(100) [not null]
 
-  name varchar(255) [not null]
+  name_en varchar(255) [not null]
+
+  name_vi varchar(255) [not null]
 
   icon varchar(255)
 
@@ -2139,9 +2173,13 @@ Table catalog.service_categories {
 
   code varchar(100) [not null]
 
-  name varchar(255) [not null]
+  name_en varchar(255)
 
-  description text
+  name_vi varchar(255)
+
+  description_en text
+
+  description_vi text
 
   sort_order int [default: 0]
 
@@ -2174,9 +2212,13 @@ Table catalog.services {
 
   code varchar(100) [not null]
 
-  name varchar(255) [not null]
+  name_en varchar(255)
 
-  description text
+  name_vi varchar(255)
+
+  description_en text
+
+  description_vi text
 
   service_type service_type [not null]
 
@@ -2234,7 +2276,9 @@ Table catalog.resource_categories {
 
   code varchar(100) [not null]
 
-  name varchar(255) [not null]
+  name_en varchar(255)
+
+  name_vi varchar(255)
 
   resource_type resource_type [not null]
 
@@ -2264,7 +2308,9 @@ Table catalog.resources {
 
   code varchar(100) [not null]
 
-  name varchar(255) [not null]
+  name_en varchar(255)
+
+  name_vi varchar(255)
 
   resource_type resource_type [not null]
 
@@ -2318,9 +2364,13 @@ Table catalog.resource_capabilities {
 
   code varchar(100) [not null]
 
-  name varchar(255) [not null]
+  name_en varchar(255)
 
-  description text
+  name_vi varchar(255)
+
+  description_en text
+
+  description_vi text
 
   created_at timestamptz [not null]
 
@@ -2355,7 +2405,9 @@ Table catalog.resource_attributes {
 
   code varchar(100) [not null]
 
-  name varchar(255) [not null]
+  name_en varchar(255)
+
+  name_vi varchar(255)
 
   value_type varchar(50) [not null]
 
@@ -2396,7 +2448,9 @@ Table catalog.resource_labels {
 
   tenant_id uuid [not null]
 
-  name varchar(100) [not null]
+  name_en varchar(100)
+
+  name_vi varchar(100)
 
   color varchar(30)
 
@@ -2406,7 +2460,8 @@ Table catalog.resource_labels {
 
   indexes {
     tenant_id
-    (tenant_id, name) [unique]
+    (tenant_id, name_en) [unique]
+    (tenant_id, name_vi) [unique]
   }
 }
 
@@ -2431,9 +2486,13 @@ Table catalog.resource_groups {
 
   code varchar(100) [not null]
 
-  name varchar(255) [not null]
+  name_en varchar(255)
 
-  description text
+  name_vi varchar(255)
+
+  description_en text
+
+  description_vi text
 
   created_at timestamptz [not null]
 
@@ -2653,7 +2712,9 @@ Table scheduling.calendar_rules {
 
   tenant_id uuid [not null]
 
-  name varchar(255) [not null]
+  name_en varchar(255)
+
+  name_vi varchar(255)
 
   recurrence recurrence_type [not null]
 
@@ -2716,7 +2777,9 @@ Table scheduling.calendar_holidays {
 
   location_id uuid
 
-  name varchar(255) [not null]
+  name_en varchar(255)
+
+  name_vi varchar(255)
 
   starts_at timestamptz [not null]
 
@@ -3014,7 +3077,9 @@ Table pricing.price_lists {
 
   code varchar(100) [not null]
 
-  name varchar(255) [not null]
+  name_en varchar(255)
+
+  name_vi varchar(255)
 
   currency varchar(10) [not null]
 
@@ -3071,7 +3136,9 @@ Table pricing.pricing_rule_sets {
 
   price_version_id uuid [not null]
 
-  name varchar(255) [not null]
+  name_en varchar(255)
+
+  name_vi varchar(255)
 
   priority int [not null, default: 100]
 
@@ -3165,7 +3232,9 @@ Table pricing.taxes {
 
   code varchar(50) [not null]
 
-  name varchar(255) [not null]
+  name_en varchar(255)
+
+  name_vi varchar(255)
 
   tax_type tax_type [not null]
 
@@ -3236,7 +3305,9 @@ Table promotion.campaigns {
 
   code varchar(100) [not null]
 
-  name varchar(255) [not null]
+  name_en varchar(255)
+
+  name_vi varchar(255)
 
   status campaign_status [not null]
 
@@ -4107,7 +4178,9 @@ Table membership.membership_plans {
 
   code varchar(100) [not null]
 
-  name varchar(255) [not null]
+  name_en varchar(255)
+
+  name_vi varchar(255)
 
   membership_plan_type membership_plan_type [not null]
 
@@ -4320,7 +4393,9 @@ Table membership.passes {
 
   code varchar(100) [not null]
 
-  name varchar(255)
+  name_en varchar(255)
+
+  name_vi varchar(255)
 
   total_entries int [not null]
 
@@ -4671,7 +4746,9 @@ Table payment.payment_methods {
 
   code varchar(100) [not null]
 
-  name varchar(255) [not null]
+  name_en varchar(255)
+
+  name_vi varchar(255)
 
   payment_method_type payment_method_type [not null]
 
@@ -4868,7 +4945,9 @@ Table ledger.account_categories {
 
   code varchar(50) [not null]
 
-  name varchar(255) [not null]
+  name_en varchar(255)
+
+  name_vi varchar(255)
 
   ledger_account_type ledger_account_type [not null]
 
@@ -4890,7 +4969,9 @@ Table ledger.accounts {
 
   code varchar(50) [not null]
 
-  name varchar(255) [not null]
+  name_en varchar(255)
+
+  name_vi varchar(255)
 
   currency varchar(10) [not null]
 
@@ -5057,7 +5138,9 @@ Table integration.providers {
 
   code varchar(100) [not null]
 
-  name varchar(255) [not null]
+  name_en varchar(255)
+
+  name_vi varchar(255)
 
   provider_type provider_type [not null]
 
@@ -5086,7 +5169,9 @@ Table integration.connections {
 
   provider_id uuid [not null]
 
-  name varchar(255) [not null]
+  name_en varchar(255)
+
+  name_vi varchar(255)
 
   status connection_status [not null]
 
@@ -5168,7 +5253,9 @@ Table integration.sync_profiles {
 
   connection_id uuid [not null]
 
-  name varchar(255) [not null]
+  name_en varchar(255)
+
+  name_vi varchar(255)
 
   sync_direction sync_direction [not null]
 
@@ -5358,8 +5445,35 @@ Table integration.api_logs {
 //////////////////////////////////////////////////////////////
 
 TableGroup "Reference" {
+  reference.locales
   reference.countries
+  reference.country_translations
   reference.currencies
+}
+
+Table reference.locales {
+  id uuid [pk]
+
+  code varchar(16) [not null, unique]
+
+  name_en varchar(255) [not null]
+
+  name_vi varchar(255) [not null]
+
+  is_default boolean [not null, default: false]
+
+  is_active boolean [not null, default: true]
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    is_active
+    is_default
+  }
+
+  Note: 'BCP-47. vi is default. Accept-Language missing → vi.'
 }
 
 Table reference.countries {
@@ -5369,7 +5483,9 @@ Table reference.countries {
 
   iso3 varchar(3)
 
-  name varchar(255) [not null]
+  name_en varchar(255) [not null]
+
+  name_vi varchar(255) [not null]
 
   phone_code varchar(10)
 
@@ -5385,13 +5501,35 @@ Table reference.countries {
     is_active
   }
 
-  Note: 'ISO 3166-1 country catalog. Addresses store country_id, not free-text country_code.'
+  Note: 'ISO 3166-1. Locale 3+: reference.country_translations.'
+}
+
+Table reference.country_translations {
+  id uuid [pk]
+
+  country_id uuid [not null]
+
+  locale_id uuid [not null]
+
+  name varchar(255) [not null]
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    (country_id, locale_id) [unique]
+  }
+
+  Note: 'Template for locale 3+. Do not store en/vi here.'
 }
 
 Table reference.currencies {
   code varchar(3) [pk]
 
-  name varchar(255) [not null]
+  name_en varchar(255) [not null]
+
+  name_vi varchar(255) [not null]
 
   symbol varchar(10) [not null]
 
@@ -5409,7 +5547,7 @@ Table reference.currencies {
     is_active
   }
 
-  Note: 'ISO 4217. English display name only.'
+  Note: 'ISO 4217. Locale 3+: add currency_translations.'
 }
 
 //////////////////////////////////////////////////////////////
@@ -5592,7 +5730,9 @@ Table platform.notification_templates {
 
   code varchar(100) [not null]
 
-  name varchar(255) [not null]
+  name_en varchar(255)
+
+  name_vi varchar(255)
 
   notification_channel notification_channel [not null]
 
@@ -5760,7 +5900,9 @@ Table platform.tags {
 
   tenant_id uuid [not null]
 
-  name varchar(100) [not null]
+  name_en varchar(100)
+
+  name_vi varchar(100)
 
   color varchar(20)
 
@@ -5768,7 +5910,8 @@ Table platform.tags {
 
   indexes {
     tenant_id
-    (tenant_id, name) [unique]
+    (tenant_id, name_en) [unique]
+    (tenant_id, name_vi) [unique]
   }
 }
 
@@ -5865,7 +6008,9 @@ Table platform.saved_searches {
 
   user_id uuid [not null]
 
-  name varchar(255)
+  name_en varchar(255)
+
+  name_vi varchar(255)
 
   filters jsonb [not null]
 
@@ -5892,7 +6037,9 @@ Table platform.custom_fields {
 
   code varchar(100) [not null]
 
-  name varchar(255) [not null]
+  name_en varchar(255)
+
+  name_vi varchar(255)
 
   data_type varchar(50) [not null]
 
@@ -5938,7 +6085,9 @@ Table analytics.metric_definitions {
 
   code varchar(100) [not null]
 
-  name varchar(255) [not null]
+  name_en varchar(255) [not null]
+
+  name_vi varchar(255) [not null]
 
   metric_type metric_type [not null]
 
@@ -6130,6 +6279,7 @@ Table analytics.dimension_customers {
 //////////////////////////////////////////////////////////////
 
 Ref: identity.users.id > identity.user_profiles.user_id
+Ref: reference.locales.id > identity.user_profiles.locale_id
 
 Ref: identity.users.id > identity.identities.user_id
 Ref: identity.identities.id > identity.identity_verifications.identity_id
@@ -6161,6 +6311,10 @@ Ref: organization.organizations.id > organization.business_units.organization_id
 
 Ref: organization.organizations.id > organization.locations.organization_id
 Ref: organization.locations.id > organization.location_addresses.location_id
+Ref: reference.locales.id > organization.tenants.locale_id
+Ref: reference.locales.id > crm.customers.preferred_locale_id
+Ref: reference.countries.id > reference.country_translations.country_id
+Ref: reference.locales.id > reference.country_translations.locale_id
 Ref: reference.countries.id > organization.location_addresses.country_id
 Ref: organization.locations.id > organization.location_settings.location_id
 

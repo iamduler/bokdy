@@ -33,7 +33,7 @@ type UserProfile struct {
 	LastName    string
 	FullName    string
 	DisplayName string
-	Locale      string
+	LocaleID    *uuid.UUID
 	Timezone    string
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
@@ -86,11 +86,13 @@ type RefreshToken struct {
 }
 
 type Role struct {
-	ID          uuid.UUID
-	Code        string
-	Name        string
-	Scope       string
-	Description string
+	ID            uuid.UUID
+	Code          string
+	NameEn        string
+	NameVi        string
+	Scope         string
+	DescriptionEn string
+	DescriptionVi string
 }
 
 type UserRole struct {

@@ -306,13 +306,15 @@ Existing BFF (do not replace):
 | --- | --- |
 | `POST /api/auth/login` `register` `refresh` `logout` | Set / clear httpOnly cookies |
 | `GET /api/auth/session` | Proxies `GET /api/v1/identity/me` |
-| `/api/go/[...path]` | Proxies `/api/v1/{path}` with Bearer + `X-Organization-ID` |
+| `/api/go/[...path]` | Proxies `/api/v1/{path}` with Bearer + `X-Organization-ID` + `Accept-Language` |
 
 Cookie prefixes differ per app (`bokdy_owner_session`, …). Do not share cookies across Player / Owner / Admin.
 
 `proxy.ts` currently protects `/{en\|vi}/dashboard`. When adding a new authenticated route tree, extend that matcher (or equivalent) so guests redirect to `/{locale}/login`. Do not create `middleware.ts`.
 
 Owner tenant context: BFF already forwards `X-Organization-ID` from the org cookie. Set that cookie when the user selects an organization — do not invent a second tenant header.
+
+Locale: forward the browser `Accept-Language` (match `[locale]` segment, e.g. `vi` or `en`). Missing header → Go defaults to `vi`. Do not send `X-Locale` or `?locale=`. Read models expose resolved `name`; owner edit forms use `name_en` + `name_vi`. See `docs/architecture/i18n.md`.
 
 Permissions:
 

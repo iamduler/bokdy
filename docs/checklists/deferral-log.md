@@ -19,6 +19,16 @@ Do not delete entries. If a deferred item returns to MVP, add a new entry that r
 
 ---
 
+### DEF-20260809-01
+
+- Date: 2026-08-09
+- From flow/ID: catalog/org display names locale 3+
+- New post-mvp ID: per-entity `*_translations` when onboarding a third locale
+- Reason: MVP freezes `name_en`/`name_vi` + `Accept-Language` (default `vi`); hybrid forever
+- MVP workaround: resolve helper; no `name_th` column; `country_translations` is the template only
+- Unblocks later wave: when product adds locale 3
+- Decided in: i18n ERD plan
+
 ### DEF-20260808-01
 
 - Date: 2026-08-08

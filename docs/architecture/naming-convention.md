@@ -72,9 +72,11 @@ Brand
 
 ## Rule 4
 
-Use English only.
+Identifiers (tables, columns, JSON keys, events, permission codes) use English only.
 
-Do not use Vietnamese.
+Do not use Vietnamese in identifiers.
+
+Display values may be Vietnamese or English (`name_vi`, `name_en`). L1 UI copy lives in next-intl, not in identifier names.
 
 ---
 

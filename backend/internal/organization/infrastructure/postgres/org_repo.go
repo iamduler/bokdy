@@ -21,17 +21,19 @@ var _ repository.OrganizationRepository = (*OrgRepo)(nil)
 
 func (r *OrgRepo) CreateTenantAndOrg(ctx context.Context, tx pgx.Tx, tenant *entity.Tenant, org *entity.Organization) error {
 	_, err := tx.Exec(ctx, `
-		INSERT INTO organization.tenants (id, public_id, code, name, slug, status, created_at, updated_at)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
-		tenant.ID, tenant.PublicID, tenant.Code, tenant.Name, tenant.Slug, tenant.Status, tenant.CreatedAt, tenant.UpdatedAt)
+		INSERT INTO organization.tenants (id, public_id, code, name_en, name_vi, slug, status, locale_id, created_at, updated_at)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+		tenant.ID, tenant.PublicID, tenant.Code, nullStr(tenant.NameEn), nullStr(tenant.NameVi), tenant.Slug, tenant.Status,
+		nullUUID(tenant.LocaleID), tenant.CreatedAt, tenant.UpdatedAt)
 	if err != nil {
 		return err
 	}
 	_, err = tx.Exec(ctx, `
 		INSERT INTO organization.organizations
-			(id, public_id, tenant_id, code, name, organization_type, email, status, created_at, updated_at)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
-		org.ID, org.PublicID, org.TenantID, org.Code, org.Name, org.OrganizationType, nullStr(org.Email), org.Status, org.CreatedAt, org.UpdatedAt)
+			(id, public_id, tenant_id, code, name_en, name_vi, organization_type, email, status, created_at, updated_at)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+		org.ID, org.PublicID, org.TenantID, org.Code, nullStr(org.NameEn), nullStr(org.NameVi), org.OrganizationType,
+		nullStr(org.Email), org.Status, org.CreatedAt, org.UpdatedAt)
 	if err != nil {
 		return err
 	}
@@ -43,14 +45,14 @@ func (r *OrgRepo) CreateTenantAndOrg(ctx context.Context, tx pgx.Tx, tenant *ent
 
 func (r *OrgRepo) FindByID(ctx context.Context, orgID uuid.UUID) (*entity.Organization, error) {
 	row := r.pool.QueryRow(ctx, `
-		SELECT id, public_id, tenant_id, code, name, organization_type, COALESCE(email,''), status, created_at, updated_at
+		SELECT id, public_id, tenant_id, code, COALESCE(name_en,''), COALESCE(name_vi,''), organization_type, COALESCE(email,''), status, created_at, updated_at
 		FROM organization.organizations WHERE id=$1 AND deleted_at IS NULL`, orgID)
 	return scanOrg(row)
 }
 
 func (r *OrgRepo) ListByUser(ctx context.Context, userID uuid.UUID) ([]entity.Organization, error) {
 	rows, err := r.pool.Query(ctx, `
-		SELECT o.id, o.public_id, o.tenant_id, o.code, o.name, o.organization_type, COALESCE(o.email,''), o.status, o.created_at, o.updated_at
+		SELECT o.id, o.public_id, o.tenant_id, o.code, COALESCE(o.name_en,''), COALESCE(o.name_vi,''), o.organization_type, COALESCE(o.email,''), o.status, o.created_at, o.updated_at
 		FROM organization.organizations o
 		JOIN organization.staff_members s ON s.organization_id = o.id
 		WHERE s.user_id=$1 AND s.status='active' AND o.deleted_at IS NULL
@@ -146,7 +148,7 @@ func (r *OrgRepo) AcceptInvitation(ctx context.Context, tx pgx.Tx, invID uuid.UU
 func scanOrg(row pgx.Row) (*entity.Organization, error) {
 	var o entity.Organization
 	var typ, status string
-	if err := row.Scan(&o.ID, &o.PublicID, &o.TenantID, &o.Code, &o.Name, &typ, &o.Email, &status, &o.CreatedAt, &o.UpdatedAt); err != nil {
+	if err := row.Scan(&o.ID, &o.PublicID, &o.TenantID, &o.Code, &o.NameEn, &o.NameVi, &typ, &o.Email, &status, &o.CreatedAt, &o.UpdatedAt); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
@@ -162,4 +164,11 @@ func nullStr(s string) any {
 		return nil
 	}
 	return s
+}
+
+func nullUUID(id *uuid.UUID) any {
+	if id == nil || *id == uuid.Nil {
+		return nil
+	}
+	return *id
 }

@@ -11,14 +11,16 @@ CREATE TABLE organization.tenants (
     id         uuid PRIMARY KEY,
     public_id  varchar(26) NOT NULL UNIQUE,
     code       varchar(100) NOT NULL,
-    name       varchar(255) NOT NULL,
+    name_en    varchar(255),
+    name_vi    varchar(255),
     slug       varchar(150) NOT NULL,
     status     organization.tenant_status NOT NULL,
     timezone   varchar(100),
-    locale     varchar(20),
+    locale_id  uuid,
     currency   varchar(10),
     created_at timestamptz NOT NULL DEFAULT now(),
-    updated_at timestamptz NOT NULL DEFAULT now()
+    updated_at timestamptz NOT NULL DEFAULT now(),
+    CONSTRAINT tenants_display_name_chk CHECK (name_en IS NOT NULL OR name_vi IS NOT NULL)
 );
 
 CREATE UNIQUE INDEX tenants_code_uidx ON organization.tenants (code);
@@ -29,7 +31,8 @@ CREATE TABLE organization.organizations (
     public_id         varchar(26) NOT NULL UNIQUE,
     tenant_id         uuid NOT NULL REFERENCES organization.tenants (id),
     code              varchar(100) NOT NULL,
-    name              varchar(255) NOT NULL,
+    name_en           varchar(255),
+    name_vi           varchar(255),
     legal_name        varchar(255),
     organization_type organization.organization_type NOT NULL,
     tax_code          varchar(100),
@@ -40,7 +43,8 @@ CREATE TABLE organization.organizations (
     status            organization.organization_status NOT NULL,
     created_at        timestamptz NOT NULL DEFAULT now(),
     updated_at        timestamptz NOT NULL DEFAULT now(),
-    deleted_at        timestamptz
+    deleted_at        timestamptz,
+    CONSTRAINT organizations_display_name_chk CHECK (name_en IS NOT NULL OR name_vi IS NOT NULL)
 );
 
 CREATE UNIQUE INDEX organizations_tenant_code_uidx ON organization.organizations (tenant_id, code) WHERE deleted_at IS NULL;

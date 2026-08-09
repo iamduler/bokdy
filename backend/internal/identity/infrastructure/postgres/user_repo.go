@@ -28,10 +28,10 @@ func (r *UserRepo) Create(ctx context.Context, tx pgx.Tx, user *entity.User, pro
 		return err
 	}
 	_, err = tx.Exec(ctx, `
-		INSERT INTO identity.user_profiles (id, user_id, first_name, last_name, full_name, display_name, locale, timezone, created_at, updated_at)
+		INSERT INTO identity.user_profiles (id, user_id, first_name, last_name, full_name, display_name, locale_id, timezone, created_at, updated_at)
 		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
 		profile.ID, profile.UserID, nullStr(profile.FirstName), nullStr(profile.LastName), profile.FullName,
-		nullStr(profile.DisplayName), nullStr(profile.Locale), nullStr(profile.Timezone),
+		nullStr(profile.DisplayName), nullUUID(profile.LocaleID), nullStr(profile.Timezone),
 		profile.CreatedAt, profile.UpdatedAt)
 	return err
 }
@@ -65,10 +65,10 @@ func (r *UserRepo) TouchLastLogin(ctx context.Context, tx pgx.Tx, id uuid.UUID, 
 func (r *UserRepo) GetProfile(ctx context.Context, userID uuid.UUID) (*entity.UserProfile, error) {
 	row := r.pool.QueryRow(ctx, `
 		SELECT user_id, COALESCE(first_name,''), COALESCE(last_name,''), full_name,
-		       COALESCE(display_name,''), COALESCE(locale,''), COALESCE(timezone,''), created_at, updated_at
+		       COALESCE(display_name,''), locale_id, COALESCE(timezone,''), created_at, updated_at
 		FROM identity.user_profiles WHERE user_id=$1`, userID)
 	var p entity.UserProfile
-	if err := row.Scan(&p.UserID, &p.FirstName, &p.LastName, &p.FullName, &p.DisplayName, &p.Locale, &p.Timezone, &p.CreatedAt, &p.UpdatedAt); err != nil {
+	if err := row.Scan(&p.UserID, &p.FirstName, &p.LastName, &p.FullName, &p.DisplayName, &p.LocaleID, &p.Timezone, &p.CreatedAt, &p.UpdatedAt); err != nil {
 		return nil, err
 	}
 	return &p, nil
@@ -92,4 +92,11 @@ func nullStr(s string) any {
 		return nil
 	}
 	return s
+}
+
+func nullUUID(id *uuid.UUID) any {
+	if id == nil || *id == uuid.Nil {
+		return nil
+	}
+	return *id
 }

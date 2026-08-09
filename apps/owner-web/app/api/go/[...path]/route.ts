@@ -5,10 +5,17 @@ async function handle(req: NextRequest, ctx: { params: Promise<{ path: string[] 
   const { path } = await ctx.params;
   const target = path.join("/");
   const body = ["GET", "HEAD"].includes(req.method) ? undefined : await req.text();
+  const headers: Record<string, string> = {
+    "Content-Type": req.headers.get("Content-Type") ?? "application/json",
+  };
+  const acceptLanguage = req.headers.get("Accept-Language");
+  if (acceptLanguage) {
+    headers["Accept-Language"] = acceptLanguage;
+  }
   const res = await proxyToGo(target + req.nextUrl.search, {
     method: req.method,
     body,
-    headers: { "Content-Type": req.headers.get("Content-Type") ?? "application/json" },
+    headers,
   });
   const text = await res.text();
   return new NextResponse(text, {

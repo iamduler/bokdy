@@ -80,6 +80,7 @@ func (a *Application) registerMiddleware(router *gin.Engine) {
 	router.Use(
 		middleware.Recovery(),
 		middleware.RequestID(),
+		middleware.Locale(),
 		middleware.AccessLog(),
 		middleware.CORS(origins),
 		gzip.Gzip(gzip.DefaultCompression),
