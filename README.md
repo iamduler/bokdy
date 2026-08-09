@@ -11,7 +11,7 @@ Multi-tenant SaaS foundation for sports venue management.
 ## Quick start
 
 ```bash
-cp .env.sample .env
+cp .env.sample .env   # single env file (repo root); Make, Compose, and Go all read this
 make install_tools
 # Infra: use local Postgres/Redis, or Docker Desktop with WSL integration:
 #   make noapp

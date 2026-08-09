@@ -26,7 +26,6 @@ func main() {
 	moduleRoot := env.MustGetWorkingDir()
 	monoRoot := env.FindMonorepoRoot(moduleRoot)
 
-	_ = godotenv.Load(filepath.Join(moduleRoot, "configs", ".env"))
 	_ = godotenv.Load(filepath.Join(monoRoot, ".env"))
 
 	cfg := config.Load()

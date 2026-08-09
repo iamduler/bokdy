@@ -152,7 +152,7 @@ func (c *Config) CORSOrigins() []string {
 }
 
 // Load reads configuration from the process environment. Callers must load
-// .env files (via godotenv) before calling Load.
+// the monorepo root .env (via godotenv) before calling Load.
 func Load() *Config {
 	appEnv := env.GetEnv("APP_ENV", "development")
 

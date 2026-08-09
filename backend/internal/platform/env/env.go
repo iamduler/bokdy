@@ -61,8 +61,8 @@ func GetDurationEnv(key string, defaultValue time.Duration) time.Duration {
 }
 
 // MustGetWorkingDir walks up from the current working directory until it
-// finds a directory containing go.mod, so the process can locate config and
-// asset paths (e.g. configs/.env) regardless of where `go run`/the compiled
+// finds a directory containing go.mod, so the process can locate module
+// assets (logs, migrations) regardless of where `go run`/the compiled
 // binary is invoked from within the monorepo.
 func MustGetWorkingDir() string {
 	cwd, err := os.Getwd()
