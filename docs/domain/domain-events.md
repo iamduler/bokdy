@@ -18,7 +18,7 @@ Good
 
 BookingCreated
 
-BookingCancelled
+BookingCanceled
 
 PaymentSucceeded
 
@@ -112,7 +112,7 @@ total_amount
 
 ---
 
-# BookingCancelled
+# BookingCanceled
 
 Publisher
 

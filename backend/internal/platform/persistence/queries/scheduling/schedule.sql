@@ -71,6 +71,39 @@ WHERE resource_id = $1 AND block_type = 'maintenance' AND reference_id = $2;
 DELETE FROM scheduling.resource_blocks
 WHERE resource_id = $1 AND block_type = 'maintenance';
 
+-- name: UpsertReservationBlock :exec
+INSERT INTO scheduling.resource_blocks (
+    id, resource_id, block_type, reference_type, reference_id, starts_at, ends_at, reason, created_at
+) VALUES ($1, $2, 'reservation', $3, $4, $5, $6, $7, $8)
+ON CONFLICT (resource_id, reference_id) WHERE block_type = 'reservation' AND reference_id IS NOT NULL
+DO UPDATE SET starts_at = EXCLUDED.starts_at, ends_at = EXCLUDED.ends_at, reason = EXCLUDED.reason;
+
+-- name: UpsertBookingBlock :exec
+INSERT INTO scheduling.resource_blocks (
+    id, resource_id, block_type, reference_type, reference_id, starts_at, ends_at, reason, created_at
+) VALUES ($1, $2, 'booking', $3, $4, $5, $6, $7, $8)
+ON CONFLICT (resource_id, reference_id) WHERE block_type = 'booking' AND reference_id IS NOT NULL
+DO UPDATE SET starts_at = EXCLUDED.starts_at, ends_at = EXCLUDED.ends_at, reason = EXCLUDED.reason;
+
+-- name: DeleteTypedBlock :exec
+DELETE FROM scheduling.resource_blocks
+WHERE resource_id = $1 AND block_type = $2 AND reference_id = $3;
+
+-- name: CountOverlappingBlocks :one
+SELECT COUNT(*)::bigint AS count
+FROM scheduling.resource_blocks
+WHERE resource_id = $1
+  AND starts_at < sqlc.arg(range_end)
+  AND ends_at > sqlc.arg(range_start);
+
+-- name: CountOverlappingBlocksExcludingReference :one
+SELECT COUNT(*)::bigint AS count
+FROM scheduling.resource_blocks
+WHERE resource_id = $1
+  AND starts_at < sqlc.arg(range_end)
+  AND ends_at > sqlc.arg(range_start)
+  AND (reference_id IS NULL OR reference_id <> sqlc.arg(exclude_reference_id));
+
 -- name: DeleteTimeSlotsFrom :exec
 DELETE FROM scheduling.time_slots WHERE resource_id = $1 AND starts_at >= $2;
 

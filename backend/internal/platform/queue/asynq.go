@@ -17,6 +17,8 @@ const (
 	TaskOutboxSweep         = "outbox:sweep"
 	TaskInvitationExpire    = "organization:invitation_expire"
 	TaskAvailabilitySync    = "scheduling:availability_sync"
+	TaskReservationExpire   = "reservation:expire"
+	TaskBookingExpireUnpaid = "booking:expire_unpaid"
 )
 
 type OutboxPayload struct {

@@ -66,8 +66,8 @@ const (
 )
 
 const (
-	RoleOrgOwner = "org_owner"
-	RoleOrgStaff = "org_staff"
+	RoleOrgOwner  = "org_owner"
+	RoleOrgStaff  = "org_staff"
 	DefaultBUCode = "default"
 )
 

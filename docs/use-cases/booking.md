@@ -134,11 +134,11 @@ Flow
 1. Cancel Booking.
 2. Release Slots.
 3. Create Refund if applicable.
-4. Publish BookingCancelled.
+4. Publish BookingCanceled.
 
 Events
 
-- BookingCancelled
+- BookingCanceled
 - PaymentRefunded
 
 Result

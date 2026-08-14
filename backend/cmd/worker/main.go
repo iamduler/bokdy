@@ -7,6 +7,9 @@ import (
 	"path/filepath"
 	"time"
 
+	bookingpg "bokdy/internal/booking/infrastructure/postgres"
+	bookingservice "bokdy/internal/booking/service"
+	crmpg "bokdy/internal/crm/infrastructure/postgres"
 	identitypg "bokdy/internal/identity/infrastructure/postgres"
 	orgpg "bokdy/internal/organization/infrastructure/postgres"
 	orgservice "bokdy/internal/organization/service"
@@ -21,6 +24,10 @@ import (
 	"bokdy/internal/platform/persistence"
 	"bokdy/internal/platform/queue"
 	"bokdy/internal/platform/requestctx"
+	pricingpg "bokdy/internal/pricing/infrastructure/postgres"
+	pricingservice "bokdy/internal/pricing/service"
+	reservationpg "bokdy/internal/reservation/infrastructure/postgres"
+	reservationservice "bokdy/internal/reservation/service"
 	schedpg "bokdy/internal/scheduling/infrastructure/postgres"
 	schedservice "bokdy/internal/scheduling/service"
 
@@ -90,6 +97,20 @@ func main() {
 	schedRepo := schedpg.NewScheduleRepo(pool)
 	syncSvc := schedservice.NewSyncService(pool, schedRepo, outbox)
 
+	syncEnqueuer := schedservice.NewAsynqSyncEnqueuer(asynqClient)
+	occupancySvc := schedservice.NewOccupancyService(schedRepo, syncEnqueuer)
+	customerRepo := crmpg.NewCustomerRepo(pool)
+	orgRepo := orgpg.NewOrgRepo(pool)
+	pricingSvc := pricingservice.NewPricingService(pool, pricingpg.NewPricingRepo(pool), orgRepo, orgSvc, outbox)
+	bookingSvc := bookingservice.NewBookingService(
+		pool, bookingpg.NewBookingRepo(pool), bookingpg.NewInvoiceRepo(pool),
+		customerRepo, orgRepo, orgSvc, occupancySvc, pricingSvc, outbox,
+	)
+	reservationSvc := reservationservice.NewReservationService(
+		pool, reservationpg.NewReservationRepo(pool),
+		customerRepo, orgRepo, orgSvc, occupancySvc, pricingSvc, bookingSvc, outbox,
+	)
+
 	mux := asynq.NewServeMux()
 	mux.HandleFunc(queue.TaskPlatformHealth, loggedTask(queueLog, func(ctx context.Context, t *asynq.Task) error {
 		return nil
@@ -126,6 +147,22 @@ func main() {
 		}
 		return nil
 	}))
+	mux.HandleFunc(queue.TaskReservationExpire, loggedTask(queueLog, func(ctx context.Context, t *asynq.Task) error {
+		n, err := reservationSvc.ExpireDue(ctx)
+		if err != nil {
+			return err
+		}
+		logging.WithTrace(queueLog, ctx).Info().Int("expired", n).Msg("reservations expired")
+		return nil
+	}))
+	mux.HandleFunc(queue.TaskBookingExpireUnpaid, loggedTask(queueLog, func(ctx context.Context, t *asynq.Task) error {
+		n, err := bookingSvc.ExpireUnpaid(ctx)
+		if err != nil {
+			return err
+		}
+		logging.WithTrace(queueLog, ctx).Info().Int("expired", n).Msg("unpaid bookings expired")
+		return nil
+	}))
 
 	scheduler := asynq.NewScheduler(queue.RedisOpt(cfg), nil)
 	if _, err := scheduler.Register("@every 15s", asynq.NewTask(queue.TaskOutboxSweep, nil)); err != nil {
@@ -133,6 +170,12 @@ func main() {
 	}
 	if _, err := scheduler.Register("@every 5m", asynq.NewTask(queue.TaskInvitationExpire, nil)); err != nil {
 		logging.Log.Fatal().Err(err).Msg("register invitation expire")
+	}
+	if _, err := scheduler.Register("@every 1m", asynq.NewTask(queue.TaskReservationExpire, nil)); err != nil {
+		logging.Log.Fatal().Err(err).Msg("register reservation expire")
+	}
+	if _, err := scheduler.Register("@every 1m", asynq.NewTask(queue.TaskBookingExpireUnpaid, nil)); err != nil {
+		logging.Log.Fatal().Err(err).Msg("register booking expire unpaid")
 	}
 	go func() {
 		if err := scheduler.Run(); err != nil {

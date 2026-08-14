@@ -308,7 +308,7 @@ Examples
 ```
 BookingCreated
 
-BookingCancelled
+BookingCanceled
 
 BookingCompleted
 

@@ -1186,7 +1186,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, and staff schedule/availability routes. */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                     /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
                     "Accept-Language"?: components["parameters"]["AcceptLanguage"];
@@ -1221,7 +1221,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, and staff schedule/availability routes. */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                     /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
                     "Accept-Language"?: components["parameters"]["AcceptLanguage"];
@@ -1271,7 +1271,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, and staff schedule/availability routes. */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                     /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
                     "Accept-Language"?: components["parameters"]["AcceptLanguage"];
@@ -1310,7 +1310,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, and staff schedule/availability routes. */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                     /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
                     "Accept-Language"?: components["parameters"]["AcceptLanguage"];
@@ -1363,7 +1363,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, and staff schedule/availability routes. */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                 };
                 path: {
@@ -1409,7 +1409,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, and staff schedule/availability routes. */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                 };
                 path: {
@@ -1455,7 +1455,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, and staff schedule/availability routes. */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                 };
                 path: {
@@ -1503,7 +1503,7 @@ export interface paths {
                     status?: "lead" | "active" | "inactive" | "blacklisted";
                 };
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, and staff schedule/availability routes. */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                     /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
                     "Accept-Language"?: components["parameters"]["AcceptLanguage"];
@@ -1538,7 +1538,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, and staff schedule/availability routes. */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                     /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
                     "Accept-Language"?: components["parameters"]["AcceptLanguage"];
@@ -1626,7 +1626,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, and staff schedule/availability routes. */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                     /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
                     "Accept-Language"?: components["parameters"]["AcceptLanguage"];
@@ -1675,7 +1675,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, and staff schedule/availability routes. */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                     /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
                     "Accept-Language"?: components["parameters"]["AcceptLanguage"];
@@ -1771,7 +1771,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, and staff schedule/availability routes. */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                 };
                 path: {
@@ -1821,7 +1821,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, and staff schedule/availability routes. */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                 };
                 path: {
@@ -1867,7 +1867,7 @@ export interface paths {
                     status?: "active" | "archived";
                 };
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, and staff schedule/availability routes. */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                     /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
                     "Accept-Language"?: components["parameters"]["AcceptLanguage"];
@@ -1902,7 +1902,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, and staff schedule/availability routes. */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                     /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
                     "Accept-Language"?: components["parameters"]["AcceptLanguage"];
@@ -1952,7 +1952,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, and staff schedule/availability routes. */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                     /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
                     "Accept-Language"?: components["parameters"]["AcceptLanguage"];
@@ -1991,7 +1991,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, and staff schedule/availability routes. */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                     /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
                     "Accept-Language"?: components["parameters"]["AcceptLanguage"];
@@ -2045,7 +2045,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, and staff schedule/availability routes. */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                 };
                 path: {
@@ -2092,7 +2092,7 @@ export interface paths {
                     branch_id?: string;
                 };
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, and staff schedule/availability routes. */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                     /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
                     "Accept-Language"?: components["parameters"]["AcceptLanguage"];
@@ -2127,7 +2127,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, and staff schedule/availability routes. */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                     /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
                     "Accept-Language"?: components["parameters"]["AcceptLanguage"];
@@ -2177,7 +2177,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, and staff schedule/availability routes. */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                     /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
                     "Accept-Language"?: components["parameters"]["AcceptLanguage"];
@@ -2219,7 +2219,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, and staff schedule/availability routes. */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                     /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
                     "Accept-Language"?: components["parameters"]["AcceptLanguage"];
@@ -2273,7 +2273,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, and staff schedule/availability routes. */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                 };
                 path: {
@@ -2319,7 +2319,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, and staff schedule/availability routes. */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                 };
                 path: {
@@ -2365,7 +2365,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, and staff schedule/availability routes. */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                 };
                 path: {
@@ -2416,7 +2416,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, and staff schedule/availability routes. */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                 };
                 path: {
@@ -2462,7 +2462,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, and staff schedule/availability routes. */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                 };
                 path: {
@@ -2503,7 +2503,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, and staff schedule/availability routes. */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                 };
                 path: {
@@ -2535,7 +2535,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, and staff schedule/availability routes. */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                 };
                 path: {
@@ -2588,7 +2588,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, and staff schedule/availability routes. */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                 };
                 path: {
@@ -2640,7 +2640,7 @@ export interface paths {
                     to: components["parameters"]["AvailabilityTo"];
                 };
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, and staff schedule/availability routes. */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                 };
                 path: {
@@ -2687,7 +2687,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, and staff schedule/availability routes. */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                 };
                 path: {
@@ -2738,7 +2738,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, and staff schedule/availability routes. */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                 };
                 path: {
@@ -2783,7 +2783,7 @@ export interface paths {
                     to: components["parameters"]["AvailabilityTo"];
                 };
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, and staff schedule/availability routes. */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                 };
                 path: {
@@ -2954,7 +2954,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, and staff schedule/availability routes. */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                 };
                 path?: never;
@@ -2984,7 +2984,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, and staff schedule/availability routes. */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                 };
                 path?: never;
@@ -3028,7 +3028,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, and staff schedule/availability routes. */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                 };
                 path: {
@@ -3077,7 +3077,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, and staff schedule/availability routes. */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                 };
                 path: {
@@ -3125,7 +3125,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, and staff schedule/availability routes. */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                 };
                 path: {
@@ -3165,7 +3165,8 @@ export interface paths {
         put?: never;
         /**
          * Calculate booking price quote
-         * @description Public quote. No promo/membership. Does not emit BookingPriceCalculated (deferred W7).
+         * @description Public quote. No promo/membership. Side-effect free: BookingPriceCalculated is emitted
+         *     when a hold or booking is created, not here.
          *     Amounts are integer VND (half-up). Base rate is VND/hour by court type.
          */
         post: {
@@ -3192,6 +3193,650 @@ export interface paths {
                 };
                 400: components["responses"]["BadRequest"];
                 404: components["responses"]["Error"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reservations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create reservation hold
+         * @description Player: JWT only, no `X-Organization-ID`; the tenant comes from the court and the
+         *     customer is resolved from the caller's CRM record in that tenant.
+         *     Staff: send `X-Organization-ID` and `customer_id`.
+         *     Hold TTL is 15 minutes. Emits ReservationCreated + BookingPriceCalculated.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    /** @description If present on nested `/organizations/{id}/...` routes, must match path id. */
+                    "X-Organization-ID"?: components["parameters"]["XOrganizationIdOptional"];
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateReservationRequest"];
+                };
+            };
+            responses: {
+                /** @description Hold created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Reservation"];
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                409: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reservations/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get reservation hold
+         * @description Own hold only for players; staff read holds of their organization.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: {
+                    /** @description If present on nested `/organizations/{id}/...` routes, must match path id. */
+                    "X-Organization-ID"?: components["parameters"]["XOrganizationIdOptional"];
+                };
+                path: {
+                    id: components["parameters"]["ReservationId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Hold */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Reservation"];
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reservations/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel reservation hold
+         * @description pending → canceled. Releases the court block. Emits ReservationCanceled.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    /** @description If present on nested `/organizations/{id}/...` routes, must match path id. */
+                    "X-Organization-ID"?: components["parameters"]["XOrganizationIdOptional"];
+                };
+                path: {
+                    id: components["parameters"]["ReservationId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Hold canceled */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Reservation"];
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                409: components["responses"]["Error"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reservations/{id}/convert": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Convert hold to booking
+         * @description pending → converted. Creates a `pending` booking with a 30 minute payment
+         *     deadline plus an `issued` invoice stub, and moves the court block from the
+         *     hold to the booking. Emits ReservationConverted, BookingCreated,
+         *     BookingPriceCalculated, and InvoiceIssued.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    /** @description If present on nested `/organizations/{id}/...` routes, must match path id. */
+                    "X-Organization-ID"?: components["parameters"]["XOrganizationIdOptional"];
+                };
+                path: {
+                    id: components["parameters"]["ReservationId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Booking created from hold */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ConvertReservationResponse"];
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                409: components["responses"]["Error"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/bookings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List bookings (staff) */
+        get: {
+            parameters: {
+                query?: {
+                    branch_id?: string;
+                    status?: "pending" | "confirmed" | "checked_in" | "in_progress" | "completed" | "canceled";
+                    /** @description Inclusive start of the booking window filter (UTC RFC3339) */
+                    from?: string;
+                    /** @description Exclusive end of the booking window filter (UTC RFC3339) */
+                    to?: string;
+                    limit?: number;
+                };
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Bookings */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Booking"][];
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/bookings/walk-in": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create walk-in booking (staff)
+         * @description On-site booking without a hold (UC-BOOKING-007). Creates a `confirmed` booking
+         *     plus an `issued` invoice stub. `customer_id` is required; no guest is created.
+         *     Emits BookingCreated, BookingConfirmed, BookingPriceCalculated, InvoiceIssued.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["WalkInBookingRequest"];
+                };
+            };
+            responses: {
+                /** @description Booking created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["WalkInBookingResponse"];
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                409: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/me/bookings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List my bookings
+         * @description Player route. Returns bookings for every CRM customer linked to the caller.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    limit?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Bookings */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Booking"][];
+                    };
+                };
+                401: components["responses"]["Error"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/bookings/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get booking
+         * @description Own booking only for players; staff read bookings of their organization.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: {
+                    /** @description If present on nested `/organizations/{id}/...` routes, must match path id. */
+                    "X-Organization-ID"?: components["parameters"]["XOrganizationIdOptional"];
+                };
+                path: {
+                    id: components["parameters"]["BookingId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Booking */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Booking"];
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/bookings/{id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm booking (staff)
+         * @description pending → confirmed. Clears the payment deadline. Emits BookingConfirmed.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                };
+                path: {
+                    id: components["parameters"]["BookingId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Booking confirmed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Booking"];
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                409: components["responses"]["Error"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/bookings/{id}/check-in": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Check in booking (staff)
+         * @description confirmed → checked_in. Emits BookingCheckedIn.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                };
+                path: {
+                    id: components["parameters"]["BookingId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Booking checked in */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Booking"];
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                409: components["responses"]["Error"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/bookings/{id}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Complete booking (staff)
+         * @description confirmed / checked_in / in_progress → completed. Emits BookingCompleted only;
+         *     loyalty and review events stay post-MVP (DEF-20260808-05).
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                };
+                path: {
+                    id: components["parameters"]["BookingId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Booking completed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Booking"];
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                409: components["responses"]["Error"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/bookings/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel booking
+         * @description pending / confirmed / checked_in → canceled. Releases the court block.
+         *     Emits BookingCanceled. No refund in W7 (payment is W8).
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    /** @description If present on nested `/organizations/{id}/...` routes, must match path id. */
+                    "X-Organization-ID"?: components["parameters"]["XOrganizationIdOptional"];
+                };
+                path: {
+                    id: components["parameters"]["BookingId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Booking canceled */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Booking"];
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                409: components["responses"]["Error"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/bookings/{id}/reschedule": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reschedule booking
+         * @description Moves a pending or confirmed booking to a new window, recalculates the price,
+         *     and moves the court block. Emits BookingRescheduled.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    /** @description If present on nested `/organizations/{id}/...` routes, must match path id. */
+                    "X-Organization-ID"?: components["parameters"]["XOrganizationIdOptional"];
+                };
+                path: {
+                    id: components["parameters"]["BookingId"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["RescheduleBookingRequest"];
+                };
+            };
+            responses: {
+                /** @description Booking rescheduled */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Booking"];
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                409: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
             };
         };
         delete?: never;
@@ -3761,6 +4406,164 @@ export interface components {
             ends_at: string;
             duration_minutes: number;
         };
+        CreateReservationRequest: {
+            /** Format: uuid */
+            court_id: string;
+            /**
+             * Format: uuid
+             * @description Required for staff holds (`X-Organization-ID` present); ignored for players.
+             */
+            customer_id?: string;
+            /** Format: date-time */
+            starts_at: string;
+            /** Format: date-time */
+            ends_at: string;
+            /**
+             * @description Defaults to `staff` for staff holds, otherwise `web`.
+             * @enum {string}
+             */
+            source?: "web" | "mobile" | "admin" | "api" | "staff";
+        };
+        Reservation: {
+            /** Format: uuid */
+            id: string;
+            public_id: string;
+            reservation_no: string;
+            /** @enum {string} */
+            status: "pending" | "converted" | "canceled" | "expired";
+            /** @enum {string} */
+            source: "web" | "mobile" | "admin" | "api" | "staff";
+            /** Format: uuid */
+            customer_id: string;
+            /** Format: uuid */
+            branch_id: string;
+            /** Format: uuid */
+            court_id: string;
+            /** @example VND */
+            currency: string;
+            subtotal: number;
+            discount_amount: number;
+            tax_amount: number;
+            total_amount: number;
+            /** Format: uuid */
+            price_version_id?: string;
+            /** Format: date-time */
+            starts_at: string;
+            /** Format: date-time */
+            ends_at: string;
+            /**
+             * Format: date-time
+             * @description Hold TTL is 15 minutes
+             */
+            expires_at: string;
+            /** Format: date-time */
+            canceled_at?: string;
+            /** Format: date-time */
+            converted_at?: string;
+            /** Format: date-time */
+            created_at: string;
+        };
+        ConvertedBooking: {
+            /** Format: uuid */
+            id: string;
+            public_id: string;
+            booking_no: string;
+            /** @enum {string} */
+            status: "pending";
+            /**
+             * Format: date-time
+             * @description Unpaid booking TTL is 30 minutes
+             */
+            expires_at?: string;
+            /** Format: uuid */
+            invoice_id: string;
+            invoice_no: string;
+            /** @example VND */
+            currency: string;
+            total_amount: number;
+        };
+        ConvertReservationResponse: {
+            reservation: components["schemas"]["Reservation"];
+            booking: components["schemas"]["ConvertedBooking"];
+        };
+        WalkInBookingRequest: {
+            /** Format: uuid */
+            court_id: string;
+            /** Format: uuid */
+            customer_id: string;
+            /** Format: date-time */
+            starts_at: string;
+            /** Format: date-time */
+            ends_at: string;
+        };
+        RescheduleBookingRequest: {
+            /** Format: date-time */
+            starts_at: string;
+            /** Format: date-time */
+            ends_at: string;
+        };
+        Booking: {
+            /** Format: uuid */
+            id: string;
+            public_id: string;
+            booking_no: string;
+            /** @enum {string} */
+            status: "pending" | "confirmed" | "checked_in" | "in_progress" | "completed" | "canceled";
+            /** Format: uuid */
+            reservation_id?: string;
+            /** Format: uuid */
+            customer_id: string;
+            /** Format: uuid */
+            branch_id: string;
+            /** Format: uuid */
+            court_id: string;
+            /** @example VND */
+            currency: string;
+            subtotal: number;
+            discount_amount: number;
+            tax_amount: number;
+            total_amount: number;
+            /** Format: uuid */
+            price_version_id?: string;
+            /** Format: date-time */
+            starts_at: string;
+            /** Format: date-time */
+            ends_at: string;
+            /**
+             * Format: date-time
+             * @description Payment deadline while pending
+             */
+            expires_at?: string;
+            /** Format: date-time */
+            confirmed_at?: string;
+            /** Format: date-time */
+            checked_in_at?: string;
+            /** Format: date-time */
+            completed_at?: string;
+            /** Format: date-time */
+            canceled_at?: string;
+            /** Format: date-time */
+            created_at: string;
+        };
+        BookingInvoice: {
+            /** Format: uuid */
+            id: string;
+            public_id: string;
+            invoice_no: string;
+            /** @enum {string} */
+            status: "draft" | "issued" | "partially_paid" | "paid" | "void" | "canceled";
+            /** @example VND */
+            currency: string;
+            total_amount: number;
+            /** Format: date-time */
+            issued_at: string;
+            /** Format: date-time */
+            due_at?: string;
+        };
+        WalkInBookingResponse: {
+            booking: components["schemas"]["Booking"];
+            invoice: components["schemas"]["BookingInvoice"];
+        };
         User: {
             /** Format: uuid */
             id: string;
@@ -3883,11 +4686,13 @@ export interface components {
         CourtTypeId: string;
         CourtId: string;
         PriceVersionId: string;
+        ReservationId: string;
+        BookingId: string;
         /** @description Inclusive range start (UTC RFC3339) */
         AvailabilityFrom: string;
         /** @description Exclusive range end (UTC RFC3339) */
         AvailabilityTo: string;
-        /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, and staff schedule/availability routes. */
+        /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
         XOrganizationId: string;
         /** @description If present on nested `/organizations/{id}/...` routes, must match path id. */
         XOrganizationIdOptional: string;

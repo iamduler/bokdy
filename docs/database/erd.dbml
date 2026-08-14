@@ -3584,12 +3584,10 @@ TableGroup "Reservation" {
 //////////////////////////////////////////////////////////////
 
 Enum reservation_status {
-  draft
   pending
-  confirmed
-  expired
+  converted
   canceled
-  completed
+  expired
 }
 
 Enum reservation_source {
@@ -3597,7 +3595,7 @@ Enum reservation_source {
   mobile
   admin
   api
-  integration
+  staff
 }
 
 Enum reservation_hold_status {

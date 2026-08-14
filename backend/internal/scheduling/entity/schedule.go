@@ -16,6 +16,8 @@ const (
 	BlockMaintenance BlockType = "maintenance"
 	BlockHoliday     BlockType = "holiday"
 	BlockSystem      BlockType = "system"
+	BlockReservation BlockType = "reservation"
+	BlockBooking     BlockType = "booking"
 )
 
 type ProjectionStatus string

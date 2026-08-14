@@ -128,7 +128,7 @@ Cancel Booking
 
 ↓
 
-BookingCancelled
+BookingCanceled
 
 ↓
 

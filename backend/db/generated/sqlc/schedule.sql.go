@@ -35,6 +35,55 @@ func (q *Queries) CountConflictingBlocks(ctx context.Context, arg CountConflicti
 	return count, err
 }
 
+const countOverlappingBlocks = `-- name: CountOverlappingBlocks :one
+SELECT COUNT(*)::bigint AS count
+FROM scheduling.resource_blocks
+WHERE resource_id = $1
+  AND starts_at < $2
+  AND ends_at > $3
+`
+
+type CountOverlappingBlocksParams struct {
+	ResourceID uuid.UUID `json:"resource_id"`
+	RangeEnd   time.Time `json:"range_end"`
+	RangeStart time.Time `json:"range_start"`
+}
+
+func (q *Queries) CountOverlappingBlocks(ctx context.Context, arg CountOverlappingBlocksParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countOverlappingBlocks, arg.ResourceID, arg.RangeEnd, arg.RangeStart)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countOverlappingBlocksExcludingReference = `-- name: CountOverlappingBlocksExcludingReference :one
+SELECT COUNT(*)::bigint AS count
+FROM scheduling.resource_blocks
+WHERE resource_id = $1
+  AND starts_at < $2
+  AND ends_at > $3
+  AND (reference_id IS NULL OR reference_id <> $4)
+`
+
+type CountOverlappingBlocksExcludingReferenceParams struct {
+	ResourceID         uuid.UUID  `json:"resource_id"`
+	RangeEnd           time.Time  `json:"range_end"`
+	RangeStart         time.Time  `json:"range_start"`
+	ExcludeReferenceID *uuid.UUID `json:"exclude_reference_id"`
+}
+
+func (q *Queries) CountOverlappingBlocksExcludingReference(ctx context.Context, arg CountOverlappingBlocksExcludingReferenceParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countOverlappingBlocksExcludingReference,
+		arg.ResourceID,
+		arg.RangeEnd,
+		arg.RangeStart,
+		arg.ExcludeReferenceID,
+	)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createHoliday = `-- name: CreateHoliday :exec
 INSERT INTO scheduling.calendar_holidays (
     id, tenant_id, location_id, name_en, name_vi, starts_at, ends_at, is_closed, opens_at, closes_at, created_at
@@ -178,6 +227,22 @@ type DeleteTimeSlotsFromParams struct {
 
 func (q *Queries) DeleteTimeSlotsFrom(ctx context.Context, arg DeleteTimeSlotsFromParams) error {
 	_, err := q.db.Exec(ctx, deleteTimeSlotsFrom, arg.ResourceID, arg.StartsAt)
+	return err
+}
+
+const deleteTypedBlock = `-- name: DeleteTypedBlock :exec
+DELETE FROM scheduling.resource_blocks
+WHERE resource_id = $1 AND block_type = $2 AND reference_id = $3
+`
+
+type DeleteTypedBlockParams struct {
+	ResourceID  uuid.UUID           `json:"resource_id"`
+	BlockType   SchedulingBlockType `json:"block_type"`
+	ReferenceID *uuid.UUID          `json:"reference_id"`
+}
+
+func (q *Queries) DeleteTypedBlock(ctx context.Context, arg DeleteTypedBlockParams) error {
+	_, err := q.db.Exec(ctx, deleteTypedBlock, arg.ResourceID, arg.BlockType, arg.ReferenceID)
 	return err
 }
 
@@ -624,6 +689,39 @@ func (q *Queries) UpsertAvailabilityProjection(ctx context.Context, arg UpsertAv
 	return id, err
 }
 
+const upsertBookingBlock = `-- name: UpsertBookingBlock :exec
+INSERT INTO scheduling.resource_blocks (
+    id, resource_id, block_type, reference_type, reference_id, starts_at, ends_at, reason, created_at
+) VALUES ($1, $2, 'booking', $3, $4, $5, $6, $7, $8)
+ON CONFLICT (resource_id, reference_id) WHERE block_type = 'booking' AND reference_id IS NOT NULL
+DO UPDATE SET starts_at = EXCLUDED.starts_at, ends_at = EXCLUDED.ends_at, reason = EXCLUDED.reason
+`
+
+type UpsertBookingBlockParams struct {
+	ID            uuid.UUID  `json:"id"`
+	ResourceID    uuid.UUID  `json:"resource_id"`
+	ReferenceType *string    `json:"reference_type"`
+	ReferenceID   *uuid.UUID `json:"reference_id"`
+	StartsAt      time.Time  `json:"starts_at"`
+	EndsAt        time.Time  `json:"ends_at"`
+	Reason        *string    `json:"reason"`
+	CreatedAt     time.Time  `json:"created_at"`
+}
+
+func (q *Queries) UpsertBookingBlock(ctx context.Context, arg UpsertBookingBlockParams) error {
+	_, err := q.db.Exec(ctx, upsertBookingBlock,
+		arg.ID,
+		arg.ResourceID,
+		arg.ReferenceType,
+		arg.ReferenceID,
+		arg.StartsAt,
+		arg.EndsAt,
+		arg.Reason,
+		arg.CreatedAt,
+	)
+	return err
+}
+
 const upsertMaintenanceBlock = `-- name: UpsertMaintenanceBlock :exec
 INSERT INTO scheduling.resource_blocks (
     id, resource_id, block_type, reference_type, reference_id, starts_at, ends_at, reason, created_at
@@ -645,6 +743,39 @@ type UpsertMaintenanceBlockParams struct {
 
 func (q *Queries) UpsertMaintenanceBlock(ctx context.Context, arg UpsertMaintenanceBlockParams) error {
 	_, err := q.db.Exec(ctx, upsertMaintenanceBlock,
+		arg.ID,
+		arg.ResourceID,
+		arg.ReferenceType,
+		arg.ReferenceID,
+		arg.StartsAt,
+		arg.EndsAt,
+		arg.Reason,
+		arg.CreatedAt,
+	)
+	return err
+}
+
+const upsertReservationBlock = `-- name: UpsertReservationBlock :exec
+INSERT INTO scheduling.resource_blocks (
+    id, resource_id, block_type, reference_type, reference_id, starts_at, ends_at, reason, created_at
+) VALUES ($1, $2, 'reservation', $3, $4, $5, $6, $7, $8)
+ON CONFLICT (resource_id, reference_id) WHERE block_type = 'reservation' AND reference_id IS NOT NULL
+DO UPDATE SET starts_at = EXCLUDED.starts_at, ends_at = EXCLUDED.ends_at, reason = EXCLUDED.reason
+`
+
+type UpsertReservationBlockParams struct {
+	ID            uuid.UUID  `json:"id"`
+	ResourceID    uuid.UUID  `json:"resource_id"`
+	ReferenceType *string    `json:"reference_type"`
+	ReferenceID   *uuid.UUID `json:"reference_id"`
+	StartsAt      time.Time  `json:"starts_at"`
+	EndsAt        time.Time  `json:"ends_at"`
+	Reason        *string    `json:"reason"`
+	CreatedAt     time.Time  `json:"created_at"`
+}
+
+func (q *Queries) UpsertReservationBlock(ctx context.Context, arg UpsertReservationBlockParams) error {
+	_, err := q.db.Exec(ctx, upsertReservationBlock,
 		arg.ID,
 		arg.ResourceID,
 		arg.ReferenceType,

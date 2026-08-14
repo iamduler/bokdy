@@ -8,6 +8,9 @@ sql:
       - "internal/platform/persistence/queries/crm/*.sql"
       - "internal/platform/persistence/queries/catalog/*.sql"
       - "internal/platform/persistence/queries/scheduling/*.sql"
+      - "internal/platform/persistence/queries/reservation/*.sql"
+      - "internal/platform/persistence/queries/booking/*.sql"
+      - "internal/platform/persistence/queries/billing/*.sql"
       - "internal/platform/persistence/queries/pricing/*.sql"
     schema: "db/schema.sql"
     gen:

@@ -23,6 +23,11 @@ type ScheduleRepository interface {
 	UpsertMaintenanceBlock(ctx context.Context, tx pgx.Tx, b *entity.ResourceBlock) error
 	DeleteMaintenanceBlock(ctx context.Context, tx pgx.Tx, resourceID, maintenanceID uuid.UUID) error
 	DeleteMaintenanceBlocksByResource(ctx context.Context, tx pgx.Tx, resourceID uuid.UUID) error
+	UpsertReservationBlock(ctx context.Context, tx pgx.Tx, b *entity.ResourceBlock) error
+	UpsertBookingBlock(ctx context.Context, tx pgx.Tx, b *entity.ResourceBlock) error
+	DeleteTypedBlock(ctx context.Context, tx pgx.Tx, resourceID uuid.UUID, blockType entity.BlockType, referenceID uuid.UUID) error
+	CountOverlappingBlocks(ctx context.Context, resourceID uuid.UUID, from, to time.Time) (int64, error)
+	CountOverlappingBlocksExcept(ctx context.Context, resourceID uuid.UUID, from, to time.Time, excludeReferenceID uuid.UUID) (int64, error)
 	DeleteSlotsFrom(ctx context.Context, tx pgx.Tx, resourceID uuid.UUID, from time.Time) error
 	UpsertProjection(ctx context.Context, tx pgx.Tx, p *entity.AvailabilityProjection) error
 	InsertTimeSlots(ctx context.Context, tx pgx.Tx, slots []entity.TimeSlot) error
@@ -71,14 +76,14 @@ type MarketplaceBranch struct {
 }
 
 type MarketplaceCourt struct {
-	ID           uuid.UUID
-	PublicID     string
-	LocationID   uuid.UUID
-	CourtTypeID  uuid.UUID
-	Code         string
-	NameEn       string
-	NameVi       string
-	Status       string
-	IsBookable   bool
-	SlotMinutes  int
+	ID          uuid.UUID
+	PublicID    string
+	LocationID  uuid.UUID
+	CourtTypeID uuid.UUID
+	Code        string
+	NameEn      string
+	NameVi      string
+	Status      string
+	IsBookable  bool
+	SlotMinutes int
 }

@@ -1,6 +1,9 @@
 package wiring
 
 import (
+	bookinghandler "bokdy/internal/booking/handler"
+	bookingpg "bokdy/internal/booking/infrastructure/postgres"
+	bookingservice "bokdy/internal/booking/service"
 	cataloghandler "bokdy/internal/catalog/handler"
 	catalogpg "bokdy/internal/catalog/infrastructure/postgres"
 	catalogservice "bokdy/internal/catalog/service"
@@ -21,6 +24,9 @@ import (
 	pricinghandler "bokdy/internal/pricing/handler"
 	pricingpg "bokdy/internal/pricing/infrastructure/postgres"
 	pricingservice "bokdy/internal/pricing/service"
+	reservationhandler "bokdy/internal/reservation/handler"
+	reservationpg "bokdy/internal/reservation/infrastructure/postgres"
+	reservationservice "bokdy/internal/reservation/service"
 	schedhandler "bokdy/internal/scheduling/handler"
 	schedpg "bokdy/internal/scheduling/infrastructure/postgres"
 	schedservice "bokdy/internal/scheduling/service"
@@ -87,6 +93,19 @@ func RegisterRoutes(api *gin.RouterGroup, app *server.Application) {
 	pricingSvc := pricingservice.NewPricingService(app.DB.Pool, pricingRepo, orgRepo, orgSvc, outbox)
 	pricingHandler := pricinghandler.NewPricingHandler(pricingSvc)
 	pricingHandler.RegisterRoutes(api, jwt)
+
+	occupancySvc := schedservice.NewOccupancyService(schedRepo, syncEnqueuer)
+	bookingSvc := bookingservice.NewBookingService(
+		app.DB.Pool, bookingpg.NewBookingRepo(app.DB.Pool), bookingpg.NewInvoiceRepo(app.DB.Pool),
+		customerRepo, orgRepo, orgSvc, occupancySvc, pricingSvc, outbox,
+	)
+	bookinghandler.NewBookingHandler(bookingSvc).RegisterRoutes(api, jwt)
+
+	reservationSvc := reservationservice.NewReservationService(
+		app.DB.Pool, reservationpg.NewReservationRepo(app.DB.Pool),
+		customerRepo, orgRepo, orgSvc, occupancySvc, pricingSvc, bookingSvc, outbox,
+	)
+	reservationhandler.NewReservationHandler(reservationSvc).RegisterRoutes(api, jwt)
 
 	admin := api.Group("/admin", jwt, middleware.RequireSystemAdmin())
 	admin.GET("/health", func(c *gin.Context) {

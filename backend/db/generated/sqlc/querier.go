@@ -18,17 +18,29 @@ type Querier interface {
 	AssignUserRole(ctx context.Context, arg AssignUserRoleParams) error
 	BranchCodeExists(ctx context.Context, arg BranchCodeExistsParams) (bool, error)
 	BranchNameExists(ctx context.Context, arg BranchNameExistsParams) (bool, error)
+	CancelBooking(ctx context.Context, arg CancelBookingParams) error
+	CancelReservation(ctx context.Context, arg CancelReservationParams) error
+	CheckInBooking(ctx context.Context, arg CheckInBookingParams) error
 	ClearUserPhoneVerified(ctx context.Context, id uuid.UUID) error
+	CompleteBooking(ctx context.Context, arg CompleteBookingParams) error
 	CompleteResourceMaintenance(ctx context.Context, id uuid.UUID) error
+	ConfirmBooking(ctx context.Context, arg ConfirmBookingParams) error
 	ConsumePasswordResetToken(ctx context.Context, id uuid.UUID) error
+	ConvertReservation(ctx context.Context, arg ConvertReservationParams) error
 	CountConflictingBlocks(ctx context.Context, arg CountConflictingBlocksParams) (int64, error)
 	CountNonArchivedCourtsByType(ctx context.Context, arg CountNonArchivedCourtsByTypeParams) (int64, error)
+	CountOverlappingBlocks(ctx context.Context, arg CountOverlappingBlocksParams) (int64, error)
+	CountOverlappingBlocksExcludingReference(ctx context.Context, arg CountOverlappingBlocksExcludingReferenceParams) (int64, error)
+	CountOverlappingBookings(ctx context.Context, arg CountOverlappingBookingsParams) (int64, error)
 	CountTenantRole(ctx context.Context, arg CountTenantRoleParams) (int32, error)
 	CourtCodeExists(ctx context.Context, arg CourtCodeExistsParams) (bool, error)
 	CourtNameExists(ctx context.Context, arg CourtNameExistsParams) (bool, error)
 	CourtTypeCodeExists(ctx context.Context, arg CourtTypeCodeExistsParams) (bool, error)
 	CourtTypeNameExists(ctx context.Context, arg CourtTypeNameExistsParams) (bool, error)
+	CreateBooking(ctx context.Context, arg CreateBookingParams) error
+	CreateBookingResource(ctx context.Context, arg CreateBookingResourceParams) error
 	CreateBusinessUnit(ctx context.Context, arg CreateBusinessUnitParams) error
+	CreateCheckIn(ctx context.Context, arg CreateCheckInParams) error
 	CreateCourt(ctx context.Context, arg CreateCourtParams) error
 	CreateCourtType(ctx context.Context, arg CreateCourtTypeParams) error
 	CreateCustomer(ctx context.Context, arg CreateCustomerParams) error
@@ -37,6 +49,7 @@ type Querier interface {
 	CreateHoliday(ctx context.Context, arg CreateHolidayParams) error
 	CreateIdentity(ctx context.Context, arg CreateIdentityParams) error
 	CreateIdentityVerification(ctx context.Context, arg CreateIdentityVerificationParams) error
+	CreateInvoice(ctx context.Context, arg CreateInvoiceParams) error
 	CreateLocation(ctx context.Context, arg CreateLocationParams) error
 	CreateLocationAddress(ctx context.Context, arg CreateLocationAddressParams) error
 	CreateLocationSettings(ctx context.Context, arg CreateLocationSettingsParams) error
@@ -46,6 +59,8 @@ type Querier interface {
 	CreatePriceList(ctx context.Context, arg CreatePriceListParams) error
 	CreatePriceVersion(ctx context.Context, arg CreatePriceVersionParams) error
 	CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) error
+	CreateReservation(ctx context.Context, arg CreateReservationParams) error
+	CreateReservationResource(ctx context.Context, arg CreateReservationResourceParams) error
 	CreateResourceBlock(ctx context.Context, arg CreateResourceBlockParams) error
 	CreateResourceMaintenance(ctx context.Context, arg CreateResourceMaintenanceParams) error
 	CreateSession(ctx context.Context, arg CreateSessionParams) error
@@ -59,14 +74,20 @@ type Querier interface {
 	DeleteProjectionsFrom(ctx context.Context, arg DeleteProjectionsFromParams) error
 	DeleteResourceBlock(ctx context.Context, arg DeleteResourceBlockParams) error
 	DeleteTimeSlotsFrom(ctx context.Context, arg DeleteTimeSlotsFromParams) error
+	DeleteTypedBlock(ctx context.Context, arg DeleteTypedBlockParams) error
 	ExpirePendingInvitations(ctx context.Context, expiresAt time.Time) ([]OrganizationStaffInvitation, error)
+	ExpireReservation(ctx context.Context, arg ExpireReservationParams) error
 	FindActivePasswordResetToken(ctx context.Context, tokenHash string) (FindActivePasswordResetTokenRow, error)
 	FindActivePriceVersion(ctx context.Context, tenantID uuid.UUID) (PricingPriceVersion, error)
+	FindBooking(ctx context.Context, id uuid.UUID) (BookingBooking, error)
+	FindBookingForUpdate(ctx context.Context, id uuid.UUID) (BookingBooking, error)
 	FindBranchByID(ctx context.Context, arg FindBranchByIDParams) (FindBranchByIDRow, error)
 	FindCategoryInTenant(ctx context.Context, arg FindCategoryInTenantParams) (uuid.UUID, error)
 	FindCourtByID(ctx context.Context, arg FindCourtByIDParams) (FindCourtByIDRow, error)
+	FindCourtForBooking(ctx context.Context, id uuid.UUID) (FindCourtForBookingRow, error)
 	FindCourtForPricing(ctx context.Context, id uuid.UUID) (FindCourtForPricingRow, error)
 	FindCourtForPricingByPublicID(ctx context.Context, publicID string) (FindCourtForPricingByPublicIDRow, error)
+	FindCourtForReservation(ctx context.Context, id uuid.UUID) (FindCourtForReservationRow, error)
 	FindCourtForSync(ctx context.Context, id uuid.UUID) (FindCourtForSyncRow, error)
 	FindCourtTypeByID(ctx context.Context, arg FindCourtTypeByIDParams) (FindCourtTypeByIDRow, error)
 	FindCustomerByID(ctx context.Context, arg FindCustomerByIDParams) (FindCustomerByIDRow, error)
@@ -79,6 +100,7 @@ type Querier interface {
 	FindInProgressMaintenance(ctx context.Context, resourceID uuid.UUID) (FindInProgressMaintenanceRow, error)
 	FindInvitationByID(ctx context.Context, arg FindInvitationByIDParams) (OrganizationStaffInvitation, error)
 	FindInvitationByToken(ctx context.Context, invitationToken string) (OrganizationStaffInvitation, error)
+	FindInvoiceByBooking(ctx context.Context, bookingID uuid.UUID) (BillingInvoice, error)
 	FindLocalIdentityByEmail(ctx context.Context, lower string) (FindLocalIdentityByEmailRow, error)
 	FindMarketplaceBranchByPublicID(ctx context.Context, publicID string) (FindMarketplaceBranchByPublicIDRow, error)
 	FindMarketplaceCourtByPublicID(ctx context.Context, publicID string) (FindMarketplaceCourtByPublicIDRow, error)
@@ -88,6 +110,8 @@ type Querier interface {
 	FindPriceVersion(ctx context.Context, id uuid.UUID) (PricingPriceVersion, error)
 	FindPrimaryIdentityByUserID(ctx context.Context, userID uuid.UUID) (FindPrimaryIdentityByUserIDRow, error)
 	FindRefreshTokenByHash(ctx context.Context, tokenHash string) (FindRefreshTokenByHashRow, error)
+	FindReservation(ctx context.Context, id uuid.UUID) (ReservationReservation, error)
+	FindReservationForUpdate(ctx context.Context, id uuid.UUID) (ReservationReservation, error)
 	FindResourceBlock(ctx context.Context, arg FindResourceBlockParams) (FindResourceBlockRow, error)
 	FindRoleByCode(ctx context.Context, code string) (FindRoleByCodeRow, error)
 	FindRoleByID(ctx context.Context, id uuid.UUID) (FindRoleByIDRow, error)
@@ -106,6 +130,8 @@ type Querier interface {
 	IsActiveStaffMember(ctx context.Context, arg IsActiveStaffMemberParams) (bool, error)
 	LinkCustomerUser(ctx context.Context, arg LinkCustomerUserParams) error
 	ListActiveCourtIDsByLocation(ctx context.Context, locationID uuid.UUID) ([]uuid.UUID, error)
+	ListBookingsByCustomers(ctx context.Context, arg ListBookingsByCustomersParams) ([]BookingBooking, error)
+	ListBookingsByTenant(ctx context.Context, arg ListBookingsByTenantParams) ([]BookingBooking, error)
 	ListBranchesByOrg(ctx context.Context, organizationID uuid.UUID) ([]ListBranchesByOrgRow, error)
 	ListBusinessHours(ctx context.Context, locationID uuid.UUID) ([]SchedulingBusinessHour, error)
 	ListCategoryPrices(ctx context.Context, priceVersionID uuid.UUID) ([]PricingCategoryPrice, error)
@@ -114,6 +140,8 @@ type Querier interface {
 	ListCustomerContacts(ctx context.Context, customerID uuid.UUID) ([]ListCustomerContactsRow, error)
 	ListCustomersByTenant(ctx context.Context, arg ListCustomersByTenantParams) ([]ListCustomersByTenantRow, error)
 	ListCustomersByUser(ctx context.Context, userID *uuid.UUID) ([]ListCustomersByUserRow, error)
+	ListExpiredPendingBookings(ctx context.Context, arg ListExpiredPendingBookingsParams) ([]BookingBooking, error)
+	ListExpiredPendingReservations(ctx context.Context, arg ListExpiredPendingReservationsParams) ([]ReservationReservation, error)
 	ListHolidaysOverlapping(ctx context.Context, arg ListHolidaysOverlappingParams) ([]ListHolidaysOverlappingRow, error)
 	ListMarketplaceCourts(ctx context.Context, locationID uuid.UUID) ([]ListMarketplaceCourtsRow, error)
 	ListOrganizationsByUser(ctx context.Context, userID uuid.UUID) ([]ListOrganizationsByUserRow, error)
@@ -131,6 +159,7 @@ type Querier interface {
 	PublishPriceVersion(ctx context.Context, arg PublishPriceVersionParams) error
 	RecordLoginHistory(ctx context.Context, arg RecordLoginHistoryParams) error
 	RemoveUserRole(ctx context.Context, arg RemoveUserRoleParams) error
+	RescheduleBooking(ctx context.Context, arg RescheduleBookingParams) error
 	RetireActiveVersions(ctx context.Context, arg RetireActiveVersionsParams) error
 	RetireDraftPriceVersion(ctx context.Context, arg RetireDraftPriceVersionParams) error
 	RevokeActiveSessionsForUser(ctx context.Context, userID uuid.UUID) error
@@ -140,6 +169,7 @@ type Querier interface {
 	RevokeSessionByID(ctx context.Context, id uuid.UUID) error
 	SearchMarketplaceBranches(ctx context.Context, arg SearchMarketplaceBranchesParams) ([]SearchMarketplaceBranchesRow, error)
 	TouchUserLastLogin(ctx context.Context, arg TouchUserLastLoginParams) error
+	UpdateBookingResourceSchedule(ctx context.Context, arg UpdateBookingResourceScheduleParams) error
 	UpdateCourt(ctx context.Context, arg UpdateCourtParams) error
 	UpdateCourtStatus(ctx context.Context, arg UpdateCourtStatusParams) error
 	UpdateCourtType(ctx context.Context, arg UpdateCourtTypeParams) error
@@ -158,8 +188,10 @@ type Querier interface {
 	UpdateUserProfile(ctx context.Context, arg UpdateUserProfileParams) error
 	UpdateUserStatus(ctx context.Context, arg UpdateUserStatusParams) error
 	UpsertAvailabilityProjection(ctx context.Context, arg UpsertAvailabilityProjectionParams) (uuid.UUID, error)
+	UpsertBookingBlock(ctx context.Context, arg UpsertBookingBlockParams) error
 	UpsertMaintenanceBlock(ctx context.Context, arg UpsertMaintenanceBlockParams) error
 	UpsertPasswordCredential(ctx context.Context, arg UpsertPasswordCredentialParams) error
+	UpsertReservationBlock(ctx context.Context, arg UpsertReservationBlockParams) error
 }
 
 var _ Querier = (*Queries)(nil)

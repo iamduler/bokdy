@@ -6,6 +6,17 @@ Status: Active
 
 Three audiences: Player, Owner (staff), Admin. Backend first. No FE wiring in W1–W9.
 
+## Reservation + Booking freeze (W7, 2026-08-14)
+
+- Full tracker W7 remaining: F-PLAYER-BOOK-04–07, 13, 15–20 + F-OWNER-OPS-03–11 + availability subtract. **No** F-PLAYER-BOOK-14 (`POST /bookings`) — hold-only player path (DEF-20260814-06).
+- Packages `reservation` + `booking`. Occupancy SoT = `scheduling.resource_blocks` (`reservation`/`booking`) + sync enqueue (no required `reservation_holds` table).
+- Schema MVP: one court + one time window per hold/booking via `*_resources` on `resource_id` (court); no `catalog.services` / multi-item.
+- Reservation API statuses: `pending` → `converted` | `canceled` | `expired`. No draft/confirmed on hold API.
+- Hold TTL **15m**; unpaid booking `pending` TTL **30m**. Workers: `reservation:expire`, `booking:expire_unpaid`.
+- Convert (player/staff) → Booking `pending` + billing invoice stub `issued` + `InvoiceIssued` (no payment/GET invoice HTTP — W8). Walk-in → Booking `confirmed` + invoice stub. Emit `BookingPriceCalculated` on hold/booking create (closes DEF-20260814-05).
+- Cancel/reschedule release slots; **no** PaymentRefunded in W7. Event spelling: `BookingCanceled`.
+- Player: JWT + CRM customer for tenant (link via existing me flow if needed). Staff: `customer_id` required; `RequireMembership`. Player routes resolve tenant from court (no org header).
+
 ## Pricing freeze (W6, 2026-08-14)
 
 - Full tracker W6: F-OWNER-VENUE-24–27 + F-PLAYER-BOOK-08. No FE. No booking.
@@ -15,7 +26,7 @@ Three audiences: Player, Owner (staff), Admin. Backend first. No FE wiring in W1
 - Create version = nested body: category (court type) base rates + time rules. Extra reads: `GET /price-versions`, `GET /price-versions/{id}`.
 - Base rate = VND **per hour** by `court_type_id` (`pricing.category_prices`). Time rules = weekday + clock window + surcharge/discount (fixed per hour or %). No taxes, services, formula DSL, full ERD rule-set stack.
 - `POST /pricing/calculate` is **public**; input `court_id` and/or `court_public_id` + `starts_at`/`ends_at`. Output amounts rounded half-up to integer VND. No promo/membership (DEF-20260808-03).
-- `BookingPriceCalculated` **not** emitted on quote — deferred to W7 (DEF-20260814-05).
+- `BookingPriceCalculated` emitted on hold/booking create (not on public calculate). See Reservation + Booking freeze (W7).
 
 ## Scheduling freeze (W5, 2026-08-14)
 
@@ -24,8 +35,7 @@ Three audiences: Player, Owner (staff), Admin. Backend first. No FE wiring in W1
 - Weekly hours = `scheduling.business_hours` (Branch/`location_id`). Special = `scheduling.calendar_holidays` with `is_closed` (default true) + optional `opens_at`/`closes_at`. No RRULE.
 - Events (checklist canonical): `WeeklyScheduleUpdated`, `SpecialScheduleUpdated`, `TimeBlocked`, `TimeUnblocked`, `AvailabilitySynchronized`.
 - Projection: Asynq `scheduling:availability_sync`; horizon **14 days**; slots from court type `slot_duration_minutes`; GET reads `time_slots`.
-- Occupied SoT = `resource_blocks`. Maintenance → sync creates/clears `block_type=maintenance` blocks (no `resource_maintenance_windows` in W5).
-- Availability subtracts hours + holidays + blocks only; reservation/booking subtract deferred to W7.
+- Occupied SoT = `resource_blocks`. Maintenance / reservation / booking blocks + sync. Availability subtracts hours + holidays + blocks.
 - No slots on CourtCreated (`inactive`). Sync on schedule/block mutations, CourtOpened, and maintenance schedule/complete.
 - Marketplace: branch `active` + org `active` is public (no `is_public` flag); query `q`; no sport filter/media.
 - Extra read: `GET /branches/{id}/schedule`. Weekly PUT is replace-all (7 weekdays).

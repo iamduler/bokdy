@@ -96,8 +96,14 @@ Scaffold includes:
 * `backend/internal/catalog` — Court Type + Court (`catalog.resources`)
 * `backend/internal/scheduling` — weekly/special hours, blocks, availability projections, marketplace reads
 * `backend/internal/pricing` — price versions, court-type hourly rates, time rules, public calculate
+* `backend/internal/reservation` — court holds (15 min TTL), cancel, expire worker, convert to Booking
+* `backend/internal/booking` — bookings (staff walk-in + converted holds), confirm/check-in/complete/cancel/reschedule, unpaid expire worker, and the billing invoice stub issued on create
 
-Do not implement booking or payment until their checklist wave is open.
+Players never call `POST /bookings`; they hold a court and convert it. Staff create on-site
+bookings with `POST /bookings/walk-in`.
+
+Do not implement payment until its checklist wave is open. Invoices exist only as the stub
+the booking use case issues — there is no public invoice HTTP until the billing wave opens.
 
 ---
 

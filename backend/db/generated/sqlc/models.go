@@ -13,6 +13,98 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type BillingInvoiceStatus string
+
+const (
+	BillingInvoiceStatusDraft         BillingInvoiceStatus = "draft"
+	BillingInvoiceStatusIssued        BillingInvoiceStatus = "issued"
+	BillingInvoiceStatusPartiallyPaid BillingInvoiceStatus = "partially_paid"
+	BillingInvoiceStatusPaid          BillingInvoiceStatus = "paid"
+	BillingInvoiceStatusVoid          BillingInvoiceStatus = "void"
+	BillingInvoiceStatusCanceled      BillingInvoiceStatus = "canceled"
+)
+
+func (e *BillingInvoiceStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = BillingInvoiceStatus(s)
+	case string:
+		*e = BillingInvoiceStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for BillingInvoiceStatus: %T", src)
+	}
+	return nil
+}
+
+type NullBillingInvoiceStatus struct {
+	BillingInvoiceStatus BillingInvoiceStatus `json:"billing_invoice_status"`
+	Valid                bool                 `json:"valid"` // Valid is true if BillingInvoiceStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullBillingInvoiceStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.BillingInvoiceStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.BillingInvoiceStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullBillingInvoiceStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.BillingInvoiceStatus), nil
+}
+
+type BookingBookingStatus string
+
+const (
+	BookingBookingStatusPending    BookingBookingStatus = "pending"
+	BookingBookingStatusConfirmed  BookingBookingStatus = "confirmed"
+	BookingBookingStatusCheckedIn  BookingBookingStatus = "checked_in"
+	BookingBookingStatusInProgress BookingBookingStatus = "in_progress"
+	BookingBookingStatusCompleted  BookingBookingStatus = "completed"
+	BookingBookingStatusCanceled   BookingBookingStatus = "canceled"
+)
+
+func (e *BookingBookingStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = BookingBookingStatus(s)
+	case string:
+		*e = BookingBookingStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for BookingBookingStatus: %T", src)
+	}
+	return nil
+}
+
+type NullBookingBookingStatus struct {
+	BookingBookingStatus BookingBookingStatus `json:"booking_booking_status"`
+	Valid                bool                 `json:"valid"` // Valid is true if BookingBookingStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullBookingBookingStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.BookingBookingStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.BookingBookingStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullBookingBookingStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.BookingBookingStatus), nil
+}
+
 type CatalogMaintenanceStatus string
 
 const (
@@ -1336,6 +1428,95 @@ func (ns NullPricingPricingRuleType) Value() (driver.Value, error) {
 	return string(ns.PricingPricingRuleType), nil
 }
 
+type ReservationReservationSource string
+
+const (
+	ReservationReservationSourceWeb    ReservationReservationSource = "web"
+	ReservationReservationSourceMobile ReservationReservationSource = "mobile"
+	ReservationReservationSourceAdmin  ReservationReservationSource = "admin"
+	ReservationReservationSourceApi    ReservationReservationSource = "api"
+	ReservationReservationSourceStaff  ReservationReservationSource = "staff"
+)
+
+func (e *ReservationReservationSource) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = ReservationReservationSource(s)
+	case string:
+		*e = ReservationReservationSource(s)
+	default:
+		return fmt.Errorf("unsupported scan type for ReservationReservationSource: %T", src)
+	}
+	return nil
+}
+
+type NullReservationReservationSource struct {
+	ReservationReservationSource ReservationReservationSource `json:"reservation_reservation_source"`
+	Valid                        bool                         `json:"valid"` // Valid is true if ReservationReservationSource is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullReservationReservationSource) Scan(value interface{}) error {
+	if value == nil {
+		ns.ReservationReservationSource, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.ReservationReservationSource.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullReservationReservationSource) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.ReservationReservationSource), nil
+}
+
+type ReservationReservationStatus string
+
+const (
+	ReservationReservationStatusPending   ReservationReservationStatus = "pending"
+	ReservationReservationStatusConverted ReservationReservationStatus = "converted"
+	ReservationReservationStatusCanceled  ReservationReservationStatus = "canceled"
+	ReservationReservationStatusExpired   ReservationReservationStatus = "expired"
+)
+
+func (e *ReservationReservationStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = ReservationReservationStatus(s)
+	case string:
+		*e = ReservationReservationStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for ReservationReservationStatus: %T", src)
+	}
+	return nil
+}
+
+type NullReservationReservationStatus struct {
+	ReservationReservationStatus ReservationReservationStatus `json:"reservation_reservation_status"`
+	Valid                        bool                         `json:"valid"` // Valid is true if ReservationReservationStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullReservationReservationStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.ReservationReservationStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.ReservationReservationStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullReservationReservationStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.ReservationReservationStatus), nil
+}
+
 type SchedulingBlockType string
 
 const (
@@ -1423,6 +1604,70 @@ func (ns NullSchedulingProjectionStatus) Value() (driver.Value, error) {
 		return nil, nil
 	}
 	return string(ns.SchedulingProjectionStatus), nil
+}
+
+type BillingInvoice struct {
+	ID             uuid.UUID            `json:"id"`
+	PublicID       string               `json:"public_id"`
+	TenantID       uuid.UUID            `json:"tenant_id"`
+	InvoiceNo      string               `json:"invoice_no"`
+	BookingID      uuid.UUID            `json:"booking_id"`
+	CustomerID     uuid.UUID            `json:"customer_id"`
+	Currency       string               `json:"currency"`
+	Status         BillingInvoiceStatus `json:"status"`
+	Subtotal       pgtype.Numeric       `json:"subtotal"`
+	DiscountAmount pgtype.Numeric       `json:"discount_amount"`
+	TaxAmount      pgtype.Numeric       `json:"tax_amount"`
+	TotalAmount    pgtype.Numeric       `json:"total_amount"`
+	IssuedAt       time.Time            `json:"issued_at"`
+	DueAt          *time.Time           `json:"due_at"`
+	CreatedAt      time.Time            `json:"created_at"`
+	UpdatedAt      time.Time            `json:"updated_at"`
+}
+
+type BookingBooking struct {
+	ID             uuid.UUID            `json:"id"`
+	PublicID       string               `json:"public_id"`
+	TenantID       uuid.UUID            `json:"tenant_id"`
+	BookingNo      string               `json:"booking_no"`
+	ReservationID  *uuid.UUID           `json:"reservation_id"`
+	CustomerID     uuid.UUID            `json:"customer_id"`
+	LocationID     uuid.UUID            `json:"location_id"`
+	ResourceID     uuid.UUID            `json:"resource_id"`
+	Status         BookingBookingStatus `json:"status"`
+	Currency       string               `json:"currency"`
+	Subtotal       pgtype.Numeric       `json:"subtotal"`
+	DiscountAmount pgtype.Numeric       `json:"discount_amount"`
+	TaxAmount      pgtype.Numeric       `json:"tax_amount"`
+	TotalAmount    pgtype.Numeric       `json:"total_amount"`
+	PriceVersionID *uuid.UUID           `json:"price_version_id"`
+	StartsAt       time.Time            `json:"starts_at"`
+	EndsAt         time.Time            `json:"ends_at"`
+	ExpiresAt      *time.Time           `json:"expires_at"`
+	ConfirmedAt    *time.Time           `json:"confirmed_at"`
+	CanceledAt     *time.Time           `json:"canceled_at"`
+	CompletedAt    *time.Time           `json:"completed_at"`
+	CheckedInAt    *time.Time           `json:"checked_in_at"`
+	CreatedBy      *uuid.UUID           `json:"created_by"`
+	CreatedAt      time.Time            `json:"created_at"`
+	UpdatedAt      time.Time            `json:"updated_at"`
+}
+
+type BookingBookingResource struct {
+	ID         uuid.UUID `json:"id"`
+	BookingID  uuid.UUID `json:"booking_id"`
+	ResourceID uuid.UUID `json:"resource_id"`
+	StartsAt   time.Time `json:"starts_at"`
+	EndsAt     time.Time `json:"ends_at"`
+	CreatedAt  time.Time `json:"created_at"`
+}
+
+type BookingCheckIn struct {
+	ID          uuid.UUID  `json:"id"`
+	BookingID   uuid.UUID  `json:"booking_id"`
+	CheckedInAt time.Time  `json:"checked_in_at"`
+	VerifiedBy  *uuid.UUID `json:"verified_by"`
+	CreatedAt   time.Time  `json:"created_at"`
 }
 
 type CatalogResource struct {
@@ -1949,6 +2194,41 @@ type ReferenceLocale struct {
 	UpdatedAt  time.Time `json:"updated_at"`
 	Name       string    `json:"name"`
 	NativeName string    `json:"native_name"`
+}
+
+type ReservationReservation struct {
+	ID             uuid.UUID                    `json:"id"`
+	PublicID       string                       `json:"public_id"`
+	TenantID       uuid.UUID                    `json:"tenant_id"`
+	ReservationNo  string                       `json:"reservation_no"`
+	CustomerID     uuid.UUID                    `json:"customer_id"`
+	LocationID     uuid.UUID                    `json:"location_id"`
+	ResourceID     uuid.UUID                    `json:"resource_id"`
+	Source         ReservationReservationSource `json:"source"`
+	Status         ReservationReservationStatus `json:"status"`
+	Currency       string                       `json:"currency"`
+	Subtotal       pgtype.Numeric               `json:"subtotal"`
+	DiscountAmount pgtype.Numeric               `json:"discount_amount"`
+	TaxAmount      pgtype.Numeric               `json:"tax_amount"`
+	TotalAmount    pgtype.Numeric               `json:"total_amount"`
+	PriceVersionID *uuid.UUID                   `json:"price_version_id"`
+	StartsAt       time.Time                    `json:"starts_at"`
+	EndsAt         time.Time                    `json:"ends_at"`
+	ExpiresAt      time.Time                    `json:"expires_at"`
+	CanceledAt     *time.Time                   `json:"canceled_at"`
+	ConvertedAt    *time.Time                   `json:"converted_at"`
+	CreatedBy      *uuid.UUID                   `json:"created_by"`
+	CreatedAt      time.Time                    `json:"created_at"`
+	UpdatedAt      time.Time                    `json:"updated_at"`
+}
+
+type ReservationReservationResource struct {
+	ID            uuid.UUID `json:"id"`
+	ReservationID uuid.UUID `json:"reservation_id"`
+	ResourceID    uuid.UUID `json:"resource_id"`
+	StartsAt      time.Time `json:"starts_at"`
+	EndsAt        time.Time `json:"ends_at"`
+	CreatedAt     time.Time `json:"created_at"`
 }
 
 type SchedulingAvailabilityProjection struct {

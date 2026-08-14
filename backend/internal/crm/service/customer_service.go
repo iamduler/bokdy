@@ -410,7 +410,7 @@ func (s *CustomerService) Update(ctx context.Context, customerID, actor uuid.UUI
 			Type: "CustomerUpdated", AggregateType: "Customer", AggregateID: customer.ID,
 			TenantID: &tenantID, ActorType: events.ActorUser, ActorID: &actor,
 			EntityType: "Customer", EntityID: customer.ID,
-			Payload: payload,
+			Payload:    payload,
 			OccurredAt: now,
 		})
 		outboxID = oid
@@ -474,7 +474,7 @@ func (s *CustomerService) Restore(ctx context.Context, customerID, actor uuid.UU
 			Type: "CustomerRestored", AggregateType: "Customer", AggregateID: customer.ID,
 			TenantID: &tenantID, ActorType: events.ActorUser, ActorID: &actor,
 			EntityType: "Customer", EntityID: customer.ID,
-			Payload: map[string]any{"organization_id": orgID.String()},
+			Payload:    map[string]any{"organization_id": orgID.String()},
 			OccurredAt: now,
 		})
 		outboxID = oid

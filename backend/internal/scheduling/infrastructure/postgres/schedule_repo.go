@@ -159,6 +159,38 @@ func (r *ScheduleRepo) DeleteMaintenanceBlocksByResource(ctx context.Context, tx
 	return r.q.WithTx(tx).DeleteMaintenanceBlocksByResource(ctx, resourceID)
 }
 
+func (r *ScheduleRepo) UpsertReservationBlock(ctx context.Context, tx pgx.Tx, b *entity.ResourceBlock) error {
+	return r.q.WithTx(tx).UpsertReservationBlock(ctx, dbsqlc.UpsertReservationBlockParams{
+		ID: b.ID, ResourceID: b.ResourceID, ReferenceType: nullStr(b.ReferenceType), ReferenceID: b.ReferenceID,
+		StartsAt: b.StartsAt, EndsAt: b.EndsAt, Reason: nullStr(b.Reason), CreatedAt: b.CreatedAt,
+	})
+}
+
+func (r *ScheduleRepo) UpsertBookingBlock(ctx context.Context, tx pgx.Tx, b *entity.ResourceBlock) error {
+	return r.q.WithTx(tx).UpsertBookingBlock(ctx, dbsqlc.UpsertBookingBlockParams{
+		ID: b.ID, ResourceID: b.ResourceID, ReferenceType: nullStr(b.ReferenceType), ReferenceID: b.ReferenceID,
+		StartsAt: b.StartsAt, EndsAt: b.EndsAt, Reason: nullStr(b.Reason), CreatedAt: b.CreatedAt,
+	})
+}
+
+func (r *ScheduleRepo) DeleteTypedBlock(ctx context.Context, tx pgx.Tx, resourceID uuid.UUID, blockType entity.BlockType, referenceID uuid.UUID) error {
+	return r.q.WithTx(tx).DeleteTypedBlock(ctx, dbsqlc.DeleteTypedBlockParams{
+		ResourceID: resourceID, BlockType: dbsqlc.SchedulingBlockType(blockType), ReferenceID: uuidPtr(referenceID),
+	})
+}
+
+func (r *ScheduleRepo) CountOverlappingBlocks(ctx context.Context, resourceID uuid.UUID, from, to time.Time) (int64, error) {
+	return r.q.CountOverlappingBlocks(ctx, dbsqlc.CountOverlappingBlocksParams{
+		ResourceID: resourceID, RangeEnd: to, RangeStart: from,
+	})
+}
+
+func (r *ScheduleRepo) CountOverlappingBlocksExcept(ctx context.Context, resourceID uuid.UUID, from, to time.Time, excludeReferenceID uuid.UUID) (int64, error) {
+	return r.q.CountOverlappingBlocksExcludingReference(ctx, dbsqlc.CountOverlappingBlocksExcludingReferenceParams{
+		ResourceID: resourceID, RangeEnd: to, RangeStart: from, ExcludeReferenceID: uuidPtr(excludeReferenceID),
+	})
+}
+
 func (r *ScheduleRepo) DeleteSlotsFrom(ctx context.Context, tx pgx.Tx, resourceID uuid.UUID, from time.Time) error {
 	q := r.q.WithTx(tx)
 	if err := q.DeleteTimeSlotsFrom(ctx, dbsqlc.DeleteTimeSlotsFromParams{ResourceID: resourceID, StartsAt: from}); err != nil {

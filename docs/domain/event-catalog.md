@@ -26,7 +26,7 @@ BookingCreated
 
 BookingConfirmed
 
-BookingCancelled
+BookingCanceled
 
 PaymentSucceeded
 
@@ -166,7 +166,7 @@ Calendar
 
 ---
 
-# BookingCancelled
+# BookingCanceled
 
 Publisher
 
@@ -178,7 +178,7 @@ Booking
 
 Trigger
 
-Booking is canceled.
+Booking is canceled (`pending` / `confirmed` / `checked_in` → `canceled`). Releases the booking `resource_blocks` row. American spelling is canonical; `BookingCancelled` is retired.
 
 Consumers
 
@@ -1579,6 +1579,162 @@ Owner archives a draft version (`draft` → `retired`).
 Consumers
 
 Audit
+
+---
+
+# ReservationCreated
+
+Publisher
+
+Reservation
+
+Aggregate
+
+Reservation
+
+Trigger
+
+A hold is placed on one court window (`POST /reservations`), player or staff. Status `pending`, TTL 15 minutes. Holds a `reservation` block in `scheduling.resource_blocks`.
+
+Consumers
+
+Audit
+
+Scheduling (availability sync)
+
+---
+
+# ReservationCanceled
+
+Publisher
+
+Reservation
+
+Aggregate
+
+Reservation
+
+Trigger
+
+Hold canceled before it converts (`pending` → `canceled`). Releases the reservation block.
+
+Consumers
+
+Audit
+
+Scheduling (availability sync)
+
+---
+
+# ReservationExpired
+
+Publisher
+
+Reservation
+
+Aggregate
+
+Reservation
+
+Trigger
+
+Asynq worker `reservation:expire` found a `pending` hold past `expires_at` (`pending` → `expired`). Releases the reservation block.
+
+Consumers
+
+Audit
+
+Scheduling (availability sync)
+
+---
+
+# ReservationConverted
+
+Publisher
+
+Reservation
+
+Aggregate
+
+Reservation
+
+Trigger
+
+Hold becomes a Booking (`pending` → `converted`). One transaction also emits BookingCreated, BookingPriceCalculated, and InvoiceIssued, and moves the block from `reservation` to `booking`.
+
+Consumers
+
+Audit
+
+Scheduling (availability sync)
+
+---
+
+# BookingCheckedIn
+
+Publisher
+
+Booking
+
+Aggregate
+
+Booking
+
+Trigger
+
+Staff checks the customer in on site (`confirmed` → `checked_in`). Writes `booking.check_ins`.
+
+Consumers
+
+Audit
+
+Analytics
+
+---
+
+# BookingExpired
+
+Publisher
+
+Booking
+
+Aggregate
+
+Booking
+
+Trigger
+
+Asynq worker `booking:expire_unpaid` found a `pending` booking past its 30 minute payment deadline; the booking is canceled and the block released.
+
+Consumers
+
+Audit
+
+Scheduling (availability sync)
+
+Notification
+
+---
+
+# BookingPriceCalculated
+
+Publisher
+
+Booking
+
+Aggregate
+
+Booking
+
+Trigger
+
+A priced court window was quoted while creating a hold, a walk-in, or a converted booking, or while rescheduling. The public `POST /pricing/calculate` quote stays side-effect free and does not emit it.
+
+Consumers
+
+Audit
+
+Analytics
 
 ---
 

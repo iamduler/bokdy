@@ -54,9 +54,11 @@ func ActionForEvent(eventType string) string {
 	switch eventType {
 	case "UserRegistered", "OrganizationCreated", "StaffAdded", "InvitationCreated", "GuestCustomerCreated", "CustomerRegistered", "BookingCreated", "InvoiceIssued", "ReservationCreated", "BranchCreated", "CourtTypeCreated", "CourtCreated", "TimeBlocked", "PricingVersionCreated":
 		return "created"
-	case "UserProfileUpdated", "OrganizationUpdated", "StaffUpdated", "PasswordReset", "PasswordResetRequested", "BranchUpdated", "CustomerUpdated", "CourtTypeUpdated", "CourtUpdated", "WeeklyScheduleUpdated", "SpecialScheduleUpdated", "AvailabilitySynchronized", "PricingVersionPublished":
+	case "UserProfileUpdated", "OrganizationUpdated", "StaffUpdated", "PasswordReset", "PasswordResetRequested", "BranchUpdated", "CustomerUpdated", "CourtTypeUpdated", "CourtUpdated", "WeeklyScheduleUpdated", "SpecialScheduleUpdated", "AvailabilitySynchronized", "PricingVersionPublished", "BookingRescheduled", "BookingPriceCalculated":
 		return "updated"
-	case "UserVerified", "OrganizationActivated", "OrganizationSuspended", "OrganizationRestored", "StaffSuspended", "StaffRestored", "BranchOpened", "BranchClosed", "BranchArchived", "InvitationRejected", "InvitationExpired", "CustomerBlacklisted", "CustomerRestored", "CourtTypeArchived", "CourtOpened", "CourtClosed", "CourtArchived", "CourtMaintenanceScheduled", "CourtMaintenanceCompleted":
+	case "UserVerified", "OrganizationActivated", "OrganizationSuspended", "OrganizationRestored", "StaffSuspended", "StaffRestored", "BranchOpened", "BranchClosed", "BranchArchived", "InvitationRejected", "InvitationExpired", "CustomerBlacklisted", "CustomerRestored", "CourtTypeArchived", "CourtOpened", "CourtClosed", "CourtArchived", "CourtMaintenanceScheduled", "CourtMaintenanceCompleted",
+		"ReservationCanceled", "ReservationExpired", "ReservationConverted",
+		"BookingConfirmed", "BookingCheckedIn", "BookingCompleted", "BookingCanceled", "BookingExpired":
 		return "status_change"
 	case "UserLoggedIn", "UserLoginFailed", "SessionRefreshed":
 		return "login"

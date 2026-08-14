@@ -100,7 +100,7 @@ BookingCreated
 
 BookingConfirmed
 
-BookingCancelled
+BookingCanceled
 
 BookingCompleted
 

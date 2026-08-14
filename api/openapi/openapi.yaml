@@ -3,7 +3,8 @@ info:
   title: Bokdy API
   version: 0.1.0
   description: |
-    Bokdy foundation API (Identity + Organization + CRM + Catalog + Scheduling + Pricing).
+    Bokdy foundation API (Identity + Organization + CRM + Catalog + Scheduling + Pricing
+    + Reservation + Booking).
     Locale is taken from Accept-Language (missing → vi). Read models return a resolved name;
     owner edit payloads use name_en + name_vi.
     Auth: send X-Client (player|owner|admin) on register, login, refresh, logout.
@@ -24,6 +25,8 @@ tags:
   - name: Schedule
   - name: Marketplace
   - name: Pricing
+  - name: Reservations
+  - name: Bookings
   - name: Admin
 paths:
   /health:
@@ -1880,7 +1883,8 @@ paths:
       tags: [Pricing]
       summary: Calculate booking price quote
       description: |
-        Public quote. No promo/membership. Does not emit BookingPriceCalculated (deferred W7).
+        Public quote. No promo/membership. Side-effect free: BookingPriceCalculated is emitted
+        when a hold or booking is created, not here.
         Amounts are integer VND (half-up). Base rate is VND/hour by court type.
       requestBody:
         required: true
@@ -1899,6 +1903,388 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "404":
           $ref: "#/components/responses/Error"
+  /api/v1/reservations:
+    post:
+      tags: [Reservations]
+      summary: Create reservation hold
+      description: |
+        Player: JWT only, no `X-Organization-ID`; the tenant comes from the court and the
+        customer is resolved from the caller's CRM record in that tenant.
+        Staff: send `X-Organization-ID` and `customer_id`.
+        Hold TTL is 15 minutes. Emits ReservationCreated + BookingPriceCalculated.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XOrganizationIdOptional"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateReservationRequest"
+      responses:
+        "201":
+          description: Hold created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Reservation"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /api/v1/reservations/{id}:
+    get:
+      tags: [Reservations]
+      summary: Get reservation hold
+      description: Own hold only for players; staff read holds of their organization.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ReservationId"
+        - $ref: "#/components/parameters/XOrganizationIdOptional"
+      responses:
+        "200":
+          description: Hold
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Reservation"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+  /api/v1/reservations/{id}/cancel:
+    post:
+      tags: [Reservations]
+      summary: Cancel reservation hold
+      description: pending → canceled. Releases the court block. Emits ReservationCanceled.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ReservationId"
+        - $ref: "#/components/parameters/XOrganizationIdOptional"
+      responses:
+        "200":
+          description: Hold canceled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Reservation"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+  /api/v1/reservations/{id}/convert:
+    post:
+      tags: [Reservations]
+      summary: Convert hold to booking
+      description: |
+        pending → converted. Creates a `pending` booking with a 30 minute payment
+        deadline plus an `issued` invoice stub, and moves the court block from the
+        hold to the booking. Emits ReservationConverted, BookingCreated,
+        BookingPriceCalculated, and InvoiceIssued.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ReservationId"
+        - $ref: "#/components/parameters/XOrganizationIdOptional"
+      responses:
+        "201":
+          description: Booking created from hold
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConvertReservationResponse"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+  /api/v1/bookings:
+    get:
+      tags: [Bookings]
+      summary: List bookings (staff)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XOrganizationId"
+        - name: branch_id
+          in: query
+          schema: { type: string, format: uuid }
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, confirmed, checked_in, in_progress, completed, canceled]
+        - name: from
+          in: query
+          schema: { type: string, format: date-time }
+          description: Inclusive start of the booking window filter (UTC RFC3339)
+        - name: to
+          in: query
+          schema: { type: string, format: date-time }
+          description: Exclusive end of the booking window filter (UTC RFC3339)
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
+      responses:
+        "200":
+          description: Bookings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Booking"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /api/v1/bookings/walk-in:
+    post:
+      tags: [Bookings]
+      summary: Create walk-in booking (staff)
+      description: |
+        On-site booking without a hold (UC-BOOKING-007). Creates a `confirmed` booking
+        plus an `issued` invoice stub. `customer_id` is required; no guest is created.
+        Emits BookingCreated, BookingConfirmed, BookingPriceCalculated, InvoiceIssued.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XOrganizationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WalkInBookingRequest"
+      responses:
+        "201":
+          description: Booking created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WalkInBookingResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /api/v1/me/bookings:
+    get:
+      tags: [Bookings]
+      summary: List my bookings
+      description: Player route. Returns bookings for every CRM customer linked to the caller.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
+      responses:
+        "200":
+          description: Bookings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Booking"
+        "401":
+          $ref: "#/components/responses/Error"
+  /api/v1/bookings/{id}:
+    get:
+      tags: [Bookings]
+      summary: Get booking
+      description: Own booking only for players; staff read bookings of their organization.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/BookingId"
+        - $ref: "#/components/parameters/XOrganizationIdOptional"
+      responses:
+        "200":
+          description: Booking
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+  /api/v1/bookings/{id}/confirm:
+    post:
+      tags: [Bookings]
+      summary: Confirm booking (staff)
+      description: pending → confirmed. Clears the payment deadline. Emits BookingConfirmed.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/BookingId"
+        - $ref: "#/components/parameters/XOrganizationId"
+      responses:
+        "200":
+          description: Booking confirmed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+  /api/v1/bookings/{id}/check-in:
+    post:
+      tags: [Bookings]
+      summary: Check in booking (staff)
+      description: confirmed → checked_in. Emits BookingCheckedIn.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/BookingId"
+        - $ref: "#/components/parameters/XOrganizationId"
+      responses:
+        "200":
+          description: Booking checked in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+  /api/v1/bookings/{id}/complete:
+    post:
+      tags: [Bookings]
+      summary: Complete booking (staff)
+      description: |
+        confirmed / checked_in / in_progress → completed. Emits BookingCompleted only;
+        loyalty and review events stay post-MVP (DEF-20260808-05).
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/BookingId"
+        - $ref: "#/components/parameters/XOrganizationId"
+      responses:
+        "200":
+          description: Booking completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+  /api/v1/bookings/{id}/cancel:
+    post:
+      tags: [Bookings]
+      summary: Cancel booking
+      description: |
+        pending / confirmed / checked_in → canceled. Releases the court block.
+        Emits BookingCanceled. No refund in W7 (payment is W8).
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/BookingId"
+        - $ref: "#/components/parameters/XOrganizationIdOptional"
+      responses:
+        "200":
+          description: Booking canceled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+  /api/v1/bookings/{id}/reschedule:
+    post:
+      tags: [Bookings]
+      summary: Reschedule booking
+      description: |
+        Moves a pending or confirmed booking to a new window, recalculates the price,
+        and moves the court block. Emits BookingRescheduled.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/BookingId"
+        - $ref: "#/components/parameters/XOrganizationIdOptional"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RescheduleBookingRequest"
+      responses:
+        "200":
+          description: Booking rescheduled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
   /api/v1/admin/health:
     get:
       tags: [Admin]
@@ -1966,6 +2352,20 @@ components:
       schema:
         type: string
         format: uuid
+    ReservationId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    BookingId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
     AvailabilityFrom:
       name: from
       in: query
@@ -1989,7 +2389,7 @@ components:
       schema:
         type: string
         format: uuid
-      description: Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, and staff schedule/availability routes.
+      description: Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete).
     XOrganizationIdOptional:
       name: X-Organization-ID
       in: header
@@ -2632,6 +3032,126 @@ components:
         starts_at: { type: string, format: date-time }
         ends_at: { type: string, format: date-time }
         duration_minutes: { type: integer }
+    CreateReservationRequest:
+      type: object
+      required: [court_id, starts_at, ends_at]
+      properties:
+        court_id: { type: string, format: uuid }
+        customer_id:
+          type: string
+          format: uuid
+          description: Required for staff holds (`X-Organization-ID` present); ignored for players.
+        starts_at: { type: string, format: date-time }
+        ends_at: { type: string, format: date-time }
+        source:
+          type: string
+          enum: [web, mobile, admin, api, staff]
+          description: Defaults to `staff` for staff holds, otherwise `web`.
+    Reservation:
+      type: object
+      required: [id, public_id, reservation_no, status, source, customer_id, branch_id, court_id, currency, subtotal, discount_amount, tax_amount, total_amount, starts_at, ends_at, expires_at, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        public_id: { type: string, minLength: 26, maxLength: 26 }
+        reservation_no: { type: string }
+        status: { type: string, enum: [pending, converted, canceled, expired] }
+        source: { type: string, enum: [web, mobile, admin, api, staff] }
+        customer_id: { type: string, format: uuid }
+        branch_id: { type: string, format: uuid }
+        court_id: { type: string, format: uuid }
+        currency: { type: string, example: VND }
+        subtotal: { type: number }
+        discount_amount: { type: number }
+        tax_amount: { type: number }
+        total_amount: { type: number }
+        price_version_id: { type: string, format: uuid }
+        starts_at: { type: string, format: date-time }
+        ends_at: { type: string, format: date-time }
+        expires_at: { type: string, format: date-time, description: Hold TTL is 15 minutes }
+        canceled_at: { type: string, format: date-time }
+        converted_at: { type: string, format: date-time }
+        created_at: { type: string, format: date-time }
+    ConvertedBooking:
+      type: object
+      required: [id, public_id, booking_no, status, invoice_id, invoice_no, currency, total_amount]
+      properties:
+        id: { type: string, format: uuid }
+        public_id: { type: string, minLength: 26, maxLength: 26 }
+        booking_no: { type: string }
+        status: { type: string, enum: [pending] }
+        expires_at: { type: string, format: date-time, description: Unpaid booking TTL is 30 minutes }
+        invoice_id: { type: string, format: uuid }
+        invoice_no: { type: string }
+        currency: { type: string, example: VND }
+        total_amount: { type: number }
+    ConvertReservationResponse:
+      type: object
+      required: [reservation, booking]
+      properties:
+        reservation:
+          $ref: "#/components/schemas/Reservation"
+        booking:
+          $ref: "#/components/schemas/ConvertedBooking"
+    WalkInBookingRequest:
+      type: object
+      required: [court_id, customer_id, starts_at, ends_at]
+      properties:
+        court_id: { type: string, format: uuid }
+        customer_id: { type: string, format: uuid }
+        starts_at: { type: string, format: date-time }
+        ends_at: { type: string, format: date-time }
+    RescheduleBookingRequest:
+      type: object
+      required: [starts_at, ends_at]
+      properties:
+        starts_at: { type: string, format: date-time }
+        ends_at: { type: string, format: date-time }
+    Booking:
+      type: object
+      required: [id, public_id, booking_no, status, customer_id, branch_id, court_id, currency, subtotal, discount_amount, tax_amount, total_amount, starts_at, ends_at, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        public_id: { type: string, minLength: 26, maxLength: 26 }
+        booking_no: { type: string }
+        status: { type: string, enum: [pending, confirmed, checked_in, in_progress, completed, canceled] }
+        reservation_id: { type: string, format: uuid }
+        customer_id: { type: string, format: uuid }
+        branch_id: { type: string, format: uuid }
+        court_id: { type: string, format: uuid }
+        currency: { type: string, example: VND }
+        subtotal: { type: number }
+        discount_amount: { type: number }
+        tax_amount: { type: number }
+        total_amount: { type: number }
+        price_version_id: { type: string, format: uuid }
+        starts_at: { type: string, format: date-time }
+        ends_at: { type: string, format: date-time }
+        expires_at: { type: string, format: date-time, description: Payment deadline while pending }
+        confirmed_at: { type: string, format: date-time }
+        checked_in_at: { type: string, format: date-time }
+        completed_at: { type: string, format: date-time }
+        canceled_at: { type: string, format: date-time }
+        created_at: { type: string, format: date-time }
+    BookingInvoice:
+      type: object
+      required: [id, public_id, invoice_no, status, currency, total_amount, issued_at]
+      properties:
+        id: { type: string, format: uuid }
+        public_id: { type: string, minLength: 26, maxLength: 26 }
+        invoice_no: { type: string }
+        status: { type: string, enum: [draft, issued, partially_paid, paid, void, canceled] }
+        currency: { type: string, example: VND }
+        total_amount: { type: number }
+        issued_at: { type: string, format: date-time }
+        due_at: { type: string, format: date-time }
+    WalkInBookingResponse:
+      type: object
+      required: [booking, invoice]
+      properties:
+        booking:
+          $ref: "#/components/schemas/Booking"
+        invoice:
+          $ref: "#/components/schemas/BookingInvoice"
     User:
       type: object
       required: [id, public_id, status, is_system_admin]

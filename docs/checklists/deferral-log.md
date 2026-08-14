@@ -19,6 +19,16 @@ Do not delete entries. If a deferred item returns to MVP, add a new entry that r
 
 ---
 
+### DEF-20260814-06
+
+- Date: 2026-08-14
+- From flow/ID: F-PLAYER-BOOK-14 `POST /api/v1/bookings` (UC-BOOKING-001 alt)
+- New post-mvp ID: remains MVP row skipped; reopen if product wants direct book-without-hold
+- Reason: scope — player happy path is hold → pay → convert; avoid double-hold / dual create paths
+- MVP workaround: player uses reservations only; staff walk-in uses `POST /bookings/walk-in`
+- Unblocks later wave: optional reopen after W8
+- Decided in: W7 booking freeze (đề xuất accepted)
+
 ### DEF-20260814-05
 
 - Date: 2026-08-14
@@ -27,6 +37,7 @@ Do not delete entries. If a deferred item returns to MVP, add a new entry that r
 - Reason: quote spam — public calculate would flood outbox/audit if emitted every preview
 - MVP workaround: W6 calculate is side-effect free (no domain event)
 - Unblocks later wave: W7
+- Resolved (W7): emit `BookingPriceCalculated` when creating hold or walk-in/convert booking (not on public calculate).
 - Decided in: W6 pricing freeze (đề xuất accepted)
 
 ### DEF-20260814-03
@@ -37,6 +48,7 @@ Do not delete entries. If a deferred item returns to MVP, add a new entry that r
 - Reason: dependency — Reservation/Booking aggregates are W7
 - MVP workaround: W5 availability subtracts weekly/special hours + `resource_blocks` (+ maintenance) only
 - Unblocks later wave: W7
+- Resolved (W7): hold/booking write `resource_blocks` + availability sync.
 - Decided in: plan `w5_scheduling_api_inventory` (đề xuất accepted)
 
 ### DEF-20260814-04
