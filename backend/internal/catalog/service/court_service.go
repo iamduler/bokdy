@@ -210,11 +210,19 @@ func (s *CatalogService) UpdateCourt(ctx context.Context, courtID, actor uuid.UU
 }
 
 func (s *CatalogService) OpenCourt(ctx context.Context, courtID, actor uuid.UUID) error {
-	return s.transitionCourt(ctx, courtID, actor, entity.ResourceInactive, entity.ResourceActive, "CourtOpened", false)
+	if err := s.transitionCourt(ctx, courtID, actor, entity.ResourceInactive, entity.ResourceActive, "CourtOpened", false); err != nil {
+		return err
+	}
+	s.enqueueAvailability(ctx, courtID)
+	return nil
 }
 
 func (s *CatalogService) CloseCourt(ctx context.Context, courtID, actor uuid.UUID) error {
-	return s.transitionCourt(ctx, courtID, actor, entity.ResourceActive, entity.ResourceInactive, "CourtClosed", false)
+	if err := s.transitionCourt(ctx, courtID, actor, entity.ResourceActive, entity.ResourceInactive, "CourtClosed", false); err != nil {
+		return err
+	}
+	s.enqueueAvailability(ctx, courtID)
+	return nil
 }
 
 func (s *CatalogService) ArchiveCourt(ctx context.Context, courtID, actor uuid.UUID) error {
@@ -252,6 +260,7 @@ func (s *CatalogService) ArchiveCourt(ctx context.Context, courtID, actor uuid.U
 		return apperr.Wrap(err, apperr.CodeInternal, "archive court")
 	}
 	events.AfterCommit(ctx, s.outbox, outboxID)
+	s.enqueueAvailability(ctx, courtID)
 	return nil
 }
 
@@ -314,6 +323,7 @@ func (s *CatalogService) ScheduleMaintenance(ctx context.Context, courtID, actor
 		return apperr.Wrap(err, apperr.CodeInternal, "schedule maintenance")
 	}
 	events.AfterCommit(ctx, s.outbox, outboxID)
+	s.enqueueAvailability(ctx, courtID)
 	return nil
 }
 
@@ -362,6 +372,7 @@ func (s *CatalogService) CompleteMaintenance(ctx context.Context, courtID, actor
 		return apperr.Wrap(err, apperr.CodeInternal, "complete maintenance")
 	}
 	events.AfterCommit(ctx, s.outbox, outboxID)
+	s.enqueueAvailability(ctx, courtID)
 	return nil
 }
 

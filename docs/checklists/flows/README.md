@@ -11,7 +11,7 @@ Tick **Done** only when every MVP row in that file is `[x]` (post-MVP `—` rows
 | [ ] | F-OWNER-STAFF | [mvp/F-OWNER-STAFF.md](mvp/F-OWNER-STAFF.md) | Owner | W2 |
 | [ ] | F-OWNER-VENUE | [mvp/F-OWNER-VENUE.md](mvp/F-OWNER-VENUE.md) | Owner | W2, W4, W5, W6 |
 | [ ] | F-OWNER-CRM | [mvp/F-OWNER-CRM.md](mvp/F-OWNER-CRM.md) | Owner | W3 |
-| [ ] | F-OWNER-OPS | [mvp/F-OWNER-OPS.md](mvp/F-OWNER-OPS.md) | Owner | W7, W8 |
+| [ ] | F-OWNER-OPS | [mvp/F-OWNER-OPS.md](mvp/F-OWNER-OPS.md) | Owner | W5, W7, W8 |
 | [ ] | F-PLAYER-BOOK | [mvp/F-PLAYER-BOOK.md](mvp/F-PLAYER-BOOK.md) | Player | W5, W7, W8 |
 | [ ] | F-ADMIN | [mvp/F-ADMIN.md](mvp/F-ADMIN.md) | Admin | W9 |
 

@@ -35,6 +35,12 @@ type CatalogService struct {
 	branches orgrepository.BranchRepository
 	orgSvc   *orgservice.OrganizationService
 	outbox   events.Enqueuer
+	avail    CourtAvailabilitySync
+}
+
+// CourtAvailabilitySync notifies scheduling to rebuild projections after court lifecycle changes.
+type CourtAvailabilitySync interface {
+	EnqueueCourt(ctx context.Context, courtID uuid.UUID) error
 }
 
 func NewCatalogService(
@@ -45,10 +51,18 @@ func NewCatalogService(
 	branches orgrepository.BranchRepository,
 	orgSvc *orgservice.OrganizationService,
 	outbox events.Enqueuer,
+	avail CourtAvailabilitySync,
 ) *CatalogService {
 	return &CatalogService{
-		pool: pool, types: types, courts: courts, orgs: orgs, branches: branches, orgSvc: orgSvc, outbox: outbox,
+		pool: pool, types: types, courts: courts, orgs: orgs, branches: branches, orgSvc: orgSvc, outbox: outbox, avail: avail,
 	}
+}
+
+func (s *CatalogService) enqueueAvailability(ctx context.Context, courtID uuid.UUID) {
+	if s.avail == nil {
+		return
+	}
+	_ = s.avail.EnqueueCourt(ctx, courtID)
 }
 
 func (s *CatalogService) requireOrgHeader(ctx context.Context) (uuid.UUID, error) {

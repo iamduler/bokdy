@@ -6,8 +6,8 @@ Phase: mvp
 
 | Done | ID | Step | UC | Phase | Gate | Proposed API | Events | Status | Notes |
 | :---: | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| [ ] | F-OWNER-OPS-01 | Branch calendar | UC-AVAILABILITY-002 | mvp | jwt+org Staff | `GET /api/v1/branches/{id}/availability` | — | ready |  |
-| [ ] | F-OWNER-OPS-02 | Court availability | UC-AVAILABILITY-001 | mvp | jwt+org Staff | `GET /api/v1/courts/{id}/availability` | — | ready |  |
+| [x] | F-OWNER-OPS-01 | Branch calendar | UC-AVAILABILITY-002 | mvp | jwt+org Staff | `GET /api/v1/branches/{id}/availability` | — | done | Reads projected `time_slots`. |
+| [x] | F-OWNER-OPS-02 | Court availability | UC-AVAILABILITY-001 | mvp | jwt+org Staff | `GET /api/v1/courts/{id}/availability` | — | done | Includes unavailable slots. |
 | [ ] | F-OWNER-OPS-03 | List bookings | — | mvp | jwt+org Staff | `GET /api/v1/bookings` | — | ready | Filter by branch, date, status. |
 | [ ] | F-OWNER-OPS-04 | Get booking | — | mvp | jwt+org Staff | `GET /api/v1/bookings/{id}` | — | ready |  |
 | [ ] | F-OWNER-OPS-05 | Walk-in booking | UC-BOOKING-007 | mvp | jwt+org Staff | `POST /api/v1/bookings/walk-in` | BookingCreated, BookingConfirmed, InvoiceIssued | ready | Skip reservation. |

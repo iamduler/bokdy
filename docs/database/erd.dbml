@@ -2832,6 +2832,12 @@ Table scheduling.calendar_holidays {
 
   ends_at timestamptz [not null]
 
+  is_closed boolean [not null, default: true]
+
+  opens_at time
+
+  closes_at time
+
   created_at timestamptz [not null]
 
   indexes {
@@ -2839,6 +2845,8 @@ Table scheduling.calendar_holidays {
     location_id
     starts_at
   }
+
+  Note: 'W5 special schedule. Default is_closed=true (branch closed for window). Optional opens_at/closes_at when is_closed=false.'
 }
 
 //////////////////////////////////////////////////////////////

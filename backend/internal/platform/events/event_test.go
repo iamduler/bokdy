@@ -27,6 +27,10 @@ func TestActionForEvent(t *testing.T) {
 		{"CourtTypeUpdated", "updated"},
 		{"CourtOpened", "status_change"},
 		{"CourtMaintenanceScheduled", "status_change"},
+		{"WeeklyScheduleUpdated", "updated"},
+		{"TimeBlocked", "created"},
+		{"TimeUnblocked", "deleted"},
+		{"AvailabilitySynchronized", "updated"},
 		{"RoleRemoved", "deleted"},
 		{"UnknownFact", "other"},
 	}

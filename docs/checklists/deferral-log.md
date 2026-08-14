@@ -19,6 +19,26 @@ Do not delete entries. If a deferred item returns to MVP, add a new entry that r
 
 ---
 
+### DEF-20260814-03
+
+- Date: 2026-08-14
+- From flow/ID: UC-AVAILABILITY-001 steps subtract reservations and bookings
+- New post-mvp ID: remains MVP once W7 ships
+- Reason: dependency — Reservation/Booking aggregates are W7
+- MVP workaround: W5 availability subtracts weekly/special hours + `resource_blocks` (+ maintenance) only
+- Unblocks later wave: W7
+- Decided in: plan `w5_scheduling_api_inventory` (đề xuất accepted)
+
+### DEF-20260814-04
+
+- Date: 2026-08-14
+- From flow/ID: UC-MARKETPLACE-001 sport/time filters; “publicly listed” flag
+- New post-mvp ID: sport catalog filter when `catalog.sports` seeded; optional `is_public` if product needs hidden active branches
+- Reason: scope — W5 marketplace discovery is minimal; no sports seed in W4/W5
+- MVP workaround: list `locations.status=active` under active orgs; `q` on name/city; every active branch is public
+- Unblocks later wave: W6+ / catalog sports
+- Decided in: plan `w5_scheduling_api_inventory` (đề xuất accepted)
+
 ### DEF-20260814-01
 
 - Date: 2026-08-14
@@ -37,6 +57,7 @@ Do not delete entries. If a deferred item returns to MVP, add a new entry that r
 - Reason: dependency — scheduling module is W5
 - MVP workaround: W4 emits CourtCreated / maintenance events and flips `resources.status`; no schedule rows
 - Unblocks later wave: W5
+- Resolved (W5): CourtCreated still does not init slots; Open/maintenance/complete enqueue `scheduling:availability_sync`. Maintenance occupies via `resource_blocks` (no `resource_maintenance_windows`).
 - Decided in: plan `w4_catalog_api_inventory` (đề xuất accepted)
 
 ### DEF-20260809-01

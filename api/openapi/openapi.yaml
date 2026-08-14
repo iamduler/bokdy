@@ -3,7 +3,7 @@ info:
   title: Bokdy API
   version: 0.1.0
   description: |
-    Bokdy foundation API (Identity + Organization + CRM + Catalog).
+    Bokdy foundation API (Identity + Organization + CRM + Catalog + Scheduling).
     Locale is taken from Accept-Language (missing → vi). Read models return a resolved name;
     owner edit payloads use name_en + name_vi.
     Auth: send X-Client (player|owner|admin) on register, login, refresh, logout.
@@ -21,6 +21,8 @@ tags:
   - name: Customers
   - name: CourtTypes
   - name: Courts
+  - name: Schedule
+  - name: Marketplace
   - name: Admin
 paths:
   /health:
@@ -1487,6 +1489,275 @@ paths:
           $ref: "#/components/responses/Error"
         "404":
           $ref: "#/components/responses/Error"
+  /api/v1/branches/{id}/schedule:
+    get:
+      tags: [Schedule]
+      summary: Get weekly schedule
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/BranchId"
+        - $ref: "#/components/parameters/XOrganizationId"
+      responses:
+        "200":
+          description: Weekly hours (0=Sunday … 6=Saturday)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BusinessHour"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+    put:
+      tags: [Schedule]
+      summary: Replace weekly schedule
+      description: Replace-all 7 weekdays. Enqueues availability sync for branch courts.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/BranchId"
+        - $ref: "#/components/parameters/XOrganizationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PutWeeklyScheduleRequest"
+      responses:
+        "200":
+          description: Saved schedule
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BusinessHour"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+  /api/v1/branches/{id}/schedule/special:
+    post:
+      tags: [Schedule]
+      summary: Create special schedule window
+      description: Holiday/closed window or alternate hours. Default is_closed=true.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/BranchId"
+        - $ref: "#/components/parameters/XOrganizationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSpecialScheduleRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpecialSchedule"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+  /api/v1/branches/{id}/availability:
+    get:
+      tags: [Schedule]
+      summary: Branch court availability
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/BranchId"
+        - $ref: "#/components/parameters/XOrganizationId"
+        - $ref: "#/components/parameters/AvailabilityFrom"
+        - $ref: "#/components/parameters/AvailabilityTo"
+      responses:
+        "200":
+          description: Slots per court (includes unavailable)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BranchAvailabilityResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+  /api/v1/courts/{id}/blocks:
+    post:
+      tags: [Schedule]
+      summary: Block court time
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourtId"
+        - $ref: "#/components/parameters/XOrganizationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBlockRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResourceBlock"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+  /api/v1/courts/{id}/blocks/{blockId}:
+    delete:
+      tags: [Schedule]
+      summary: Unblock court time
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourtId"
+        - name: blockId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/XOrganizationId"
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+  /api/v1/courts/{id}/availability:
+    get:
+      tags: [Schedule]
+      summary: Court availability (staff)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourtId"
+        - $ref: "#/components/parameters/XOrganizationId"
+        - $ref: "#/components/parameters/AvailabilityFrom"
+        - $ref: "#/components/parameters/AvailabilityTo"
+      responses:
+        "200":
+          description: Time slots (includes unavailable)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourtAvailabilityResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+  /api/v1/marketplace/branches:
+    get:
+      tags: [Marketplace]
+      summary: Search public branches
+      description: Active branches under active organizations. Optional q filters name/city.
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+      responses:
+        "200":
+          description: Branches
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MarketplaceBranch"
+  /api/v1/marketplace/branches/{publicId}:
+    get:
+      tags: [Marketplace]
+      summary: Public branch profile
+      parameters:
+        - name: publicId
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 26
+            maxLength: 26
+      responses:
+        "200":
+          description: Branch + non-archived courts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketplaceBranchProfile"
+        "404":
+          $ref: "#/components/responses/Error"
+  /api/v1/marketplace/courts/{publicId}/availability:
+    get:
+      tags: [Marketplace]
+      summary: Public court availability
+      parameters:
+        - name: publicId
+          in: path
+          required: true
+          schema:
+            type: string
+            minLength: 26
+            maxLength: 26
+        - $ref: "#/components/parameters/AvailabilityFrom"
+        - $ref: "#/components/parameters/AvailabilityTo"
+      responses:
+        "200":
+          description: Available slots only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketplaceCourtAvailability"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/Error"
   /api/v1/admin/health:
     get:
       tags: [Admin]
@@ -1547,6 +1818,22 @@ components:
       schema:
         type: string
         format: uuid
+    AvailabilityFrom:
+      name: from
+      in: query
+      required: true
+      schema:
+        type: string
+        format: date-time
+      description: Inclusive range start (UTC RFC3339)
+    AvailabilityTo:
+      name: to
+      in: query
+      required: true
+      schema:
+        type: string
+        format: date-time
+      description: Exclusive range end (UTC RFC3339)
     XOrganizationId:
       name: X-Organization-ID
       in: header
@@ -1554,7 +1841,7 @@ components:
       schema:
         type: string
         format: uuid
-      description: Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, and `/api/v1/courts*`.
+      description: Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, and staff schedule/availability routes.
     XOrganizationIdOptional:
       name: X-Organization-ID
       in: header
@@ -1962,6 +2249,148 @@ components:
         title: { type: string }
         reason: { type: string }
         started_at: { type: string, format: date-time }
+    BusinessHour:
+      type: object
+      required: [weekday, is_closed]
+      properties:
+        weekday: { type: integer, minimum: 0, maximum: 6, description: "0=Sunday … 6=Saturday" }
+        opens_at: { type: string, example: "08:00", description: Required when is_closed=false }
+        closes_at: { type: string, example: "22:00", description: Required when is_closed=false }
+        is_closed: { type: boolean }
+    PutWeeklyScheduleRequest:
+      type: object
+      required: [days]
+      properties:
+        days:
+          type: array
+          minItems: 7
+          maxItems: 7
+          items:
+            $ref: "#/components/schemas/BusinessHour"
+    CreateSpecialScheduleRequest:
+      type: object
+      required: [starts_at, ends_at]
+      properties:
+        name_en: { type: string }
+        name_vi: { type: string }
+        starts_at: { type: string, format: date-time }
+        ends_at: { type: string, format: date-time }
+        is_closed: { type: boolean, default: true }
+        opens_at: { type: string, example: "10:00" }
+        closes_at: { type: string, example: "14:00" }
+    SpecialSchedule:
+      type: object
+      required: [id, name, starts_at, ends_at, is_closed]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        name_en: { type: string }
+        name_vi: { type: string }
+        starts_at: { type: string, format: date-time }
+        ends_at: { type: string, format: date-time }
+        is_closed: { type: boolean }
+        opens_at: { type: string }
+        closes_at: { type: string }
+    CreateBlockRequest:
+      type: object
+      required: [starts_at, ends_at]
+      properties:
+        starts_at: { type: string, format: date-time }
+        ends_at: { type: string, format: date-time }
+        reason: { type: string }
+    ResourceBlock:
+      type: object
+      required: [id, court_id, starts_at, ends_at]
+      properties:
+        id: { type: string, format: uuid }
+        court_id: { type: string, format: uuid }
+        starts_at: { type: string, format: date-time }
+        ends_at: { type: string, format: date-time }
+        reason: { type: string }
+    TimeSlot:
+      type: object
+      required: [id, court_id, starts_at, ends_at, is_available]
+      properties:
+        id: { type: string, format: uuid }
+        court_id: { type: string, format: uuid }
+        starts_at: { type: string, format: date-time }
+        ends_at: { type: string, format: date-time }
+        is_available: { type: boolean }
+    CourtAvailabilityResponse:
+      type: object
+      required: [court_id, slots]
+      properties:
+        court_id: { type: string, format: uuid }
+        slots:
+          type: array
+          items:
+            $ref: "#/components/schemas/TimeSlot"
+    BranchAvailabilityResponse:
+      type: object
+      required: [branch_id, courts]
+      properties:
+        branch_id: { type: string, format: uuid }
+        courts:
+          type: array
+          items:
+            type: object
+            required: [court_id, slots]
+            properties:
+              court_id: { type: string, format: uuid }
+              slots:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TimeSlot"
+    MarketplaceBranch:
+      type: object
+      required: [public_id, organization_id, code, name, status]
+      properties:
+        public_id: { type: string, minLength: 26, maxLength: 26 }
+        organization_id: { type: string, format: uuid }
+        code: { type: string }
+        name: { type: string }
+        name_en: { type: string }
+        name_vi: { type: string }
+        phone: { type: string }
+        email: { type: string }
+        timezone: { type: string }
+        status: { type: string }
+        city: { type: string }
+        district: { type: string }
+        address_line_1: { type: string }
+    MarketplaceCourt:
+      type: object
+      required: [public_id, code, name, status, is_bookable, slot_duration_minutes]
+      properties:
+        public_id: { type: string, minLength: 26, maxLength: 26 }
+        court_type_id: { type: string, format: uuid }
+        code: { type: string }
+        name: { type: string }
+        name_en: { type: string }
+        name_vi: { type: string }
+        status: { type: string }
+        is_bookable: { type: boolean }
+        slot_duration_minutes: { type: integer }
+    MarketplaceBranchProfile:
+      type: object
+      required: [branch, courts]
+      properties:
+        branch:
+          $ref: "#/components/schemas/MarketplaceBranch"
+        courts:
+          type: array
+          items:
+            $ref: "#/components/schemas/MarketplaceCourt"
+    MarketplaceCourtAvailability:
+      type: object
+      required: [court, slots]
+      properties:
+        court:
+          $ref: "#/components/schemas/MarketplaceCourt"
+        slots:
+          type: array
+          items:
+            $ref: "#/components/schemas/TimeSlot"
     User:
       type: object
       required: [id, public_id, status, is_system_admin]

@@ -1165,6 +1165,95 @@ func (ns NullPlatformAuditLogActivityType) Value() (driver.Value, error) {
 	return string(ns.PlatformAuditLogActivityType), nil
 }
 
+type SchedulingBlockType string
+
+const (
+	SchedulingBlockTypeReservation SchedulingBlockType = "reservation"
+	SchedulingBlockTypeBooking     SchedulingBlockType = "booking"
+	SchedulingBlockTypeMaintenance SchedulingBlockType = "maintenance"
+	SchedulingBlockTypeHoliday     SchedulingBlockType = "holiday"
+	SchedulingBlockTypeManual      SchedulingBlockType = "manual"
+	SchedulingBlockTypeSystem      SchedulingBlockType = "system"
+)
+
+func (e *SchedulingBlockType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = SchedulingBlockType(s)
+	case string:
+		*e = SchedulingBlockType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for SchedulingBlockType: %T", src)
+	}
+	return nil
+}
+
+type NullSchedulingBlockType struct {
+	SchedulingBlockType SchedulingBlockType `json:"scheduling_block_type"`
+	Valid               bool                `json:"valid"` // Valid is true if SchedulingBlockType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullSchedulingBlockType) Scan(value interface{}) error {
+	if value == nil {
+		ns.SchedulingBlockType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.SchedulingBlockType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullSchedulingBlockType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.SchedulingBlockType), nil
+}
+
+type SchedulingProjectionStatus string
+
+const (
+	SchedulingProjectionStatusPending   SchedulingProjectionStatus = "pending"
+	SchedulingProjectionStatusGenerated SchedulingProjectionStatus = "generated"
+	SchedulingProjectionStatusExpired   SchedulingProjectionStatus = "expired"
+)
+
+func (e *SchedulingProjectionStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = SchedulingProjectionStatus(s)
+	case string:
+		*e = SchedulingProjectionStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for SchedulingProjectionStatus: %T", src)
+	}
+	return nil
+}
+
+type NullSchedulingProjectionStatus struct {
+	SchedulingProjectionStatus SchedulingProjectionStatus `json:"scheduling_projection_status"`
+	Valid                      bool                       `json:"valid"` // Valid is true if SchedulingProjectionStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullSchedulingProjectionStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.SchedulingProjectionStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.SchedulingProjectionStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullSchedulingProjectionStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.SchedulingProjectionStatus), nil
+}
+
 type CatalogResource struct {
 	ID               uuid.UUID             `json:"id"`
 	PublicID         string                `json:"public_id"`
@@ -1644,4 +1733,62 @@ type ReferenceLocale struct {
 	UpdatedAt  time.Time `json:"updated_at"`
 	Name       string    `json:"name"`
 	NativeName string    `json:"native_name"`
+}
+
+type SchedulingAvailabilityProjection struct {
+	ID               uuid.UUID                  `json:"id"`
+	ResourceID       uuid.UUID                  `json:"resource_id"`
+	ProjectionDate   pgtype.Date                `json:"projection_date"`
+	AvailableMinutes int32                      `json:"available_minutes"`
+	OccupiedMinutes  int32                      `json:"occupied_minutes"`
+	Status           SchedulingProjectionStatus `json:"status"`
+	GeneratedAt      time.Time                  `json:"generated_at"`
+}
+
+type SchedulingBusinessHour struct {
+	ID         uuid.UUID   `json:"id"`
+	LocationID uuid.UUID   `json:"location_id"`
+	Weekday    int16       `json:"weekday"`
+	OpensAt    pgtype.Time `json:"opens_at"`
+	ClosesAt   pgtype.Time `json:"closes_at"`
+	IsClosed   bool        `json:"is_closed"`
+	CreatedAt  time.Time   `json:"created_at"`
+	UpdatedAt  time.Time   `json:"updated_at"`
+}
+
+type SchedulingCalendarHoliday struct {
+	ID         uuid.UUID   `json:"id"`
+	TenantID   uuid.UUID   `json:"tenant_id"`
+	LocationID *uuid.UUID  `json:"location_id"`
+	NameEn     *string     `json:"name_en"`
+	NameVi     *string     `json:"name_vi"`
+	StartsAt   time.Time   `json:"starts_at"`
+	EndsAt     time.Time   `json:"ends_at"`
+	IsClosed   bool        `json:"is_closed"`
+	OpensAt    pgtype.Time `json:"opens_at"`
+	ClosesAt   pgtype.Time `json:"closes_at"`
+	CreatedAt  time.Time   `json:"created_at"`
+}
+
+type SchedulingResourceBlock struct {
+	ID            uuid.UUID           `json:"id"`
+	ResourceID    uuid.UUID           `json:"resource_id"`
+	BlockType     SchedulingBlockType `json:"block_type"`
+	ReferenceType *string             `json:"reference_type"`
+	ReferenceID   *uuid.UUID          `json:"reference_id"`
+	StartsAt      time.Time           `json:"starts_at"`
+	EndsAt        time.Time           `json:"ends_at"`
+	Reason        *string             `json:"reason"`
+	CreatedAt     time.Time           `json:"created_at"`
+}
+
+type SchedulingTimeSlot struct {
+	ID           uuid.UUID  `json:"id"`
+	ResourceID   uuid.UUID  `json:"resource_id"`
+	StartsAt     time.Time  `json:"starts_at"`
+	EndsAt       time.Time  `json:"ends_at"`
+	IsAvailable  bool       `json:"is_available"`
+	Source       *string    `json:"source"`
+	ProjectionID *uuid.UUID `json:"projection_id"`
+	GeneratedAt  time.Time  `json:"generated_at"`
 }

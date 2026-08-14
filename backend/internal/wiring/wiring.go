@@ -18,6 +18,9 @@ import (
 	"bokdy/internal/platform/middleware"
 	"bokdy/internal/platform/server"
 	"bokdy/internal/platform/validation"
+	schedhandler "bokdy/internal/scheduling/handler"
+	schedpg "bokdy/internal/scheduling/infrastructure/postgres"
+	schedservice "bokdy/internal/scheduling/service"
 
 	"github.com/gin-gonic/gin"
 )
@@ -54,9 +57,19 @@ func RegisterRoutes(api *gin.RouterGroup, app *server.Application) {
 	orgHandler := orghandler.NewOrganizationHandler(orgSvc)
 	branchHandler := orghandler.NewBranchHandler(branchSvc)
 	customerHandler := crmhandler.NewCustomerHandler(customerSvc)
+
+	syncEnqueuer := schedservice.NewAsynqSyncEnqueuer(app.Asynq)
+	schedRepo := schedpg.NewScheduleRepo(app.DB.Pool)
+	schedSvc := schedservice.NewScheduleService(
+		app.DB.Pool, schedRepo, schedRepo, orgRepo, branchRepo, orgSvc, outbox, syncEnqueuer,
+	)
+	schedHandler := schedhandler.NewScheduleHandler(schedSvc)
+
 	courtTypeRepo := catalogpg.NewCourtTypeRepo(app.DB.Pool)
 	courtRepo := catalogpg.NewCourtRepo(app.DB.Pool)
-	catalogSvc := catalogservice.NewCatalogService(app.DB.Pool, courtTypeRepo, courtRepo, orgRepo, branchRepo, orgSvc, outbox)
+	catalogSvc := catalogservice.NewCatalogService(
+		app.DB.Pool, courtTypeRepo, courtRepo, orgRepo, branchRepo, orgSvc, outbox, syncEnqueuer,
+	)
 	catalogHandler := cataloghandler.NewCatalogHandler(catalogSvc)
 
 	jwt := middleware.JWTAuth(app.Tokens)
@@ -65,6 +78,7 @@ func RegisterRoutes(api *gin.RouterGroup, app *server.Application) {
 	branchHandler.RegisterRoutes(api, jwt)
 	customerHandler.RegisterRoutes(api, jwt)
 	catalogHandler.RegisterRoutes(api, jwt)
+	schedHandler.RegisterRoutes(api, jwt)
 
 	admin := api.Group("/admin", jwt, middleware.RequireSystemAdmin())
 	admin.GET("/health", func(c *gin.Context) {

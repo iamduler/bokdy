@@ -2,13 +2,14 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"path/filepath"
 	"time"
 
+	identitypg "bokdy/internal/identity/infrastructure/postgres"
 	orgpg "bokdy/internal/organization/infrastructure/postgres"
 	orgservice "bokdy/internal/organization/service"
-	identitypg "bokdy/internal/identity/infrastructure/postgres"
 	"bokdy/internal/platform/audit"
 	"bokdy/internal/platform/config"
 	"bokdy/internal/platform/env"
@@ -20,7 +21,10 @@ import (
 	"bokdy/internal/platform/persistence"
 	"bokdy/internal/platform/queue"
 	"bokdy/internal/platform/requestctx"
+	schedpg "bokdy/internal/scheduling/infrastructure/postgres"
+	schedservice "bokdy/internal/scheduling/service"
 
+	"github.com/google/uuid"
 	"github.com/hibiken/asynq"
 	"github.com/joho/godotenv"
 	"github.com/rs/zerolog"
@@ -83,6 +87,8 @@ func main() {
 	)
 
 	consumer := audit.NewConsumer(db.Pool)
+	schedRepo := schedpg.NewScheduleRepo(pool)
+	syncSvc := schedservice.NewSyncService(pool, schedRepo, outbox)
 
 	mux := asynq.NewServeMux()
 	mux.HandleFunc(queue.TaskPlatformHealth, loggedTask(queueLog, func(ctx context.Context, t *asynq.Task) error {
@@ -96,6 +102,28 @@ func main() {
 			return err
 		}
 		logging.WithTrace(queueLog, ctx).Info().Int("expired", n).Msg("invitations expired")
+		return nil
+	}))
+	mux.HandleFunc(queue.TaskAvailabilitySync, loggedTask(queueLog, func(ctx context.Context, t *asynq.Task) error {
+		var p queue.AvailabilitySyncPayload
+		if err := json.Unmarshal(t.Payload(), &p); err != nil {
+			return err
+		}
+		ctx = otelx.ExtractMap(ctx, p.Trace)
+		if p.ResourceID != "" {
+			id, err := uuid.Parse(p.ResourceID)
+			if err != nil {
+				return err
+			}
+			return syncSvc.SyncCourt(ctx, id)
+		}
+		if p.LocationID != "" {
+			id, err := uuid.Parse(p.LocationID)
+			if err != nil {
+				return err
+			}
+			return syncSvc.SyncBranch(ctx, id)
+		}
 		return nil
 	}))
 

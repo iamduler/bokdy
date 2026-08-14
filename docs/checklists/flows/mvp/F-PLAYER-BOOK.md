@@ -6,9 +6,9 @@ Phase: mvp
 
 | Done | ID | Step | UC | Phase | Gate | Proposed API | Events | Status | Notes |
 | :---: | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| [ ] | F-PLAYER-BOOK-01 | Search branches | UC-MARKETPLACE-001 | mvp | public | `GET /api/v1/marketplace/branches` | — | ready |  |
-| [ ] | F-PLAYER-BOOK-02 | Branch profile | UC-MARKETPLACE-002 | mvp | public | `GET /api/v1/marketplace/branches/{publicId}` | — | ready | Use public_id in public URLs. |
-| [ ] | F-PLAYER-BOOK-03 | Court availability | UC-AVAILABILITY-001 | mvp | public | `GET /api/v1/marketplace/courts/{publicId}/availability` | — | ready |  |
+| [x] | F-PLAYER-BOOK-01 | Search branches | UC-MARKETPLACE-001 | mvp | public | `GET /api/v1/marketplace/branches` | — | done | Active branch + org; `q` only. DEF-20260814-04 |
+| [x] | F-PLAYER-BOOK-02 | Branch profile | UC-MARKETPLACE-002 | mvp | public | `GET /api/v1/marketplace/branches/{publicId}` | — | done | Non-archived courts; no media. |
+| [x] | F-PLAYER-BOOK-03 | Court availability | UC-AVAILABILITY-001 | mvp | public | `GET /api/v1/marketplace/courts/{publicId}/availability` | — | done | Available slots; booking subtract deferred W7. |
 | [ ] | F-PLAYER-BOOK-04 | Create hold | UC-RESERVATION-001 | mvp | jwt | `POST /api/v1/reservations` | ReservationCreated | ready |  |
 | [ ] | F-PLAYER-BOOK-05 | Get hold | — | mvp | jwt | `GET /api/v1/reservations/{id}` | — | ready | Own only. |
 | [ ] | F-PLAYER-BOOK-06 | Cancel hold | UC-RESERVATION-002 | mvp | jwt | `POST /api/v1/reservations/{id}/cancel` | ReservationCanceled | ready |  |

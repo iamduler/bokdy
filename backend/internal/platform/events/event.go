@@ -52,9 +52,9 @@ type auditEnvelope struct {
 
 func ActionForEvent(eventType string) string {
 	switch eventType {
-	case "UserRegistered", "OrganizationCreated", "StaffAdded", "InvitationCreated", "GuestCustomerCreated", "CustomerRegistered", "BookingCreated", "InvoiceIssued", "ReservationCreated", "BranchCreated", "CourtTypeCreated", "CourtCreated":
+	case "UserRegistered", "OrganizationCreated", "StaffAdded", "InvitationCreated", "GuestCustomerCreated", "CustomerRegistered", "BookingCreated", "InvoiceIssued", "ReservationCreated", "BranchCreated", "CourtTypeCreated", "CourtCreated", "TimeBlocked":
 		return "created"
-	case "UserProfileUpdated", "OrganizationUpdated", "StaffUpdated", "PasswordReset", "PasswordResetRequested", "BranchUpdated", "CustomerUpdated", "CourtTypeUpdated", "CourtUpdated":
+	case "UserProfileUpdated", "OrganizationUpdated", "StaffUpdated", "PasswordReset", "PasswordResetRequested", "BranchUpdated", "CustomerUpdated", "CourtTypeUpdated", "CourtUpdated", "WeeklyScheduleUpdated", "SpecialScheduleUpdated", "AvailabilitySynchronized":
 		return "updated"
 	case "UserVerified", "OrganizationActivated", "OrganizationSuspended", "OrganizationRestored", "StaffSuspended", "StaffRestored", "BranchOpened", "BranchClosed", "BranchArchived", "InvitationRejected", "InvitationExpired", "CustomerBlacklisted", "CustomerRestored", "CourtTypeArchived", "CourtOpened", "CourtClosed", "CourtArchived", "CourtMaintenanceScheduled", "CourtMaintenanceCompleted":
 		return "status_change"
@@ -62,7 +62,7 @@ func ActionForEvent(eventType string) string {
 		return "login"
 	case "UserLoggedOut":
 		return "logout"
-	case "StaffRemoved", "InvitationRevoked", "RoleRemoved":
+	case "StaffRemoved", "InvitationRevoked", "RoleRemoved", "TimeUnblocked":
 		return "deleted"
 	case "InvitationAccepted", "RoleAssigned":
 		return "assign"

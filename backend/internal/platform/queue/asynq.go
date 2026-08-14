@@ -16,11 +16,18 @@ const (
 	TaskOutboxAudit         = "outbox:audit"
 	TaskOutboxSweep         = "outbox:sweep"
 	TaskInvitationExpire    = "organization:invitation_expire"
+	TaskAvailabilitySync    = "scheduling:availability_sync"
 )
 
 type OutboxPayload struct {
 	OutboxID string            `json:"outbox_id"`
 	Trace    map[string]string `json:"trace,omitempty"`
+}
+
+type AvailabilitySyncPayload struct {
+	LocationID string            `json:"location_id,omitempty"`
+	ResourceID string            `json:"resource_id,omitempty"`
+	Trace      map[string]string `json:"trace,omitempty"`
 }
 
 const DefaultQueue = "default"

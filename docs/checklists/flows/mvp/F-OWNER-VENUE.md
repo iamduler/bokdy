@@ -25,14 +25,14 @@ W4 freeze (2026-08-14): Court Type = `resource_categories`; Court = `resources` 
 | [x] | F-OWNER-VENUE-13 | Update court | UC-COURT-002 | mvp | jwt+org Staff | `PATCH /api/v1/courts/{id}` | CourtUpdated | done | Code immutable. |
 | [x] | F-OWNER-VENUE-14 | Open court | UC-COURT-003 | mvp | jwt+org Staff | `POST /api/v1/courts/{id}/open` | CourtOpened | done | inactive → active |
 | [x] | F-OWNER-VENUE-15 | Close court | UC-COURT-004 | mvp | jwt+org Staff | `POST /api/v1/courts/{id}/close` | CourtClosed | done | active → inactive |
-| [x] | F-OWNER-VENUE-16 | Schedule maintenance | UC-COURT-005 | mvp | jwt+org Staff | `POST /api/v1/courts/{id}/maintenance` | CourtMaintenanceScheduled | done | Status + `resource_maintenances`; no slot blocks. |
+| [x] | F-OWNER-VENUE-16 | Schedule maintenance | UC-COURT-005 | mvp | jwt+org Staff | `POST /api/v1/courts/{id}/maintenance` | CourtMaintenanceScheduled | done | Status + maintenance row; sync upserts maintenance block. |
 | [x] | F-OWNER-VENUE-17 | Complete maintenance | UC-COURT-006 | mvp | jwt+org Staff | `POST /api/v1/courts/{id}/maintenance/complete` | CourtMaintenanceCompleted | done | → active |
 | [x] | F-OWNER-VENUE-18 | Archive court | UC-COURT-007 | mvp | jwt+org Owner | `POST /api/v1/courts/{id}/archive` | CourtArchived | done | From inactive only. Booking check deferred. |
-| [ ] | F-OWNER-VENUE-19 | Weekly schedule | UC-SCHEDULE-001 | mvp | jwt+org Staff | `PUT /api/v1/branches/{id}/schedule` | WeeklyScheduleUpdated | ready | W5 |
-| [ ] | F-OWNER-VENUE-20 | Special schedule | UC-SCHEDULE-002 | mvp | jwt+org Staff | `POST /api/v1/branches/{id}/schedule/special` | SpecialScheduleUpdated | ready |  |
-| [ ] | F-OWNER-VENUE-21 | Block time | UC-SCHEDULE-003 | mvp | jwt+org Staff | `POST /api/v1/courts/{id}/blocks` | TimeBlocked | ready |  |
-| [ ] | F-OWNER-VENUE-22 | Unblock time | UC-SCHEDULE-004 | mvp | jwt+org Staff | `DELETE /api/v1/courts/{id}/blocks/{blockId}` | TimeUnblocked | ready |  |
-| [ ] | F-OWNER-VENUE-23 | Sync availability | UC-SCHEDULE-005 | mvp | system | worker | AvailabilitySynchronized | ready | Projection rebuild. |
+| [x] | F-OWNER-VENUE-19 | Weekly schedule | UC-SCHEDULE-001 | mvp | jwt+org Staff | `PUT /api/v1/branches/{id}/schedule` | WeeklyScheduleUpdated | done | Replace-all 7 weekdays. Also `GET …/schedule`. |
+| [x] | F-OWNER-VENUE-20 | Special schedule | UC-SCHEDULE-002 | mvp | jwt+org Staff | `POST /api/v1/branches/{id}/schedule/special` | SpecialScheduleUpdated | done | `calendar_holidays`; default closed. |
+| [x] | F-OWNER-VENUE-21 | Block time | UC-SCHEDULE-003 | mvp | jwt+org Staff | `POST /api/v1/courts/{id}/blocks` | TimeBlocked | done |  |
+| [x] | F-OWNER-VENUE-22 | Unblock time | UC-SCHEDULE-004 | mvp | jwt+org Staff | `DELETE /api/v1/courts/{id}/blocks/{blockId}` | TimeUnblocked | done | Manual blocks only. |
+| [x] | F-OWNER-VENUE-23 | Sync availability | UC-SCHEDULE-005 | mvp | system | worker | AvailabilitySynchronized | done | Asynq `scheduling:availability_sync`; 14-day horizon. |
 | [ ] | F-OWNER-VENUE-24 | Create price version | UC-PRICING-002 | mvp | jwt+org Owner | `POST /api/v1/price-versions` | PricingVersionCreated | ready | W6 |
 | [ ] | F-OWNER-VENUE-25 | Publish price version | UC-PRICING-003 | mvp | jwt+org Owner | `POST /api/v1/price-versions/{id}/publish` | PricingVersionPublished | ready |  |
 | [ ] | F-OWNER-VENUE-26 | Archive price version | UC-PRICING-004 | mvp | jwt+org Owner | `POST /api/v1/price-versions/{id}/archive` | PricingVersionArchived | ready |  |

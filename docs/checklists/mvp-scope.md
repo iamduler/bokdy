@@ -6,6 +6,20 @@ Status: Active
 
 Three audiences: Player, Owner (staff), Admin. Backend first. No FE wiring in W1–W9.
 
+## Scheduling freeze (W5, 2026-08-14)
+
+- Full tracker W5: F-OWNER-VENUE-19–23, F-PLAYER-BOOK-01–03, F-OWNER-OPS-01–02. No FE. No pricing/booking.
+- Package `scheduling`; marketplace public routes live in the same module handlers.
+- Weekly hours = `scheduling.business_hours` (Branch/`location_id`). Special = `scheduling.calendar_holidays` with `is_closed` (default true) + optional `opens_at`/`closes_at`. No RRULE.
+- Events (checklist canonical): `WeeklyScheduleUpdated`, `SpecialScheduleUpdated`, `TimeBlocked`, `TimeUnblocked`, `AvailabilitySynchronized`.
+- Projection: Asynq `scheduling:availability_sync`; horizon **14 days**; slots from court type `slot_duration_minutes`; GET reads `time_slots`.
+- Occupied SoT = `resource_blocks`. Maintenance → sync creates/clears `block_type=maintenance` blocks (no `resource_maintenance_windows` in W5).
+- Availability subtracts hours + holidays + blocks only; reservation/booking subtract deferred to W7.
+- No slots on CourtCreated (`inactive`). Sync on schedule/block mutations, CourtOpened, and maintenance schedule/complete.
+- Marketplace: branch `active` + org `active` is public (no `is_public` flag); query `q`; no sport filter/media.
+- Extra read: `GET /branches/{id}/schedule`. Weekly PUT is replace-all (7 weekdays).
+- Gate: Staff `RequireMembership` for schedule/blocks/staff availability.
+
 ## Catalog freeze (W4, 2026-08-14)
 
 - Full F-OWNER-VENUE-08–18 in one wave (including maintenance). Schedule/pricing/media stay later waves.

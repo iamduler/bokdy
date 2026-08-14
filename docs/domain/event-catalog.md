@@ -1314,6 +1314,8 @@ Consumers
 
 Audit
 
+Scheduling
+
 Booking
 
 ---
@@ -1336,6 +1338,8 @@ Consumers
 
 Audit
 
+Scheduling
+
 Booking
 
 ---
@@ -1352,7 +1356,7 @@ Court
 
 Trigger
 
-Court status `maintenance`; `resource_maintenances` row `in_progress`. Slot blocking deferred to W5.
+Court status `maintenance`; `resource_maintenances` row `in_progress`. Sync upserts `resource_blocks` (`block_type=maintenance`).
 
 Consumers
 
@@ -1374,7 +1378,7 @@ Court
 
 Trigger
 
-Maintenance completed (`maintenance` → `active`).
+Maintenance completed (`maintenance` → `active`). Sync clears maintenance `resource_blocks`.
 
 Consumers
 
@@ -1397,6 +1401,120 @@ Court
 Trigger
 
 Court archived from `inactive`. Future-booking check deferred until Booking exists.
+
+Consumers
+
+Audit
+
+Scheduling
+
+---
+
+# WeeklyScheduleUpdated
+
+Publisher
+
+Scheduling
+
+Aggregate
+
+Branch
+
+Trigger
+
+Staff replaces weekly business hours for a branch (`PUT …/schedule`).
+
+Consumers
+
+Audit
+
+Scheduling (availability sync)
+
+Payload notes
+
+`organization_id`, `branch_id`
+
+---
+
+# SpecialScheduleUpdated
+
+Publisher
+
+Scheduling
+
+Aggregate
+
+Branch
+
+Trigger
+
+Staff creates a special schedule / holiday window (`POST …/schedule/special`). UC alias: same name.
+
+Consumers
+
+Audit
+
+Scheduling (availability sync)
+
+---
+
+# TimeBlocked
+
+Publisher
+
+Scheduling
+
+Aggregate
+
+Court
+
+Trigger
+
+Staff blocks court time (`POST …/blocks`). UC alias: CourtTimeBlocked.
+
+Consumers
+
+Audit
+
+Scheduling (availability sync)
+
+---
+
+# TimeUnblocked
+
+Publisher
+
+Scheduling
+
+Aggregate
+
+Court
+
+Trigger
+
+Staff removes a manual block (`DELETE …/blocks/{blockId}`). UC alias: CourtTimeUnblocked.
+
+Consumers
+
+Audit
+
+Scheduling (availability sync)
+
+---
+
+# AvailabilitySynchronized
+
+Publisher
+
+Scheduling
+
+Aggregate
+
+Court
+
+Trigger
+
+Asynq worker `scheduling:availability_sync` rebuilt `availability_projections` + `time_slots` (14-day horizon). UC alias: CourtAvailabilityUpdated.
 
 Consumers
 

@@ -21,6 +21,7 @@ type Querier interface {
 	ClearUserPhoneVerified(ctx context.Context, id uuid.UUID) error
 	CompleteResourceMaintenance(ctx context.Context, id uuid.UUID) error
 	ConsumePasswordResetToken(ctx context.Context, id uuid.UUID) error
+	CountConflictingBlocks(ctx context.Context, arg CountConflictingBlocksParams) (int64, error)
 	CountNonArchivedCourtsByType(ctx context.Context, arg CountNonArchivedCourtsByTypeParams) (int64, error)
 	CountTenantRole(ctx context.Context, arg CountTenantRoleParams) (int32, error)
 	CourtCodeExists(ctx context.Context, arg CourtCodeExistsParams) (bool, error)
@@ -33,6 +34,7 @@ type Querier interface {
 	CreateCustomer(ctx context.Context, arg CreateCustomerParams) error
 	CreateCustomerContact(ctx context.Context, arg CreateCustomerContactParams) error
 	CreateCustomerProfile(ctx context.Context, arg CreateCustomerProfileParams) error
+	CreateHoliday(ctx context.Context, arg CreateHolidayParams) error
 	CreateIdentity(ctx context.Context, arg CreateIdentityParams) error
 	CreateIdentityVerification(ctx context.Context, arg CreateIdentityVerificationParams) error
 	CreateLocation(ctx context.Context, arg CreateLocationParams) error
@@ -42,16 +44,24 @@ type Querier interface {
 	CreateOrganizationSettings(ctx context.Context, arg CreateOrganizationSettingsParams) error
 	CreatePasswordResetToken(ctx context.Context, arg CreatePasswordResetTokenParams) error
 	CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) error
+	CreateResourceBlock(ctx context.Context, arg CreateResourceBlockParams) error
 	CreateResourceMaintenance(ctx context.Context, arg CreateResourceMaintenanceParams) error
 	CreateSession(ctx context.Context, arg CreateSessionParams) error
 	CreateStaffInvitation(ctx context.Context, arg CreateStaffInvitationParams) error
 	CreateTenant(ctx context.Context, arg CreateTenantParams) error
 	CreateUser(ctx context.Context, arg CreateUserParams) error
 	CreateUserProfile(ctx context.Context, arg CreateUserProfileParams) error
+	DeleteBusinessHoursByLocation(ctx context.Context, locationID uuid.UUID) error
+	DeleteMaintenanceBlock(ctx context.Context, arg DeleteMaintenanceBlockParams) error
+	DeleteMaintenanceBlocksByResource(ctx context.Context, resourceID uuid.UUID) error
+	DeleteProjectionsFrom(ctx context.Context, arg DeleteProjectionsFromParams) error
+	DeleteResourceBlock(ctx context.Context, arg DeleteResourceBlockParams) error
+	DeleteTimeSlotsFrom(ctx context.Context, arg DeleteTimeSlotsFromParams) error
 	ExpirePendingInvitations(ctx context.Context, expiresAt time.Time) ([]OrganizationStaffInvitation, error)
 	FindActivePasswordResetToken(ctx context.Context, tokenHash string) (FindActivePasswordResetTokenRow, error)
 	FindBranchByID(ctx context.Context, arg FindBranchByIDParams) (FindBranchByIDRow, error)
 	FindCourtByID(ctx context.Context, arg FindCourtByIDParams) (FindCourtByIDRow, error)
+	FindCourtForSync(ctx context.Context, id uuid.UUID) (FindCourtForSyncRow, error)
 	FindCourtTypeByID(ctx context.Context, arg FindCourtTypeByIDParams) (FindCourtTypeByIDRow, error)
 	FindCustomerByID(ctx context.Context, arg FindCustomerByIDParams) (FindCustomerByIDRow, error)
 	FindCustomerByIDAnyTenant(ctx context.Context, id uuid.UUID) (FindCustomerByIDAnyTenantRow, error)
@@ -63,10 +73,14 @@ type Querier interface {
 	FindInvitationByID(ctx context.Context, arg FindInvitationByIDParams) (OrganizationStaffInvitation, error)
 	FindInvitationByToken(ctx context.Context, invitationToken string) (OrganizationStaffInvitation, error)
 	FindLocalIdentityByEmail(ctx context.Context, lower string) (FindLocalIdentityByEmailRow, error)
+	FindMarketplaceBranchByPublicID(ctx context.Context, publicID string) (FindMarketplaceBranchByPublicIDRow, error)
+	FindMarketplaceCourtByPublicID(ctx context.Context, publicID string) (FindMarketplaceCourtByPublicIDRow, error)
+	FindOpenMaintenance(ctx context.Context, resourceID uuid.UUID) (FindOpenMaintenanceRow, error)
 	FindOrganizationByID(ctx context.Context, id uuid.UUID) (FindOrganizationByIDRow, error)
 	FindPendingVerificationByTokenHash(ctx context.Context, tokenHash string) (FindPendingVerificationByTokenHashRow, error)
 	FindPrimaryIdentityByUserID(ctx context.Context, userID uuid.UUID) (FindPrimaryIdentityByUserIDRow, error)
 	FindRefreshTokenByHash(ctx context.Context, tokenHash string) (FindRefreshTokenByHashRow, error)
+	FindResourceBlock(ctx context.Context, arg FindResourceBlockParams) (FindResourceBlockRow, error)
 	FindRoleByCode(ctx context.Context, code string) (FindRoleByCodeRow, error)
 	FindRoleByID(ctx context.Context, id uuid.UUID) (FindRoleByIDRow, error)
 	FindStaffByID(ctx context.Context, arg FindStaffByIDParams) (FindStaffByIDRow, error)
@@ -77,16 +91,24 @@ type Querier interface {
 	GetPasswordHash(ctx context.Context, userID uuid.UUID) (string, error)
 	GetUserProfile(ctx context.Context, userID uuid.UUID) (GetUserProfileRow, error)
 	HasTenantRole(ctx context.Context, arg HasTenantRoleParams) (bool, error)
+	InsertBusinessHour(ctx context.Context, arg InsertBusinessHourParams) error
+	InsertTimeSlot(ctx context.Context, arg InsertTimeSlotParams) error
 	IsActiveStaffMember(ctx context.Context, arg IsActiveStaffMemberParams) (bool, error)
 	LinkCustomerUser(ctx context.Context, arg LinkCustomerUserParams) error
+	ListActiveCourtIDsByLocation(ctx context.Context, locationID uuid.UUID) ([]uuid.UUID, error)
 	ListBranchesByOrg(ctx context.Context, organizationID uuid.UUID) ([]ListBranchesByOrgRow, error)
+	ListBusinessHours(ctx context.Context, locationID uuid.UUID) ([]SchedulingBusinessHour, error)
 	ListCourtTypesByTenant(ctx context.Context, arg ListCourtTypesByTenantParams) ([]ListCourtTypesByTenantRow, error)
 	ListCourts(ctx context.Context, arg ListCourtsParams) ([]ListCourtsRow, error)
 	ListCustomerContacts(ctx context.Context, customerID uuid.UUID) ([]ListCustomerContactsRow, error)
 	ListCustomersByTenant(ctx context.Context, arg ListCustomersByTenantParams) ([]ListCustomersByTenantRow, error)
 	ListCustomersByUser(ctx context.Context, userID *uuid.UUID) ([]ListCustomersByUserRow, error)
+	ListHolidaysOverlapping(ctx context.Context, arg ListHolidaysOverlappingParams) ([]ListHolidaysOverlappingRow, error)
+	ListMarketplaceCourts(ctx context.Context, locationID uuid.UUID) ([]ListMarketplaceCourtsRow, error)
 	ListOrganizationsByUser(ctx context.Context, userID uuid.UUID) ([]ListOrganizationsByUserRow, error)
+	ListResourceBlocksOverlapping(ctx context.Context, arg ListResourceBlocksOverlappingParams) ([]ListResourceBlocksOverlappingRow, error)
 	ListStaffByOrg(ctx context.Context, organizationID uuid.UUID) ([]ListStaffByOrgRow, error)
+	ListTimeSlots(ctx context.Context, arg ListTimeSlotsParams) ([]ListTimeSlotsRow, error)
 	ListUserRoles(ctx context.Context, userID uuid.UUID) ([]ListUserRolesRow, error)
 	ListUserRolesByTenant(ctx context.Context, arg ListUserRolesByTenantParams) ([]ListUserRolesByTenantRow, error)
 	MarkUserEmailVerified(ctx context.Context, arg MarkUserEmailVerifiedParams) error
@@ -99,6 +121,7 @@ type Querier interface {
 	RevokeRefreshTokensBySession(ctx context.Context, sessionID uuid.UUID) error
 	RevokeRefreshTokensForUser(ctx context.Context, userID uuid.UUID) error
 	RevokeSessionByID(ctx context.Context, id uuid.UUID) error
+	SearchMarketplaceBranches(ctx context.Context, arg SearchMarketplaceBranchesParams) ([]SearchMarketplaceBranchesRow, error)
 	TouchUserLastLogin(ctx context.Context, arg TouchUserLastLoginParams) error
 	UpdateCourt(ctx context.Context, arg UpdateCourtParams) error
 	UpdateCourtStatus(ctx context.Context, arg UpdateCourtStatusParams) error
@@ -117,6 +140,8 @@ type Querier interface {
 	UpdateStaffStatus(ctx context.Context, arg UpdateStaffStatusParams) error
 	UpdateUserProfile(ctx context.Context, arg UpdateUserProfileParams) error
 	UpdateUserStatus(ctx context.Context, arg UpdateUserStatusParams) error
+	UpsertAvailabilityProjection(ctx context.Context, arg UpsertAvailabilityProjectionParams) (uuid.UUID, error)
+	UpsertMaintenanceBlock(ctx context.Context, arg UpsertMaintenanceBlockParams) error
 	UpsertPasswordCredential(ctx context.Context, arg UpsertPasswordCredentialParams) error
 }
 
