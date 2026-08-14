@@ -1186,7 +1186,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*` and staff `/api/v1/customers*` (except own GET/PATCH where noted). */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, and `/api/v1/courts*`. */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                     /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
                     "Accept-Language"?: components["parameters"]["AcceptLanguage"];
@@ -1221,7 +1221,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*` and staff `/api/v1/customers*` (except own GET/PATCH where noted). */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, and `/api/v1/courts*`. */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                     /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
                     "Accept-Language"?: components["parameters"]["AcceptLanguage"];
@@ -1271,7 +1271,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*` and staff `/api/v1/customers*` (except own GET/PATCH where noted). */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, and `/api/v1/courts*`. */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                     /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
                     "Accept-Language"?: components["parameters"]["AcceptLanguage"];
@@ -1310,7 +1310,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*` and staff `/api/v1/customers*` (except own GET/PATCH where noted). */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, and `/api/v1/courts*`. */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                     /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
                     "Accept-Language"?: components["parameters"]["AcceptLanguage"];
@@ -1363,7 +1363,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*` and staff `/api/v1/customers*` (except own GET/PATCH where noted). */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, and `/api/v1/courts*`. */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                 };
                 path: {
@@ -1409,7 +1409,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*` and staff `/api/v1/customers*` (except own GET/PATCH where noted). */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, and `/api/v1/courts*`. */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                 };
                 path: {
@@ -1455,7 +1455,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*` and staff `/api/v1/customers*` (except own GET/PATCH where noted). */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, and `/api/v1/courts*`. */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                 };
                 path: {
@@ -1503,7 +1503,7 @@ export interface paths {
                     status?: "lead" | "active" | "inactive" | "blacklisted";
                 };
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*` and staff `/api/v1/customers*` (except own GET/PATCH where noted). */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, and `/api/v1/courts*`. */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                     /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
                     "Accept-Language"?: components["parameters"]["AcceptLanguage"];
@@ -1538,7 +1538,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*` and staff `/api/v1/customers*` (except own GET/PATCH where noted). */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, and `/api/v1/courts*`. */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                     /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
                     "Accept-Language"?: components["parameters"]["AcceptLanguage"];
@@ -1626,7 +1626,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*` and staff `/api/v1/customers*` (except own GET/PATCH where noted). */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, and `/api/v1/courts*`. */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                     /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
                     "Accept-Language"?: components["parameters"]["AcceptLanguage"];
@@ -1675,7 +1675,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*` and staff `/api/v1/customers*` (except own GET/PATCH where noted). */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, and `/api/v1/courts*`. */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                     /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
                     "Accept-Language"?: components["parameters"]["AcceptLanguage"];
@@ -1771,7 +1771,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*` and staff `/api/v1/customers*` (except own GET/PATCH where noted). */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, and `/api/v1/courts*`. */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                 };
                 path: {
@@ -1821,7 +1821,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*` and staff `/api/v1/customers*` (except own GET/PATCH where noted). */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, and `/api/v1/courts*`. */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                 };
                 path: {
@@ -1832,6 +1832,647 @@ export interface paths {
             requestBody?: never;
             responses: {
                 /** @description Restored */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/court-types": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List court types
+         * @description Staff. Archived excluded unless `status` is set.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    status?: "active" | "archived";
+                };
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, and `/api/v1/courts*`. */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                    /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
+                    "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["CourtType"][];
+                        };
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+            };
+        };
+        put?: never;
+        /**
+         * Create court type
+         * @description Owner. `slot_duration_minutes` 15–180, multiple of 15. Emits CourtTypeCreated.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, and `/api/v1/courts*`. */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                    /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
+                    "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateCourtTypeRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["CourtType"];
+                        };
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                409: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/court-types/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get court type */
+        get: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, and `/api/v1/courts*`. */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                    /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
+                    "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+                };
+                path: {
+                    id: components["parameters"]["CourtTypeId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["CourtType"];
+                        };
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update court type */
+        patch: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, and `/api/v1/courts*`. */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                    /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
+                    "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+                };
+                path: {
+                    id: components["parameters"]["CourtTypeId"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateCourtTypeRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["CourtType"];
+                        };
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                409: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        trace?: never;
+    };
+    "/api/v1/court-types/{id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Archive court type
+         * @description Blocked while non-archived courts still use the type. Emits CourtTypeArchived.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, and `/api/v1/courts*`. */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                };
+                path: {
+                    id: components["parameters"]["CourtTypeId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Archived */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                409: components["responses"]["Error"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/courts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List courts
+         * @description Staff. Archived excluded. Optional `branch_id`. Hard limit 50.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    branch_id?: string;
+                };
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, and `/api/v1/courts*`. */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                    /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
+                    "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["Court"][];
+                        };
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+            };
+        };
+        put?: never;
+        /**
+         * Create court
+         * @description Owner. Initial status `inactive`. Availability rows deferred to W5. Emits CourtCreated.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, and `/api/v1/courts*`. */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                    /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
+                    "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateCourtRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["Court"];
+                        };
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                409: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/courts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get court */
+        get: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, and `/api/v1/courts*`. */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                    /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
+                    "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+                };
+                path: {
+                    id: components["parameters"]["CourtId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["Court"];
+                        };
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update court
+         * @description Staff. Court code is immutable (BR-005). Emits CourtUpdated.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, and `/api/v1/courts*`. */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                    /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
+                    "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+                };
+                path: {
+                    id: components["parameters"]["CourtId"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateCourtRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["Court"];
+                        };
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                409: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        trace?: never;
+    };
+    "/api/v1/courts/{id}/open": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Open court
+         * @description inactive -> active
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, and `/api/v1/courts*`. */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                };
+                path: {
+                    id: components["parameters"]["CourtId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Opened */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/courts/{id}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Close court
+         * @description active -> inactive
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, and `/api/v1/courts*`. */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                };
+                path: {
+                    id: components["parameters"]["CourtId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Closed */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/courts/{id}/maintenance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Schedule court maintenance
+         * @description Sets status `maintenance` and inserts `resource_maintenances` (`in_progress`). No scheduling blocks in W4.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, and `/api/v1/courts*`. */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                };
+                path: {
+                    id: components["parameters"]["CourtId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["ScheduleMaintenanceRequest"];
+                };
+            };
+            responses: {
+                /** @description Scheduled */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                409: components["responses"]["Error"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/courts/{id}/maintenance/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Complete court maintenance
+         * @description maintenance -> active
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, and `/api/v1/courts*`. */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                };
+                path: {
+                    id: components["parameters"]["CourtId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Completed */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/courts/{id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Archive court
+         * @description inactive -> archived. Future-booking check deferred until Booking exists.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, and `/api/v1/courts*`. */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                };
+                path: {
+                    id: components["parameters"]["CourtId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Archived */
                 204: {
                     headers: {
                         [name: string]: unknown;
@@ -2134,6 +2775,73 @@ export interface components {
         BlacklistCustomerRequest: {
             reason?: string;
         };
+        CourtType: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            /** @description Resolved from Accept-Language */
+            name: string;
+            name_en?: string;
+            name_vi?: string;
+            /** @enum {string} */
+            status: "active" | "archived";
+            slot_duration_minutes: number;
+        };
+        /** @description At least one of name_en or name_vi is required. slot_duration_minutes 15–180, multiple of 15. */
+        CreateCourtTypeRequest: {
+            name_en?: string;
+            name_vi?: string;
+            /** @description Optional; auto-generated when omitted */
+            code?: string;
+            slot_duration_minutes: number;
+        };
+        UpdateCourtTypeRequest: {
+            name_en?: string;
+            name_vi?: string;
+            code?: string;
+            slot_duration_minutes?: number;
+        };
+        Court: {
+            /** Format: uuid */
+            id: string;
+            public_id: string;
+            /** Format: uuid */
+            branch_id: string;
+            /** Format: uuid */
+            court_type_id: string;
+            code: string;
+            /** @description Resolved from Accept-Language */
+            name: string;
+            name_en?: string;
+            name_vi?: string;
+            /** @enum {string} */
+            status: "active" | "inactive" | "maintenance" | "archived";
+            is_bookable: boolean;
+        };
+        /** @description At least one of name_en or name_vi is required. Initial status is inactive. */
+        CreateCourtRequest: {
+            /** Format: uuid */
+            branch_id: string;
+            /** Format: uuid */
+            court_type_id: string;
+            name_en?: string;
+            name_vi?: string;
+            code?: string;
+        };
+        UpdateCourtRequest: {
+            name_en?: string;
+            name_vi?: string;
+            /** @description Immutable; sending a different value is rejected */
+            code?: string;
+            /** Format: uuid */
+            court_type_id?: string;
+        };
+        ScheduleMaintenanceRequest: {
+            title?: string;
+            reason?: string;
+            /** Format: date-time */
+            started_at?: string;
+        };
         User: {
             /** Format: uuid */
             id: string;
@@ -2253,7 +2961,9 @@ export interface components {
         StaffId: string;
         BranchId: string;
         CustomerId: string;
-        /** @description Tenant organization context. Required for `/api/v1/branches*` and staff `/api/v1/customers*` (except own GET/PATCH where noted). */
+        CourtTypeId: string;
+        CourtId: string;
+        /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, and `/api/v1/courts*`. */
         XOrganizationId: string;
         /** @description If present on nested `/organizations/{id}/...` routes, must match path id. */
         XOrganizationIdOptional: string;

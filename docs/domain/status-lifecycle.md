@@ -349,39 +349,60 @@ Canceled
 
 ---
 
-# 7. Resource
+# 7. Resource (Court)
+
+W4 maps Court to `catalog.resources` where `resource_type = court`.
+
+API verbs use open/close/maintenance/archive; stored statuses:
+
+| API | Status |
+|-----|--------|
+| create | `inactive` |
+| open | `active` |
+| close | `inactive` |
+| maintenance | `maintenance` |
+| maintenance/complete | `active` |
+| archive | `archived` |
 
 ## Lifecycle
 
 ```
-Active
+inactive (created)
 
-↓
+↓ open
 
-Maintenance
+active
 
-↓
+↓ close
 
-Active
-```
+inactive
 
-Alternative
+↓ maintenance (from active or inactive)
 
-```
-Active
+maintenance
 
-↓
+↓ complete
 
-Inactive
+active
+
+↓ archive (from inactive only)
+
+archived
 ```
 
 ## Status
 
-| Status |
-|---------|
-| active |
-| maintenance |
-| inactive |
+| Status | Description |
+|--------|-------------|
+| inactive | Closed; default on create |
+| active | Open; accepts bookings (after W7) |
+| maintenance | Temporary unavailability; `resource_maintenances` row `in_progress` |
+| archived | Terminal; excluded from list |
+
+## Rules
+
+- Archive requires `inactive`. Future-booking check deferred until Booking exists (W7).
+- Court Type (`resource_categories`) uses `active` / `archived`. Archive type is blocked while any non-archived court references it.
 
 ---
 

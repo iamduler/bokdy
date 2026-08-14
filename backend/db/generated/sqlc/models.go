@@ -13,6 +13,181 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type CatalogMaintenanceStatus string
+
+const (
+	CatalogMaintenanceStatusScheduled  CatalogMaintenanceStatus = "scheduled"
+	CatalogMaintenanceStatusInProgress CatalogMaintenanceStatus = "in_progress"
+	CatalogMaintenanceStatusCompleted  CatalogMaintenanceStatus = "completed"
+	CatalogMaintenanceStatusCanceled   CatalogMaintenanceStatus = "canceled"
+)
+
+func (e *CatalogMaintenanceStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = CatalogMaintenanceStatus(s)
+	case string:
+		*e = CatalogMaintenanceStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for CatalogMaintenanceStatus: %T", src)
+	}
+	return nil
+}
+
+type NullCatalogMaintenanceStatus struct {
+	CatalogMaintenanceStatus CatalogMaintenanceStatus `json:"catalog_maintenance_status"`
+	Valid                    bool                     `json:"valid"` // Valid is true if CatalogMaintenanceStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullCatalogMaintenanceStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.CatalogMaintenanceStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.CatalogMaintenanceStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullCatalogMaintenanceStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.CatalogMaintenanceStatus), nil
+}
+
+type CatalogResourceCategoryStatus string
+
+const (
+	CatalogResourceCategoryStatusActive   CatalogResourceCategoryStatus = "active"
+	CatalogResourceCategoryStatusArchived CatalogResourceCategoryStatus = "archived"
+)
+
+func (e *CatalogResourceCategoryStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = CatalogResourceCategoryStatus(s)
+	case string:
+		*e = CatalogResourceCategoryStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for CatalogResourceCategoryStatus: %T", src)
+	}
+	return nil
+}
+
+type NullCatalogResourceCategoryStatus struct {
+	CatalogResourceCategoryStatus CatalogResourceCategoryStatus `json:"catalog_resource_category_status"`
+	Valid                         bool                          `json:"valid"` // Valid is true if CatalogResourceCategoryStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullCatalogResourceCategoryStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.CatalogResourceCategoryStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.CatalogResourceCategoryStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullCatalogResourceCategoryStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.CatalogResourceCategoryStatus), nil
+}
+
+type CatalogResourceStatus string
+
+const (
+	CatalogResourceStatusActive      CatalogResourceStatus = "active"
+	CatalogResourceStatusInactive    CatalogResourceStatus = "inactive"
+	CatalogResourceStatusMaintenance CatalogResourceStatus = "maintenance"
+	CatalogResourceStatusArchived    CatalogResourceStatus = "archived"
+)
+
+func (e *CatalogResourceStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = CatalogResourceStatus(s)
+	case string:
+		*e = CatalogResourceStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for CatalogResourceStatus: %T", src)
+	}
+	return nil
+}
+
+type NullCatalogResourceStatus struct {
+	CatalogResourceStatus CatalogResourceStatus `json:"catalog_resource_status"`
+	Valid                 bool                  `json:"valid"` // Valid is true if CatalogResourceStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullCatalogResourceStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.CatalogResourceStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.CatalogResourceStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullCatalogResourceStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.CatalogResourceStatus), nil
+}
+
+type CatalogResourceType string
+
+const (
+	CatalogResourceTypeCourt     CatalogResourceType = "court"
+	CatalogResourceTypeRoom      CatalogResourceType = "room"
+	CatalogResourceTypeCoach     CatalogResourceType = "coach"
+	CatalogResourceTypeEquipment CatalogResourceType = "equipment"
+	CatalogResourceTypeFacility  CatalogResourceType = "facility"
+)
+
+func (e *CatalogResourceType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = CatalogResourceType(s)
+	case string:
+		*e = CatalogResourceType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for CatalogResourceType: %T", src)
+	}
+	return nil
+}
+
+type NullCatalogResourceType struct {
+	CatalogResourceType CatalogResourceType `json:"catalog_resource_type"`
+	Valid               bool                `json:"valid"` // Valid is true if CatalogResourceType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullCatalogResourceType) Scan(value interface{}) error {
+	if value == nil {
+		ns.CatalogResourceType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.CatalogResourceType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullCatalogResourceType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.CatalogResourceType), nil
+}
+
 type CrmContactType string
 
 const (
@@ -988,6 +1163,55 @@ func (ns NullPlatformAuditLogActivityType) Value() (driver.Value, error) {
 		return nil, nil
 	}
 	return string(ns.PlatformAuditLogActivityType), nil
+}
+
+type CatalogResource struct {
+	ID               uuid.UUID             `json:"id"`
+	PublicID         string                `json:"public_id"`
+	TenantID         uuid.UUID             `json:"tenant_id"`
+	LocationID       uuid.UUID             `json:"location_id"`
+	CourtTypeID      *uuid.UUID            `json:"court_type_id"`
+	Code             string                `json:"code"`
+	NameEn           *string               `json:"name_en"`
+	NameVi           *string               `json:"name_vi"`
+	ResourceType     CatalogResourceType   `json:"resource_type"`
+	ParentResourceID *uuid.UUID            `json:"parent_resource_id"`
+	Status           CatalogResourceStatus `json:"status"`
+	IsBookable       bool                  `json:"is_bookable"`
+	Capacity         *int32                `json:"capacity"`
+	SortOrder        *int32                `json:"sort_order"`
+	Metadata         []byte                `json:"metadata"`
+	CreatedAt        time.Time             `json:"created_at"`
+	UpdatedAt        time.Time             `json:"updated_at"`
+	DeletedAt        *time.Time            `json:"deleted_at"`
+}
+
+type CatalogResourceCategory struct {
+	ID                  uuid.UUID                     `json:"id"`
+	TenantID            uuid.UUID                     `json:"tenant_id"`
+	ParentID            *uuid.UUID                    `json:"parent_id"`
+	Code                string                        `json:"code"`
+	NameEn              *string                       `json:"name_en"`
+	NameVi              *string                       `json:"name_vi"`
+	ResourceType        CatalogResourceType           `json:"resource_type"`
+	Status              CatalogResourceCategoryStatus `json:"status"`
+	SlotDurationMinutes int32                         `json:"slot_duration_minutes"`
+	CreatedAt           time.Time                     `json:"created_at"`
+	UpdatedAt           time.Time                     `json:"updated_at"`
+	DeletedAt           *time.Time                    `json:"deleted_at"`
+}
+
+type CatalogResourceMaintenance struct {
+	ID                uuid.UUID                `json:"id"`
+	ResourceID        uuid.UUID                `json:"resource_id"`
+	Status            CatalogMaintenanceStatus `json:"status"`
+	Title             *string                  `json:"title"`
+	Description       *string                  `json:"description"`
+	StartedAt         *time.Time               `json:"started_at"`
+	CompletedAt       *time.Time               `json:"completed_at"`
+	NextMaintenanceAt *time.Time               `json:"next_maintenance_at"`
+	CreatedAt         time.Time                `json:"created_at"`
+	UpdatedAt         time.Time                `json:"updated_at"`
 }
 
 type CrmCustomer struct {

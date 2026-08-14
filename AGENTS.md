@@ -93,8 +93,9 @@ Scaffold includes:
 * `backend/internal/identity` — auth, sessions, RBAC
 * `backend/internal/organization` — Organization, staff, Branch
 * `backend/internal/crm` — Customer (guest + player-linked)
+* `backend/internal/catalog` — Court Type + Court (`catalog.resources`)
 
-Do not implement booking, court, or payment until their checklist wave is open.
+Do not implement booking or payment until their checklist wave is open.
 
 ---
 

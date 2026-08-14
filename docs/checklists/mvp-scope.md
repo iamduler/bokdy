@@ -6,6 +6,20 @@ Status: Active
 
 Three audiences: Player, Owner (staff), Admin. Backend first. No FE wiring in W1–W9.
 
+## Catalog freeze (W4, 2026-08-14)
+
+- Full F-OWNER-VENUE-08–18 in one wave (including maintenance). Schedule/pricing/media stay later waves.
+- Court Type = `catalog.resource_categories` (`resource_type=court`) plus W4 columns `status` (`active`/`archived`), `slot_duration_minutes`, `deleted_at`. No `catalog.sports` in W4.
+- Court = `catalog.resources` (`resource_type=court`). BR-004 via FK `court_type_id` (not M:N assignments).
+- Create court → `inactive`; open → `active`; close → `inactive`; maintenance → `maintenance`; archive → `archived` + `deleted_at`.
+- Maintenance: status flip + `catalog.resource_maintenances` (`in_progress` → `completed`). No scheduling blocks in W4.
+- UC-COURT-001 “initialize availability” is a no-op until W5.
+- Court code/name unique **within branch** (`location_id`), not tenant-wide. DEF-20260814-01.
+- Extra reads: `GET /court-types`, `GET /courts/{id}`. List courts: optional `branch_id`, exclude archived, limit 50.
+- Create court type: at least one of `name_en`/`name_vi`; `code` optional auto; `slot_duration_minutes` required (15–180, multiple of 15).
+- Create court: `branch_id`, `court_type_id`, at least one name; `code` optional. Court `code` immutable (BR-005).
+- Package `catalog`. Owner: create/update/archive type, create/archive court. Staff: list/get/update/open/close/maintenance.
+
 ## CRM freeze (W3, 2026-08-14)
 
 - Full F-OWNER-CRM-01–07 in one wave; merge deferred.

@@ -14,10 +14,10 @@ const DestinationAudit = "platform.audit"
 type ActorType string
 
 const (
-	ActorUser         ActorType = "user"
-	ActorStaff        ActorType = "staff"
-	ActorSystem       ActorType = "system"
-	ActorIntegration  ActorType = "integration"
+	ActorUser        ActorType = "user"
+	ActorStaff       ActorType = "staff"
+	ActorSystem      ActorType = "system"
+	ActorIntegration ActorType = "integration"
 )
 
 type Event struct {
@@ -52,11 +52,11 @@ type auditEnvelope struct {
 
 func ActionForEvent(eventType string) string {
 	switch eventType {
-	case "UserRegistered", "OrganizationCreated", "StaffAdded", "InvitationCreated", "GuestCustomerCreated", "CustomerRegistered", "BookingCreated", "InvoiceIssued", "ReservationCreated", "BranchCreated":
+	case "UserRegistered", "OrganizationCreated", "StaffAdded", "InvitationCreated", "GuestCustomerCreated", "CustomerRegistered", "BookingCreated", "InvoiceIssued", "ReservationCreated", "BranchCreated", "CourtTypeCreated", "CourtCreated":
 		return "created"
-	case "UserProfileUpdated", "OrganizationUpdated", "StaffUpdated", "PasswordReset", "PasswordResetRequested", "BranchUpdated", "CustomerUpdated":
+	case "UserProfileUpdated", "OrganizationUpdated", "StaffUpdated", "PasswordReset", "PasswordResetRequested", "BranchUpdated", "CustomerUpdated", "CourtTypeUpdated", "CourtUpdated":
 		return "updated"
-	case "UserVerified", "OrganizationActivated", "OrganizationSuspended", "OrganizationRestored", "StaffSuspended", "StaffRestored", "BranchOpened", "BranchClosed", "BranchArchived", "InvitationRejected", "InvitationExpired", "CustomerBlacklisted", "CustomerRestored":
+	case "UserVerified", "OrganizationActivated", "OrganizationSuspended", "OrganizationRestored", "StaffSuspended", "StaffRestored", "BranchOpened", "BranchClosed", "BranchArchived", "InvitationRejected", "InvitationExpired", "CustomerBlacklisted", "CustomerRestored", "CourtTypeArchived", "CourtOpened", "CourtClosed", "CourtArchived", "CourtMaintenanceScheduled", "CourtMaintenanceCompleted":
 		return "status_change"
 	case "UserLoggedIn", "UserLoginFailed", "SessionRefreshed":
 		return "login"

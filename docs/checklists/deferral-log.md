@@ -19,6 +19,26 @@ Do not delete entries. If a deferred item returns to MVP, add a new entry that r
 
 ---
 
+### DEF-20260814-01
+
+- Date: 2026-08-14
+- From flow/ID: W4 Catalog — ERD `resources (tenant_id, code)` unique vs UC-COURT-001 unique within branch; ERD M:N `resource_category_assignments` vs BR-004
+- New post-mvp ID: keep Court Type M:N / tenant-wide resource codes if product re-opens Resource (non-court)
+- Reason: W4 freeze follows UC + BR-004; Court is the only resource type in MVP
+- MVP workaround: unique `(location_id, code)` for `resource_type=court`; FK `resources.court_type_id`; no assignments table
+- Unblocks later wave: W10+ if coaches/rooms share catalog.resources
+- Decided in: plan `w4_catalog_api_inventory` (đề xuất accepted)
+
+### DEF-20260814-02
+
+- Date: 2026-08-14
+- From flow/ID: UC-COURT-001 step “Initialize availability”; UC-COURT-005/006 “block/restore slots”
+- New post-mvp ID: remains MVP in W5 (`F-OWNER-VENUE-19–23`)
+- Reason: dependency — scheduling module is W5
+- MVP workaround: W4 emits CourtCreated / maintenance events and flips `resources.status`; no schedule rows
+- Unblocks later wave: W5
+- Decided in: plan `w4_catalog_api_inventory` (đề xuất accepted)
+
 ### DEF-20260809-01
 
 - Date: 2026-08-09

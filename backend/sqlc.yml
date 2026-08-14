@@ -6,6 +6,7 @@ sql:
       - "internal/platform/persistence/queries/identity/*.sql"
       - "internal/platform/persistence/queries/organization/*.sql"
       - "internal/platform/persistence/queries/crm/*.sql"
+      - "internal/platform/persistence/queries/catalog/*.sql"
     schema: "db/schema.sql"
     gen:
       go:

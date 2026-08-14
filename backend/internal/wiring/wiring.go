@@ -1,6 +1,9 @@
 package wiring
 
 import (
+	cataloghandler "bokdy/internal/catalog/handler"
+	catalogpg "bokdy/internal/catalog/infrastructure/postgres"
+	catalogservice "bokdy/internal/catalog/service"
 	crmhandler "bokdy/internal/crm/handler"
 	crmpg "bokdy/internal/crm/infrastructure/postgres"
 	crmservice "bokdy/internal/crm/service"
@@ -51,12 +54,17 @@ func RegisterRoutes(api *gin.RouterGroup, app *server.Application) {
 	orgHandler := orghandler.NewOrganizationHandler(orgSvc)
 	branchHandler := orghandler.NewBranchHandler(branchSvc)
 	customerHandler := crmhandler.NewCustomerHandler(customerSvc)
+	courtTypeRepo := catalogpg.NewCourtTypeRepo(app.DB.Pool)
+	courtRepo := catalogpg.NewCourtRepo(app.DB.Pool)
+	catalogSvc := catalogservice.NewCatalogService(app.DB.Pool, courtTypeRepo, courtRepo, orgRepo, branchRepo, orgSvc, outbox)
+	catalogHandler := cataloghandler.NewCatalogHandler(catalogSvc)
 
 	jwt := middleware.JWTAuth(app.Tokens)
 	authHandler.RegisterRoutes(api, jwt)
 	orgHandler.RegisterRoutes(api, jwt)
 	branchHandler.RegisterRoutes(api, jwt)
 	customerHandler.RegisterRoutes(api, jwt)
+	catalogHandler.RegisterRoutes(api, jwt)
 
 	admin := api.Group("/admin", jwt, middleware.RequireSystemAdmin())
 	admin.GET("/health", func(c *gin.Context) {

@@ -146,7 +146,7 @@ backend/internal/wiring/wiring.go
 
 Do **not** create a new bounded context unless the user explicitly requests it.
 
-Existing foundation modules: `platform`, `identity`, `organization`.
+Existing foundation modules: `platform`, `identity`, `organization`, `crm`, `catalog`.
 
 ---
 
@@ -188,7 +188,7 @@ Must not import Gin, pgx, Redis, JSON tags as transport, or SQL.
 - persistence only: Save / Find / Delete / List
 - interface in `<module>/repository`
 - implementation in `<module>/infrastructure/postgres`
-- SQL lives in `backend/internal/platform/persistence/queries/{identity,organization}/*.sql`
+- SQL lives in `backend/internal/platform/persistence/queries/{identity,organization,crm,catalog}/*.sql`
 - regenerate with `make sqlc` (extracts goose Up → `backend/db/schema.sql`, then generates `bokdy/db/generated/sqlc`)
 - adapters call `dbsqlc.Queries` (`New(pool)` / `WithTx(tx)`); **do not** embed raw SQL strings in `*_repo.go`
 

@@ -3,7 +3,7 @@ info:
   title: Bokdy API
   version: 0.1.0
   description: |
-    Bokdy foundation API (Identity + Organization + CRM).
+    Bokdy foundation API (Identity + Organization + CRM + Catalog).
     Locale is taken from Accept-Language (missing → vi). Read models return a resolved name;
     owner edit payloads use name_en + name_vi.
     Auth: send X-Client (player|owner|admin) on register, login, refresh, logout.
@@ -19,6 +19,8 @@ tags:
   - name: Organizations
   - name: Branches
   - name: Customers
+  - name: CourtTypes
+  - name: Courts
   - name: Admin
 paths:
   /health:
@@ -1080,6 +1082,411 @@ paths:
           $ref: "#/components/responses/Error"
         "404":
           $ref: "#/components/responses/Error"
+  /api/v1/court-types:
+    get:
+      tags: [CourtTypes]
+      summary: List court types
+      description: Staff. Archived excluded unless `status` is set.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XOrganizationId"
+        - $ref: "#/components/parameters/AcceptLanguage"
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [active, archived]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CourtType"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+    post:
+      tags: [CourtTypes]
+      summary: Create court type
+      description: Owner. `slot_duration_minutes` 15–180, multiple of 15. Emits CourtTypeCreated.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XOrganizationId"
+        - $ref: "#/components/parameters/AcceptLanguage"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCourtTypeRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/CourtType"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /api/v1/court-types/{id}:
+    get:
+      tags: [CourtTypes]
+      summary: Get court type
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourtTypeId"
+        - $ref: "#/components/parameters/XOrganizationId"
+        - $ref: "#/components/parameters/AcceptLanguage"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/CourtType"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+    patch:
+      tags: [CourtTypes]
+      summary: Update court type
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourtTypeId"
+        - $ref: "#/components/parameters/XOrganizationId"
+        - $ref: "#/components/parameters/AcceptLanguage"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCourtTypeRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/CourtType"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /api/v1/court-types/{id}/archive:
+    post:
+      tags: [CourtTypes]
+      summary: Archive court type
+      description: Blocked while non-archived courts still use the type. Emits CourtTypeArchived.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourtTypeId"
+        - $ref: "#/components/parameters/XOrganizationId"
+      responses:
+        "204":
+          description: Archived
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+  /api/v1/courts:
+    get:
+      tags: [Courts]
+      summary: List courts
+      description: Staff. Archived excluded. Optional `branch_id`. Hard limit 50.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XOrganizationId"
+        - $ref: "#/components/parameters/AcceptLanguage"
+        - name: branch_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Court"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+    post:
+      tags: [Courts]
+      summary: Create court
+      description: Owner. Initial status `inactive`. Availability rows deferred to W5. Emits CourtCreated.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XOrganizationId"
+        - $ref: "#/components/parameters/AcceptLanguage"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCourtRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Court"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /api/v1/courts/{id}:
+    get:
+      tags: [Courts]
+      summary: Get court
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourtId"
+        - $ref: "#/components/parameters/XOrganizationId"
+        - $ref: "#/components/parameters/AcceptLanguage"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Court"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+    patch:
+      tags: [Courts]
+      summary: Update court
+      description: Staff. Court code is immutable (BR-005). Emits CourtUpdated.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourtId"
+        - $ref: "#/components/parameters/XOrganizationId"
+        - $ref: "#/components/parameters/AcceptLanguage"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCourtRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Court"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /api/v1/courts/{id}/open:
+    post:
+      tags: [Courts]
+      summary: Open court
+      description: "inactive -> active"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourtId"
+        - $ref: "#/components/parameters/XOrganizationId"
+      responses:
+        "204":
+          description: Opened
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+  /api/v1/courts/{id}/close:
+    post:
+      tags: [Courts]
+      summary: Close court
+      description: "active -> inactive"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourtId"
+        - $ref: "#/components/parameters/XOrganizationId"
+      responses:
+        "204":
+          description: Closed
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+  /api/v1/courts/{id}/maintenance:
+    post:
+      tags: [Courts]
+      summary: Schedule court maintenance
+      description: Sets status `maintenance` and inserts `resource_maintenances` (`in_progress`). No scheduling blocks in W4.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourtId"
+        - $ref: "#/components/parameters/XOrganizationId"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScheduleMaintenanceRequest"
+      responses:
+        "204":
+          description: Scheduled
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+  /api/v1/courts/{id}/maintenance/complete:
+    post:
+      tags: [Courts]
+      summary: Complete court maintenance
+      description: "maintenance -> active"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourtId"
+        - $ref: "#/components/parameters/XOrganizationId"
+      responses:
+        "204":
+          description: Completed
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+  /api/v1/courts/{id}/archive:
+    post:
+      tags: [Courts]
+      summary: Archive court
+      description: "inactive -> archived. Future-booking check deferred until Booking exists."
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourtId"
+        - $ref: "#/components/parameters/XOrganizationId"
+      responses:
+        "204":
+          description: Archived
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
   /api/v1/admin/health:
     get:
       tags: [Admin]
@@ -1126,6 +1533,20 @@ components:
       schema:
         type: string
         format: uuid
+    CourtTypeId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    CourtId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
     XOrganizationId:
       name: X-Organization-ID
       in: header
@@ -1133,7 +1554,7 @@ components:
       schema:
         type: string
         format: uuid
-      description: Tenant organization context. Required for `/api/v1/branches*` and staff `/api/v1/customers*` (except own GET/PATCH where noted).
+      description: Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, and `/api/v1/courts*`.
     XOrganizationIdOptional:
       name: X-Organization-ID
       in: header
@@ -1477,6 +1898,70 @@ components:
       type: object
       properties:
         reason: { type: string }
+    CourtType:
+      type: object
+      required: [id, code, name, status, slot_duration_minutes]
+      properties:
+        id: { type: string, format: uuid }
+        code: { type: string }
+        name: { type: string, description: Resolved from Accept-Language }
+        name_en: { type: string }
+        name_vi: { type: string }
+        status: { type: string, enum: [active, archived] }
+        slot_duration_minutes: { type: integer }
+    CreateCourtTypeRequest:
+      type: object
+      required: [slot_duration_minutes]
+      description: At least one of name_en or name_vi is required. slot_duration_minutes 15–180, multiple of 15.
+      properties:
+        name_en: { type: string }
+        name_vi: { type: string }
+        code: { type: string, description: Optional; auto-generated when omitted }
+        slot_duration_minutes: { type: integer, minimum: 15, maximum: 180 }
+    UpdateCourtTypeRequest:
+      type: object
+      properties:
+        name_en: { type: string }
+        name_vi: { type: string }
+        code: { type: string }
+        slot_duration_minutes: { type: integer, minimum: 15, maximum: 180 }
+    Court:
+      type: object
+      required: [id, public_id, branch_id, court_type_id, code, name, status, is_bookable]
+      properties:
+        id: { type: string, format: uuid }
+        public_id: { type: string, minLength: 26, maxLength: 26 }
+        branch_id: { type: string, format: uuid }
+        court_type_id: { type: string, format: uuid }
+        code: { type: string }
+        name: { type: string, description: Resolved from Accept-Language }
+        name_en: { type: string }
+        name_vi: { type: string }
+        status: { type: string, enum: [active, inactive, maintenance, archived] }
+        is_bookable: { type: boolean }
+    CreateCourtRequest:
+      type: object
+      required: [branch_id, court_type_id]
+      description: At least one of name_en or name_vi is required. Initial status is inactive.
+      properties:
+        branch_id: { type: string, format: uuid }
+        court_type_id: { type: string, format: uuid }
+        name_en: { type: string }
+        name_vi: { type: string }
+        code: { type: string }
+    UpdateCourtRequest:
+      type: object
+      properties:
+        name_en: { type: string }
+        name_vi: { type: string }
+        code: { type: string, description: Immutable; sending a different value is rejected }
+        court_type_id: { type: string, format: uuid }
+    ScheduleMaintenanceRequest:
+      type: object
+      properties:
+        title: { type: string }
+        reason: { type: string }
+        started_at: { type: string, format: date-time }
     User:
       type: object
       required: [id, public_id, status, is_system_admin]

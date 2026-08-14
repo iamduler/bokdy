@@ -6,6 +6,8 @@ Phase: mvp
 
 Business names: Branch, Court. Tables: `organization.locations`, `catalog.resources`.
 
+W4 freeze (2026-08-14): Court Type = `resource_categories`; Court = `resources` + `court_type_id`; create court `inactive`; maintenance = status + `resource_maintenances`; availability init deferred; code unique per branch.
+
 | Done | ID | Step | UC | Phase | Gate | Proposed API | Events | Status | Notes |
 | :---: | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | [x] | F-OWNER-VENUE-01 | Create branch | UC-BRANCH-001 | mvp | jwt+org Owner | `POST /api/v1/branches` | BranchCreated | done | Starts `inactive`; empty location_settings. |
@@ -15,17 +17,17 @@ Business names: Branch, Court. Tables: `organization.locations`, `catalog.resour
 | [x] | F-OWNER-VENUE-05 | Open branch | UC-BRANCH-003 | mvp | jwt+org Owner | `POST /api/v1/branches/{id}/open` | BranchOpened | done | inactive → active |
 | [x] | F-OWNER-VENUE-06 | Close branch | UC-BRANCH-004 | mvp | jwt+org Owner | `POST /api/v1/branches/{id}/close` | BranchClosed | done | active → inactive |
 | [x] | F-OWNER-VENUE-07 | Archive branch | UC-BRANCH-005 | mvp | jwt+org Owner | `POST /api/v1/branches/{id}/archive` | BranchArchived | done | No booking check in W2. |
-| [ ] | F-OWNER-VENUE-08 | Create court type | UC-COURT-TYPE-001 | mvp | jwt+org Owner | `POST /api/v1/court-types` | CourtTypeCreated | ready | W4 catalog |
-| [ ] | F-OWNER-VENUE-09 | Update court type | UC-COURT-TYPE-002 | mvp | jwt+org Owner | `PATCH /api/v1/court-types/{id}` | CourtTypeUpdated | ready |  |
-| [ ] | F-OWNER-VENUE-10 | Archive court type | UC-COURT-TYPE-003 | mvp | jwt+org Owner | `POST /api/v1/court-types/{id}/archive` | CourtTypeArchived | ready |  |
-| [ ] | F-OWNER-VENUE-11 | Create court | UC-COURT-001 | mvp | jwt+org Owner | `POST /api/v1/courts` | CourtCreated | ready | W4 |
-| [ ] | F-OWNER-VENUE-12 | List courts | — | mvp | jwt+org Staff | `GET /api/v1/courts` | — | ready |  |
-| [ ] | F-OWNER-VENUE-13 | Update court | UC-COURT-002 | mvp | jwt+org Staff | `PATCH /api/v1/courts/{id}` | CourtUpdated | ready |  |
-| [ ] | F-OWNER-VENUE-14 | Open court | UC-COURT-003 | mvp | jwt+org Staff | `POST /api/v1/courts/{id}/open` | CourtOpened | ready |  |
-| [ ] | F-OWNER-VENUE-15 | Close court | UC-COURT-004 | mvp | jwt+org Staff | `POST /api/v1/courts/{id}/close` | CourtClosed | ready |  |
-| [ ] | F-OWNER-VENUE-16 | Schedule maintenance | UC-COURT-005 | mvp | jwt+org Staff | `POST /api/v1/courts/{id}/maintenance` | CourtMaintenanceScheduled | ready |  |
-| [ ] | F-OWNER-VENUE-17 | Complete maintenance | UC-COURT-006 | mvp | jwt+org Staff | `POST /api/v1/courts/{id}/maintenance/complete` | CourtMaintenanceCompleted | ready |  |
-| [ ] | F-OWNER-VENUE-18 | Archive court | UC-COURT-007 | mvp | jwt+org Owner | `POST /api/v1/courts/{id}/archive` | CourtArchived | ready |  |
+| [x] | F-OWNER-VENUE-08 | Create court type | UC-COURT-TYPE-001 | mvp | jwt+org Owner | `POST /api/v1/court-types` | CourtTypeCreated | done | W4 catalog |
+| [x] | F-OWNER-VENUE-09 | Update court type | UC-COURT-TYPE-002 | mvp | jwt+org Owner | `PATCH /api/v1/court-types/{id}` | CourtTypeUpdated | done |  |
+| [x] | F-OWNER-VENUE-10 | Archive court type | UC-COURT-TYPE-003 | mvp | jwt+org Owner | `POST /api/v1/court-types/{id}/archive` | CourtTypeArchived | done | Blocked if courts still use type. |
+| [x] | F-OWNER-VENUE-11 | Create court | UC-COURT-001 | mvp | jwt+org Owner | `POST /api/v1/courts` | CourtCreated | done | Starts `inactive`. Availability deferred W5. |
+| [x] | F-OWNER-VENUE-12 | List courts | — | mvp | jwt+org Staff | `GET /api/v1/courts` | — | done | Optional `branch_id`; also `GET /courts/{id}`, `GET /court-types`. |
+| [x] | F-OWNER-VENUE-13 | Update court | UC-COURT-002 | mvp | jwt+org Staff | `PATCH /api/v1/courts/{id}` | CourtUpdated | done | Code immutable. |
+| [x] | F-OWNER-VENUE-14 | Open court | UC-COURT-003 | mvp | jwt+org Staff | `POST /api/v1/courts/{id}/open` | CourtOpened | done | inactive → active |
+| [x] | F-OWNER-VENUE-15 | Close court | UC-COURT-004 | mvp | jwt+org Staff | `POST /api/v1/courts/{id}/close` | CourtClosed | done | active → inactive |
+| [x] | F-OWNER-VENUE-16 | Schedule maintenance | UC-COURT-005 | mvp | jwt+org Staff | `POST /api/v1/courts/{id}/maintenance` | CourtMaintenanceScheduled | done | Status + `resource_maintenances`; no slot blocks. |
+| [x] | F-OWNER-VENUE-17 | Complete maintenance | UC-COURT-006 | mvp | jwt+org Staff | `POST /api/v1/courts/{id}/maintenance/complete` | CourtMaintenanceCompleted | done | → active |
+| [x] | F-OWNER-VENUE-18 | Archive court | UC-COURT-007 | mvp | jwt+org Owner | `POST /api/v1/courts/{id}/archive` | CourtArchived | done | From inactive only. Booking check deferred. |
 | [ ] | F-OWNER-VENUE-19 | Weekly schedule | UC-SCHEDULE-001 | mvp | jwt+org Staff | `PUT /api/v1/branches/{id}/schedule` | WeeklyScheduleUpdated | ready | W5 |
 | [ ] | F-OWNER-VENUE-20 | Special schedule | UC-SCHEDULE-002 | mvp | jwt+org Staff | `POST /api/v1/branches/{id}/schedule/special` | SpecialScheduleUpdated | ready |  |
 | [ ] | F-OWNER-VENUE-21 | Block time | UC-SCHEDULE-003 | mvp | jwt+org Staff | `POST /api/v1/courts/{id}/blocks` | TimeBlocked | ready |  |

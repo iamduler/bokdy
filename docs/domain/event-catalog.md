@@ -1194,6 +1194,216 @@ Audit
 
 ---
 
+# CourtTypeCreated
+
+Publisher
+
+Catalog
+
+Aggregate
+
+CourtType
+
+Trigger
+
+Owner creates a court type (`resource_categories`, `resource_type=court`).
+
+Consumers
+
+Audit
+
+---
+
+# CourtTypeUpdated
+
+Publisher
+
+Catalog
+
+Aggregate
+
+CourtType
+
+Trigger
+
+Court type name, code, or slot duration updated.
+
+Consumers
+
+Audit
+
+---
+
+# CourtTypeArchived
+
+Publisher
+
+Catalog
+
+Aggregate
+
+CourtType
+
+Trigger
+
+Court type archived. Blocked while non-archived courts still reference it.
+
+Consumers
+
+Audit
+
+---
+
+# CourtCreated
+
+Publisher
+
+Catalog
+
+Aggregate
+
+Court
+
+Trigger
+
+Owner creates a court (`catalog.resources`, `resource_type=court`). Initial status `inactive`. Availability init deferred to W5.
+
+Consumers
+
+Audit
+
+Scheduling
+
+---
+
+# CourtUpdated
+
+Publisher
+
+Catalog
+
+Aggregate
+
+Court
+
+Trigger
+
+Court name or court type updated. Code is immutable.
+
+Consumers
+
+Audit
+
+---
+
+# CourtOpened
+
+Publisher
+
+Catalog
+
+Aggregate
+
+Court
+
+Trigger
+
+Court opened (`inactive` → `active`).
+
+Consumers
+
+Audit
+
+Booking
+
+---
+
+# CourtClosed
+
+Publisher
+
+Catalog
+
+Aggregate
+
+Court
+
+Trigger
+
+Court closed (`active` → `inactive`).
+
+Consumers
+
+Audit
+
+Booking
+
+---
+
+# CourtMaintenanceScheduled
+
+Publisher
+
+Catalog
+
+Aggregate
+
+Court
+
+Trigger
+
+Court status `maintenance`; `resource_maintenances` row `in_progress`. Slot blocking deferred to W5.
+
+Consumers
+
+Audit
+
+Scheduling
+
+---
+
+# CourtMaintenanceCompleted
+
+Publisher
+
+Catalog
+
+Aggregate
+
+Court
+
+Trigger
+
+Maintenance completed (`maintenance` → `active`).
+
+Consumers
+
+Audit
+
+Scheduling
+
+---
+
+# CourtArchived
+
+Publisher
+
+Catalog
+
+Aggregate
+
+Court
+
+Trigger
+
+Court archived from `inactive`. Future-booking check deferred until Booking exists.
+
+Consumers
+
+Audit
+
+---
+
 # OrganizationActivated
 
 Publisher

@@ -23,6 +23,10 @@ func TestActionForEvent(t *testing.T) {
 		{"CustomerUpdated", "updated"},
 		{"CustomerBlacklisted", "status_change"},
 		{"CustomerRestored", "status_change"},
+		{"CourtCreated", "created"},
+		{"CourtTypeUpdated", "updated"},
+		{"CourtOpened", "status_change"},
+		{"CourtMaintenanceScheduled", "status_change"},
 		{"RoleRemoved", "deleted"},
 		{"UnknownFact", "other"},
 	}

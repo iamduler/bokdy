@@ -13,13 +13,23 @@ import (
 
 type Querier interface {
 	AddStaffMember(ctx context.Context, arg AddStaffMemberParams) error
+	ArchiveCourt(ctx context.Context, arg ArchiveCourtParams) error
+	ArchiveCourtType(ctx context.Context, arg ArchiveCourtTypeParams) error
 	AssignUserRole(ctx context.Context, arg AssignUserRoleParams) error
 	BranchCodeExists(ctx context.Context, arg BranchCodeExistsParams) (bool, error)
 	BranchNameExists(ctx context.Context, arg BranchNameExistsParams) (bool, error)
 	ClearUserPhoneVerified(ctx context.Context, id uuid.UUID) error
+	CompleteResourceMaintenance(ctx context.Context, id uuid.UUID) error
 	ConsumePasswordResetToken(ctx context.Context, id uuid.UUID) error
+	CountNonArchivedCourtsByType(ctx context.Context, arg CountNonArchivedCourtsByTypeParams) (int64, error)
 	CountTenantRole(ctx context.Context, arg CountTenantRoleParams) (int32, error)
+	CourtCodeExists(ctx context.Context, arg CourtCodeExistsParams) (bool, error)
+	CourtNameExists(ctx context.Context, arg CourtNameExistsParams) (bool, error)
+	CourtTypeCodeExists(ctx context.Context, arg CourtTypeCodeExistsParams) (bool, error)
+	CourtTypeNameExists(ctx context.Context, arg CourtTypeNameExistsParams) (bool, error)
 	CreateBusinessUnit(ctx context.Context, arg CreateBusinessUnitParams) error
+	CreateCourt(ctx context.Context, arg CreateCourtParams) error
+	CreateCourtType(ctx context.Context, arg CreateCourtTypeParams) error
 	CreateCustomer(ctx context.Context, arg CreateCustomerParams) error
 	CreateCustomerContact(ctx context.Context, arg CreateCustomerContactParams) error
 	CreateCustomerProfile(ctx context.Context, arg CreateCustomerProfileParams) error
@@ -32,6 +42,7 @@ type Querier interface {
 	CreateOrganizationSettings(ctx context.Context, arg CreateOrganizationSettingsParams) error
 	CreatePasswordResetToken(ctx context.Context, arg CreatePasswordResetTokenParams) error
 	CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) error
+	CreateResourceMaintenance(ctx context.Context, arg CreateResourceMaintenanceParams) error
 	CreateSession(ctx context.Context, arg CreateSessionParams) error
 	CreateStaffInvitation(ctx context.Context, arg CreateStaffInvitationParams) error
 	CreateTenant(ctx context.Context, arg CreateTenantParams) error
@@ -40,12 +51,15 @@ type Querier interface {
 	ExpirePendingInvitations(ctx context.Context, expiresAt time.Time) ([]OrganizationStaffInvitation, error)
 	FindActivePasswordResetToken(ctx context.Context, tokenHash string) (FindActivePasswordResetTokenRow, error)
 	FindBranchByID(ctx context.Context, arg FindBranchByIDParams) (FindBranchByIDRow, error)
+	FindCourtByID(ctx context.Context, arg FindCourtByIDParams) (FindCourtByIDRow, error)
+	FindCourtTypeByID(ctx context.Context, arg FindCourtTypeByIDParams) (FindCourtTypeByIDRow, error)
 	FindCustomerByID(ctx context.Context, arg FindCustomerByIDParams) (FindCustomerByIDRow, error)
 	FindCustomerByIDAnyTenant(ctx context.Context, id uuid.UUID) (FindCustomerByIDAnyTenantRow, error)
 	FindCustomerByPhone(ctx context.Context, arg FindCustomerByPhoneParams) (FindCustomerByPhoneRow, error)
 	FindCustomerByUserAndTenant(ctx context.Context, arg FindCustomerByUserAndTenantParams) (FindCustomerByUserAndTenantRow, error)
 	FindDefaultBusinessUnit(ctx context.Context, arg FindDefaultBusinessUnitParams) (FindDefaultBusinessUnitRow, error)
 	FindIdentityByPhone(ctx context.Context, phone *string) (FindIdentityByPhoneRow, error)
+	FindInProgressMaintenance(ctx context.Context, resourceID uuid.UUID) (FindInProgressMaintenanceRow, error)
 	FindInvitationByID(ctx context.Context, arg FindInvitationByIDParams) (OrganizationStaffInvitation, error)
 	FindInvitationByToken(ctx context.Context, invitationToken string) (OrganizationStaffInvitation, error)
 	FindLocalIdentityByEmail(ctx context.Context, lower string) (FindLocalIdentityByEmailRow, error)
@@ -66,6 +80,8 @@ type Querier interface {
 	IsActiveStaffMember(ctx context.Context, arg IsActiveStaffMemberParams) (bool, error)
 	LinkCustomerUser(ctx context.Context, arg LinkCustomerUserParams) error
 	ListBranchesByOrg(ctx context.Context, organizationID uuid.UUID) ([]ListBranchesByOrgRow, error)
+	ListCourtTypesByTenant(ctx context.Context, arg ListCourtTypesByTenantParams) ([]ListCourtTypesByTenantRow, error)
+	ListCourts(ctx context.Context, arg ListCourtsParams) ([]ListCourtsRow, error)
 	ListCustomerContacts(ctx context.Context, customerID uuid.UUID) ([]ListCustomerContactsRow, error)
 	ListCustomersByTenant(ctx context.Context, arg ListCustomersByTenantParams) ([]ListCustomersByTenantRow, error)
 	ListCustomersByUser(ctx context.Context, userID *uuid.UUID) ([]ListCustomersByUserRow, error)
@@ -84,6 +100,9 @@ type Querier interface {
 	RevokeRefreshTokensForUser(ctx context.Context, userID uuid.UUID) error
 	RevokeSessionByID(ctx context.Context, id uuid.UUID) error
 	TouchUserLastLogin(ctx context.Context, arg TouchUserLastLoginParams) error
+	UpdateCourt(ctx context.Context, arg UpdateCourtParams) error
+	UpdateCourtStatus(ctx context.Context, arg UpdateCourtStatusParams) error
+	UpdateCourtType(ctx context.Context, arg UpdateCourtTypeParams) error
 	UpdateCustomer(ctx context.Context, arg UpdateCustomerParams) error
 	UpdateCustomerProfile(ctx context.Context, arg UpdateCustomerProfileParams) error
 	UpdateCustomerStatus(ctx context.Context, arg UpdateCustomerStatusParams) error

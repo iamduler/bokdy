@@ -19,5 +19,6 @@ Foundation sequence:
 | `00009_user_profiles_id.sql` | user_profiles.id PK |
 | `00010_organization_w2_branch_staff.sql` | business_units, locations(+address/settings), invitation rejected, default BU backfill |
 | `00011_crm_w3_customers.sql` | crm.customers, customer_profiles, customer_contacts |
+| `00012_catalog_w4_courts.sql` | catalog.resource_categories, resources, resource_maintenances |
 
 Table shapes must match `docs/database/erd.dbml` (including the CONVENTIONS block).

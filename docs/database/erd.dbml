@@ -2136,6 +2136,11 @@ Enum resource_status {
   archived
 }
 
+Enum resource_category_status {
+  active
+  archived
+}
+
 Enum resource_type {
   court
   room
@@ -2313,15 +2318,24 @@ Table catalog.resource_categories {
 
   resource_type resource_type [not null]
 
+  status resource_category_status [not null]
+
+  slot_duration_minutes int [not null]
+
   created_at timestamptz [not null]
 
   updated_at timestamptz [not null]
 
+  deleted_at timestamptz
+
   indexes {
     tenant_id
     parent_id
-    (tenant_id, code) [unique]
+    status
+    (tenant_id, code) [unique, note: 'Partial WHERE deleted_at IS NULL']
   }
+
+  Note: 'Business name: Court Type when resource_type = court. W4 adds status + slot_duration_minutes. DEF-20260814-01.'
 }
 
 //////////////////////////////////////////////////////////////
@@ -2336,6 +2350,8 @@ Table catalog.resources {
   tenant_id uuid [not null]
 
   location_id uuid [not null]
+
+  court_type_id uuid
 
   code varchar(100) [not null]
 
@@ -2368,10 +2384,10 @@ Table catalog.resources {
     location_id
     parent_resource_id
     status
-    (tenant_id, code) [unique]
+    (location_id, code) [unique, note: 'W4 courts: partial WHERE deleted_at IS NULL AND resource_type = court. DEF-20260814-01.']
   }
 
-  Note: 'Partial unique (tenant_id, code) WHERE deleted_at IS NULL. Business name: Court when resource_type = court.'
+  Note: 'Business name: Court when resource_type = court. W4 requires court_type_id (BR-004). Code unique per branch, not tenant. DEF-20260814-01.'
 }
 
 Table catalog.resource_category_assignments {
@@ -6408,6 +6424,8 @@ Ref: catalog.resources.id > catalog.service_resources.resource_id
 
 Ref: catalog.resources.id > catalog.resource_category_assignments.resource_id
 Ref: catalog.resource_categories.id > catalog.resource_category_assignments.resource_category_id
+Ref: catalog.resource_categories.id > catalog.resources.court_type_id
+Ref: organization.locations.id > catalog.resources.location_id
 
 Ref: catalog.resources.id > catalog.resource_capability_assignments.resource_id
 Ref: catalog.resource_capabilities.id > catalog.resource_capability_assignments.capability_id
