@@ -8,6 +8,7 @@ sql:
       - "internal/platform/persistence/queries/crm/*.sql"
       - "internal/platform/persistence/queries/catalog/*.sql"
       - "internal/platform/persistence/queries/scheduling/*.sql"
+      - "internal/platform/persistence/queries/pricing/*.sql"
     schema: "db/schema.sql"
     gen:
       go:

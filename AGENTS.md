@@ -95,6 +95,7 @@ Scaffold includes:
 * `backend/internal/crm` — Customer (guest + player-linked)
 * `backend/internal/catalog` — Court Type + Court (`catalog.resources`)
 * `backend/internal/scheduling` — weekly/special hours, blocks, availability projections, marketplace reads
+* `backend/internal/pricing` — price versions, court-type hourly rates, time rules, public calculate
 
 Do not implement booking or payment until their checklist wave is open.
 

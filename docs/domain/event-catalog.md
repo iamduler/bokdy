@@ -1522,6 +1522,66 @@ Audit
 
 ---
 
+# PricingVersionCreated
+
+Publisher
+
+Pricing
+
+Aggregate
+
+PriceVersion
+
+Trigger
+
+Owner creates a draft price version with court-type rates (and optional time rules).
+
+Consumers
+
+Audit
+
+---
+
+# PricingVersionPublished
+
+Publisher
+
+Pricing
+
+Aggregate
+
+PriceVersion
+
+Trigger
+
+Owner publishes a draft version (`draft` → `active`). Previous active version is retired.
+
+Consumers
+
+Audit
+
+---
+
+# PricingVersionArchived
+
+Publisher
+
+Pricing
+
+Aggregate
+
+PriceVersion
+
+Trigger
+
+Owner archives a draft version (`draft` → `retired`).
+
+Consumers
+
+Audit
+
+---
+
 # OrganizationActivated
 
 Publisher

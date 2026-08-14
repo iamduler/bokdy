@@ -43,6 +43,8 @@ type Querier interface {
 	CreateOrganization(ctx context.Context, arg CreateOrganizationParams) error
 	CreateOrganizationSettings(ctx context.Context, arg CreateOrganizationSettingsParams) error
 	CreatePasswordResetToken(ctx context.Context, arg CreatePasswordResetTokenParams) error
+	CreatePriceList(ctx context.Context, arg CreatePriceListParams) error
+	CreatePriceVersion(ctx context.Context, arg CreatePriceVersionParams) error
 	CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) error
 	CreateResourceBlock(ctx context.Context, arg CreateResourceBlockParams) error
 	CreateResourceMaintenance(ctx context.Context, arg CreateResourceMaintenanceParams) error
@@ -59,8 +61,12 @@ type Querier interface {
 	DeleteTimeSlotsFrom(ctx context.Context, arg DeleteTimeSlotsFromParams) error
 	ExpirePendingInvitations(ctx context.Context, expiresAt time.Time) ([]OrganizationStaffInvitation, error)
 	FindActivePasswordResetToken(ctx context.Context, tokenHash string) (FindActivePasswordResetTokenRow, error)
+	FindActivePriceVersion(ctx context.Context, tenantID uuid.UUID) (PricingPriceVersion, error)
 	FindBranchByID(ctx context.Context, arg FindBranchByIDParams) (FindBranchByIDRow, error)
+	FindCategoryInTenant(ctx context.Context, arg FindCategoryInTenantParams) (uuid.UUID, error)
 	FindCourtByID(ctx context.Context, arg FindCourtByIDParams) (FindCourtByIDRow, error)
+	FindCourtForPricing(ctx context.Context, id uuid.UUID) (FindCourtForPricingRow, error)
+	FindCourtForPricingByPublicID(ctx context.Context, publicID string) (FindCourtForPricingByPublicIDRow, error)
 	FindCourtForSync(ctx context.Context, id uuid.UUID) (FindCourtForSyncRow, error)
 	FindCourtTypeByID(ctx context.Context, arg FindCourtTypeByIDParams) (FindCourtTypeByIDRow, error)
 	FindCustomerByID(ctx context.Context, arg FindCustomerByIDParams) (FindCustomerByIDRow, error)
@@ -68,6 +74,7 @@ type Querier interface {
 	FindCustomerByPhone(ctx context.Context, arg FindCustomerByPhoneParams) (FindCustomerByPhoneRow, error)
 	FindCustomerByUserAndTenant(ctx context.Context, arg FindCustomerByUserAndTenantParams) (FindCustomerByUserAndTenantRow, error)
 	FindDefaultBusinessUnit(ctx context.Context, arg FindDefaultBusinessUnitParams) (FindDefaultBusinessUnitRow, error)
+	FindDefaultPriceList(ctx context.Context, tenantID uuid.UUID) (FindDefaultPriceListRow, error)
 	FindIdentityByPhone(ctx context.Context, phone *string) (FindIdentityByPhoneRow, error)
 	FindInProgressMaintenance(ctx context.Context, resourceID uuid.UUID) (FindInProgressMaintenanceRow, error)
 	FindInvitationByID(ctx context.Context, arg FindInvitationByIDParams) (OrganizationStaffInvitation, error)
@@ -78,6 +85,7 @@ type Querier interface {
 	FindOpenMaintenance(ctx context.Context, resourceID uuid.UUID) (FindOpenMaintenanceRow, error)
 	FindOrganizationByID(ctx context.Context, id uuid.UUID) (FindOrganizationByIDRow, error)
 	FindPendingVerificationByTokenHash(ctx context.Context, tokenHash string) (FindPendingVerificationByTokenHashRow, error)
+	FindPriceVersion(ctx context.Context, id uuid.UUID) (PricingPriceVersion, error)
 	FindPrimaryIdentityByUserID(ctx context.Context, userID uuid.UUID) (FindPrimaryIdentityByUserIDRow, error)
 	FindRefreshTokenByHash(ctx context.Context, tokenHash string) (FindRefreshTokenByHashRow, error)
 	FindResourceBlock(ctx context.Context, arg FindResourceBlockParams) (FindResourceBlockRow, error)
@@ -92,12 +100,15 @@ type Querier interface {
 	GetUserProfile(ctx context.Context, userID uuid.UUID) (GetUserProfileRow, error)
 	HasTenantRole(ctx context.Context, arg HasTenantRoleParams) (bool, error)
 	InsertBusinessHour(ctx context.Context, arg InsertBusinessHourParams) error
+	InsertCategoryPrice(ctx context.Context, arg InsertCategoryPriceParams) error
+	InsertTimeRule(ctx context.Context, arg InsertTimeRuleParams) error
 	InsertTimeSlot(ctx context.Context, arg InsertTimeSlotParams) error
 	IsActiveStaffMember(ctx context.Context, arg IsActiveStaffMemberParams) (bool, error)
 	LinkCustomerUser(ctx context.Context, arg LinkCustomerUserParams) error
 	ListActiveCourtIDsByLocation(ctx context.Context, locationID uuid.UUID) ([]uuid.UUID, error)
 	ListBranchesByOrg(ctx context.Context, organizationID uuid.UUID) ([]ListBranchesByOrgRow, error)
 	ListBusinessHours(ctx context.Context, locationID uuid.UUID) ([]SchedulingBusinessHour, error)
+	ListCategoryPrices(ctx context.Context, priceVersionID uuid.UUID) ([]PricingCategoryPrice, error)
 	ListCourtTypesByTenant(ctx context.Context, arg ListCourtTypesByTenantParams) ([]ListCourtTypesByTenantRow, error)
 	ListCourts(ctx context.Context, arg ListCourtsParams) ([]ListCourtsRow, error)
 	ListCustomerContacts(ctx context.Context, customerID uuid.UUID) ([]ListCustomerContactsRow, error)
@@ -106,16 +117,22 @@ type Querier interface {
 	ListHolidaysOverlapping(ctx context.Context, arg ListHolidaysOverlappingParams) ([]ListHolidaysOverlappingRow, error)
 	ListMarketplaceCourts(ctx context.Context, locationID uuid.UUID) ([]ListMarketplaceCourtsRow, error)
 	ListOrganizationsByUser(ctx context.Context, userID uuid.UUID) ([]ListOrganizationsByUserRow, error)
+	ListPriceVersionsByList(ctx context.Context, priceListID uuid.UUID) ([]PricingPriceVersion, error)
 	ListResourceBlocksOverlapping(ctx context.Context, arg ListResourceBlocksOverlappingParams) ([]ListResourceBlocksOverlappingRow, error)
 	ListStaffByOrg(ctx context.Context, organizationID uuid.UUID) ([]ListStaffByOrgRow, error)
+	ListTimeRules(ctx context.Context, priceVersionID uuid.UUID) ([]PricingTimeRule, error)
 	ListTimeSlots(ctx context.Context, arg ListTimeSlotsParams) ([]ListTimeSlotsRow, error)
 	ListUserRoles(ctx context.Context, userID uuid.UUID) ([]ListUserRolesRow, error)
 	ListUserRolesByTenant(ctx context.Context, arg ListUserRolesByTenantParams) ([]ListUserRolesByTenantRow, error)
 	MarkUserEmailVerified(ctx context.Context, arg MarkUserEmailVerifiedParams) error
 	MarkVerificationVerified(ctx context.Context, id uuid.UUID) error
+	NextPriceVersionNumber(ctx context.Context, priceListID uuid.UUID) (int32, error)
 	Ping(ctx context.Context) (int32, error)
+	PublishPriceVersion(ctx context.Context, arg PublishPriceVersionParams) error
 	RecordLoginHistory(ctx context.Context, arg RecordLoginHistoryParams) error
 	RemoveUserRole(ctx context.Context, arg RemoveUserRoleParams) error
+	RetireActiveVersions(ctx context.Context, arg RetireActiveVersionsParams) error
+	RetireDraftPriceVersion(ctx context.Context, arg RetireDraftPriceVersionParams) error
 	RevokeActiveSessionsForUser(ctx context.Context, userID uuid.UUID) error
 	RevokeRefreshTokenByID(ctx context.Context, id uuid.UUID) error
 	RevokeRefreshTokensBySession(ctx context.Context, sessionID uuid.UUID) error

@@ -31,6 +31,9 @@ func TestActionForEvent(t *testing.T) {
 		{"TimeBlocked", "created"},
 		{"TimeUnblocked", "deleted"},
 		{"AvailabilitySynchronized", "updated"},
+		{"PricingVersionCreated", "created"},
+		{"PricingVersionPublished", "updated"},
+		{"PricingVersionArchived", "deleted"},
 		{"RoleRemoved", "deleted"},
 		{"UnknownFact", "other"},
 	}

@@ -3032,6 +3032,10 @@ TableGroup "Pricing" {
 
   pricing.price_versions
 
+  pricing.category_prices
+
+  pricing.time_rules
+
   pricing.pricing_rule_sets
 
   pricing.pricing_rules
@@ -3180,6 +3184,63 @@ Table pricing.price_versions {
     effective_from
     (price_list_id, version) [unique]
   }
+}
+
+//////////////////////////////////////////////////////////////
+// CATEGORY PRICE (W6 — court type hourly base)
+//////////////////////////////////////////////////////////////
+
+Table pricing.category_prices {
+  id uuid [pk]
+
+  price_version_id uuid [not null]
+
+  category_id uuid [not null, note: 'catalog.resource_categories (court type)']
+
+  amount decimal(18,2) [not null, note: 'VND per hour']
+
+  created_at timestamptz [not null]
+
+  indexes {
+    price_version_id
+    category_id
+    (price_version_id, category_id) [unique]
+  }
+
+  Note: 'W6 MVP base rates by court type. Full resource_prices remain for per-court override later.'
+}
+
+//////////////////////////////////////////////////////////////
+// TIME RULE (W6 — peak / off-peak windows)
+//////////////////////////////////////////////////////////////
+
+Table pricing.time_rules {
+  id uuid [pk]
+
+  price_version_id uuid [not null]
+
+  weekdays smallint[] [not null, note: '0=Sunday … 6=Saturday']
+
+  starts_at time [not null]
+
+  ends_at time [not null]
+
+  adjustment_type adjustment_type [not null]
+
+  value_type pricing_rule_type [not null, note: 'fixed (VND/hour) or percentage']
+
+  value decimal(18,2) [not null]
+
+  priority int [not null, default: 100]
+
+  created_at timestamptz [not null]
+
+  indexes {
+    price_version_id
+    priority
+  }
+
+  Note: 'W6 MVP time windows. ERD rule_sets/conditions/adjustments stack deferred until needed.'
 }
 
 //////////////////////////////////////////////////////////////
@@ -6485,6 +6546,9 @@ Ref: organization.tenants.id > pricing.price_lists.tenant_id
 Ref: pricing.price_lists.id > pricing.price_versions.price_list_id
 
 Ref: pricing.price_versions.id > pricing.pricing_rule_sets.price_version_id
+Ref: pricing.price_versions.id > pricing.category_prices.price_version_id
+Ref: catalog.resource_categories.id > pricing.category_prices.category_id
+Ref: pricing.price_versions.id > pricing.time_rules.price_version_id
 Ref: pricing.pricing_rule_sets.id > pricing.pricing_rules.rule_set_id
 Ref: pricing.pricing_rules.id > pricing.pricing_conditions.pricing_rule_id
 Ref: pricing.pricing_rules.id > pricing.pricing_adjustments.pricing_rule_id

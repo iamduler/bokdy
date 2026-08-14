@@ -18,6 +18,9 @@ import (
 	"bokdy/internal/platform/middleware"
 	"bokdy/internal/platform/server"
 	"bokdy/internal/platform/validation"
+	pricinghandler "bokdy/internal/pricing/handler"
+	pricingpg "bokdy/internal/pricing/infrastructure/postgres"
+	pricingservice "bokdy/internal/pricing/service"
 	schedhandler "bokdy/internal/scheduling/handler"
 	schedpg "bokdy/internal/scheduling/infrastructure/postgres"
 	schedservice "bokdy/internal/scheduling/service"
@@ -79,6 +82,11 @@ func RegisterRoutes(api *gin.RouterGroup, app *server.Application) {
 	customerHandler.RegisterRoutes(api, jwt)
 	catalogHandler.RegisterRoutes(api, jwt)
 	schedHandler.RegisterRoutes(api, jwt)
+
+	pricingRepo := pricingpg.NewPricingRepo(app.DB.Pool)
+	pricingSvc := pricingservice.NewPricingService(app.DB.Pool, pricingRepo, orgRepo, orgSvc, outbox)
+	pricingHandler := pricinghandler.NewPricingHandler(pricingSvc)
+	pricingHandler.RegisterRoutes(api, jwt)
 
 	admin := api.Group("/admin", jwt, middleware.RequireSystemAdmin())
 	admin.GET("/health", func(c *gin.Context) {

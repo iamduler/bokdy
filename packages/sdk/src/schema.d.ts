@@ -2942,6 +2942,264 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/price-versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List price versions */
+        get: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, and staff schedule/availability routes. */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Versions for the tenant default price list */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PriceVersion"][];
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+            };
+        };
+        put?: never;
+        /**
+         * Create draft price version
+         * @description Nested court-type hourly rates and optional time rules. Auto-creates default VND price list.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, and staff schedule/availability routes. */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreatePriceVersionRequest"];
+                };
+            };
+            responses: {
+                /** @description Created draft */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PriceVersion"];
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/price-versions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get price version */
+        get: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, and staff schedule/availability routes. */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                };
+                path: {
+                    id: components["parameters"]["PriceVersionId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Version with rates and time rules */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PriceVersion"];
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/price-versions/{id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Publish price version
+         * @description draft → active; previous active → retired.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, and staff schedule/availability routes. */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                };
+                path: {
+                    id: components["parameters"]["PriceVersionId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Published */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PriceVersion"];
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                409: components["responses"]["Error"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/price-versions/{id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Archive draft price version
+         * @description draft → retired only.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, and staff schedule/availability routes. */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                };
+                path: {
+                    id: components["parameters"]["PriceVersionId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Archived */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                409: components["responses"]["Error"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pricing/calculate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Calculate booking price quote
+         * @description Public quote. No promo/membership. Does not emit BookingPriceCalculated (deferred W7).
+         *     Amounts are integer VND (half-up). Base rate is VND/hour by court type.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CalculatePriceRequest"];
+                };
+            };
+            responses: {
+                /** @description Quote */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PriceQuote"];
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                404: components["responses"]["Error"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/health": {
         parameters: {
             query?: never;
@@ -3418,6 +3676,91 @@ export interface components {
             court: components["schemas"]["MarketplaceCourt"];
             slots: components["schemas"]["TimeSlot"][];
         };
+        CreatePriceVersionRequest: {
+            rates: {
+                /** Format: uuid */
+                court_type_id: string;
+                /** @description VND per hour */
+                amount: number;
+            }[];
+            time_rules?: {
+                weekdays: number[];
+                /** @example 18:00 */
+                starts_at: string;
+                /** @example 22:00 */
+                ends_at: string;
+                /** @enum {string} */
+                adjustment_type: "surcharge" | "discount";
+                /** @enum {string} */
+                value_type: "fixed" | "percentage";
+                value: number;
+                /** @default 100 */
+                priority: number;
+            }[];
+        };
+        PriceVersion: {
+            /** Format: uuid */
+            id: string;
+            version: number;
+            /** @enum {string} */
+            status: "draft" | "active" | "retired";
+            /** Format: date-time */
+            effective_from: string;
+            /** Format: date-time */
+            effective_to?: string;
+            /** Format: date-time */
+            published_at?: string;
+            rates?: {
+                /** Format: uuid */
+                court_type_id: string;
+                amount: number;
+            }[];
+            time_rules?: {
+                /** Format: uuid */
+                id?: string;
+                weekdays?: number[];
+                starts_at?: string;
+                ends_at?: string;
+                adjustment_type?: string;
+                value_type?: string;
+                value?: number;
+                priority?: number;
+            }[];
+        };
+        /** @description Provide court_id and/or court_public_id */
+        CalculatePriceRequest: {
+            /** Format: uuid */
+            court_id?: string;
+            court_public_id?: string;
+            /** Format: date-time */
+            starts_at: string;
+            /** Format: date-time */
+            ends_at: string;
+        };
+        PriceQuote: {
+            /** @example VND */
+            currency: string;
+            base_amount: number;
+            adjustments: {
+                /** Format: uuid */
+                rule_id?: string;
+                adjustment_type?: string;
+                value_type?: string;
+                value?: number;
+                overlap_minutes?: number;
+                amount?: number;
+            }[];
+            total_amount: number;
+            /** Format: uuid */
+            price_version_id: string;
+            /** Format: uuid */
+            court_id: string;
+            /** Format: date-time */
+            starts_at: string;
+            /** Format: date-time */
+            ends_at: string;
+            duration_minutes: number;
+        };
         User: {
             /** Format: uuid */
             id: string;
@@ -3539,6 +3882,7 @@ export interface components {
         CustomerId: string;
         CourtTypeId: string;
         CourtId: string;
+        PriceVersionId: string;
         /** @description Inclusive range start (UTC RFC3339) */
         AvailabilityFrom: string;
         /** @description Exclusive range end (UTC RFC3339) */

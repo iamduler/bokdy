@@ -3,7 +3,7 @@ info:
   title: Bokdy API
   version: 0.1.0
   description: |
-    Bokdy foundation API (Identity + Organization + CRM + Catalog + Scheduling).
+    Bokdy foundation API (Identity + Organization + CRM + Catalog + Scheduling + Pricing).
     Locale is taken from Accept-Language (missing → vi). Read models return a resolved name;
     owner edit payloads use name_en + name_vi.
     Auth: send X-Client (player|owner|admin) on register, login, refresh, logout.
@@ -23,6 +23,7 @@ tags:
   - name: Courts
   - name: Schedule
   - name: Marketplace
+  - name: Pricing
   - name: Admin
 paths:
   /health:
@@ -1758,6 +1759,146 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "404":
           $ref: "#/components/responses/Error"
+  /api/v1/price-versions:
+    get:
+      tags: [Pricing]
+      summary: List price versions
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XOrganizationId"
+      responses:
+        "200":
+          description: Versions for the tenant default price list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PriceVersion"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+    post:
+      tags: [Pricing]
+      summary: Create draft price version
+      description: Nested court-type hourly rates and optional time rules. Auto-creates default VND price list.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XOrganizationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePriceVersionRequest"
+      responses:
+        "201":
+          description: Created draft
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PriceVersion"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+  /api/v1/price-versions/{id}:
+    get:
+      tags: [Pricing]
+      summary: Get price version
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PriceVersionId"
+        - $ref: "#/components/parameters/XOrganizationId"
+      responses:
+        "200":
+          description: Version with rates and time rules
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PriceVersion"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+  /api/v1/price-versions/{id}/publish:
+    post:
+      tags: [Pricing]
+      summary: Publish price version
+      description: draft → active; previous active → retired.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PriceVersionId"
+        - $ref: "#/components/parameters/XOrganizationId"
+      responses:
+        "200":
+          description: Published
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PriceVersion"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+  /api/v1/price-versions/{id}/archive:
+    post:
+      tags: [Pricing]
+      summary: Archive draft price version
+      description: draft → retired only.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PriceVersionId"
+        - $ref: "#/components/parameters/XOrganizationId"
+      responses:
+        "204":
+          description: Archived
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+  /api/v1/pricing/calculate:
+    post:
+      tags: [Pricing]
+      summary: Calculate booking price quote
+      description: |
+        Public quote. No promo/membership. Does not emit BookingPriceCalculated (deferred W7).
+        Amounts are integer VND (half-up). Base rate is VND/hour by court type.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CalculatePriceRequest"
+      responses:
+        "200":
+          description: Quote
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PriceQuote"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/Error"
   /api/v1/admin/health:
     get:
       tags: [Admin]
@@ -1812,6 +1953,13 @@ components:
         type: string
         format: uuid
     CourtId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    PriceVersionId:
       name: id
       in: path
       required: true
@@ -2391,6 +2539,99 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/TimeSlot"
+    CreatePriceVersionRequest:
+      type: object
+      required: [rates]
+      properties:
+        rates:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [court_type_id, amount]
+            properties:
+              court_type_id: { type: string, format: uuid }
+              amount: { type: number, minimum: 0, description: VND per hour }
+        time_rules:
+          type: array
+          items:
+            type: object
+            required: [weekdays, starts_at, ends_at, adjustment_type, value_type, value]
+            properties:
+              weekdays:
+                type: array
+                items: { type: integer, minimum: 0, maximum: 6 }
+              starts_at: { type: string, example: "18:00" }
+              ends_at: { type: string, example: "22:00" }
+              adjustment_type: { type: string, enum: [surcharge, discount] }
+              value_type: { type: string, enum: [fixed, percentage] }
+              value: { type: number }
+              priority: { type: integer, default: 100 }
+    PriceVersion:
+      type: object
+      required: [id, version, status, effective_from]
+      properties:
+        id: { type: string, format: uuid }
+        version: { type: integer }
+        status: { type: string, enum: [draft, active, retired] }
+        effective_from: { type: string, format: date-time }
+        effective_to: { type: string, format: date-time }
+        published_at: { type: string, format: date-time }
+        rates:
+          type: array
+          items:
+            type: object
+            required: [court_type_id, amount]
+            properties:
+              court_type_id: { type: string, format: uuid }
+              amount: { type: number }
+        time_rules:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string, format: uuid }
+              weekdays:
+                type: array
+                items: { type: integer }
+              starts_at: { type: string }
+              ends_at: { type: string }
+              adjustment_type: { type: string }
+              value_type: { type: string }
+              value: { type: number }
+              priority: { type: integer }
+    CalculatePriceRequest:
+      type: object
+      required: [starts_at, ends_at]
+      description: Provide court_id and/or court_public_id
+      properties:
+        court_id: { type: string, format: uuid }
+        court_public_id: { type: string, minLength: 26, maxLength: 26 }
+        starts_at: { type: string, format: date-time }
+        ends_at: { type: string, format: date-time }
+    PriceQuote:
+      type: object
+      required: [currency, base_amount, adjustments, total_amount, price_version_id, court_id, starts_at, ends_at, duration_minutes]
+      properties:
+        currency: { type: string, example: VND }
+        base_amount: { type: number }
+        adjustments:
+          type: array
+          items:
+            type: object
+            properties:
+              rule_id: { type: string, format: uuid }
+              adjustment_type: { type: string }
+              value_type: { type: string }
+              value: { type: number }
+              overlap_minutes: { type: integer }
+              amount: { type: number }
+        total_amount: { type: number }
+        price_version_id: { type: string, format: uuid }
+        court_id: { type: string, format: uuid }
+        starts_at: { type: string, format: date-time }
+        ends_at: { type: string, format: date-time }
+        duration_minutes: { type: integer }
     User:
       type: object
       required: [id, public_id, status, is_system_admin]

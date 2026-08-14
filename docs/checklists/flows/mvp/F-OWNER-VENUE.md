@@ -33,8 +33,8 @@ W4 freeze (2026-08-14): Court Type = `resource_categories`; Court = `resources` 
 | [x] | F-OWNER-VENUE-21 | Block time | UC-SCHEDULE-003 | mvp | jwt+org Staff | `POST /api/v1/courts/{id}/blocks` | TimeBlocked | done |  |
 | [x] | F-OWNER-VENUE-22 | Unblock time | UC-SCHEDULE-004 | mvp | jwt+org Staff | `DELETE /api/v1/courts/{id}/blocks/{blockId}` | TimeUnblocked | done | Manual blocks only. |
 | [x] | F-OWNER-VENUE-23 | Sync availability | UC-SCHEDULE-005 | mvp | system | worker | AvailabilitySynchronized | done | Asynq `scheduling:availability_sync`; 14-day horizon. |
-| [ ] | F-OWNER-VENUE-24 | Create price version | UC-PRICING-002 | mvp | jwt+org Owner | `POST /api/v1/price-versions` | PricingVersionCreated | ready | W6 |
-| [ ] | F-OWNER-VENUE-25 | Publish price version | UC-PRICING-003 | mvp | jwt+org Owner | `POST /api/v1/price-versions/{id}/publish` | PricingVersionPublished | ready |  |
-| [ ] | F-OWNER-VENUE-26 | Archive price version | UC-PRICING-004 | mvp | jwt+org Owner | `POST /api/v1/price-versions/{id}/archive` | PricingVersionArchived | ready |  |
-| [ ] | F-OWNER-VENUE-27 | Calculate price | UC-PRICING-001 | mvp | jwt+org / jwt | `POST /api/v1/pricing/calculate` | BookingPriceCalculated | ready | No promo/membership. DEF-20260808-03 |
+| [x] | F-OWNER-VENUE-24 | Create price version | UC-PRICING-002 | mvp | jwt+org Owner | `POST /api/v1/price-versions` | PricingVersionCreated | done | Nested rates + time rules; default VND list. |
+| [x] | F-OWNER-VENUE-25 | Publish price version | UC-PRICING-003 | mvp | jwt+org Owner | `POST /api/v1/price-versions/{id}/publish` | PricingVersionPublished | done | Previous active → retired. |
+| [x] | F-OWNER-VENUE-26 | Archive price version | UC-PRICING-004 | mvp | jwt+org Owner | `POST /api/v1/price-versions/{id}/archive` | PricingVersionArchived | done | draft → retired only. |
+| [x] | F-OWNER-VENUE-27 | Calculate price | UC-PRICING-001 | mvp | public | `POST /api/v1/pricing/calculate` | — | done | No event on quote (DEF-20260814-05). No promo. |
 | — | F-OWNER-VENUE-28 | Upload court media gallery | UC-MEDIA-001 | post-mvp | jwt+org | `POST /api/v1/media` | MediaUploaded | deferred | DEF-20260808-08 → `F-MEDIA-01`. Logo file_id on org may be a later MVP slice if needed. |

@@ -19,6 +19,16 @@ Do not delete entries. If a deferred item returns to MVP, add a new entry that r
 
 ---
 
+### DEF-20260814-05
+
+- Date: 2026-08-14
+- From flow/ID: UC-PRICING-001 / F-OWNER-VENUE-27 / F-PLAYER-BOOK-08 event `BookingPriceCalculated`
+- New post-mvp ID: remains MVP event; emit from W7 reservation/booking create
+- Reason: quote spam — public calculate would flood outbox/audit if emitted every preview
+- MVP workaround: W6 calculate is side-effect free (no domain event)
+- Unblocks later wave: W7
+- Decided in: W6 pricing freeze (đề xuất accepted)
+
 ### DEF-20260814-03
 
 - Date: 2026-08-14

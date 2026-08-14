@@ -13,7 +13,7 @@ Phase: mvp
 | [ ] | F-PLAYER-BOOK-05 | Get hold | — | mvp | jwt | `GET /api/v1/reservations/{id}` | — | ready | Own only. |
 | [ ] | F-PLAYER-BOOK-06 | Cancel hold | UC-RESERVATION-002 | mvp | jwt | `POST /api/v1/reservations/{id}/cancel` | ReservationCanceled | ready |  |
 | [ ] | F-PLAYER-BOOK-07 | Expire hold | UC-RESERVATION-003 | mvp | system | worker | ReservationExpired | ready |  |
-| [ ] | F-PLAYER-BOOK-08 | Calculate price | UC-PRICING-001 | mvp | jwt / public | `POST /api/v1/pricing/calculate` | BookingPriceCalculated | ready | No promo. DEF-20260808-03 |
+| [x] | F-PLAYER-BOOK-08 | Calculate price | UC-PRICING-001 | mvp | public | `POST /api/v1/pricing/calculate` | — | done | No promo. DEF-20260808-03 / DEF-20260814-05 |
 | [ ] | F-PLAYER-BOOK-09 | Create payment | UC-PAYMENT-001 | mvp | jwt | `POST /api/v1/payments` | PaymentCreated | ready | Against invoice after convert or pending booking. |
 | [ ] | F-PLAYER-BOOK-10 | Payment complete | UC-PAYMENT-002 | mvp | system | webhook / mock complete | PaymentSucceeded, InvoicePaid | ready | Mock in MVP. DEF-20260808-04 |
 | [ ] | F-PLAYER-BOOK-11 | Payment fail | UC-PAYMENT-003 | mvp | system | webhook / mock | PaymentFailed | ready |  |

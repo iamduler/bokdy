@@ -1165,6 +1165,177 @@ func (ns NullPlatformAuditLogActivityType) Value() (driver.Value, error) {
 	return string(ns.PlatformAuditLogActivityType), nil
 }
 
+type PricingAdjustmentType string
+
+const (
+	PricingAdjustmentTypeSurcharge PricingAdjustmentType = "surcharge"
+	PricingAdjustmentTypeDiscount  PricingAdjustmentType = "discount"
+)
+
+func (e *PricingAdjustmentType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = PricingAdjustmentType(s)
+	case string:
+		*e = PricingAdjustmentType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for PricingAdjustmentType: %T", src)
+	}
+	return nil
+}
+
+type NullPricingAdjustmentType struct {
+	PricingAdjustmentType PricingAdjustmentType `json:"pricing_adjustment_type"`
+	Valid                 bool                  `json:"valid"` // Valid is true if PricingAdjustmentType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullPricingAdjustmentType) Scan(value interface{}) error {
+	if value == nil {
+		ns.PricingAdjustmentType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.PricingAdjustmentType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullPricingAdjustmentType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.PricingAdjustmentType), nil
+}
+
+type PricingPriceListStatus string
+
+const (
+	PricingPriceListStatusDraft    PricingPriceListStatus = "draft"
+	PricingPriceListStatusActive   PricingPriceListStatus = "active"
+	PricingPriceListStatusArchived PricingPriceListStatus = "archived"
+)
+
+func (e *PricingPriceListStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = PricingPriceListStatus(s)
+	case string:
+		*e = PricingPriceListStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for PricingPriceListStatus: %T", src)
+	}
+	return nil
+}
+
+type NullPricingPriceListStatus struct {
+	PricingPriceListStatus PricingPriceListStatus `json:"pricing_price_list_status"`
+	Valid                  bool                   `json:"valid"` // Valid is true if PricingPriceListStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullPricingPriceListStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.PricingPriceListStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.PricingPriceListStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullPricingPriceListStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.PricingPriceListStatus), nil
+}
+
+type PricingPriceVersionStatus string
+
+const (
+	PricingPriceVersionStatusDraft   PricingPriceVersionStatus = "draft"
+	PricingPriceVersionStatusActive  PricingPriceVersionStatus = "active"
+	PricingPriceVersionStatusRetired PricingPriceVersionStatus = "retired"
+)
+
+func (e *PricingPriceVersionStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = PricingPriceVersionStatus(s)
+	case string:
+		*e = PricingPriceVersionStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for PricingPriceVersionStatus: %T", src)
+	}
+	return nil
+}
+
+type NullPricingPriceVersionStatus struct {
+	PricingPriceVersionStatus PricingPriceVersionStatus `json:"pricing_price_version_status"`
+	Valid                     bool                      `json:"valid"` // Valid is true if PricingPriceVersionStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullPricingPriceVersionStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.PricingPriceVersionStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.PricingPriceVersionStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullPricingPriceVersionStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.PricingPriceVersionStatus), nil
+}
+
+type PricingPricingRuleType string
+
+const (
+	PricingPricingRuleTypeFixed      PricingPricingRuleType = "fixed"
+	PricingPricingRuleTypePercentage PricingPricingRuleType = "percentage"
+	PricingPricingRuleTypeFormula    PricingPricingRuleType = "formula"
+)
+
+func (e *PricingPricingRuleType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = PricingPricingRuleType(s)
+	case string:
+		*e = PricingPricingRuleType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for PricingPricingRuleType: %T", src)
+	}
+	return nil
+}
+
+type NullPricingPricingRuleType struct {
+	PricingPricingRuleType PricingPricingRuleType `json:"pricing_pricing_rule_type"`
+	Valid                  bool                   `json:"valid"` // Valid is true if PricingPricingRuleType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullPricingPricingRuleType) Scan(value interface{}) error {
+	if value == nil {
+		ns.PricingPricingRuleType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.PricingPricingRuleType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullPricingPricingRuleType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.PricingPricingRuleType), nil
+}
+
 type SchedulingBlockType string
 
 const (
@@ -1689,6 +1860,51 @@ type PlatformAuditLog struct {
 	IpAddress     *string                      `json:"ip_address"`
 	UserAgent     *string                      `json:"user_agent"`
 	CreatedAt     time.Time                    `json:"created_at"`
+}
+
+type PricingCategoryPrice struct {
+	ID             uuid.UUID      `json:"id"`
+	PriceVersionID uuid.UUID      `json:"price_version_id"`
+	CategoryID     uuid.UUID      `json:"category_id"`
+	Amount         pgtype.Numeric `json:"amount"`
+	CreatedAt      time.Time      `json:"created_at"`
+}
+
+type PricingPriceList struct {
+	ID        uuid.UUID              `json:"id"`
+	TenantID  uuid.UUID              `json:"tenant_id"`
+	Code      string                 `json:"code"`
+	NameEn    *string                `json:"name_en"`
+	NameVi    *string                `json:"name_vi"`
+	Currency  string                 `json:"currency"`
+	Status    PricingPriceListStatus `json:"status"`
+	CreatedAt time.Time              `json:"created_at"`
+	UpdatedAt time.Time              `json:"updated_at"`
+}
+
+type PricingPriceVersion struct {
+	ID            uuid.UUID                 `json:"id"`
+	PriceListID   uuid.UUID                 `json:"price_list_id"`
+	Version       int32                     `json:"version"`
+	Status        PricingPriceVersionStatus `json:"status"`
+	EffectiveFrom time.Time                 `json:"effective_from"`
+	EffectiveTo   *time.Time                `json:"effective_to"`
+	PublishedAt   *time.Time                `json:"published_at"`
+	CreatedAt     time.Time                 `json:"created_at"`
+	UpdatedAt     time.Time                 `json:"updated_at"`
+}
+
+type PricingTimeRule struct {
+	ID             uuid.UUID              `json:"id"`
+	PriceVersionID uuid.UUID              `json:"price_version_id"`
+	Weekdays       []int16                `json:"weekdays"`
+	StartsAt       pgtype.Time            `json:"starts_at"`
+	EndsAt         pgtype.Time            `json:"ends_at"`
+	AdjustmentType PricingAdjustmentType  `json:"adjustment_type"`
+	ValueType      PricingPricingRuleType `json:"value_type"`
+	Value          pgtype.Numeric         `json:"value"`
+	Priority       int32                  `json:"priority"`
+	CreatedAt      time.Time              `json:"created_at"`
 }
 
 type ReferenceCountry struct {

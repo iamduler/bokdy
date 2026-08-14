@@ -6,6 +6,17 @@ Status: Active
 
 Three audiences: Player, Owner (staff), Admin. Backend first. No FE wiring in W1–W9.
 
+## Pricing freeze (W6, 2026-08-14)
+
+- Full tracker W6: F-OWNER-VENUE-24–27 + F-PLAYER-BOOK-08. No FE. No booking.
+- Package `pricing`. Mutations Owner-only (`RequireOwner`).
+- Implicit one `price_lists` row per tenant (`code=default`, currency `VND`). No price-list HTTP API.
+- Version status: `draft` → `active` (publish) → previous active `retired`. Archive API: `draft` → `retired` only. Event name `PricingVersionArchived`.
+- Create version = nested body: category (court type) base rates + time rules. Extra reads: `GET /price-versions`, `GET /price-versions/{id}`.
+- Base rate = VND **per hour** by `court_type_id` (`pricing.category_prices`). Time rules = weekday + clock window + surcharge/discount (fixed per hour or %). No taxes, services, formula DSL, full ERD rule-set stack.
+- `POST /pricing/calculate` is **public**; input `court_id` and/or `court_public_id` + `starts_at`/`ends_at`. Output amounts rounded half-up to integer VND. No promo/membership (DEF-20260808-03).
+- `BookingPriceCalculated` **not** emitted on quote — deferred to W7 (DEF-20260814-05).
+
 ## Scheduling freeze (W5, 2026-08-14)
 
 - Full tracker W5: F-OWNER-VENUE-19–23, F-PLAYER-BOOK-01–03, F-OWNER-OPS-01–02. No FE. No pricing/booking.
