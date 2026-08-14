@@ -502,26 +502,14 @@ Invitation path creates pending invitation first; staff row is created on accept
 ## Lifecycle
 
 ```
-Lead
-
-↓
-
-Registered
-
-↓
-
-Active
+lead → active (player register / link)
+lead | active | inactive → blacklisted
+blacklisted → active (restore)
 ```
 
-Alternative
+Statuses map to ERD `crm.customer_status`: `lead`, `active`, `inactive`, `blacklisted`, `deleted`.
 
-```
-Active
-
-↓
-
-Blocked
-```
+W3 freeze: guest create → `lead`; `POST /customers/me` → `active`; blacklist/restore are status-only (no `customer_blacklists` table).
 
 ---
 

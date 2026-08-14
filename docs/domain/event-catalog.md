@@ -450,6 +450,102 @@ Analytics
 
 ---
 
+# GuestCustomerCreated
+
+Publisher
+
+Customer
+
+Aggregate
+
+Customer
+
+Trigger
+
+Staff creates a walk-in / guest customer (`lead`).
+
+Consumers
+
+Booking
+
+Analytics
+
+Audit
+
+---
+
+# CustomerRegistered
+
+Publisher
+
+Customer
+
+Aggregate
+
+Customer
+
+Trigger
+
+Player links JWT user to a customer (`active`), or links an existing guest.
+
+Consumers
+
+Booking
+
+Analytics
+
+Audit
+
+---
+
+# CustomerUpdated
+
+Publisher
+
+Customer
+
+Aggregate
+
+Customer
+
+Trigger
+
+Customer profile or contacts updated.
+
+Consumers
+
+Analytics
+
+Search
+
+Audit
+
+---
+
+# CustomerRestored
+
+Publisher
+
+Customer
+
+Aggregate
+
+Customer
+
+Trigger
+
+Customer restored from `blacklisted` to `active`.
+
+Consumers
+
+Booking
+
+Analytics
+
+Audit
+
+---
+
 # CustomerMerged
 
 Publisher

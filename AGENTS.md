@@ -91,9 +91,10 @@ Scaffold includes:
 
 * `backend/internal/platform` — shared infrastructure
 * `backend/internal/identity` — auth, sessions, RBAC
-* `backend/internal/organization` — Organization + staff membership (no Branch/Court)
+* `backend/internal/organization` — Organization, staff, Branch
+* `backend/internal/crm` — Customer (guest + player-linked)
 
-Do not implement booking, court, payment, or CRM Customer in the foundation layer.
+Do not implement booking, court, or payment until their checklist wave is open.
 
 ---
 

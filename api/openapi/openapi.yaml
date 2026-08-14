@@ -3,7 +3,7 @@ info:
   title: Bokdy API
   version: 0.1.0
   description: |
-    Bokdy foundation API (Identity + Organization).
+    Bokdy foundation API (Identity + Organization + CRM).
     Locale is taken from Accept-Language (missing → vi). Read models return a resolved name;
     owner edit payloads use name_en + name_vi.
     Auth: send X-Client (player|owner|admin) on register, login, refresh, logout.
@@ -18,6 +18,7 @@ tags:
   - name: Identity
   - name: Organizations
   - name: Branches
+  - name: Customers
   - name: Admin
 paths:
   /health:
@@ -832,6 +833,253 @@ paths:
           $ref: "#/components/responses/Error"
         "404":
           $ref: "#/components/responses/Error"
+  /api/v1/customers:
+    get:
+      tags: [Customers]
+      summary: List customers
+      description: Staff. Soft-deleted excluded. Blacklisted excluded unless `status` is set. Hard limit 50.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XOrganizationId"
+        - $ref: "#/components/parameters/AcceptLanguage"
+        - name: q
+          in: query
+          required: false
+          schema: { type: string }
+          description: Search phone, full name, or code
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [lead, active, inactive, blacklisted]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Customer"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+    post:
+      tags: [Customers]
+      summary: Create guest customer
+      description: Staff walk-in. Status `lead`. Phone unique per tenant. Emits GuestCustomerCreated.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XOrganizationId"
+        - $ref: "#/components/parameters/AcceptLanguage"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateGuestCustomerRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Customer"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /api/v1/customers/me:
+    get:
+      tags: [Customers]
+      summary: Get my customer profile
+      description: Player. Optional X-Organization-ID; required when user has customers in multiple orgs.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XOrganizationIdOptional"
+        - $ref: "#/components/parameters/AcceptLanguage"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Customer"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+    post:
+      tags: [Customers]
+      summary: Register as customer
+      description: Links JWT user to a customer in the organization (status `active`). Does not create a User. Emits CustomerRegistered.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XOrganizationId"
+        - $ref: "#/components/parameters/AcceptLanguage"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterCustomerMeRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Customer"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /api/v1/customers/{id}:
+    get:
+      tags: [Customers]
+      summary: Get customer
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CustomerId"
+        - $ref: "#/components/parameters/XOrganizationId"
+        - $ref: "#/components/parameters/AcceptLanguage"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Customer"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+    patch:
+      tags: [Customers]
+      summary: Update customer
+      description: Staff (org membership) or own customer (`user_id` match). Emits CustomerUpdated.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CustomerId"
+        - $ref: "#/components/parameters/XOrganizationIdOptional"
+        - $ref: "#/components/parameters/AcceptLanguage"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCustomerRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Customer"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /api/v1/customers/{id}/blacklist:
+    post:
+      tags: [Customers]
+      summary: Blacklist customer
+      description: Sets status to `blacklisted`. Optional reason in event payload. Emits CustomerBlacklisted.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CustomerId"
+        - $ref: "#/components/parameters/XOrganizationId"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BlacklistCustomerRequest"
+      responses:
+        "204":
+          description: Blacklisted
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+  /api/v1/customers/{id}/restore:
+    post:
+      tags: [Customers]
+      summary: Restore customer
+      description: "blacklisted -> active. Emits CustomerRestored."
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CustomerId"
+        - $ref: "#/components/parameters/XOrganizationId"
+      responses:
+        "204":
+          description: Restored
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
   /api/v1/admin/health:
     get:
       tags: [Admin]
@@ -871,6 +1119,13 @@ components:
       schema:
         type: string
         format: uuid
+    CustomerId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
     XOrganizationId:
       name: X-Organization-ID
       in: header
@@ -878,7 +1133,7 @@ components:
       schema:
         type: string
         format: uuid
-      description: Tenant organization context. Required for `/api/v1/branches*`.
+      description: Tenant organization context. Required for `/api/v1/branches*` and staff `/api/v1/customers*` (except own GET/PATCH where noted).
     XOrganizationIdOptional:
       name: X-Organization-ID
       in: header
@@ -1163,6 +1418,65 @@ components:
         timezone: { type: string }
         address:
           $ref: "#/components/schemas/BranchAddress"
+    CustomerContact:
+      type: object
+      required: [type, value, is_primary, is_verified]
+      properties:
+        type: { type: string, enum: [email, phone] }
+        value: { type: string }
+        label: { type: string }
+        is_primary: { type: boolean }
+        is_verified: { type: boolean }
+    Customer:
+      type: object
+      required: [id, public_id, code, customer_type, status, created_at, updated_at]
+      properties:
+        id: { type: string, format: uuid }
+        public_id: { type: string, minLength: 26, maxLength: 26 }
+        code: { type: string }
+        customer_type: { type: string, enum: [individual, organization] }
+        status: { type: string, enum: [lead, active, inactive, blacklisted, deleted] }
+        user_id: { type: string, format: uuid }
+        full_name: { type: string }
+        phone: { type: string }
+        email: { type: string, format: email }
+        source: { type: string }
+        organization_name: { type: string }
+        contacts:
+          type: array
+          items:
+            $ref: "#/components/schemas/CustomerContact"
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    CreateGuestCustomerRequest:
+      type: object
+      required: [phone]
+      properties:
+        phone: { type: string }
+        full_name: { type: string }
+        email: { type: string, format: email }
+        code: { type: string, description: Optional; auto-generated when omitted }
+        source: { type: string }
+    RegisterCustomerMeRequest:
+      type: object
+      required: [phone]
+      properties:
+        phone: { type: string }
+        full_name: { type: string }
+        email: { type: string, format: email }
+        code: { type: string }
+    UpdateCustomerRequest:
+      type: object
+      properties:
+        full_name: { type: string }
+        phone: { type: string }
+        email: { type: string, format: email }
+        code: { type: string }
+        source: { type: string }
+    BlacklistCustomerRequest:
+      type: object
+      properties:
+        reason: { type: string }
     User:
       type: object
       required: [id, public_id, status, is_system_admin]

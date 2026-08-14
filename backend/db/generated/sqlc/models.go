@@ -13,6 +13,140 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type CrmContactType string
+
+const (
+	CrmContactTypeEmail    CrmContactType = "email"
+	CrmContactTypePhone    CrmContactType = "phone"
+	CrmContactTypeWhatsapp CrmContactType = "whatsapp"
+	CrmContactTypeZalo     CrmContactType = "zalo"
+	CrmContactTypeTelegram CrmContactType = "telegram"
+	CrmContactTypeFacebook CrmContactType = "facebook"
+	CrmContactTypeOther    CrmContactType = "other"
+)
+
+func (e *CrmContactType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = CrmContactType(s)
+	case string:
+		*e = CrmContactType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for CrmContactType: %T", src)
+	}
+	return nil
+}
+
+type NullCrmContactType struct {
+	CrmContactType CrmContactType `json:"crm_contact_type"`
+	Valid          bool           `json:"valid"` // Valid is true if CrmContactType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullCrmContactType) Scan(value interface{}) error {
+	if value == nil {
+		ns.CrmContactType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.CrmContactType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullCrmContactType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.CrmContactType), nil
+}
+
+type CrmCustomerStatus string
+
+const (
+	CrmCustomerStatusLead        CrmCustomerStatus = "lead"
+	CrmCustomerStatusActive      CrmCustomerStatus = "active"
+	CrmCustomerStatusInactive    CrmCustomerStatus = "inactive"
+	CrmCustomerStatusBlacklisted CrmCustomerStatus = "blacklisted"
+	CrmCustomerStatusDeleted     CrmCustomerStatus = "deleted"
+)
+
+func (e *CrmCustomerStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = CrmCustomerStatus(s)
+	case string:
+		*e = CrmCustomerStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for CrmCustomerStatus: %T", src)
+	}
+	return nil
+}
+
+type NullCrmCustomerStatus struct {
+	CrmCustomerStatus CrmCustomerStatus `json:"crm_customer_status"`
+	Valid             bool              `json:"valid"` // Valid is true if CrmCustomerStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullCrmCustomerStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.CrmCustomerStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.CrmCustomerStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullCrmCustomerStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.CrmCustomerStatus), nil
+}
+
+type CrmCustomerType string
+
+const (
+	CrmCustomerTypeIndividual   CrmCustomerType = "individual"
+	CrmCustomerTypeOrganization CrmCustomerType = "organization"
+)
+
+func (e *CrmCustomerType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = CrmCustomerType(s)
+	case string:
+		*e = CrmCustomerType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for CrmCustomerType: %T", src)
+	}
+	return nil
+}
+
+type NullCrmCustomerType struct {
+	CrmCustomerType CrmCustomerType `json:"crm_customer_type"`
+	Valid           bool            `json:"valid"` // Valid is true if CrmCustomerType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullCrmCustomerType) Scan(value interface{}) error {
+	if value == nil {
+		ns.CrmCustomerType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.CrmCustomerType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullCrmCustomerType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.CrmCustomerType), nil
+}
+
 type IdentityDateFormat string
 
 const (
@@ -854,6 +988,54 @@ func (ns NullPlatformAuditLogActivityType) Value() (driver.Value, error) {
 		return nil, nil
 	}
 	return string(ns.PlatformAuditLogActivityType), nil
+}
+
+type CrmCustomer struct {
+	ID               uuid.UUID         `json:"id"`
+	PublicID         string            `json:"public_id"`
+	TenantID         uuid.UUID         `json:"tenant_id"`
+	Code             string            `json:"code"`
+	CustomerType     CrmCustomerType   `json:"customer_type"`
+	Status           CrmCustomerStatus `json:"status"`
+	UserID           *uuid.UUID        `json:"user_id"`
+	OrganizationName *string           `json:"organization_name"`
+	OwnerStaffID     *uuid.UUID        `json:"owner_staff_id"`
+	Source           *string           `json:"source"`
+	AcquiredAt       *time.Time        `json:"acquired_at"`
+	CreatedAt        time.Time         `json:"created_at"`
+	UpdatedAt        time.Time         `json:"updated_at"`
+	DeletedAt        *time.Time        `json:"deleted_at"`
+}
+
+type CrmCustomerContact struct {
+	ID          uuid.UUID      `json:"id"`
+	CustomerID  uuid.UUID      `json:"customer_id"`
+	ContactType CrmContactType `json:"contact_type"`
+	Value       string         `json:"value"`
+	Label       *string        `json:"label"`
+	IsVerified  bool           `json:"is_verified"`
+	IsPrimary   bool           `json:"is_primary"`
+	VerifiedAt  *time.Time     `json:"verified_at"`
+	CreatedAt   time.Time      `json:"created_at"`
+	UpdatedAt   time.Time      `json:"updated_at"`
+}
+
+type CrmCustomerProfile struct {
+	ID                uuid.UUID   `json:"id"`
+	CustomerID        uuid.UUID   `json:"customer_id"`
+	FirstName         *string     `json:"first_name"`
+	LastName          *string     `json:"last_name"`
+	FullName          *string     `json:"full_name"`
+	Gender            *string     `json:"gender"`
+	DateOfBirth       pgtype.Date `json:"date_of_birth"`
+	AvatarFileID      *uuid.UUID  `json:"avatar_file_id"`
+	Occupation        *string     `json:"occupation"`
+	Company           *string     `json:"company"`
+	TaxCode           *string     `json:"tax_code"`
+	PreferredLocaleID *uuid.UUID  `json:"preferred_locale_id"`
+	PreferredTimezone *string     `json:"preferred_timezone"`
+	Metadata          []byte      `json:"metadata"`
+	UpdatedAt         time.Time   `json:"updated_at"`
 }
 
 type IdentityIdentity struct {

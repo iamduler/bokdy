@@ -6,6 +6,17 @@ Status: Active
 
 Three audiences: Player, Owner (staff), Admin. Backend first. No FE wiring in W1–W9.
 
+## CRM freeze (W3, 2026-08-14)
+
+- Full F-OWNER-CRM-01–07 in one wave; merge deferred.
+- `POST /api/v1/customers/me` links existing JWT user → customer; does not create User.
+- Guest create: `phone` required; optional `full_name`, `email`; status `lead`; `customer_type=individual`.
+- Player register (`/me`): status `active`; requires `X-Organization-ID`.
+- Phone unique per tenant (application-enforced).
+- Blacklist/restore = `customers.status` only; optional `reason` in event payload; no `customer_blacklists` table.
+- `code` auto-generated when omitted; list supports `q` + optional `status`, hard limit 50.
+- Module package: `crm`.
+
 ## Auth freeze (2026-08-08)
 
 - One `identity.users` table.

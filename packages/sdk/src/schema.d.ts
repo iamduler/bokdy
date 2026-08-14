@@ -1186,7 +1186,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*`. */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*` and staff `/api/v1/customers*` (except own GET/PATCH where noted). */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                     /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
                     "Accept-Language"?: components["parameters"]["AcceptLanguage"];
@@ -1221,7 +1221,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*`. */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*` and staff `/api/v1/customers*` (except own GET/PATCH where noted). */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                     /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
                     "Accept-Language"?: components["parameters"]["AcceptLanguage"];
@@ -1271,7 +1271,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*`. */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*` and staff `/api/v1/customers*` (except own GET/PATCH where noted). */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                     /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
                     "Accept-Language"?: components["parameters"]["AcceptLanguage"];
@@ -1310,7 +1310,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*`. */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*` and staff `/api/v1/customers*` (except own GET/PATCH where noted). */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                     /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
                     "Accept-Language"?: components["parameters"]["AcceptLanguage"];
@@ -1363,7 +1363,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*`. */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*` and staff `/api/v1/customers*` (except own GET/PATCH where noted). */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                 };
                 path: {
@@ -1409,7 +1409,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*`. */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*` and staff `/api/v1/customers*` (except own GET/PATCH where noted). */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                 };
                 path: {
@@ -1455,7 +1455,7 @@ export interface paths {
             parameters: {
                 query?: never;
                 header: {
-                    /** @description Tenant organization context. Required for `/api/v1/branches*`. */
+                    /** @description Tenant organization context. Required for `/api/v1/branches*` and staff `/api/v1/customers*` (except own GET/PATCH where noted). */
                     "X-Organization-ID": components["parameters"]["XOrganizationId"];
                 };
                 path: {
@@ -1466,6 +1466,372 @@ export interface paths {
             requestBody?: never;
             responses: {
                 /** @description Archived */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/customers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List customers
+         * @description Staff. Soft-deleted excluded. Blacklisted excluded unless `status` is set. Hard limit 50.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Search phone, full name, or code */
+                    q?: string;
+                    status?: "lead" | "active" | "inactive" | "blacklisted";
+                };
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*` and staff `/api/v1/customers*` (except own GET/PATCH where noted). */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                    /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
+                    "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["Customer"][];
+                        };
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+            };
+        };
+        put?: never;
+        /**
+         * Create guest customer
+         * @description Staff walk-in. Status `lead`. Phone unique per tenant. Emits GuestCustomerCreated.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*` and staff `/api/v1/customers*` (except own GET/PATCH where noted). */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                    /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
+                    "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateGuestCustomerRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["Customer"];
+                        };
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                409: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/customers/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get my customer profile
+         * @description Player. Optional X-Organization-ID; required when user has customers in multiple orgs.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: {
+                    /** @description If present on nested `/organizations/{id}/...` routes, must match path id. */
+                    "X-Organization-ID"?: components["parameters"]["XOrganizationIdOptional"];
+                    /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
+                    "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["Customer"];
+                        };
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+            };
+        };
+        put?: never;
+        /**
+         * Register as customer
+         * @description Links JWT user to a customer in the organization (status `active`). Does not create a User. Emits CustomerRegistered.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*` and staff `/api/v1/customers*` (except own GET/PATCH where noted). */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                    /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
+                    "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["RegisterCustomerMeRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["Customer"];
+                        };
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Error"];
+                409: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/customers/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get customer */
+        get: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*` and staff `/api/v1/customers*` (except own GET/PATCH where noted). */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                    /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
+                    "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+                };
+                path: {
+                    id: components["parameters"]["CustomerId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["Customer"];
+                        };
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update customer
+         * @description Staff (org membership) or own customer (`user_id` match). Emits CustomerUpdated.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: {
+                    /** @description If present on nested `/organizations/{id}/...` routes, must match path id. */
+                    "X-Organization-ID"?: components["parameters"]["XOrganizationIdOptional"];
+                    /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
+                    "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+                };
+                path: {
+                    id: components["parameters"]["CustomerId"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateCustomerRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["Customer"];
+                        };
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                409: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        trace?: never;
+    };
+    "/api/v1/customers/{id}/blacklist": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Blacklist customer
+         * @description Sets status to `blacklisted`. Optional reason in event payload. Emits CustomerBlacklisted.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*` and staff `/api/v1/customers*` (except own GET/PATCH where noted). */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                };
+                path: {
+                    id: components["parameters"]["CustomerId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["BlacklistCustomerRequest"];
+                };
+            };
+            responses: {
+                /** @description Blacklisted */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/customers/{id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Restore customer
+         * @description blacklisted -> active. Emits CustomerRestored.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*` and staff `/api/v1/customers*` (except own GET/PATCH where noted). */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                };
+                path: {
+                    id: components["parameters"]["CustomerId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Restored */
                 204: {
                     headers: {
                         [name: string]: unknown;
@@ -1710,6 +2076,64 @@ export interface components {
             timezone?: string;
             address?: components["schemas"]["BranchAddress"];
         };
+        CustomerContact: {
+            /** @enum {string} */
+            type: "email" | "phone";
+            value: string;
+            label?: string;
+            is_primary: boolean;
+            is_verified: boolean;
+        };
+        Customer: {
+            /** Format: uuid */
+            id: string;
+            public_id: string;
+            code: string;
+            /** @enum {string} */
+            customer_type: "individual" | "organization";
+            /** @enum {string} */
+            status: "lead" | "active" | "inactive" | "blacklisted" | "deleted";
+            /** Format: uuid */
+            user_id?: string;
+            full_name?: string;
+            phone?: string;
+            /** Format: email */
+            email?: string;
+            source?: string;
+            organization_name?: string;
+            contacts?: components["schemas"]["CustomerContact"][];
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        CreateGuestCustomerRequest: {
+            phone: string;
+            full_name?: string;
+            /** Format: email */
+            email?: string;
+            /** @description Optional; auto-generated when omitted */
+            code?: string;
+            source?: string;
+        };
+        RegisterCustomerMeRequest: {
+            phone: string;
+            full_name?: string;
+            /** Format: email */
+            email?: string;
+            code?: string;
+        };
+        UpdateCustomerRequest: {
+            full_name?: string;
+            phone?: string;
+            /** Format: email */
+            email?: string;
+            code?: string;
+            source?: string;
+        };
+        BlacklistCustomerRequest: {
+            reason?: string;
+        };
         User: {
             /** Format: uuid */
             id: string;
@@ -1828,7 +2252,8 @@ export interface components {
         OrganizationId: string;
         StaffId: string;
         BranchId: string;
-        /** @description Tenant organization context. Required for `/api/v1/branches*`. */
+        CustomerId: string;
+        /** @description Tenant organization context. Required for `/api/v1/branches*` and staff `/api/v1/customers*` (except own GET/PATCH where noted). */
         XOrganizationId: string;
         /** @description If present on nested `/organizations/{id}/...` routes, must match path id. */
         XOrganizationIdOptional: string;

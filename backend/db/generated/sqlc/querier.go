@@ -20,6 +20,9 @@ type Querier interface {
 	ConsumePasswordResetToken(ctx context.Context, id uuid.UUID) error
 	CountTenantRole(ctx context.Context, arg CountTenantRoleParams) (int32, error)
 	CreateBusinessUnit(ctx context.Context, arg CreateBusinessUnitParams) error
+	CreateCustomer(ctx context.Context, arg CreateCustomerParams) error
+	CreateCustomerContact(ctx context.Context, arg CreateCustomerContactParams) error
+	CreateCustomerProfile(ctx context.Context, arg CreateCustomerProfileParams) error
 	CreateIdentity(ctx context.Context, arg CreateIdentityParams) error
 	CreateIdentityVerification(ctx context.Context, arg CreateIdentityVerificationParams) error
 	CreateLocation(ctx context.Context, arg CreateLocationParams) error
@@ -37,6 +40,10 @@ type Querier interface {
 	ExpirePendingInvitations(ctx context.Context, expiresAt time.Time) ([]OrganizationStaffInvitation, error)
 	FindActivePasswordResetToken(ctx context.Context, tokenHash string) (FindActivePasswordResetTokenRow, error)
 	FindBranchByID(ctx context.Context, arg FindBranchByIDParams) (FindBranchByIDRow, error)
+	FindCustomerByID(ctx context.Context, arg FindCustomerByIDParams) (FindCustomerByIDRow, error)
+	FindCustomerByIDAnyTenant(ctx context.Context, id uuid.UUID) (FindCustomerByIDAnyTenantRow, error)
+	FindCustomerByPhone(ctx context.Context, arg FindCustomerByPhoneParams) (FindCustomerByPhoneRow, error)
+	FindCustomerByUserAndTenant(ctx context.Context, arg FindCustomerByUserAndTenantParams) (FindCustomerByUserAndTenantRow, error)
 	FindDefaultBusinessUnit(ctx context.Context, arg FindDefaultBusinessUnitParams) (FindDefaultBusinessUnitRow, error)
 	FindIdentityByPhone(ctx context.Context, phone *string) (FindIdentityByPhoneRow, error)
 	FindInvitationByID(ctx context.Context, arg FindInvitationByIDParams) (OrganizationStaffInvitation, error)
@@ -52,11 +59,16 @@ type Querier interface {
 	FindStaffByOrgUser(ctx context.Context, arg FindStaffByOrgUserParams) (FindStaffByOrgUserRow, error)
 	FindUserByEmail(ctx context.Context, lower string) (FindUserByEmailRow, error)
 	FindUserByID(ctx context.Context, id uuid.UUID) (FindUserByIDRow, error)
+	GetCustomerProfile(ctx context.Context, customerID uuid.UUID) (GetCustomerProfileRow, error)
 	GetPasswordHash(ctx context.Context, userID uuid.UUID) (string, error)
 	GetUserProfile(ctx context.Context, userID uuid.UUID) (GetUserProfileRow, error)
 	HasTenantRole(ctx context.Context, arg HasTenantRoleParams) (bool, error)
 	IsActiveStaffMember(ctx context.Context, arg IsActiveStaffMemberParams) (bool, error)
+	LinkCustomerUser(ctx context.Context, arg LinkCustomerUserParams) error
 	ListBranchesByOrg(ctx context.Context, organizationID uuid.UUID) ([]ListBranchesByOrgRow, error)
+	ListCustomerContacts(ctx context.Context, customerID uuid.UUID) ([]ListCustomerContactsRow, error)
+	ListCustomersByTenant(ctx context.Context, arg ListCustomersByTenantParams) ([]ListCustomersByTenantRow, error)
+	ListCustomersByUser(ctx context.Context, userID *uuid.UUID) ([]ListCustomersByUserRow, error)
 	ListOrganizationsByUser(ctx context.Context, userID uuid.UUID) ([]ListOrganizationsByUserRow, error)
 	ListStaffByOrg(ctx context.Context, organizationID uuid.UUID) ([]ListStaffByOrgRow, error)
 	ListUserRoles(ctx context.Context, userID uuid.UUID) ([]ListUserRolesRow, error)
@@ -72,11 +84,15 @@ type Querier interface {
 	RevokeRefreshTokensForUser(ctx context.Context, userID uuid.UUID) error
 	RevokeSessionByID(ctx context.Context, id uuid.UUID) error
 	TouchUserLastLogin(ctx context.Context, arg TouchUserLastLoginParams) error
+	UpdateCustomer(ctx context.Context, arg UpdateCustomerParams) error
+	UpdateCustomerProfile(ctx context.Context, arg UpdateCustomerProfileParams) error
+	UpdateCustomerStatus(ctx context.Context, arg UpdateCustomerStatusParams) error
 	UpdateInvitationStatus(ctx context.Context, arg UpdateInvitationStatusParams) error
 	UpdateLocation(ctx context.Context, arg UpdateLocationParams) error
 	UpdateLocationAddress(ctx context.Context, arg UpdateLocationAddressParams) error
 	UpdateLocationStatus(ctx context.Context, arg UpdateLocationStatusParams) error
 	UpdateOrganization(ctx context.Context, arg UpdateOrganizationParams) error
+	UpdatePrimaryContactValue(ctx context.Context, arg UpdatePrimaryContactValueParams) (int64, error)
 	UpdatePrimaryIdentityPhone(ctx context.Context, arg UpdatePrimaryIdentityPhoneParams) error
 	UpdateStaffMember(ctx context.Context, arg UpdateStaffMemberParams) error
 	UpdateStaffStatus(ctx context.Context, arg UpdateStaffStatusParams) error
