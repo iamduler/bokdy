@@ -385,41 +385,115 @@ Inactive
 
 ---
 
+# 7b. Branch (location)
+
+W2 maps Branch to `organization.locations`.
+
+API verbs use open/close/archive; stored statuses:
+
+| API | Status |
+|-----|--------|
+| open | `active` |
+| close | `inactive` |
+| archive | `archived` |
+
+`maintenance` is reserved for Court (W4), not Branch open/close.
+
+## Lifecycle
+
+```
+inactive (created)
+
+↓ open
+
+active
+
+↓ close
+
+inactive
+
+↓ archive (from active or inactive)
+
+archived
+```
+
+## Status
+
+| Status | Description |
+|--------|-------------|
+| inactive | Closed; default on create |
+| active | Open for operations |
+| maintenance | Reserved (not used by Branch APIs in W2) |
+| archived | Terminal; excluded from list |
+
+## Rules
+
+- Create starts as `inactive`.
+- Open only from `inactive`.
+- Close only from `active`.
+- Archive from any non-archived status.
+- W2 does not enforce “no active bookings” on archive (Booking not implemented yet).
+- W2 initializes empty `location_settings` only (no `scheduling.*` rows).
+
+---
+
+# 7c. Invitation
+
+## Lifecycle
+
+```
+pending
+
+├── accept → accepted
+├── reject → rejected
+├── revoke → revoked
+└── expire → expired
+```
+
+## Status
+
+| Status | Description |
+|--------|-------------|
+| pending | Awaiting invitee |
+| accepted | Invitee joined |
+| rejected | Invitee declined (distinct from revoked) |
+| revoked | Owner canceled |
+| expired | Past `expires_at` (worker) |
+
+## Rules
+
+- Reject does **not** map to `revoked`.
+- Accept/reject require JWT email to match invitation email.
+- Expire is system-only (Asynq worker).
+
+---
+
 # 8. Staff
 
 ## Lifecycle
 
 ```
-Invited
+active (via invite accept or direct add)
 
-↓
-
-Pending
-
-↓
-
-Active
+├── suspend → suspended → restore → active
+└── remove → resigned
 ```
 
-Alternative
+Invitation path creates pending invitation first; staff row is created on accept (or direct add).
 
-```
-Active
+## Status
 
-↓
+| Status | Description |
+|--------|-------------|
+| invited | Reserved / legacy |
+| active | Can access organization |
+| suspended | Membership blocked |
+| resigned | Removed |
 
-Suspended
-```
+## Rules
 
-or
-
-```
-Active
-
-↓
-
-Inactive
-```
+- Cannot suspend/remove/remove-owner-role the last active `org_owner`.
+- Seeded roles only in W2: `org_owner`, `org_staff`.
 
 ---
 

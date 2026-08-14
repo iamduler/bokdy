@@ -6,10 +6,15 @@ import (
 	"path/filepath"
 	"time"
 
+	orgpg "bokdy/internal/organization/infrastructure/postgres"
+	orgservice "bokdy/internal/organization/service"
+	identitypg "bokdy/internal/identity/infrastructure/postgres"
 	"bokdy/internal/platform/audit"
 	"bokdy/internal/platform/config"
 	"bokdy/internal/platform/env"
+	"bokdy/internal/platform/events"
 	"bokdy/internal/platform/logging"
+	"bokdy/internal/platform/mail"
 	"bokdy/internal/platform/metrics"
 	"bokdy/internal/platform/otelx"
 	"bokdy/internal/platform/persistence"
@@ -63,6 +68,20 @@ func main() {
 	})
 	startWorkerMetrics(cfg.WorkerMetricsAddr)
 
+	asynqClient := queue.NewClient(cfg)
+	defer asynqClient.Close()
+	outbox := events.NewAsynqEnqueuer(asynqClient)
+	orgSvc := orgservice.NewOrganizationService(
+		pool,
+		orgpg.NewOrgRepo(pool),
+		orgpg.NewStaffRepo(pool),
+		orgpg.NewInvitationRepo(pool),
+		identitypg.NewRoleRepo(pool),
+		identitypg.NewUserRepo(pool),
+		mail.NewLogMailer(queueLog),
+		outbox,
+	)
+
 	consumer := audit.NewConsumer(db.Pool)
 
 	mux := asynq.NewServeMux()
@@ -71,10 +90,21 @@ func main() {
 	}))
 	mux.HandleFunc(queue.TaskOutboxAudit, loggedTask(queueLog, consumer.HandleAuditTask))
 	mux.HandleFunc(queue.TaskOutboxSweep, loggedTask(queueLog, consumer.HandleSweepTask))
+	mux.HandleFunc(queue.TaskInvitationExpire, loggedTask(queueLog, func(ctx context.Context, t *asynq.Task) error {
+		n, err := orgSvc.ExpireInvitations(ctx)
+		if err != nil {
+			return err
+		}
+		logging.WithTrace(queueLog, ctx).Info().Int("expired", n).Msg("invitations expired")
+		return nil
+	}))
 
 	scheduler := asynq.NewScheduler(queue.RedisOpt(cfg), nil)
 	if _, err := scheduler.Register("@every 15s", asynq.NewTask(queue.TaskOutboxSweep, nil)); err != nil {
 		logging.Log.Fatal().Err(err).Msg("register outbox sweep")
+	}
+	if _, err := scheduler.Register("@every 5m", asynq.NewTask(queue.TaskInvitationExpire, nil)); err != nil {
+		logging.Log.Fatal().Err(err).Msg("register invitation expire")
 	}
 	go func() {
 		if err := scheduler.Run(); err != nil {

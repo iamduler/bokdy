@@ -79,7 +79,7 @@ Domain first. Never start from the REST handler or OpenAPI.
 2. Repository interface (in the module, not in infrastructure)
 3. Application service (one use case, one transaction)
 4. goose migration (only if the ERD already defines the table/column)
-5. Postgres adapter
+5. sqlc query (`.sql`) + `make sqlc` + Postgres adapter
 6. DTO + handler
 7. Register in internal/wiring (constructor injection)
 8. api/openapi/openapi.yaml in the same change
@@ -97,7 +97,7 @@ Entity, errors, repository interface
 Application service
         │
         ▼
-Migration + postgres adapter
+Migration + sqlc query + postgres adapter
         │
         ▼
 DTO + handler + middleware
@@ -188,12 +188,16 @@ Must not import Gin, pgx, Redis, JSON tags as transport, or SQL.
 - persistence only: Save / Find / Delete / List
 - interface in `<module>/repository`
 - implementation in `<module>/infrastructure/postgres`
+- SQL lives in `backend/internal/platform/persistence/queries/{identity,organization}/*.sql`
+- regenerate with `make sqlc` (extracts goose Up → `backend/db/schema.sql`, then generates `bokdy/db/generated/sqlc`)
+- adapters call `dbsqlc.Queries` (`New(pool)` / `WithTx(tx)`); **do not** embed raw SQL strings in `*_repo.go`
 
 **One repository type = one file** (interface and adapter). Do not dump several adapters into `repos.go`.
 
 ```text
 backend/internal/<module>/repository/<name>.go
 backend/internal/<module>/infrastructure/postgres/<name>_repo.go
+backend/internal/platform/persistence/queries/<module>/<name>.sql
 ```
 
 Shared scan/null helpers may live in `infrastructure/postgres/helpers.go` in the same package. Shared SQL across repository types is not a reason to merge files.
@@ -329,6 +333,7 @@ Before finishing:
 - [ ] `go test ./...` and build succeed
 - [ ] No placeholder repositories or TODO business logic
 - [ ] One postgres adapter file per repository interface (no catch-all `repos.go`)
+- [ ] New/changed adapter SQL added under `queries/` and regenerated with `make sqlc` (no raw SQL in `*_repo.go`)
 - [ ] Matching flow row: `Done` `[x]` and `status` `done` (`docs/checklists/flows/`)
 
 ---

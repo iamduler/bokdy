@@ -44,7 +44,10 @@ db_setup: db_create migrate_up seed
 seed:
 	go -C $(BACKEND_DIR) run ./cmd/seed
 
-sqlc:
+sqlc_schema:
+	bash ./scripts/sqlc-schema.sh
+
+sqlc: sqlc_schema
 	cd $(BACKEND_DIR) && $(SQLC) generate
 
 test:
@@ -71,4 +74,4 @@ dev:
 	docker compose -f $(DEV_COMPOSE_FILE) --env-file $(ENV_FILE) up --build
 
 .PHONY: server worker migrate_up migrate_down migrate_status migrate_create install_tools
-.PHONY: db_create db_setup seed sqlc test vet check build noapp stop_noapp dev
+.PHONY: db_create db_setup seed sqlc_schema sqlc test vet check build noapp stop_noapp dev

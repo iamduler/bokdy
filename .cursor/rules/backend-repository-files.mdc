@@ -15,9 +15,10 @@ backend/internal/<module>/repository/<name>.go
 backend/internal/<module>/infrastructure/postgres/<name>_repo.go
 ```
 
-Identity: `user_repo.go`, `identity_repo.go`, `credential_repo.go`, `session_repo.go`, `role_repo.go`.
+SQL for adapters: `backend/internal/platform/persistence/queries/<area>/*.sql` → `make sqlc` → `bokdy/db/generated/sqlc`.
 
 Do **not** add a new adapter into `repos.go` or merge unrelated SQL into an existing `*_repo.go`.
+Do **not** embed raw SQL strings in `*_repo.go`.
 
 Shared `nullStr` / scan helpers: `infrastructure/postgres/helpers.go` only.
 

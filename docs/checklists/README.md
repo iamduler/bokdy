@@ -58,7 +58,7 @@ Update the matching row in the flow file **and** [backend-api-tracker.md](backen
 
 - [ ] Pre-flight docs read; no invented terms or tables
 - [ ] Exactly one bounded context
-- [ ] Domain → repository interface → application service → goose (if ERD already has the table) → postgres → DTO/handler → wiring
+- [ ] Domain → repository interface → application service → goose (if ERD already has the table) → sqlc query + postgres adapter → DTO/handler → wiring
 - [ ] Audience gate matches [permission-matrix.md](../domain/permission-matrix.md)
 - [ ] `api/openapi/openapi.yaml` updated in the same change
 - [ ] `pnpm --filter @bokdy/sdk generate`

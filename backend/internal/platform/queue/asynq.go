@@ -12,9 +12,10 @@ import (
 )
 
 const (
-	TaskPlatformHealth = "platform:health"
-	TaskOutboxAudit    = "outbox:audit"
-	TaskOutboxSweep    = "outbox:sweep"
+	TaskPlatformHealth      = "platform:health"
+	TaskOutboxAudit         = "outbox:audit"
+	TaskOutboxSweep         = "outbox:sweep"
+	TaskInvitationExpire    = "organization:invitation_expire"
 )
 
 type OutboxPayload struct {

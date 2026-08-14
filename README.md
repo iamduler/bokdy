@@ -4,7 +4,7 @@ Multi-tenant SaaS foundation for sports venue management.
 
 ## Stack
 
-- **Backend:** Go (Gin, sqlc-ready, goose, PostgreSQL, Redis, Asynq)
+- **Backend:** Go (Gin, sqlc, goose, PostgreSQL, Redis, Asynq)
 - **Frontend:** Next.js apps — Player (`:3000`), Owner (`:3001`), Admin (`:3002`)
 - **Shared:** `@bokdy/ui`, `@bokdy/sdk`, `@bokdy/config`
 
@@ -13,6 +13,7 @@ Multi-tenant SaaS foundation for sports venue management.
 ```bash
 cp .env.sample .env   # single env file (repo root); Make, Compose, and Go all read this
 make install_tools
+make sqlc          # goose Up → schema.sql + generate dbsqlc (committed under backend/db/generated/sqlc)
 # Infra: use local Postgres/Redis, or Docker Desktop with WSL integration:
 #   make noapp
 make db_setup       # create DB + migrate + seed

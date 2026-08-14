@@ -330,6 +330,8 @@ One repository interface = one file under `<module>/repository/`.
 
 One postgres adapter = one `<name>_repo.go` under `<module>/infrastructure/postgres/`.
 
+Adapter SQL must be sqlc: add/update `.sql` under `backend/internal/platform/persistence/queries/`, run `make sqlc`, call `dbsqlc` from the adapter. Do not add raw SQL strings to `*_repo.go`.
+
 Do not accumulate unrelated adapters in `repos.go`. Package-level helpers (`nullStr`, scan helpers) belong in `helpers.go`, not in a second repository type.
 
 Identity example: `user_repo.go`, `identity_repo.go`, `credential_repo.go`, `session_repo.go`, `role_repo.go`.

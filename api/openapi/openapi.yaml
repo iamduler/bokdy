@@ -17,6 +17,7 @@ tags:
   - name: Auth
   - name: Identity
   - name: Organizations
+  - name: Branches
   - name: Admin
 paths:
   /health:
@@ -253,6 +254,7 @@ paths:
     post:
       tags: [Organizations]
       summary: Create organization
+      description: Creates tenant, organization, default business unit (`code=default`), and owner staff with `org_owner`.
       security:
         - bearerAuth: []
       parameters:
@@ -279,6 +281,66 @@ paths:
           $ref: "#/components/responses/Error"
         "422":
           $ref: "#/components/responses/ValidationFailed"
+  /api/v1/organizations/{id}:
+    get:
+      tags: [Organizations]
+      summary: Get organization
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - $ref: "#/components/parameters/AcceptLanguage"
+        - $ref: "#/components/parameters/XOrganizationIdOptional"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Organization"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+    patch:
+      tags: [Organizations]
+      summary: Update organization
+      description: Owner or system admin. Does not change status.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - $ref: "#/components/parameters/AcceptLanguage"
+        - $ref: "#/components/parameters/XOrganizationIdOptional"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateOrganizationRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Organization"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
   /api/v1/organizations/{id}/staff:
     get:
       tags: [Organizations]
@@ -287,17 +349,205 @@ paths:
         - bearerAuth: []
       parameters:
         - $ref: "#/components/parameters/OrganizationId"
+        - $ref: "#/components/parameters/XOrganizationIdOptional"
       responses:
         "200":
           description: OK
-  /api/v1/organizations/{id}/invitations:
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/StaffMember"
     post:
       tags: [Organizations]
-      summary: Invite staff
+      summary: Add staff directly
+      description: Owner only. Body uses existing `user_id`. Default role `org_staff`.
       security:
         - bearerAuth: []
       parameters:
         - $ref: "#/components/parameters/OrganizationId"
+        - $ref: "#/components/parameters/XOrganizationIdOptional"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddStaffRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/StaffMember"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /api/v1/organizations/{id}/staff/{staffId}:
+    patch:
+      tags: [Organizations]
+      summary: Update staff
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - $ref: "#/components/parameters/StaffId"
+        - $ref: "#/components/parameters/XOrganizationIdOptional"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateStaffRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/StaffMember"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+    delete:
+      tags: [Organizations]
+      summary: Remove staff
+      description: Sets status resigned and revokes tenant roles. Cannot remove last owner.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - $ref: "#/components/parameters/StaffId"
+        - $ref: "#/components/parameters/XOrganizationIdOptional"
+      responses:
+        "204":
+          description: Removed
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+  /api/v1/organizations/{id}/staff/{staffId}/suspend:
+    post:
+      tags: [Organizations]
+      summary: Suspend staff
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - $ref: "#/components/parameters/StaffId"
+        - $ref: "#/components/parameters/XOrganizationIdOptional"
+      responses:
+        "204":
+          description: Suspended
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+  /api/v1/organizations/{id}/staff/{staffId}/restore:
+    post:
+      tags: [Organizations]
+      summary: Restore staff
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - $ref: "#/components/parameters/StaffId"
+        - $ref: "#/components/parameters/XOrganizationIdOptional"
+      responses:
+        "204":
+          description: Restored
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+  /api/v1/organizations/{id}/staff/{staffId}/roles:
+    post:
+      tags: [Organizations]
+      summary: Assign seeded role
+      description: Seed roles only (`org_owner`, `org_staff`).
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - $ref: "#/components/parameters/StaffId"
+        - $ref: "#/components/parameters/XOrganizationIdOptional"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssignRoleRequest"
+      responses:
+        "204":
+          description: Assigned
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /api/v1/organizations/{id}/staff/{staffId}/roles/{roleId}:
+    delete:
+      tags: [Organizations]
+      summary: Remove role
+      description: Cannot remove last `org_owner`.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - $ref: "#/components/parameters/StaffId"
+        - name: roleId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/XOrganizationIdOptional"
+      responses:
+        "204":
+          description: Removed
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+  /api/v1/organizations/{id}/invitations:
+    post:
+      tags: [Organizations]
+      summary: Invite staff
+      description: Owner only. Invitee must not already be an active/suspended member.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - $ref: "#/components/parameters/XOrganizationIdOptional"
       requestBody:
         required: true
         content:
@@ -307,16 +557,50 @@ paths:
       responses:
         "201":
           description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Invitation"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
         "422":
           $ref: "#/components/responses/ValidationFailed"
+  /api/v1/organizations/{id}/invitations/{invitationId}/revoke:
+    post:
+      tags: [Organizations]
+      summary: Revoke invitation
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - name: invitationId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/XOrganizationIdOptional"
+      responses:
+        "204":
+          description: Revoked
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
   /api/v1/organizations/invitations/accept:
     post:
       tags: [Organizations]
       summary: Accept invitation
+      description: JWT email must match invitation email.
       security:
         - bearerAuth: []
       requestBody:
@@ -332,8 +616,222 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
         "422":
           $ref: "#/components/responses/ValidationFailed"
+  /api/v1/organizations/invitations/reject:
+    post:
+      tags: [Organizations]
+      summary: Reject invitation
+      description: JWT email must match invitation email. Sets status `rejected` (not revoked).
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AcceptInviteRequest"
+      responses:
+        "204":
+          description: Rejected
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /api/v1/branches:
+    get:
+      tags: [Branches]
+      summary: List branches
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XOrganizationId"
+        - $ref: "#/components/parameters/AcceptLanguage"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Branch"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+    post:
+      tags: [Branches]
+      summary: Create branch
+      description: Owner only. Initial status `inactive`. Creates empty location_settings (no scheduling rows).
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XOrganizationId"
+        - $ref: "#/components/parameters/AcceptLanguage"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBranchRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Branch"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /api/v1/branches/{id}:
+    get:
+      tags: [Branches]
+      summary: Get branch
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/BranchId"
+        - $ref: "#/components/parameters/XOrganizationId"
+        - $ref: "#/components/parameters/AcceptLanguage"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Branch"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+    patch:
+      tags: [Branches]
+      summary: Update branch
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/BranchId"
+        - $ref: "#/components/parameters/XOrganizationId"
+        - $ref: "#/components/parameters/AcceptLanguage"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateBranchRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Branch"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /api/v1/branches/{id}/open:
+    post:
+      tags: [Branches]
+      summary: Open branch
+      description: "inactive -> active"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/BranchId"
+        - $ref: "#/components/parameters/XOrganizationId"
+      responses:
+        "204":
+          description: Opened
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+  /api/v1/branches/{id}/close:
+    post:
+      tags: [Branches]
+      summary: Close branch
+      description: "active -> inactive"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/BranchId"
+        - $ref: "#/components/parameters/XOrganizationId"
+      responses:
+        "204":
+          description: Closed
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+  /api/v1/branches/{id}/archive:
+    post:
+      tags: [Branches]
+      summary: Archive branch
+      description: "Any non-archived status -> archived. Booking checks deferred until Booking exists."
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/BranchId"
+        - $ref: "#/components/parameters/XOrganizationId"
+      responses:
+        "204":
+          description: Archived
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
   /api/v1/admin/health:
     get:
       tags: [Admin]
@@ -359,6 +857,36 @@ components:
       schema:
         type: string
         format: uuid
+    StaffId:
+      name: staffId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    BranchId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    XOrganizationId:
+      name: X-Organization-ID
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Tenant organization context. Required for `/api/v1/branches*`.
+    XOrganizationIdOptional:
+      name: X-Organization-ID
+      in: header
+      required: false
+      schema:
+        type: string
+        format: uuid
+      description: If present on nested `/organizations/{id}/...` routes, must match path id.
     AcceptLanguage:
       name: Accept-Language
       in: header
@@ -515,6 +1043,7 @@ components:
         name_en: { type: string }
         name_vi: { type: string }
         email: { type: string, format: email }
+        phone: { type: string }
         status: { type: string }
     CreateOrganizationRequest:
       type: object
@@ -525,17 +1054,115 @@ components:
         name_vi: { type: string }
         code: { type: string }
         email: { type: string, format: email }
+        phone: { type: string }
+    UpdateOrganizationRequest:
+      type: object
+      properties:
+        name_en: { type: string }
+        name_vi: { type: string }
+        code: { type: string }
+        email: { type: string, format: email }
+        phone: { type: string }
+    StaffMember:
+      type: object
+      required: [id, user_id, status, roles]
+      properties:
+        id: { type: string, format: uuid }
+        user_id: { type: string, format: uuid }
+        title: { type: string }
+        location_id: { type: string, format: uuid }
+        status: { type: string, enum: [invited, active, suspended, resigned] }
+        roles:
+          type: array
+          items: { type: string }
+    AddStaffRequest:
+      type: object
+      required: [user_id]
+      properties:
+        user_id: { type: string, format: uuid }
+        title: { type: string }
+        role_code: { type: string, enum: [org_owner, org_staff], default: org_staff }
+    UpdateStaffRequest:
+      type: object
+      properties:
+        title: { type: string }
+        location_id: { type: string, format: uuid }
+    AssignRoleRequest:
+      type: object
+      required: [role_code]
+      properties:
+        role_code: { type: string, enum: [org_owner, org_staff] }
     InviteRequest:
       type: object
       required: [email]
       properties:
         email: { type: string, format: email }
+        role_code: { type: string, enum: [org_owner, org_staff], default: org_staff }
+    Invitation:
+      type: object
+      required: [id, email, role_code, token, expires_at]
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
         role_code: { type: string }
+        token: { type: string }
+        expires_at: { type: string, format: date-time }
     AcceptInviteRequest:
       type: object
       required: [token]
       properties:
         token: { type: string }
+    BranchAddress:
+      type: object
+      properties:
+        country_id: { type: string, format: uuid }
+        state: { type: string }
+        city: { type: string }
+        district: { type: string }
+        ward: { type: string }
+        address_line_1: { type: string }
+        address_line_2: { type: string }
+        postal_code: { type: string }
+    Branch:
+      type: object
+      required: [id, public_id, organization_id, code, name, status]
+      properties:
+        id: { type: string, format: uuid }
+        public_id: { type: string, minLength: 26, maxLength: 26 }
+        organization_id: { type: string, format: uuid }
+        code: { type: string }
+        name: { type: string, description: Resolved from Accept-Language }
+        name_en: { type: string }
+        name_vi: { type: string }
+        phone: { type: string }
+        email: { type: string, format: email }
+        timezone: { type: string }
+        status: { type: string, enum: [active, inactive, maintenance, archived] }
+        address:
+          $ref: "#/components/schemas/BranchAddress"
+    CreateBranchRequest:
+      type: object
+      description: At least one of name_en or name_vi is required. Initial status is inactive.
+      properties:
+        name_en: { type: string }
+        name_vi: { type: string }
+        code: { type: string }
+        phone: { type: string }
+        email: { type: string, format: email }
+        timezone: { type: string }
+        address:
+          $ref: "#/components/schemas/BranchAddress"
+    UpdateBranchRequest:
+      type: object
+      properties:
+        name_en: { type: string }
+        name_vi: { type: string }
+        code: { type: string }
+        phone: { type: string }
+        email: { type: string, format: email }
+        timezone: { type: string }
+        address:
+          $ref: "#/components/schemas/BranchAddress"
     User:
       type: object
       required: [id, public_id, status, is_system_admin]

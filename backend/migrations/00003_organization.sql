@@ -5,7 +5,7 @@ CREATE TYPE organization.tenant_status AS ENUM ('trial', 'active', 'suspended', 
 CREATE TYPE organization.organization_status AS ENUM ('active', 'inactive', 'suspended', 'archived');
 CREATE TYPE organization.organization_type AS ENUM ('company', 'club', 'school', 'government', 'individual', 'other');
 CREATE TYPE organization.staff_status AS ENUM ('invited', 'active', 'suspended', 'resigned');
-CREATE TYPE organization.invitation_status AS ENUM ('pending', 'accepted', 'expired', 'revoked');
+CREATE TYPE organization.invitation_status AS ENUM ('pending', 'accepted', 'expired', 'revoked', 'rejected');
 
 CREATE TABLE organization.tenants (
     id         uuid PRIMARY KEY,

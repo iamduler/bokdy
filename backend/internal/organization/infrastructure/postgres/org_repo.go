@@ -3,7 +3,9 @@ package postgres
 import (
 	"context"
 	"errors"
+	"time"
 
+	"bokdy/db/generated/sqlc"
 	"bokdy/internal/organization/entity"
 	"bokdy/internal/organization/repository"
 	"bokdy/internal/platform/id"
@@ -13,162 +15,101 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type OrgRepo struct{ pool *pgxpool.Pool }
+type OrgRepo struct {
+	pool *pgxpool.Pool
+	q    *dbsqlc.Queries
+}
 
-func NewOrgRepo(pool *pgxpool.Pool) *OrgRepo { return &OrgRepo{pool: pool} }
+func NewOrgRepo(pool *pgxpool.Pool) *OrgRepo {
+	return &OrgRepo{pool: pool, q: dbsqlc.New(pool)}
+}
 
 var _ repository.OrganizationRepository = (*OrgRepo)(nil)
 
-func (r *OrgRepo) CreateTenantAndOrg(ctx context.Context, tx pgx.Tx, tenant *entity.Tenant, org *entity.Organization) error {
-	_, err := tx.Exec(ctx, `
-		INSERT INTO organization.tenants (id, public_id, code, name_en, name_vi, slug, status, locale_id, created_at, updated_at)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
-		tenant.ID, tenant.PublicID, tenant.Code, nullStr(tenant.NameEn), nullStr(tenant.NameVi), tenant.Slug, tenant.Status,
-		nullUUID(tenant.LocaleID), tenant.CreatedAt, tenant.UpdatedAt)
-	if err != nil {
+func (r *OrgRepo) CreateTenantAndOrg(ctx context.Context, tx pgx.Tx, tenant *entity.Tenant, org *entity.Organization, bu *entity.BusinessUnit) error {
+	q := r.q.WithTx(tx)
+	if err := q.CreateTenant(ctx, dbsqlc.CreateTenantParams{
+		ID: tenant.ID, PublicID: tenant.PublicID, Code: tenant.Code, NameEn: nullStr(tenant.NameEn), NameVi: nullStr(tenant.NameVi),
+		Slug: tenant.Slug, Status: dbsqlc.OrganizationTenantStatus(tenant.Status), LocaleID: tenant.LocaleID,
+		CreatedAt: tenant.CreatedAt, UpdatedAt: tenant.UpdatedAt,
+	}); err != nil {
 		return err
 	}
-	_, err = tx.Exec(ctx, `
-		INSERT INTO organization.organizations
-			(id, public_id, tenant_id, code, name_en, name_vi, organization_type, email, status, created_at, updated_at)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
-		org.ID, org.PublicID, org.TenantID, org.Code, nullStr(org.NameEn), nullStr(org.NameVi), org.OrganizationType,
-		nullStr(org.Email), org.Status, org.CreatedAt, org.UpdatedAt)
-	if err != nil {
+	if err := q.CreateOrganization(ctx, dbsqlc.CreateOrganizationParams{
+		ID: org.ID, PublicID: org.PublicID, TenantID: org.TenantID, Code: org.Code,
+		NameEn: nullStr(org.NameEn), NameVi: nullStr(org.NameVi),
+		OrganizationType: dbsqlc.OrganizationOrganizationType(org.OrganizationType),
+		Phone:            nullStr(org.Phone), Email: nullStr(org.Email),
+		Status: dbsqlc.OrganizationOrganizationStatus(org.Status), CreatedAt: org.CreatedAt, UpdatedAt: org.UpdatedAt,
+	}); err != nil {
 		return err
 	}
-	_, err = tx.Exec(ctx, `
-		INSERT INTO organization.organization_settings (id, organization_id, updated_at)
-		VALUES ($1, $2, now())`, id.MustNewUUID(), org.ID)
-	return err
+	if err := q.CreateOrganizationSettings(ctx, dbsqlc.CreateOrganizationSettingsParams{
+		ID: id.MustNewUUID(), OrganizationID: org.ID,
+	}); err != nil {
+		return err
+	}
+	return q.CreateBusinessUnit(ctx, dbsqlc.CreateBusinessUnitParams{
+		ID: bu.ID, OrganizationID: bu.OrganizationID, Code: bu.Code,
+		NameEn: nullStr(bu.NameEn), NameVi: nullStr(bu.NameVi),
+		Status: dbsqlc.OrganizationBusinessUnitStatus(bu.Status), CreatedAt: bu.CreatedAt, UpdatedAt: bu.UpdatedAt,
+	})
 }
 
 func (r *OrgRepo) FindByID(ctx context.Context, orgID uuid.UUID) (*entity.Organization, error) {
-	row := r.pool.QueryRow(ctx, `
-		SELECT id, public_id, tenant_id, code, COALESCE(name_en,''), COALESCE(name_vi,''), organization_type, COALESCE(email,''), status, created_at, updated_at
-		FROM organization.organizations WHERE id=$1 AND deleted_at IS NULL`, orgID)
-	return scanOrg(row)
+	row, err := r.q.FindOrganizationByID(ctx, orgID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return toOrg(row.ID, row.PublicID, row.TenantID, row.Code, row.NameEn, row.NameVi, row.OrganizationType, row.Phone, row.Email, row.Status, row.CreatedAt, row.UpdatedAt), nil
 }
 
 func (r *OrgRepo) ListByUser(ctx context.Context, userID uuid.UUID) ([]entity.Organization, error) {
-	rows, err := r.pool.Query(ctx, `
-		SELECT o.id, o.public_id, o.tenant_id, o.code, COALESCE(o.name_en,''), COALESCE(o.name_vi,''), o.organization_type, COALESCE(o.email,''), o.status, o.created_at, o.updated_at
-		FROM organization.organizations o
-		JOIN organization.staff_members s ON s.organization_id = o.id
-		WHERE s.user_id=$1 AND s.status='active' AND o.deleted_at IS NULL
-		ORDER BY o.created_at ASC`, userID)
+	rows, err := r.q.ListOrganizationsByUser(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-	var out []entity.Organization
-	for rows.Next() {
-		org, err := scanOrg(rows)
-		if err != nil {
-			return nil, err
-		}
-		out = append(out, *org)
+	out := make([]entity.Organization, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, *toOrg(row.ID, row.PublicID, row.TenantID, row.Code, row.NameEn, row.NameVi, row.OrganizationType, row.Phone, row.Email, row.Status, row.CreatedAt, row.UpdatedAt))
 	}
-	return out, rows.Err()
+	return out, nil
 }
 
-func (r *OrgRepo) AddStaff(ctx context.Context, tx pgx.Tx, member *entity.StaffMember) error {
-	_, err := tx.Exec(ctx, `
-		INSERT INTO organization.staff_members
-			(id, organization_id, user_id, title, status, joined_at, created_at, updated_at)
-		VALUES ($1,$2,$3,$4,$5,CURRENT_DATE,$6,$7)`,
-		member.ID, member.OrganizationID, member.UserID, nullStr(member.Title), member.Status, member.CreatedAt, member.UpdatedAt)
-	return err
+func (r *OrgRepo) Update(ctx context.Context, tx pgx.Tx, org *entity.Organization) error {
+	return r.q.WithTx(tx).UpdateOrganization(ctx, dbsqlc.UpdateOrganizationParams{
+		ID: org.ID, Code: org.Code, NameEn: nullStr(org.NameEn), NameVi: nullStr(org.NameVi),
+		Phone: nullStr(org.Phone), Email: nullStr(org.Email),
+	})
 }
 
-func (r *OrgRepo) IsMember(ctx context.Context, orgID, userID uuid.UUID) (bool, error) {
-	var exists bool
-	err := r.pool.QueryRow(ctx, `
-		SELECT EXISTS(
-			SELECT 1 FROM organization.staff_members
-			WHERE organization_id=$1 AND user_id=$2 AND status='active'
-		)`, orgID, userID).Scan(&exists)
-	return exists, err
-}
-
-func (r *OrgRepo) ListStaff(ctx context.Context, orgID uuid.UUID) ([]entity.StaffMember, error) {
-	rows, err := r.pool.Query(ctx, `
-		SELECT id, organization_id, user_id, COALESCE(title,''), status, created_at, updated_at
-		FROM organization.staff_members WHERE organization_id=$1 ORDER BY created_at ASC`, orgID)
+func (r *OrgRepo) FindDefaultBusinessUnit(ctx context.Context, orgID uuid.UUID) (*entity.BusinessUnit, error) {
+	row, err := r.q.FindDefaultBusinessUnit(ctx, dbsqlc.FindDefaultBusinessUnitParams{
+		OrganizationID: orgID, Code: entity.DefaultBUCode,
+	})
 	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var out []entity.StaffMember
-	for rows.Next() {
-		var m entity.StaffMember
-		var status string
-		if err := rows.Scan(&m.ID, &m.OrganizationID, &m.UserID, &m.Title, &status, &m.CreatedAt, &m.UpdatedAt); err != nil {
-			return nil, err
-		}
-		m.Status = entity.StaffStatus(status)
-		out = append(out, m)
-	}
-	return out, rows.Err()
-}
-
-func (r *OrgRepo) CreateInvitation(ctx context.Context, tx pgx.Tx, inv *entity.StaffInvitation) error {
-	_, err := tx.Exec(ctx, `
-		INSERT INTO organization.staff_invitations
-			(id, organization_id, email, role_code, invitation_token, status, expires_at, invited_by, created_at)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
-		inv.ID, inv.OrganizationID, inv.Email, inv.RoleCode, inv.InvitationToken, inv.Status, inv.ExpiresAt, inv.InvitedBy, inv.CreatedAt)
-	return err
-}
-
-func (r *OrgRepo) FindInvitationByToken(ctx context.Context, token string) (*entity.StaffInvitation, error) {
-	row := r.pool.QueryRow(ctx, `
-		SELECT id, organization_id, email, role_code, invitation_token, status, expires_at, invited_by, accepted_by, created_at
-		FROM organization.staff_invitations WHERE invitation_token=$1`, token)
-	var inv entity.StaffInvitation
-	var status string
-	if err := row.Scan(&inv.ID, &inv.OrganizationID, &inv.Email, &inv.RoleCode, &inv.InvitationToken, &status,
-		&inv.ExpiresAt, &inv.InvitedBy, &inv.AcceptedBy, &inv.CreatedAt); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, err
 	}
-	inv.Status = entity.InvitationStatus(status)
-	return &inv, nil
+	return &entity.BusinessUnit{
+		ID: row.ID, OrganizationID: row.OrganizationID, Code: row.Code, NameEn: row.NameEn, NameVi: row.NameVi,
+		Status: entity.BusinessUnitStatus(row.Status), CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
+	}, nil
 }
 
-func (r *OrgRepo) AcceptInvitation(ctx context.Context, tx pgx.Tx, invID uuid.UUID, userID uuid.UUID) error {
-	_, err := tx.Exec(ctx, `
-		UPDATE organization.staff_invitations
-		SET status='accepted', accepted_by=$2 WHERE id=$1 AND status='pending'`, invID, userID)
-	return err
-}
-
-func scanOrg(row pgx.Row) (*entity.Organization, error) {
-	var o entity.Organization
-	var typ, status string
-	if err := row.Scan(&o.ID, &o.PublicID, &o.TenantID, &o.Code, &o.NameEn, &o.NameVi, &typ, &o.Email, &status, &o.CreatedAt, &o.UpdatedAt); err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil
-		}
-		return nil, err
+func toOrg(
+	id uuid.UUID, publicID string, tenantID uuid.UUID, code, nameEn, nameVi string,
+	typ dbsqlc.OrganizationOrganizationType, phone, email string, status dbsqlc.OrganizationOrganizationStatus,
+	createdAt, updatedAt time.Time,
+) *entity.Organization {
+	return &entity.Organization{
+		ID: id, PublicID: publicID, TenantID: tenantID, Code: code, NameEn: nameEn, NameVi: nameVi,
+		OrganizationType: entity.OrganizationType(typ), Phone: phone, Email: email,
+		Status: entity.OrganizationStatus(status), CreatedAt: createdAt, UpdatedAt: updatedAt,
 	}
-	o.OrganizationType = entity.OrganizationType(typ)
-	o.Status = entity.OrganizationStatus(status)
-	return &o, nil
-}
-
-func nullStr(s string) any {
-	if s == "" {
-		return nil
-	}
-	return s
-}
-
-func nullUUID(id *uuid.UUID) any {
-	if id == nil || *id == uuid.Nil {
-		return nil
-	}
-	return *id
 }

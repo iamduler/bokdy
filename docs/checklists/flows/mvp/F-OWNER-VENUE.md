@@ -8,13 +8,13 @@ Business names: Branch, Court. Tables: `organization.locations`, `catalog.resour
 
 | Done | ID | Step | UC | Phase | Gate | Proposed API | Events | Status | Notes |
 | :---: | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| [ ] | F-OWNER-VENUE-01 | Create branch | UC-BRANCH-001 | mvp | jwt+org Owner | `POST /api/v1/branches` | BranchCreated | ready | W2. Init hours/settings. |
-| [ ] | F-OWNER-VENUE-02 | List branches | — | mvp | jwt+org Staff | `GET /api/v1/branches` | — | ready |  |
-| [ ] | F-OWNER-VENUE-03 | Get branch | — | mvp | jwt+org Staff | `GET /api/v1/branches/{id}` | — | ready |  |
-| [ ] | F-OWNER-VENUE-04 | Update branch | UC-BRANCH-002 | mvp | jwt+org Owner | `PATCH /api/v1/branches/{id}` | BranchUpdated | ready |  |
-| [ ] | F-OWNER-VENUE-05 | Open branch | UC-BRANCH-003 | mvp | jwt+org Owner | `POST /api/v1/branches/{id}/open` | BranchOpened | ready |  |
-| [ ] | F-OWNER-VENUE-06 | Close branch | UC-BRANCH-004 | mvp | jwt+org Owner | `POST /api/v1/branches/{id}/close` | BranchClosed | ready |  |
-| [ ] | F-OWNER-VENUE-07 | Archive branch | UC-BRANCH-005 | mvp | jwt+org Owner | `POST /api/v1/branches/{id}/archive` | BranchArchived | ready |  |
+| [x] | F-OWNER-VENUE-01 | Create branch | UC-BRANCH-001 | mvp | jwt+org Owner | `POST /api/v1/branches` | BranchCreated | done | Starts `inactive`; empty location_settings. |
+| [x] | F-OWNER-VENUE-02 | List branches | — | mvp | jwt+org Staff | `GET /api/v1/branches` | — | done | Requires `X-Organization-ID`. |
+| [x] | F-OWNER-VENUE-03 | Get branch | — | mvp | jwt+org Staff | `GET /api/v1/branches/{id}` | — | done |  |
+| [x] | F-OWNER-VENUE-04 | Update branch | UC-BRANCH-002 | mvp | jwt+org Owner | `PATCH /api/v1/branches/{id}` | BranchUpdated | done |  |
+| [x] | F-OWNER-VENUE-05 | Open branch | UC-BRANCH-003 | mvp | jwt+org Owner | `POST /api/v1/branches/{id}/open` | BranchOpened | done | inactive → active |
+| [x] | F-OWNER-VENUE-06 | Close branch | UC-BRANCH-004 | mvp | jwt+org Owner | `POST /api/v1/branches/{id}/close` | BranchClosed | done | active → inactive |
+| [x] | F-OWNER-VENUE-07 | Archive branch | UC-BRANCH-005 | mvp | jwt+org Owner | `POST /api/v1/branches/{id}/archive` | BranchArchived | done | No booking check in W2. |
 | [ ] | F-OWNER-VENUE-08 | Create court type | UC-COURT-TYPE-001 | mvp | jwt+org Owner | `POST /api/v1/court-types` | CourtTypeCreated | ready | W4 catalog |
 | [ ] | F-OWNER-VENUE-09 | Update court type | UC-COURT-TYPE-002 | mvp | jwt+org Owner | `PATCH /api/v1/court-types/{id}` | CourtTypeUpdated | ready |  |
 | [ ] | F-OWNER-VENUE-10 | Archive court type | UC-COURT-TYPE-003 | mvp | jwt+org Owner | `POST /api/v1/court-types/{id}/archive` | CourtTypeArchived | ready |  |

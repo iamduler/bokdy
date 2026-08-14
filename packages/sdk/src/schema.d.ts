@@ -511,7 +511,10 @@ export interface paths {
             };
         };
         put?: never;
-        /** Create organization */
+        /**
+         * Create organization
+         * @description Creates tenant, organization, default business unit (`code=default`), and owner staff with `org_owner`.
+         */
         post: {
             parameters: {
                 query?: never;
@@ -550,18 +553,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/organizations/{id}/staff": {
+    "/api/v1/organizations/{id}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** List staff */
+        /** Get organization */
         get: {
             parameters: {
                 query?: never;
-                header?: never;
+                header?: {
+                    /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
+                    "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+                    /** @description If present on nested `/organizations/{id}/...` routes, must match path id. */
+                    "X-Organization-ID"?: components["parameters"]["XOrganizationIdOptional"];
+                };
                 path: {
                     id: components["parameters"]["OrganizationId"];
                 };
@@ -574,13 +582,406 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["Organization"];
+                        };
+                    };
                 };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
             };
         };
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update organization
+         * @description Owner or system admin. Does not change status.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: {
+                    /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
+                    "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+                    /** @description If present on nested `/organizations/{id}/...` routes, must match path id. */
+                    "X-Organization-ID"?: components["parameters"]["XOrganizationIdOptional"];
+                };
+                path: {
+                    id: components["parameters"]["OrganizationId"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateOrganizationRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["Organization"];
+                        };
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        trace?: never;
+    };
+    "/api/v1/organizations/{id}/staff": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List staff */
+        get: {
+            parameters: {
+                query?: never;
+                header?: {
+                    /** @description If present on nested `/organizations/{id}/...` routes, must match path id. */
+                    "X-Organization-ID"?: components["parameters"]["XOrganizationIdOptional"];
+                };
+                path: {
+                    id: components["parameters"]["OrganizationId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["StaffMember"][];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Add staff directly
+         * @description Owner only. Body uses existing `user_id`. Default role `org_staff`.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    /** @description If present on nested `/organizations/{id}/...` routes, must match path id. */
+                    "X-Organization-ID"?: components["parameters"]["XOrganizationIdOptional"];
+                };
+                path: {
+                    id: components["parameters"]["OrganizationId"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AddStaffRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["StaffMember"];
+                        };
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                409: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organizations/{id}/staff/{staffId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove staff
+         * @description Sets status resigned and revokes tenant roles. Cannot remove last owner.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: {
+                    /** @description If present on nested `/organizations/{id}/...` routes, must match path id. */
+                    "X-Organization-ID"?: components["parameters"]["XOrganizationIdOptional"];
+                };
+                path: {
+                    id: components["parameters"]["OrganizationId"];
+                    staffId: components["parameters"]["StaffId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Removed */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+            };
+        };
+        options?: never;
+        head?: never;
+        /** Update staff */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: {
+                    /** @description If present on nested `/organizations/{id}/...` routes, must match path id. */
+                    "X-Organization-ID"?: components["parameters"]["XOrganizationIdOptional"];
+                };
+                path: {
+                    id: components["parameters"]["OrganizationId"];
+                    staffId: components["parameters"]["StaffId"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateStaffRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["StaffMember"];
+                        };
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+            };
+        };
+        trace?: never;
+    };
+    "/api/v1/organizations/{id}/staff/{staffId}/suspend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Suspend staff */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    /** @description If present on nested `/organizations/{id}/...` routes, must match path id. */
+                    "X-Organization-ID"?: components["parameters"]["XOrganizationIdOptional"];
+                };
+                path: {
+                    id: components["parameters"]["OrganizationId"];
+                    staffId: components["parameters"]["StaffId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Suspended */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organizations/{id}/staff/{staffId}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restore staff */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    /** @description If present on nested `/organizations/{id}/...` routes, must match path id. */
+                    "X-Organization-ID"?: components["parameters"]["XOrganizationIdOptional"];
+                };
+                path: {
+                    id: components["parameters"]["OrganizationId"];
+                    staffId: components["parameters"]["StaffId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Restored */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organizations/{id}/staff/{staffId}/roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Assign seeded role
+         * @description Seed roles only (`org_owner`, `org_staff`).
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    /** @description If present on nested `/organizations/{id}/...` routes, must match path id. */
+                    "X-Organization-ID"?: components["parameters"]["XOrganizationIdOptional"];
+                };
+                path: {
+                    id: components["parameters"]["OrganizationId"];
+                    staffId: components["parameters"]["StaffId"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AssignRoleRequest"];
+                };
+            };
+            responses: {
+                /** @description Assigned */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organizations/{id}/staff/{staffId}/roles/{roleId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove role
+         * @description Cannot remove last `org_owner`.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: {
+                    /** @description If present on nested `/organizations/{id}/...` routes, must match path id. */
+                    "X-Organization-ID"?: components["parameters"]["XOrganizationIdOptional"];
+                };
+                path: {
+                    id: components["parameters"]["OrganizationId"];
+                    staffId: components["parameters"]["StaffId"];
+                    roleId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Removed */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+            };
+        };
         options?: never;
         head?: never;
         patch?: never;
@@ -595,11 +996,17 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Invite staff */
+        /**
+         * Invite staff
+         * @description Owner only. Invitee must not already be an active/suspended member.
+         */
         post: {
             parameters: {
                 query?: never;
-                header?: never;
+                header?: {
+                    /** @description If present on nested `/organizations/{id}/...` routes, must match path id. */
+                    "X-Organization-ID"?: components["parameters"]["XOrganizationIdOptional"];
+                };
                 path: {
                     id: components["parameters"]["OrganizationId"];
                 };
@@ -616,11 +1023,59 @@ export interface paths {
                     headers: {
                         [name: string]: unknown;
                     };
-                    content?: never;
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["Invitation"];
+                        };
+                    };
                 };
                 400: components["responses"]["BadRequest"];
                 401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
                 422: components["responses"]["ValidationFailed"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organizations/{id}/invitations/{invitationId}/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Revoke invitation */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    /** @description If present on nested `/organizations/{id}/...` routes, must match path id. */
+                    "X-Organization-ID"?: components["parameters"]["XOrganizationIdOptional"];
+                };
+                path: {
+                    id: components["parameters"]["OrganizationId"];
+                    invitationId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Revoked */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
             };
         };
         delete?: never;
@@ -638,7 +1093,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Accept invitation */
+        /**
+         * Accept invitation
+         * @description JWT email must match invitation email.
+         */
         post: {
             parameters: {
                 query?: never;
@@ -661,7 +1119,363 @@ export interface paths {
                 };
                 400: components["responses"]["BadRequest"];
                 401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
                 422: components["responses"]["ValidationFailed"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organizations/invitations/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reject invitation
+         * @description JWT email must match invitation email. Sets status `rejected` (not revoked).
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AcceptInviteRequest"];
+                };
+            };
+            responses: {
+                /** @description Rejected */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/branches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List branches */
+        get: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`. */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                    /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
+                    "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["Branch"][];
+                        };
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+            };
+        };
+        put?: never;
+        /**
+         * Create branch
+         * @description Owner only. Initial status `inactive`. Creates empty location_settings (no scheduling rows).
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`. */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                    /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
+                    "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreateBranchRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["Branch"];
+                        };
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                409: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/branches/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get branch */
+        get: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`. */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                    /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
+                    "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+                };
+                path: {
+                    id: components["parameters"]["BranchId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["Branch"];
+                        };
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update branch */
+        patch: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`. */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                    /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
+                    "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+                };
+                path: {
+                    id: components["parameters"]["BranchId"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateBranchRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["Branch"];
+                        };
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        trace?: never;
+    };
+    "/api/v1/branches/{id}/open": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Open branch
+         * @description inactive -> active
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`. */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                };
+                path: {
+                    id: components["parameters"]["BranchId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Opened */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/branches/{id}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Close branch
+         * @description active -> inactive
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`. */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                };
+                path: {
+                    id: components["parameters"]["BranchId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Closed */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/branches/{id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Archive branch
+         * @description Any non-archived status -> archived. Booking checks deferred until Booking exists.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`. */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                };
+                path: {
+                    id: components["parameters"]["BranchId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Archived */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
             };
         };
         delete?: never;
@@ -770,6 +1584,7 @@ export interface components {
             name_vi?: string;
             /** Format: email */
             email?: string;
+            phone?: string;
             status: string;
         };
         /** @description At least one of name, name_en, or name_vi is required. */
@@ -781,14 +1596,119 @@ export interface components {
             code?: string;
             /** Format: email */
             email?: string;
+            phone?: string;
+        };
+        UpdateOrganizationRequest: {
+            name_en?: string;
+            name_vi?: string;
+            code?: string;
+            /** Format: email */
+            email?: string;
+            phone?: string;
+        };
+        StaffMember: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            user_id: string;
+            title?: string;
+            /** Format: uuid */
+            location_id?: string;
+            /** @enum {string} */
+            status: "invited" | "active" | "suspended" | "resigned";
+            roles: string[];
+        };
+        AddStaffRequest: {
+            /** Format: uuid */
+            user_id: string;
+            title?: string;
+            /**
+             * @default org_staff
+             * @enum {string}
+             */
+            role_code: "org_owner" | "org_staff";
+        };
+        UpdateStaffRequest: {
+            title?: string;
+            /** Format: uuid */
+            location_id?: string;
+        };
+        AssignRoleRequest: {
+            /** @enum {string} */
+            role_code: "org_owner" | "org_staff";
         };
         InviteRequest: {
             /** Format: email */
             email: string;
-            role_code?: string;
+            /**
+             * @default org_staff
+             * @enum {string}
+             */
+            role_code: "org_owner" | "org_staff";
+        };
+        Invitation: {
+            /** Format: uuid */
+            id: string;
+            /** Format: email */
+            email: string;
+            role_code: string;
+            token: string;
+            /** Format: date-time */
+            expires_at: string;
         };
         AcceptInviteRequest: {
             token: string;
+        };
+        BranchAddress: {
+            /** Format: uuid */
+            country_id?: string;
+            state?: string;
+            city?: string;
+            district?: string;
+            ward?: string;
+            address_line_1?: string;
+            address_line_2?: string;
+            postal_code?: string;
+        };
+        Branch: {
+            /** Format: uuid */
+            id: string;
+            public_id: string;
+            /** Format: uuid */
+            organization_id: string;
+            code: string;
+            /** @description Resolved from Accept-Language */
+            name: string;
+            name_en?: string;
+            name_vi?: string;
+            phone?: string;
+            /** Format: email */
+            email?: string;
+            timezone?: string;
+            /** @enum {string} */
+            status: "active" | "inactive" | "maintenance" | "archived";
+            address?: components["schemas"]["BranchAddress"];
+        };
+        /** @description At least one of name_en or name_vi is required. Initial status is inactive. */
+        CreateBranchRequest: {
+            name_en?: string;
+            name_vi?: string;
+            code?: string;
+            phone?: string;
+            /** Format: email */
+            email?: string;
+            timezone?: string;
+            address?: components["schemas"]["BranchAddress"];
+        };
+        UpdateBranchRequest: {
+            name_en?: string;
+            name_vi?: string;
+            code?: string;
+            phone?: string;
+            /** Format: email */
+            email?: string;
+            timezone?: string;
+            address?: components["schemas"]["BranchAddress"];
         };
         User: {
             /** Format: uuid */
@@ -906,6 +1826,12 @@ export interface components {
     };
     parameters: {
         OrganizationId: string;
+        StaffId: string;
+        BranchId: string;
+        /** @description Tenant organization context. Required for `/api/v1/branches*`. */
+        XOrganizationId: string;
+        /** @description If present on nested `/organizations/{id}/...` routes, must match path id. */
+        XOrganizationIdOptional: string;
         /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
         AcceptLanguage: string;
         /** @description 32-char hex OpenTelemetry trace id (Loki join key). Echoed on the response. Prefer traceparent; if only this header is sent (UUID or hex), Go synthesizes a traceparent. */

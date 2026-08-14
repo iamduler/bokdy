@@ -16,6 +16,10 @@ func TestActionForEvent(t *testing.T) {
 		{"SessionRefreshed", "login"},
 		{"PasswordReset", "updated"},
 		{"OrganizationCreated", "created"},
+		{"BranchCreated", "created"},
+		{"BranchOpened", "status_change"},
+		{"InvitationRejected", "status_change"},
+		{"RoleRemoved", "deleted"},
 		{"UnknownFact", "other"},
 	}
 	for _, tc := range cases {

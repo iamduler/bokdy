@@ -1131,6 +1131,7 @@ Enum location_status {
   active
   inactive
   maintenance
+  archived
 }
 
 Enum staff_status {
@@ -1145,6 +1146,7 @@ Enum invitation_status {
   accepted
   expired
   revoked
+  rejected
 }
 
 Enum subscription_status {

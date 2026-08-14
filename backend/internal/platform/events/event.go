@@ -52,19 +52,19 @@ type auditEnvelope struct {
 
 func ActionForEvent(eventType string) string {
 	switch eventType {
-	case "UserRegistered", "OrganizationCreated", "StaffAdded", "InvitationCreated", "GuestCustomerCreated", "BookingCreated", "InvoiceIssued", "ReservationCreated":
+	case "UserRegistered", "OrganizationCreated", "StaffAdded", "InvitationCreated", "GuestCustomerCreated", "BookingCreated", "InvoiceIssued", "ReservationCreated", "BranchCreated":
 		return "created"
-	case "UserProfileUpdated", "OrganizationUpdated", "StaffUpdated", "PasswordReset", "PasswordResetRequested":
+	case "UserProfileUpdated", "OrganizationUpdated", "StaffUpdated", "PasswordReset", "PasswordResetRequested", "BranchUpdated":
 		return "updated"
-	case "UserVerified", "OrganizationActivated", "OrganizationSuspended", "OrganizationRestored", "StaffSuspended", "StaffRestored":
+	case "UserVerified", "OrganizationActivated", "OrganizationSuspended", "OrganizationRestored", "StaffSuspended", "StaffRestored", "BranchOpened", "BranchClosed", "BranchArchived", "InvitationRejected", "InvitationExpired":
 		return "status_change"
 	case "UserLoggedIn", "UserLoginFailed", "SessionRefreshed":
 		return "login"
 	case "UserLoggedOut":
 		return "logout"
-	case "StaffRemoved", "InvitationRevoked":
+	case "StaffRemoved", "InvitationRevoked", "RoleRemoved":
 		return "deleted"
-	case "InvitationAccepted":
+	case "InvitationAccepted", "RoleAssigned":
 		return "assign"
 	default:
 		return "other"

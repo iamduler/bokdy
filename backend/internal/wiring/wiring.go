@@ -36,12 +36,20 @@ func RegisterRoutes(api *gin.RouterGroup, app *server.Application) {
 	authHandler := identityhandler.NewAuthHandler(authSvc)
 
 	orgRepo := orgpg.NewOrgRepo(app.DB.Pool)
-	orgSvc := orgservice.NewOrganizationService(app.DB.Pool, orgRepo, roleRepo, app.Mailer, outbox)
+	staffRepo := orgpg.NewStaffRepo(app.DB.Pool)
+	inviteRepo := orgpg.NewInvitationRepo(app.DB.Pool)
+	branchRepo := orgpg.NewBranchRepo(app.DB.Pool)
+	orgSvc := orgservice.NewOrganizationService(
+		app.DB.Pool, orgRepo, staffRepo, inviteRepo, roleRepo, userRepo, app.Mailer, outbox,
+	)
+	branchSvc := orgservice.NewBranchService(app.DB.Pool, orgRepo, branchRepo, orgSvc, outbox)
 	orgHandler := orghandler.NewOrganizationHandler(orgSvc)
+	branchHandler := orghandler.NewBranchHandler(branchSvc)
 
 	jwt := middleware.JWTAuth(app.Tokens)
 	authHandler.RegisterRoutes(api, jwt)
 	orgHandler.RegisterRoutes(api, jwt)
+	branchHandler.RegisterRoutes(api, jwt)
 
 	admin := api.Group("/admin", jwt, middleware.RequireSystemAdmin())
 	admin.GET("/health", func(c *gin.Context) {

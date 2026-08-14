@@ -15,5 +15,8 @@ Foundation sequence:
 | `00005_platform.sql` | audit_logs |
 | `00006_i18n_locale_fk.sql` | reshape pre-i18n identity/org columns + locale FKs |
 | `00007_user_prefs_and_locales.sql` | locales name/native_name; user verified_at; profile prefs; phone unique |
+| `00008_login_histories_is_success.sql` | rename login_histories.success → is_success |
+| `00009_user_profiles_id.sql` | user_profiles.id PK |
+| `00010_organization_w2_branch_staff.sql` | business_units, locations(+address/settings), invitation rejected, default BU backfill |
 
 Table shapes must match `docs/database/erd.dbml` (including the CONVENTIONS block).

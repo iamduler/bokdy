@@ -11,7 +11,7 @@ Tick **Done** when every MVP row in that wave is `[x]` on the flow file.
 | Done | Wave | Module | Flow IDs | HTTP today | Wave status |
 | :---: | --- | --- | --- | --- | --- |
 | [x] | W1 | identity | F-AUTH | auth + me + PATCH me; X-Client; prefs | done |
-| [ ] | W2 | organization | F-OWNER-ONBOARD, F-OWNER-STAFF, F-OWNER-VENUE-01–07 | org create/list, invite, accept, list staff | partial |
+| [x] | W2 | organization | F-OWNER-ONBOARD, F-OWNER-STAFF, F-OWNER-VENUE-01–07 | org CRUD, staff/invite lifecycle, branch 01–07 | done |
 | [ ] | W3 | crm | F-OWNER-CRM | none | not started |
 | [ ] | W4 | catalog | F-OWNER-VENUE-08–18 | none | not started |
 | [ ] | W5 | scheduling | F-OWNER-VENUE-19–23, F-PLAYER-BOOK-01–03, F-OWNER-OPS-01–02 | none | not started |
@@ -32,14 +32,13 @@ Tick **Done** when every MVP row in that wave is `[x]` on the flow file.
 
 | Status | MVP rows | Post-MVP rows |
 | --- | --- | --- |
-| partial | org foundation (W2) | — |
 | ready | most remaining MVP actions | — |
 | gap | — | F-POS-07/08 cash shift, F-BOOKING-PLUS-01 no-show, F-ADMIN-PLUS-08 ads, F-ANALYTICS-04 dashboard |
 | deferred | slices listed on MVP flows | all W10–W12 rows |
-| done | F-AUTH (W1) | — |
+| done | F-AUTH (W1), F-OWNER-ONBOARD / STAFF / VENUE-01–07 (W2) | — |
 
 ## Next implement
 
-W2: get/patch organization, remaining staff (reject/revoke/suspend), then branch create (`F-OWNER-VENUE-01`). Do not open W3 until W2 branch create works.
+W3 CRM (guest customers). Do not open W4 until W3 guest create works.
 
 FE wiring: none until the consumed row is `[x]` / `done` and OpenAPI lists the operation.

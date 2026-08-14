@@ -12,8 +12,7 @@ backend/bin/
 .vscode/
 .DS_Store
 
-# Optional local tooling / generated sqlc
-backend/db/generated/
+# Optional local tooling
 backend/tools/
 
 # Node / Next

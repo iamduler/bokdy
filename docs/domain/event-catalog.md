@@ -778,6 +778,66 @@ Audit
 
 ---
 
+# InvitationRejected
+
+Publisher
+
+Organization
+
+Aggregate
+
+Invitation
+
+Trigger
+
+Invitee rejected a pending invitation.
+
+Consumers
+
+Audit
+
+---
+
+# InvitationRevoked
+
+Publisher
+
+Organization
+
+Aggregate
+
+Invitation
+
+Trigger
+
+Owner revoked a pending invitation.
+
+Consumers
+
+Audit
+
+---
+
+# InvitationExpired
+
+Publisher
+
+Organization
+
+Aggregate
+
+Invitation
+
+Trigger
+
+System worker expired a pending invitation past `expires_at`.
+
+Consumers
+
+Audit
+
+---
+
 # StaffAdded
 
 Publisher
@@ -790,7 +850,247 @@ StaffMember
 
 Trigger
 
-Staff member joined the organization.
+Staff member joined the organization (invite accept or direct add).
+
+Consumers
+
+Audit
+
+---
+
+# StaffUpdated
+
+Publisher
+
+Organization
+
+Aggregate
+
+StaffMember
+
+Trigger
+
+Staff profile fields updated (title, location).
+
+Consumers
+
+Audit
+
+---
+
+# StaffSuspended
+
+Publisher
+
+Organization
+
+Aggregate
+
+StaffMember
+
+Trigger
+
+Active staff suspended by owner.
+
+Consumers
+
+Audit
+
+---
+
+# StaffRestored
+
+Publisher
+
+Organization
+
+Aggregate
+
+StaffMember
+
+Trigger
+
+Suspended staff restored to active.
+
+Consumers
+
+Audit
+
+---
+
+# StaffRemoved
+
+Publisher
+
+Organization
+
+Aggregate
+
+StaffMember
+
+Trigger
+
+Staff resigned/removed; tenant roles revoked.
+
+Consumers
+
+Audit
+
+---
+
+# RoleAssigned
+
+Publisher
+
+Organization
+
+Aggregate
+
+StaffMember
+
+Trigger
+
+Seeded role assigned to staff (`org_owner` / `org_staff`).
+
+Consumers
+
+Audit
+
+---
+
+# RoleRemoved
+
+Publisher
+
+Organization
+
+Aggregate
+
+StaffMember
+
+Trigger
+
+Role removed from staff. Cannot remove last `org_owner`.
+
+Consumers
+
+Audit
+
+---
+
+# OrganizationUpdated
+
+Publisher
+
+Organization
+
+Aggregate
+
+Organization
+
+Trigger
+
+Organization profile fields updated (not status).
+
+Consumers
+
+Audit
+
+---
+
+# BranchCreated
+
+Publisher
+
+Organization
+
+Aggregate
+
+Branch
+
+Trigger
+
+Branch (location) created under default business unit. Initial status `inactive`.
+
+Consumers
+
+Audit
+
+---
+
+# BranchUpdated
+
+Publisher
+
+Organization
+
+Aggregate
+
+Branch
+
+Trigger
+
+Branch profile/address updated.
+
+Consumers
+
+Audit
+
+---
+
+# BranchOpened
+
+Publisher
+
+Organization
+
+Aggregate
+
+Branch
+
+Trigger
+
+Branch opened (`inactive` → `active`).
+
+Consumers
+
+Audit
+
+---
+
+# BranchClosed
+
+Publisher
+
+Organization
+
+Aggregate
+
+Branch
+
+Trigger
+
+Branch closed (`active` → `inactive`).
+
+Consumers
+
+Audit
+
+---
+
+# BranchArchived
+
+Publisher
+
+Organization
+
+Aggregate
+
+Branch
+
+Trigger
+
+Branch archived (terminal for W2; booking checks deferred).
 
 Consumers
 
