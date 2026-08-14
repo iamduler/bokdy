@@ -210,6 +210,162 @@ func (q *Queries) FindOrganizationByID(ctx context.Context, id uuid.UUID) (FindO
 	return i, err
 }
 
+const findOrganizationByTenant = `-- name: FindOrganizationByTenant :one
+SELECT id, public_id, tenant_id, code, COALESCE(name_en, '') AS name_en, COALESCE(name_vi, '') AS name_vi, organization_type,
+       COALESCE(phone, '') AS phone, COALESCE(email, '') AS email, status, created_at, updated_at
+FROM organization.organizations
+WHERE tenant_id = $1 AND deleted_at IS NULL
+`
+
+type FindOrganizationByTenantRow struct {
+	ID               uuid.UUID                      `json:"id"`
+	PublicID         string                         `json:"public_id"`
+	TenantID         uuid.UUID                      `json:"tenant_id"`
+	Code             string                         `json:"code"`
+	NameEn           string                         `json:"name_en"`
+	NameVi           string                         `json:"name_vi"`
+	OrganizationType OrganizationOrganizationType   `json:"organization_type"`
+	Phone            string                         `json:"phone"`
+	Email            string                         `json:"email"`
+	Status           OrganizationOrganizationStatus `json:"status"`
+	CreatedAt        time.Time                      `json:"created_at"`
+	UpdatedAt        time.Time                      `json:"updated_at"`
+}
+
+func (q *Queries) FindOrganizationByTenant(ctx context.Context, tenantID uuid.UUID) (FindOrganizationByTenantRow, error) {
+	row := q.db.QueryRow(ctx, findOrganizationByTenant, tenantID)
+	var i FindOrganizationByTenantRow
+	err := row.Scan(
+		&i.ID,
+		&i.PublicID,
+		&i.TenantID,
+		&i.Code,
+		&i.NameEn,
+		&i.NameVi,
+		&i.OrganizationType,
+		&i.Phone,
+		&i.Email,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const findTenantByID = `-- name: FindTenantByID :one
+SELECT id, public_id, code, COALESCE(name_en, '') AS name_en, COALESCE(name_vi, '') AS name_vi, slug, status, locale_id, created_at, updated_at
+FROM organization.tenants
+WHERE id = $1
+`
+
+type FindTenantByIDRow struct {
+	ID        uuid.UUID                `json:"id"`
+	PublicID  string                   `json:"public_id"`
+	Code      string                   `json:"code"`
+	NameEn    string                   `json:"name_en"`
+	NameVi    string                   `json:"name_vi"`
+	Slug      string                   `json:"slug"`
+	Status    OrganizationTenantStatus `json:"status"`
+	LocaleID  *uuid.UUID               `json:"locale_id"`
+	CreatedAt time.Time                `json:"created_at"`
+	UpdatedAt time.Time                `json:"updated_at"`
+}
+
+func (q *Queries) FindTenantByID(ctx context.Context, id uuid.UUID) (FindTenantByIDRow, error) {
+	row := q.db.QueryRow(ctx, findTenantByID, id)
+	var i FindTenantByIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.PublicID,
+		&i.Code,
+		&i.NameEn,
+		&i.NameVi,
+		&i.Slug,
+		&i.Status,
+		&i.LocaleID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const listOrganizationsAdmin = `-- name: ListOrganizationsAdmin :many
+SELECT o.id, o.public_id, o.tenant_id, o.code, COALESCE(o.name_en, '') AS name_en, COALESCE(o.name_vi, '') AS name_vi, o.organization_type,
+       COALESCE(o.phone, '') AS phone, COALESCE(o.email, '') AS email, o.status, o.created_at, o.updated_at,
+       t.status AS tenant_status
+FROM organization.organizations o
+JOIN organization.tenants t ON t.id = o.tenant_id
+WHERE o.deleted_at IS NULL
+  AND (
+    $1::text IS NULL
+    OR o.status = $1::organization.organization_status
+  )
+  AND (
+    $2::text = ''
+    OR lower(o.code) LIKE '%' || lower($2::text) || '%'
+    OR lower(COALESCE(o.name_en, '')) LIKE '%' || lower($2::text) || '%'
+    OR lower(COALESCE(o.name_vi, '')) LIKE '%' || lower($2::text) || '%'
+  )
+ORDER BY o.created_at DESC
+LIMIT $3
+`
+
+type ListOrganizationsAdminParams struct {
+	StatusFilter *string `json:"status_filter"`
+	Q            string  `json:"q"`
+	RowLimit     int32   `json:"row_limit"`
+}
+
+type ListOrganizationsAdminRow struct {
+	ID               uuid.UUID                      `json:"id"`
+	PublicID         string                         `json:"public_id"`
+	TenantID         uuid.UUID                      `json:"tenant_id"`
+	Code             string                         `json:"code"`
+	NameEn           string                         `json:"name_en"`
+	NameVi           string                         `json:"name_vi"`
+	OrganizationType OrganizationOrganizationType   `json:"organization_type"`
+	Phone            string                         `json:"phone"`
+	Email            string                         `json:"email"`
+	Status           OrganizationOrganizationStatus `json:"status"`
+	CreatedAt        time.Time                      `json:"created_at"`
+	UpdatedAt        time.Time                      `json:"updated_at"`
+	TenantStatus     OrganizationTenantStatus       `json:"tenant_status"`
+}
+
+func (q *Queries) ListOrganizationsAdmin(ctx context.Context, arg ListOrganizationsAdminParams) ([]ListOrganizationsAdminRow, error) {
+	rows, err := q.db.Query(ctx, listOrganizationsAdmin, arg.StatusFilter, arg.Q, arg.RowLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListOrganizationsAdminRow{}
+	for rows.Next() {
+		var i ListOrganizationsAdminRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.PublicID,
+			&i.TenantID,
+			&i.Code,
+			&i.NameEn,
+			&i.NameVi,
+			&i.OrganizationType,
+			&i.Phone,
+			&i.Email,
+			&i.Status,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.TenantStatus,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listOrganizationsByUser = `-- name: ListOrganizationsByUser :many
 SELECT o.id, o.public_id, o.tenant_id, o.code, COALESCE(o.name_en, '') AS name_en, COALESCE(o.name_vi, '') AS name_vi, o.organization_type,
        COALESCE(o.phone, '') AS phone, COALESCE(o.email, '') AS email, o.status, o.created_at, o.updated_at
@@ -267,6 +423,87 @@ func (q *Queries) ListOrganizationsByUser(ctx context.Context, userID uuid.UUID)
 	return items, nil
 }
 
+const lockOrganizationByID = `-- name: LockOrganizationByID :one
+SELECT id, public_id, tenant_id, code, COALESCE(name_en, '') AS name_en, COALESCE(name_vi, '') AS name_vi, organization_type,
+       COALESCE(phone, '') AS phone, COALESCE(email, '') AS email, status, created_at, updated_at
+FROM organization.organizations
+WHERE id = $1 AND deleted_at IS NULL
+FOR UPDATE
+`
+
+type LockOrganizationByIDRow struct {
+	ID               uuid.UUID                      `json:"id"`
+	PublicID         string                         `json:"public_id"`
+	TenantID         uuid.UUID                      `json:"tenant_id"`
+	Code             string                         `json:"code"`
+	NameEn           string                         `json:"name_en"`
+	NameVi           string                         `json:"name_vi"`
+	OrganizationType OrganizationOrganizationType   `json:"organization_type"`
+	Phone            string                         `json:"phone"`
+	Email            string                         `json:"email"`
+	Status           OrganizationOrganizationStatus `json:"status"`
+	CreatedAt        time.Time                      `json:"created_at"`
+	UpdatedAt        time.Time                      `json:"updated_at"`
+}
+
+func (q *Queries) LockOrganizationByID(ctx context.Context, id uuid.UUID) (LockOrganizationByIDRow, error) {
+	row := q.db.QueryRow(ctx, lockOrganizationByID, id)
+	var i LockOrganizationByIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.PublicID,
+		&i.TenantID,
+		&i.Code,
+		&i.NameEn,
+		&i.NameVi,
+		&i.OrganizationType,
+		&i.Phone,
+		&i.Email,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const lockTenantByID = `-- name: LockTenantByID :one
+SELECT id, public_id, code, COALESCE(name_en, '') AS name_en, COALESCE(name_vi, '') AS name_vi, slug, status, locale_id, created_at, updated_at
+FROM organization.tenants
+WHERE id = $1
+FOR UPDATE
+`
+
+type LockTenantByIDRow struct {
+	ID        uuid.UUID                `json:"id"`
+	PublicID  string                   `json:"public_id"`
+	Code      string                   `json:"code"`
+	NameEn    string                   `json:"name_en"`
+	NameVi    string                   `json:"name_vi"`
+	Slug      string                   `json:"slug"`
+	Status    OrganizationTenantStatus `json:"status"`
+	LocaleID  *uuid.UUID               `json:"locale_id"`
+	CreatedAt time.Time                `json:"created_at"`
+	UpdatedAt time.Time                `json:"updated_at"`
+}
+
+func (q *Queries) LockTenantByID(ctx context.Context, id uuid.UUID) (LockTenantByIDRow, error) {
+	row := q.db.QueryRow(ctx, lockTenantByID, id)
+	var i LockTenantByIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.PublicID,
+		&i.Code,
+		&i.NameEn,
+		&i.NameVi,
+		&i.Slug,
+		&i.Status,
+		&i.LocaleID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const updateOrganization = `-- name: UpdateOrganization :exec
 UPDATE organization.organizations
 SET code = $2, name_en = $3, name_vi = $4, phone = $5, email = $6, updated_at = now()
@@ -291,5 +528,39 @@ func (q *Queries) UpdateOrganization(ctx context.Context, arg UpdateOrganization
 		arg.Phone,
 		arg.Email,
 	)
+	return err
+}
+
+const updateOrganizationStatus = `-- name: UpdateOrganizationStatus :exec
+UPDATE organization.organizations
+SET status = $2, updated_at = $3
+WHERE id = $1 AND deleted_at IS NULL
+`
+
+type UpdateOrganizationStatusParams struct {
+	ID        uuid.UUID                      `json:"id"`
+	Status    OrganizationOrganizationStatus `json:"status"`
+	UpdatedAt time.Time                      `json:"updated_at"`
+}
+
+func (q *Queries) UpdateOrganizationStatus(ctx context.Context, arg UpdateOrganizationStatusParams) error {
+	_, err := q.db.Exec(ctx, updateOrganizationStatus, arg.ID, arg.Status, arg.UpdatedAt)
+	return err
+}
+
+const updateTenantStatus = `-- name: UpdateTenantStatus :exec
+UPDATE organization.tenants
+SET status = $2, updated_at = $3
+WHERE id = $1
+`
+
+type UpdateTenantStatusParams struct {
+	ID        uuid.UUID                `json:"id"`
+	Status    OrganizationTenantStatus `json:"status"`
+	UpdatedAt time.Time                `json:"updated_at"`
+}
+
+func (q *Queries) UpdateTenantStatus(ctx context.Context, arg UpdateTenantStatusParams) error {
+	_, err := q.db.Exec(ctx, updateTenantStatus, arg.ID, arg.Status, arg.UpdatedAt)
 	return err
 }

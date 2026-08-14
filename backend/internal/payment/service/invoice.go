@@ -139,6 +139,9 @@ func (s *PaymentService) Create(ctx context.Context, actor uuid.UUID, in CreateI
 	if existing != nil {
 		return existing, false, nil
 	}
+	if err := s.orgSvc.AssertTenantOperable(ctx, inv.TenantID); err != nil {
+		return nil, false, err
+	}
 
 	now := time.Now().UTC()
 	expires := entity.ExpiresAtFor(now, b.ExpiresAt)

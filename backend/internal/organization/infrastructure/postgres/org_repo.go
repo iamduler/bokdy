@@ -67,6 +67,50 @@ func (r *OrgRepo) FindByID(ctx context.Context, orgID uuid.UUID) (*entity.Organi
 	return toOrg(row.ID, row.PublicID, row.TenantID, row.Code, row.NameEn, row.NameVi, row.OrganizationType, row.Phone, row.Email, row.Status, row.CreatedAt, row.UpdatedAt), nil
 }
 
+func (r *OrgRepo) FindByTenant(ctx context.Context, tenantID uuid.UUID) (*entity.Organization, error) {
+	row, err := r.q.FindOrganizationByTenant(ctx, tenantID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return toOrg(row.ID, row.PublicID, row.TenantID, row.Code, row.NameEn, row.NameVi, row.OrganizationType, row.Phone, row.Email, row.Status, row.CreatedAt, row.UpdatedAt), nil
+}
+
+func (r *OrgRepo) FindTenantByID(ctx context.Context, tenantID uuid.UUID) (*entity.Tenant, error) {
+	row, err := r.q.FindTenantByID(ctx, tenantID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return toTenant(row.ID, row.PublicID, row.Code, row.NameEn, row.NameVi, row.Slug, row.Status, row.LocaleID, row.CreatedAt, row.UpdatedAt), nil
+}
+
+func (r *OrgRepo) LockByID(ctx context.Context, tx pgx.Tx, orgID uuid.UUID) (*entity.Organization, error) {
+	row, err := r.q.WithTx(tx).LockOrganizationByID(ctx, orgID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return toOrg(row.ID, row.PublicID, row.TenantID, row.Code, row.NameEn, row.NameVi, row.OrganizationType, row.Phone, row.Email, row.Status, row.CreatedAt, row.UpdatedAt), nil
+}
+
+func (r *OrgRepo) LockTenantByID(ctx context.Context, tx pgx.Tx, tenantID uuid.UUID) (*entity.Tenant, error) {
+	row, err := r.q.WithTx(tx).LockTenantByID(ctx, tenantID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return toTenant(row.ID, row.PublicID, row.Code, row.NameEn, row.NameVi, row.Slug, row.Status, row.LocaleID, row.CreatedAt, row.UpdatedAt), nil
+}
+
 func (r *OrgRepo) ListByUser(ctx context.Context, userID uuid.UUID) ([]entity.Organization, error) {
 	rows, err := r.q.ListOrganizationsByUser(ctx, userID)
 	if err != nil {
@@ -79,10 +123,44 @@ func (r *OrgRepo) ListByUser(ctx context.Context, userID uuid.UUID) ([]entity.Or
 	return out, nil
 }
 
+func (r *OrgRepo) ListAdmin(ctx context.Context, filter repository.AdminListFilter) ([]repository.AdminOrganization, error) {
+	var statusFilter *string
+	if filter.Status != nil {
+		s := string(*filter.Status)
+		statusFilter = &s
+	}
+	rows, err := r.q.ListOrganizationsAdmin(ctx, dbsqlc.ListOrganizationsAdminParams{
+		StatusFilter: statusFilter, Q: filter.Q, RowLimit: int32(filter.Limit),
+	})
+	if err != nil {
+		return nil, err
+	}
+	out := make([]repository.AdminOrganization, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, repository.AdminOrganization{
+			Organization: *toOrg(row.ID, row.PublicID, row.TenantID, row.Code, row.NameEn, row.NameVi, row.OrganizationType, row.Phone, row.Email, row.Status, row.CreatedAt, row.UpdatedAt),
+			TenantStatus: entity.TenantStatus(row.TenantStatus),
+		})
+	}
+	return out, nil
+}
+
 func (r *OrgRepo) Update(ctx context.Context, tx pgx.Tx, org *entity.Organization) error {
 	return r.q.WithTx(tx).UpdateOrganization(ctx, dbsqlc.UpdateOrganizationParams{
 		ID: org.ID, Code: org.Code, NameEn: nullStr(org.NameEn), NameVi: nullStr(org.NameVi),
 		Phone: nullStr(org.Phone), Email: nullStr(org.Email),
+	})
+}
+
+func (r *OrgRepo) UpdateStatus(ctx context.Context, tx pgx.Tx, orgID uuid.UUID, status entity.OrganizationStatus, at time.Time) error {
+	return r.q.WithTx(tx).UpdateOrganizationStatus(ctx, dbsqlc.UpdateOrganizationStatusParams{
+		ID: orgID, Status: dbsqlc.OrganizationOrganizationStatus(status), UpdatedAt: at,
+	})
+}
+
+func (r *OrgRepo) UpdateTenantStatus(ctx context.Context, tx pgx.Tx, tenantID uuid.UUID, status entity.TenantStatus, at time.Time) error {
+	return r.q.WithTx(tx).UpdateTenantStatus(ctx, dbsqlc.UpdateTenantStatusParams{
+		ID: tenantID, Status: dbsqlc.OrganizationTenantStatus(status), UpdatedAt: at,
 	})
 }
 
@@ -100,6 +178,16 @@ func (r *OrgRepo) FindDefaultBusinessUnit(ctx context.Context, orgID uuid.UUID) 
 		ID: row.ID, OrganizationID: row.OrganizationID, Code: row.Code, NameEn: row.NameEn, NameVi: row.NameVi,
 		Status: entity.BusinessUnitStatus(row.Status), CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
 	}, nil
+}
+
+func toTenant(
+	id uuid.UUID, publicID, code, nameEn, nameVi, slug string,
+	status dbsqlc.OrganizationTenantStatus, localeID *uuid.UUID, createdAt, updatedAt time.Time,
+) *entity.Tenant {
+	return &entity.Tenant{
+		ID: id, PublicID: publicID, Code: code, NameEn: nameEn, NameVi: nameVi, Slug: slug,
+		Status: entity.TenantStatus(status), LocaleID: localeID, CreatedAt: createdAt, UpdatedAt: updatedAt,
+	}
 }
 
 func toOrg(

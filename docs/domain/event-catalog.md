@@ -1842,7 +1842,55 @@ Organization
 
 Trigger
 
-Organization becomes active.
+Admin activates the organization (tenant trial → active and/or org inactive → active). MVP does not require a subscription.
+
+Consumers
+
+Search
+
+Notification
+
+Analytics
+
+---
+
+# OrganizationSuspended
+
+Publisher
+
+Organization
+
+Aggregate
+
+Organization
+
+Trigger
+
+Admin suspends an active organization. Reason is in the event payload.
+
+Consumers
+
+Search
+
+Notification
+
+Analytics
+
+---
+
+# OrganizationRestored
+
+Publisher
+
+Organization
+
+Aggregate
+
+Organization
+
+Trigger
+
+Admin restores a suspended organization to active.
 
 Consumers
 

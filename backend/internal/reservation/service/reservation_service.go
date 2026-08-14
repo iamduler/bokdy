@@ -160,6 +160,9 @@ func (s *ReservationService) CreateHold(ctx context.Context, actor uuid.UUID, in
 	if !court.AcceptsHolds() {
 		return nil, reservationerrors.ErrCourtNotActive
 	}
+	if err := s.orgSvc.AssertTenantOperable(ctx, court.TenantID); err != nil {
+		return nil, err
+	}
 	caller, err := s.resolveActor(ctx, actor, court.TenantID, in.CustomerID)
 	if err != nil {
 		return nil, err

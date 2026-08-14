@@ -2498,8 +2498,159 @@ paths:
       responses:
         "200":
           description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, scope]
+                properties:
+                  status: { type: string, example: ok }
+                  scope: { type: string, example: admin }
+        "401":
+          $ref: "#/components/responses/Error"
         "403":
-          description: Forbidden
+          $ref: "#/components/responses/Error"
+  /api/v1/admin/organizations:
+    get:
+      tags: [Admin]
+      summary: List all organizations
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: q
+          in: query
+          schema: { type: string }
+          description: Filter by code or name
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, inactive, suspended, archived]
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
+      responses:
+        "200":
+          description: Organizations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminOrganization"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /api/v1/admin/organizations/{id}:
+    get:
+      tags: [Admin]
+      summary: Get organization
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+      responses:
+        "200":
+          description: Organization
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminOrganization"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+  /api/v1/admin/organizations/{id}/activate:
+    post:
+      tags: [Admin]
+      summary: Activate organization
+      description: |
+        UC-ORG-003 workaround (no subscription): tenant `trial` → `active`, org `inactive` → `active`.
+        Does not unsuspend. Already active is idempotent and does not emit a duplicate event.
+        Emits OrganizationActivated when status changes.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+      responses:
+        "200":
+          description: Organization activated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminOrganization"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+  /api/v1/admin/organizations/{id}/suspend:
+    post:
+      tags: [Admin]
+      summary: Suspend organization
+      description: |
+        Org `active` → `suspended` and tenant `trial|active` → `suspended`. Reason is required
+        and stored on OrganizationSuspended only. Marketplace hides the org; staff membership
+        routes and new holds/payments are rejected.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SuspendOrganizationRequest"
+      responses:
+        "200":
+          description: Organization suspended
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminOrganization"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /api/v1/admin/organizations/{id}/restore:
+    post:
+      tags: [Admin]
+      summary: Restore organization
+      description: Suspended org and tenant → `active`. Emits OrganizationRestored.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+      responses:
+        "200":
+          description: Organization restored
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminOrganization"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
 components:
   securitySchemes:
     bearerAuth:
@@ -2773,7 +2924,20 @@ components:
         name_vi: { type: string }
         email: { type: string, format: email }
         phone: { type: string }
-        status: { type: string }
+        status: { type: string, enum: [active, inactive, suspended, archived] }
+        tenant_status: { type: string, enum: [trial, active, suspended, canceled], description: Present on admin organization reads }
+    AdminOrganization:
+      allOf:
+        - $ref: "#/components/schemas/Organization"
+        - type: object
+          required: [tenant_status]
+          properties:
+            tenant_status: { type: string, enum: [trial, active, suspended, canceled] }
+    SuspendOrganizationRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason: { type: string, minLength: 1 }
     CreateOrganizationRequest:
       type: object
       description: At least one of name, name_en, or name_vi is required.

@@ -38,3 +38,57 @@ WHERE id = $1 AND deleted_at IS NULL;
 SELECT id, organization_id, code, COALESCE(name_en, '') AS name_en, COALESCE(name_vi, '') AS name_vi, status, created_at, updated_at
 FROM organization.business_units
 WHERE organization_id = $1 AND code = $2;
+
+-- name: FindTenantByID :one
+SELECT id, public_id, code, COALESCE(name_en, '') AS name_en, COALESCE(name_vi, '') AS name_vi, slug, status, locale_id, created_at, updated_at
+FROM organization.tenants
+WHERE id = $1;
+
+-- name: FindOrganizationByTenant :one
+SELECT id, public_id, tenant_id, code, COALESCE(name_en, '') AS name_en, COALESCE(name_vi, '') AS name_vi, organization_type,
+       COALESCE(phone, '') AS phone, COALESCE(email, '') AS email, status, created_at, updated_at
+FROM organization.organizations
+WHERE tenant_id = $1 AND deleted_at IS NULL;
+
+-- name: LockOrganizationByID :one
+SELECT id, public_id, tenant_id, code, COALESCE(name_en, '') AS name_en, COALESCE(name_vi, '') AS name_vi, organization_type,
+       COALESCE(phone, '') AS phone, COALESCE(email, '') AS email, status, created_at, updated_at
+FROM organization.organizations
+WHERE id = $1 AND deleted_at IS NULL
+FOR UPDATE;
+
+-- name: LockTenantByID :one
+SELECT id, public_id, code, COALESCE(name_en, '') AS name_en, COALESCE(name_vi, '') AS name_vi, slug, status, locale_id, created_at, updated_at
+FROM organization.tenants
+WHERE id = $1
+FOR UPDATE;
+
+-- name: UpdateOrganizationStatus :exec
+UPDATE organization.organizations
+SET status = $2, updated_at = $3
+WHERE id = $1 AND deleted_at IS NULL;
+
+-- name: UpdateTenantStatus :exec
+UPDATE organization.tenants
+SET status = $2, updated_at = $3
+WHERE id = $1;
+
+-- name: ListOrganizationsAdmin :many
+SELECT o.id, o.public_id, o.tenant_id, o.code, COALESCE(o.name_en, '') AS name_en, COALESCE(o.name_vi, '') AS name_vi, o.organization_type,
+       COALESCE(o.phone, '') AS phone, COALESCE(o.email, '') AS email, o.status, o.created_at, o.updated_at,
+       t.status AS tenant_status
+FROM organization.organizations o
+JOIN organization.tenants t ON t.id = o.tenant_id
+WHERE o.deleted_at IS NULL
+  AND (
+    sqlc.narg(status_filter)::text IS NULL
+    OR o.status = sqlc.narg(status_filter)::organization.organization_status
+  )
+  AND (
+    sqlc.arg(q)::text = ''
+    OR lower(o.code) LIKE '%' || lower(sqlc.arg(q)::text) || '%'
+    OR lower(COALESCE(o.name_en, '')) LIKE '%' || lower(sqlc.arg(q)::text) || '%'
+    OR lower(COALESCE(o.name_vi, '')) LIKE '%' || lower(sqlc.arg(q)::text) || '%'
+  )
+ORDER BY o.created_at DESC
+LIMIT sqlc.arg(row_limit);

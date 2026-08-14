@@ -24,6 +24,40 @@ const (
 	OrganizationArchived  OrganizationStatus = "archived"
 )
 
+func ParseOrganizationStatus(raw string) (OrganizationStatus, bool) {
+	switch OrganizationStatus(raw) {
+	case OrganizationActive, OrganizationInactive, OrganizationSuspended, OrganizationArchived:
+		return OrganizationStatus(raw), true
+	default:
+		return "", false
+	}
+}
+
+func (o *Organization) CanSuspend() bool {
+	return o.Status == OrganizationActive
+}
+
+func (o *Organization) CanRestore() bool {
+	return o.Status == OrganizationSuspended
+}
+
+// BlocksActivate reports a status that activate must not change (use restore).
+func (o *Organization) BlocksActivate() bool {
+	return o.Status == OrganizationSuspended || o.Status == OrganizationArchived
+}
+
+func (t *Tenant) BlocksActivate() bool {
+	return t.Status == TenantSuspended || t.Status == TenantCanceled
+}
+
+func (t *Tenant) IsOperable() bool {
+	return t.Status == TenantTrial || t.Status == TenantActive
+}
+
+func (o *Organization) IsOperable() bool {
+	return o.Status == OrganizationActive
+}
+
 type OrganizationType string
 
 const (

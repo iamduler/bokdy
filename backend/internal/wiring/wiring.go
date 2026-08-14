@@ -121,7 +121,5 @@ func RegisterRoutes(api *gin.RouterGroup, app *server.Application) {
 	paymenthandler.NewPaymentHandler(paymentSvc).RegisterRoutes(api, jwt)
 
 	admin := api.Group("/admin", jwt, middleware.RequireSystemAdmin())
-	admin.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{"status": "ok", "scope": "admin"})
-	})
+	orgHandler.RegisterAdminRoutes(admin)
 }

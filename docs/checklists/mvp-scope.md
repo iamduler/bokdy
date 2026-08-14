@@ -6,6 +6,16 @@ Status: Active
 
 Three audiences: Player, Owner (staff), Admin. Backend first. No FE wiring in W1–W9.
 
+## Admin freeze (W9, 2026-08-14)
+
+- Full tracker W9: F-ADMIN-01–06. No FE. KYC / SaaS / ads stay deferred (DEF-20260808-08).
+- Logic in `OrganizationService`; admin HTTP in `organization/handler` (`admin_handler.go`) on `/api/v1/admin`. No `admin` domain package.
+- W2 create unchanged: org `active` + tenant `trial`. Activate = tenant `trial` → `active`, org `inactive` → `active`. Does **not** unsuspend. Already both `active` → 200, no duplicate event. No subscription check (UC-ORG-003 workaround).
+- Suspend: org `active` → `suspended` **and** tenant `trial|active` → `suspended`. Restore: both → `active` (not back to `trial`). Activate ≠ restore; wrong transition → 409.
+- Disable ops: marketplace already hides non-`active` org. `RequireMembership` / `RequireOwner` → 403 if org or tenant `suspended`. `GET /organizations` (list mine) still works. Player: reject **create** hold / walk-in / payment; GET/cancel existing booking allowed.
+- Admin list: `q`, optional org `status`, `limit` 50 (max 100). DTO = Organization + `tenant_status`. Suspend body `{ "reason" }` required (event payload only). Restore: no reason.
+- Health: handler + `{ data: { status, scope } }`. No DB/Redis probe.
+
 ## Billing + Payment freeze (W8, 2026-08-14)
 
 - Full tracker W8: F-PLAYER-BOOK-09–12, 21 + F-OWNER-OPS-12–15. No FE. Real PSP deferred (DEF-20260808-04).

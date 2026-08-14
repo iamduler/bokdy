@@ -91,7 +91,7 @@ Scaffold includes:
 
 * `backend/internal/platform` — shared infrastructure
 * `backend/internal/identity` — auth, sessions, RBAC
-* `backend/internal/organization` — Organization, staff, Branch
+* `backend/internal/organization` — Organization, staff, Branch; admin list/get/activate/suspend/restore
 * `backend/internal/crm` — Customer (guest + player-linked)
 * `backend/internal/catalog` — Court Type + Court (`catalog.resources`)
 * `backend/internal/scheduling` — weekly/special hours, blocks, availability projections, marketplace reads

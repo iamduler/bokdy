@@ -114,6 +114,7 @@ type Querier interface {
 	FindOpenMaintenance(ctx context.Context, resourceID uuid.UUID) (FindOpenMaintenanceRow, error)
 	FindOpenPaymentIntentByInvoice(ctx context.Context, invoiceID uuid.UUID) (PaymentPaymentIntent, error)
 	FindOrganizationByID(ctx context.Context, id uuid.UUID) (FindOrganizationByIDRow, error)
+	FindOrganizationByTenant(ctx context.Context, tenantID uuid.UUID) (FindOrganizationByTenantRow, error)
 	FindPaymentIntentByID(ctx context.Context, id uuid.UUID) (PaymentPaymentIntent, error)
 	FindPendingVerificationByTokenHash(ctx context.Context, tokenHash string) (FindPendingVerificationByTokenHashRow, error)
 	FindPriceVersion(ctx context.Context, id uuid.UUID) (PricingPriceVersion, error)
@@ -126,6 +127,7 @@ type Querier interface {
 	FindRoleByID(ctx context.Context, id uuid.UUID) (FindRoleByIDRow, error)
 	FindStaffByID(ctx context.Context, arg FindStaffByIDParams) (FindStaffByIDRow, error)
 	FindStaffByOrgUser(ctx context.Context, arg FindStaffByOrgUserParams) (FindStaffByOrgUserRow, error)
+	FindTenantByID(ctx context.Context, id uuid.UUID) (FindTenantByIDRow, error)
 	FindUserByEmail(ctx context.Context, lower string) (FindUserByEmailRow, error)
 	FindUserByID(ctx context.Context, id uuid.UUID) (FindUserByIDRow, error)
 	GetCustomerProfile(ctx context.Context, customerID uuid.UUID) (GetCustomerProfileRow, error)
@@ -154,6 +156,7 @@ type Querier interface {
 	ListExpiredPendingReservations(ctx context.Context, arg ListExpiredPendingReservationsParams) ([]ReservationReservation, error)
 	ListHolidaysOverlapping(ctx context.Context, arg ListHolidaysOverlappingParams) ([]ListHolidaysOverlappingRow, error)
 	ListMarketplaceCourts(ctx context.Context, locationID uuid.UUID) ([]ListMarketplaceCourtsRow, error)
+	ListOrganizationsAdmin(ctx context.Context, arg ListOrganizationsAdminParams) ([]ListOrganizationsAdminRow, error)
 	ListOrganizationsByUser(ctx context.Context, userID uuid.UUID) ([]ListOrganizationsByUserRow, error)
 	ListPriceVersionsByList(ctx context.Context, priceListID uuid.UUID) ([]PricingPriceVersion, error)
 	ListResourceBlocksOverlapping(ctx context.Context, arg ListResourceBlocksOverlappingParams) ([]ListResourceBlocksOverlappingRow, error)
@@ -163,7 +166,9 @@ type Querier interface {
 	ListUserRoles(ctx context.Context, userID uuid.UUID) ([]ListUserRolesRow, error)
 	ListUserRolesByTenant(ctx context.Context, arg ListUserRolesByTenantParams) ([]ListUserRolesByTenantRow, error)
 	LockInvoiceByID(ctx context.Context, id uuid.UUID) (LockInvoiceByIDRow, error)
+	LockOrganizationByID(ctx context.Context, id uuid.UUID) (LockOrganizationByIDRow, error)
 	LockPaymentIntentByID(ctx context.Context, id uuid.UUID) (PaymentPaymentIntent, error)
+	LockTenantByID(ctx context.Context, id uuid.UUID) (LockTenantByIDRow, error)
 	MarkInvoicePaid(ctx context.Context, arg MarkInvoicePaidParams) error
 	MarkUserEmailVerified(ctx context.Context, arg MarkUserEmailVerifiedParams) error
 	MarkVerificationVerified(ctx context.Context, id uuid.UUID) error
@@ -195,10 +200,12 @@ type Querier interface {
 	UpdateLocationAddress(ctx context.Context, arg UpdateLocationAddressParams) error
 	UpdateLocationStatus(ctx context.Context, arg UpdateLocationStatusParams) error
 	UpdateOrganization(ctx context.Context, arg UpdateOrganizationParams) error
+	UpdateOrganizationStatus(ctx context.Context, arg UpdateOrganizationStatusParams) error
 	UpdatePrimaryContactValue(ctx context.Context, arg UpdatePrimaryContactValueParams) (int64, error)
 	UpdatePrimaryIdentityPhone(ctx context.Context, arg UpdatePrimaryIdentityPhoneParams) error
 	UpdateStaffMember(ctx context.Context, arg UpdateStaffMemberParams) error
 	UpdateStaffStatus(ctx context.Context, arg UpdateStaffStatusParams) error
+	UpdateTenantStatus(ctx context.Context, arg UpdateTenantStatusParams) error
 	UpdateUserProfile(ctx context.Context, arg UpdateUserProfileParams) error
 	UpdateUserStatus(ctx context.Context, arg UpdateUserStatusParams) error
 	UpsertAvailabilityProjection(ctx context.Context, arg UpsertAvailabilityProjectionParams) (uuid.UUID, error)

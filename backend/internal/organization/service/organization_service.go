@@ -271,7 +271,7 @@ func (s *OrganizationService) RequireMembership(ctx context.Context, orgID, user
 	if !ok {
 		return orgerrors.ErrMembershipRequired
 	}
-	return nil
+	return s.AssertOperable(ctx, orgID)
 }
 
 func (s *OrganizationService) RequireOwner(ctx context.Context, orgID, userID uuid.UUID) error {
