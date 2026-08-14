@@ -13,6 +13,23 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const addInvoiceRefundedAmount = `-- name: AddInvoiceRefundedAmount :exec
+UPDATE billing.invoices
+SET refunded_amount = refunded_amount + $2, updated_at = $3
+WHERE id = $1
+`
+
+type AddInvoiceRefundedAmountParams struct {
+	ID             uuid.UUID      `json:"id"`
+	RefundedAmount pgtype.Numeric `json:"refunded_amount"`
+	UpdatedAt      time.Time      `json:"updated_at"`
+}
+
+func (q *Queries) AddInvoiceRefundedAmount(ctx context.Context, arg AddInvoiceRefundedAmountParams) error {
+	_, err := q.db.Exec(ctx, addInvoiceRefundedAmount, arg.ID, arg.RefundedAmount, arg.UpdatedAt)
+	return err
+}
+
 const createInvoice = `-- name: CreateInvoice :exec
 INSERT INTO billing.invoices (
     id, public_id, tenant_id, invoice_no, booking_id, customer_id, currency, status,
@@ -66,14 +83,36 @@ func (q *Queries) CreateInvoice(ctx context.Context, arg CreateInvoiceParams) er
 
 const findInvoiceByBooking = `-- name: FindInvoiceByBooking :one
 SELECT id, public_id, tenant_id, invoice_no, booking_id, customer_id, currency, status,
-       subtotal, discount_amount, tax_amount, total_amount, issued_at, due_at, created_at, updated_at
+       subtotal, discount_amount, tax_amount, total_amount, issued_at, due_at, paid_at,
+       refunded_amount, created_at, updated_at
 FROM billing.invoices
 WHERE booking_id = $1
 `
 
-func (q *Queries) FindInvoiceByBooking(ctx context.Context, bookingID uuid.UUID) (BillingInvoice, error) {
+type FindInvoiceByBookingRow struct {
+	ID             uuid.UUID            `json:"id"`
+	PublicID       string               `json:"public_id"`
+	TenantID       uuid.UUID            `json:"tenant_id"`
+	InvoiceNo      string               `json:"invoice_no"`
+	BookingID      uuid.UUID            `json:"booking_id"`
+	CustomerID     uuid.UUID            `json:"customer_id"`
+	Currency       string               `json:"currency"`
+	Status         BillingInvoiceStatus `json:"status"`
+	Subtotal       pgtype.Numeric       `json:"subtotal"`
+	DiscountAmount pgtype.Numeric       `json:"discount_amount"`
+	TaxAmount      pgtype.Numeric       `json:"tax_amount"`
+	TotalAmount    pgtype.Numeric       `json:"total_amount"`
+	IssuedAt       time.Time            `json:"issued_at"`
+	DueAt          *time.Time           `json:"due_at"`
+	PaidAt         *time.Time           `json:"paid_at"`
+	RefundedAmount pgtype.Numeric       `json:"refunded_amount"`
+	CreatedAt      time.Time            `json:"created_at"`
+	UpdatedAt      time.Time            `json:"updated_at"`
+}
+
+func (q *Queries) FindInvoiceByBooking(ctx context.Context, bookingID uuid.UUID) (FindInvoiceByBookingRow, error) {
 	row := q.db.QueryRow(ctx, findInvoiceByBooking, bookingID)
-	var i BillingInvoice
+	var i FindInvoiceByBookingRow
 	err := row.Scan(
 		&i.ID,
 		&i.PublicID,
@@ -89,8 +128,153 @@ func (q *Queries) FindInvoiceByBooking(ctx context.Context, bookingID uuid.UUID)
 		&i.TotalAmount,
 		&i.IssuedAt,
 		&i.DueAt,
+		&i.PaidAt,
+		&i.RefundedAmount,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const findInvoiceByID = `-- name: FindInvoiceByID :one
+SELECT id, public_id, tenant_id, invoice_no, booking_id, customer_id, currency, status,
+       subtotal, discount_amount, tax_amount, total_amount, issued_at, due_at, paid_at,
+       refunded_amount, created_at, updated_at
+FROM billing.invoices
+WHERE id = $1
+`
+
+type FindInvoiceByIDRow struct {
+	ID             uuid.UUID            `json:"id"`
+	PublicID       string               `json:"public_id"`
+	TenantID       uuid.UUID            `json:"tenant_id"`
+	InvoiceNo      string               `json:"invoice_no"`
+	BookingID      uuid.UUID            `json:"booking_id"`
+	CustomerID     uuid.UUID            `json:"customer_id"`
+	Currency       string               `json:"currency"`
+	Status         BillingInvoiceStatus `json:"status"`
+	Subtotal       pgtype.Numeric       `json:"subtotal"`
+	DiscountAmount pgtype.Numeric       `json:"discount_amount"`
+	TaxAmount      pgtype.Numeric       `json:"tax_amount"`
+	TotalAmount    pgtype.Numeric       `json:"total_amount"`
+	IssuedAt       time.Time            `json:"issued_at"`
+	DueAt          *time.Time           `json:"due_at"`
+	PaidAt         *time.Time           `json:"paid_at"`
+	RefundedAmount pgtype.Numeric       `json:"refunded_amount"`
+	CreatedAt      time.Time            `json:"created_at"`
+	UpdatedAt      time.Time            `json:"updated_at"`
+}
+
+func (q *Queries) FindInvoiceByID(ctx context.Context, id uuid.UUID) (FindInvoiceByIDRow, error) {
+	row := q.db.QueryRow(ctx, findInvoiceByID, id)
+	var i FindInvoiceByIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.PublicID,
+		&i.TenantID,
+		&i.InvoiceNo,
+		&i.BookingID,
+		&i.CustomerID,
+		&i.Currency,
+		&i.Status,
+		&i.Subtotal,
+		&i.DiscountAmount,
+		&i.TaxAmount,
+		&i.TotalAmount,
+		&i.IssuedAt,
+		&i.DueAt,
+		&i.PaidAt,
+		&i.RefundedAmount,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const lockInvoiceByID = `-- name: LockInvoiceByID :one
+SELECT id, public_id, tenant_id, invoice_no, booking_id, customer_id, currency, status,
+       subtotal, discount_amount, tax_amount, total_amount, issued_at, due_at, paid_at,
+       refunded_amount, created_at, updated_at
+FROM billing.invoices
+WHERE id = $1
+FOR UPDATE
+`
+
+type LockInvoiceByIDRow struct {
+	ID             uuid.UUID            `json:"id"`
+	PublicID       string               `json:"public_id"`
+	TenantID       uuid.UUID            `json:"tenant_id"`
+	InvoiceNo      string               `json:"invoice_no"`
+	BookingID      uuid.UUID            `json:"booking_id"`
+	CustomerID     uuid.UUID            `json:"customer_id"`
+	Currency       string               `json:"currency"`
+	Status         BillingInvoiceStatus `json:"status"`
+	Subtotal       pgtype.Numeric       `json:"subtotal"`
+	DiscountAmount pgtype.Numeric       `json:"discount_amount"`
+	TaxAmount      pgtype.Numeric       `json:"tax_amount"`
+	TotalAmount    pgtype.Numeric       `json:"total_amount"`
+	IssuedAt       time.Time            `json:"issued_at"`
+	DueAt          *time.Time           `json:"due_at"`
+	PaidAt         *time.Time           `json:"paid_at"`
+	RefundedAmount pgtype.Numeric       `json:"refunded_amount"`
+	CreatedAt      time.Time            `json:"created_at"`
+	UpdatedAt      time.Time            `json:"updated_at"`
+}
+
+func (q *Queries) LockInvoiceByID(ctx context.Context, id uuid.UUID) (LockInvoiceByIDRow, error) {
+	row := q.db.QueryRow(ctx, lockInvoiceByID, id)
+	var i LockInvoiceByIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.PublicID,
+		&i.TenantID,
+		&i.InvoiceNo,
+		&i.BookingID,
+		&i.CustomerID,
+		&i.Currency,
+		&i.Status,
+		&i.Subtotal,
+		&i.DiscountAmount,
+		&i.TaxAmount,
+		&i.TotalAmount,
+		&i.IssuedAt,
+		&i.DueAt,
+		&i.PaidAt,
+		&i.RefundedAmount,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const markInvoicePaid = `-- name: MarkInvoicePaid :exec
+UPDATE billing.invoices
+SET status = 'paid', paid_at = $2, updated_at = $2
+WHERE id = $1 AND status = 'issued'
+`
+
+type MarkInvoicePaidParams struct {
+	ID     uuid.UUID  `json:"id"`
+	PaidAt *time.Time `json:"paid_at"`
+}
+
+func (q *Queries) MarkInvoicePaid(ctx context.Context, arg MarkInvoicePaidParams) error {
+	_, err := q.db.Exec(ctx, markInvoicePaid, arg.ID, arg.PaidAt)
+	return err
+}
+
+const voidInvoice = `-- name: VoidInvoice :exec
+UPDATE billing.invoices
+SET status = 'void', updated_at = $2
+WHERE id = $1 AND status = 'issued'
+`
+
+type VoidInvoiceParams struct {
+	ID        uuid.UUID `json:"id"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+func (q *Queries) VoidInvoice(ctx context.Context, arg VoidInvoiceParams) error {
+	_, err := q.db.Exec(ctx, voidInvoice, arg.ID, arg.UpdatedAt)
+	return err
 }

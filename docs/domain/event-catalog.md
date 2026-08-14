@@ -246,6 +246,28 @@ Calendar
 
 ---
 
+# PaymentCreated
+
+Publisher
+
+Payment
+
+Aggregate
+
+Payment
+
+Trigger
+
+Payment intent created against an issued invoice.
+
+Consumers
+
+Notification
+
+Analytics
+
+---
+
 # PaymentSucceeded
 
 Publisher
@@ -298,6 +320,28 @@ Fraud Monitor
 
 ---
 
+# PaymentExpired
+
+Publisher
+
+Payment
+
+Aggregate
+
+Payment
+
+Trigger
+
+Pending payment intent TTL elapsed.
+
+Consumers
+
+Notification
+
+Analytics
+
+---
+
 # PaymentRefunded
 
 Publisher
@@ -343,6 +387,54 @@ Consumers
 PDF
 
 Email
+
+Accounting
+
+Analytics
+
+---
+
+# InvoicePaid
+
+Publisher
+
+Invoice
+
+Aggregate
+
+Invoice
+
+Trigger
+
+Invoice marked paid after a successful payment.
+
+Consumers
+
+Notification
+
+Accounting
+
+Analytics
+
+Revenue
+
+---
+
+# InvoiceVoided
+
+Publisher
+
+Invoice
+
+Aggregate
+
+Invoice
+
+Trigger
+
+Issued invoice voided after the booking was canceled or expired.
+
+Consumers
 
 Accounting
 

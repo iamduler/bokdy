@@ -13,6 +13,8 @@ import (
 	identitypg "bokdy/internal/identity/infrastructure/postgres"
 	orgpg "bokdy/internal/organization/infrastructure/postgres"
 	orgservice "bokdy/internal/organization/service"
+	paymentpg "bokdy/internal/payment/infrastructure/postgres"
+	paymentservice "bokdy/internal/payment/service"
 	"bokdy/internal/platform/audit"
 	"bokdy/internal/platform/config"
 	"bokdy/internal/platform/env"
@@ -110,6 +112,11 @@ func main() {
 		pool, reservationpg.NewReservationRepo(pool),
 		customerRepo, orgRepo, orgSvc, occupancySvc, pricingSvc, bookingSvc, outbox,
 	)
+	paymentSvc := paymentservice.NewPaymentService(
+		pool, paymentpg.NewInvoiceRepo(pool), paymentpg.NewIntentRepo(pool),
+		paymentpg.NewRefundRepo(pool), bookingpg.NewBookingRepo(pool),
+		customerRepo, orgRepo, orgSvc, bookingSvc, outbox,
+	)
 
 	mux := asynq.NewServeMux()
 	mux.HandleFunc(queue.TaskPlatformHealth, loggedTask(queueLog, func(ctx context.Context, t *asynq.Task) error {
@@ -163,6 +170,14 @@ func main() {
 		logging.WithTrace(queueLog, ctx).Info().Int("expired", n).Msg("unpaid bookings expired")
 		return nil
 	}))
+	mux.HandleFunc(queue.TaskPaymentExpire, loggedTask(queueLog, func(ctx context.Context, t *asynq.Task) error {
+		n, err := paymentSvc.ExpireDue(ctx)
+		if err != nil {
+			return err
+		}
+		logging.WithTrace(queueLog, ctx).Info().Int("expired", n).Msg("payments expired")
+		return nil
+	}))
 
 	scheduler := asynq.NewScheduler(queue.RedisOpt(cfg), nil)
 	if _, err := scheduler.Register("@every 15s", asynq.NewTask(queue.TaskOutboxSweep, nil)); err != nil {
@@ -176,6 +191,9 @@ func main() {
 	}
 	if _, err := scheduler.Register("@every 1m", asynq.NewTask(queue.TaskBookingExpireUnpaid, nil)); err != nil {
 		logging.Log.Fatal().Err(err).Msg("register booking expire unpaid")
+	}
+	if _, err := scheduler.Register("@every 1m", asynq.NewTask(queue.TaskPaymentExpire, nil)); err != nil {
+		logging.Log.Fatal().Err(err).Msg("register payment expire")
 	}
 	go func() {
 		if err := scheduler.Run(); err != nil {

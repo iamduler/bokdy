@@ -47,6 +47,13 @@ func TestActionForEvent(t *testing.T) {
 		{"BookingRescheduled", "updated"},
 		{"BookingPriceCalculated", "updated"},
 		{"InvoiceIssued", "created"},
+		{"PaymentCreated", "created"},
+		{"PaymentSucceeded", "status_change"},
+		{"PaymentFailed", "status_change"},
+		{"PaymentExpired", "status_change"},
+		{"PaymentRefunded", "created"},
+		{"InvoicePaid", "status_change"},
+		{"InvoiceVoided", "status_change"},
 		{"RoleRemoved", "deleted"},
 		{"UnknownFact", "other"},
 	}

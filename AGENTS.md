@@ -98,12 +98,11 @@ Scaffold includes:
 * `backend/internal/pricing` — price versions, court-type hourly rates, time rules, public calculate
 * `backend/internal/reservation` — court holds (15 min TTL), cancel, expire worker, convert to Booking
 * `backend/internal/booking` — bookings (staff walk-in + converted holds), confirm/check-in/complete/cancel/reschedule, unpaid expire worker, and the billing invoice stub issued on create
+* `backend/internal/payment` — invoice GET/void, payment intents (`cash`/`mock`), mock complete/fail, refunds, payment-driven confirm, `payment:expire` worker
 
 Players never call `POST /bookings`; they hold a court and convert it. Staff create on-site
-bookings with `POST /bookings/walk-in`.
-
-Do not implement payment until its checklist wave is open. Invoices exist only as the stub
-the booking use case issues — there is no public invoice HTTP until the billing wave opens.
+bookings with `POST /bookings/walk-in`. Players pay via `POST /payments` (`mock`) then complete.
+Staff may collect `cash` atomically. Real PSP is deferred (DEF-20260808-04).
 
 ---
 

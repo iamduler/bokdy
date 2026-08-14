@@ -1161,6 +1161,136 @@ func (ns NullOrganizationTenantStatus) Value() (driver.Value, error) {
 	return string(ns.OrganizationTenantStatus), nil
 }
 
+type PaymentPaymentIntentStatus string
+
+const (
+	PaymentPaymentIntentStatusPending   PaymentPaymentIntentStatus = "pending"
+	PaymentPaymentIntentStatusSucceeded PaymentPaymentIntentStatus = "succeeded"
+	PaymentPaymentIntentStatusFailed    PaymentPaymentIntentStatus = "failed"
+	PaymentPaymentIntentStatusExpired   PaymentPaymentIntentStatus = "expired"
+)
+
+func (e *PaymentPaymentIntentStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = PaymentPaymentIntentStatus(s)
+	case string:
+		*e = PaymentPaymentIntentStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for PaymentPaymentIntentStatus: %T", src)
+	}
+	return nil
+}
+
+type NullPaymentPaymentIntentStatus struct {
+	PaymentPaymentIntentStatus PaymentPaymentIntentStatus `json:"payment_payment_intent_status"`
+	Valid                      bool                       `json:"valid"` // Valid is true if PaymentPaymentIntentStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullPaymentPaymentIntentStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.PaymentPaymentIntentStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.PaymentPaymentIntentStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullPaymentPaymentIntentStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.PaymentPaymentIntentStatus), nil
+}
+
+type PaymentPaymentMethodType string
+
+const (
+	PaymentPaymentMethodTypeCash PaymentPaymentMethodType = "cash"
+	PaymentPaymentMethodTypeMock PaymentPaymentMethodType = "mock"
+)
+
+func (e *PaymentPaymentMethodType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = PaymentPaymentMethodType(s)
+	case string:
+		*e = PaymentPaymentMethodType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for PaymentPaymentMethodType: %T", src)
+	}
+	return nil
+}
+
+type NullPaymentPaymentMethodType struct {
+	PaymentPaymentMethodType PaymentPaymentMethodType `json:"payment_payment_method_type"`
+	Valid                    bool                     `json:"valid"` // Valid is true if PaymentPaymentMethodType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullPaymentPaymentMethodType) Scan(value interface{}) error {
+	if value == nil {
+		ns.PaymentPaymentMethodType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.PaymentPaymentMethodType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullPaymentPaymentMethodType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.PaymentPaymentMethodType), nil
+}
+
+type PaymentRefundStatus string
+
+const (
+	PaymentRefundStatusPending   PaymentRefundStatus = "pending"
+	PaymentRefundStatusCompleted PaymentRefundStatus = "completed"
+	PaymentRefundStatusFailed    PaymentRefundStatus = "failed"
+	PaymentRefundStatusCanceled  PaymentRefundStatus = "canceled"
+)
+
+func (e *PaymentRefundStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = PaymentRefundStatus(s)
+	case string:
+		*e = PaymentRefundStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for PaymentRefundStatus: %T", src)
+	}
+	return nil
+}
+
+type NullPaymentRefundStatus struct {
+	PaymentRefundStatus PaymentRefundStatus `json:"payment_refund_status"`
+	Valid               bool                `json:"valid"` // Valid is true if PaymentRefundStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullPaymentRefundStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.PaymentRefundStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.PaymentRefundStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullPaymentRefundStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.PaymentRefundStatus), nil
+}
+
 type PlatformAuditActorType string
 
 const (
@@ -1623,6 +1753,8 @@ type BillingInvoice struct {
 	DueAt          *time.Time           `json:"due_at"`
 	CreatedAt      time.Time            `json:"created_at"`
 	UpdatedAt      time.Time            `json:"updated_at"`
+	PaidAt         *time.Time           `json:"paid_at"`
+	RefundedAmount pgtype.Numeric       `json:"refunded_amount"`
 }
 
 type BookingBooking struct {
@@ -2089,6 +2221,35 @@ type OrganizationTenant struct {
 	Currency  *string                  `json:"currency"`
 	CreatedAt time.Time                `json:"created_at"`
 	UpdatedAt time.Time                `json:"updated_at"`
+}
+
+type PaymentPaymentIntent struct {
+	ID          uuid.UUID                  `json:"id"`
+	TenantID    uuid.UUID                  `json:"tenant_id"`
+	InvoiceID   uuid.UUID                  `json:"invoice_id"`
+	CustomerID  uuid.UUID                  `json:"customer_id"`
+	Amount      pgtype.Numeric             `json:"amount"`
+	Currency    string                     `json:"currency"`
+	Status      PaymentPaymentIntentStatus `json:"status"`
+	MethodType  PaymentPaymentMethodType   `json:"method_type"`
+	ExpiresAt   *time.Time                 `json:"expires_at"`
+	SucceededAt *time.Time                 `json:"succeeded_at"`
+	CreatedBy   *uuid.UUID                 `json:"created_by"`
+	CreatedAt   time.Time                  `json:"created_at"`
+	UpdatedAt   time.Time                  `json:"updated_at"`
+}
+
+type PaymentRefund struct {
+	ID              uuid.UUID           `json:"id"`
+	TenantID        uuid.UUID           `json:"tenant_id"`
+	PaymentIntentID uuid.UUID           `json:"payment_intent_id"`
+	InvoiceID       uuid.UUID           `json:"invoice_id"`
+	Amount          pgtype.Numeric      `json:"amount"`
+	Currency        string              `json:"currency"`
+	Status          PaymentRefundStatus `json:"status"`
+	CreatedBy       *uuid.UUID          `json:"created_by"`
+	CreatedAt       time.Time           `json:"created_at"`
+	UpdatedAt       time.Time           `json:"updated_at"`
 }
 
 type PlatformAuditLog struct {

@@ -10,6 +10,7 @@ import (
 	"bokdy/internal/platform/events"
 	"bokdy/internal/platform/id"
 	"bokdy/internal/platform/persistence"
+	"bokdy/internal/platform/requestctx"
 	pricingservice "bokdy/internal/pricing/service"
 
 	"github.com/google/uuid"
@@ -56,6 +57,33 @@ func (s *BookingService) Confirm(ctx context.Context, bookingID, actor uuid.UUID
 	b.ExpiresAt = nil
 	b.UpdatedAt = now
 	return b, nil
+}
+
+// ConfirmFromPayment confirms a pending booking inside an already-open payment
+// transaction. Already-confirmed walk-ins are a no-op. Canceled/expired bookings
+// reject so the payment cannot settle against a dead reservation.
+func (s *BookingService) ConfirmFromPayment(ctx context.Context, tx pgx.Tx, bookingID, actor uuid.UUID, at time.Time) (uuid.UUID, error) {
+	locked, err := s.lock(ctx, tx, bookingID)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	switch locked.Status {
+	case entity.StatusPending:
+		if err := s.repo.Confirm(ctx, tx, locked.ID, at); err != nil {
+			return uuid.Nil, err
+		}
+		actorType := events.ActorUser
+		if _, ok := requestctx.OrganizationID(ctx); ok {
+			actorType = events.ActorStaff
+		}
+		return events.Append(ctx, tx, s.event("BookingConfirmed", locked, actorType, actor, at, map[string]any{
+			"source": "payment",
+		}))
+	case entity.StatusConfirmed, entity.StatusCheckedIn, entity.StatusInProgress, entity.StatusCompleted:
+		return uuid.Nil, nil
+	default:
+		return uuid.Nil, bookingerrors.ErrInvalidStatus
+	}
 }
 
 // CheckIn records the customer's arrival (UC-BOOKING-008).

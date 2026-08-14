@@ -17,6 +17,9 @@ import (
 	orghandler "bokdy/internal/organization/handler"
 	orgpg "bokdy/internal/organization/infrastructure/postgres"
 	orgservice "bokdy/internal/organization/service"
+	paymenthandler "bokdy/internal/payment/handler"
+	paymentpg "bokdy/internal/payment/infrastructure/postgres"
+	paymentservice "bokdy/internal/payment/service"
 	"bokdy/internal/platform/events"
 	"bokdy/internal/platform/middleware"
 	"bokdy/internal/platform/server"
@@ -106,6 +109,16 @@ func RegisterRoutes(api *gin.RouterGroup, app *server.Application) {
 		customerRepo, orgRepo, orgSvc, occupancySvc, pricingSvc, bookingSvc, outbox,
 	)
 	reservationhandler.NewReservationHandler(reservationSvc).RegisterRoutes(api, jwt)
+
+	paymentSvc := paymentservice.NewPaymentService(
+		app.DB.Pool,
+		paymentpg.NewInvoiceRepo(app.DB.Pool),
+		paymentpg.NewIntentRepo(app.DB.Pool),
+		paymentpg.NewRefundRepo(app.DB.Pool),
+		bookingpg.NewBookingRepo(app.DB.Pool),
+		customerRepo, orgRepo, orgSvc, bookingSvc, outbox,
+	)
+	paymenthandler.NewPaymentHandler(paymentSvc).RegisterRoutes(api, jwt)
 
 	admin := api.Group("/admin", jwt, middleware.RequireSystemAdmin())
 	admin.GET("/health", func(c *gin.Context) {

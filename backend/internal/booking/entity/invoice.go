@@ -6,8 +6,8 @@ import (
 	"github.com/google/uuid"
 )
 
-// The W7 freeze issues the billing invoice stub from the booking use case; no
-// public invoice HTTP exists until W8 opens the billing module.
+// The booking use case issues the billing invoice stub on create. Public
+// invoice HTTP lives in the payment module.
 type InvoiceStatus string
 
 const (
@@ -48,6 +48,8 @@ type Invoice struct {
 	TotalAmount    float64
 	IssuedAt       time.Time
 	DueAt          *time.Time
+	PaidAt         *time.Time
+	RefundedAmount float64
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
 }

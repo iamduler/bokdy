@@ -49,6 +49,8 @@ func (r *InvoiceRepo) FindByBooking(ctx context.Context, bookingID uuid.UUID) (*
 		Status:   entity.InvoiceStatus(row.Status),
 		Subtotal: fromNumeric(row.Subtotal), DiscountAmount: fromNumeric(row.DiscountAmount),
 		TaxAmount: fromNumeric(row.TaxAmount), TotalAmount: fromNumeric(row.TotalAmount),
-		IssuedAt: row.IssuedAt, DueAt: row.DueAt, CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
+		IssuedAt: row.IssuedAt, DueAt: row.DueAt, PaidAt: row.PaidAt,
+		RefundedAmount: fromNumeric(row.RefundedAmount),
+		CreatedAt:      row.CreatedAt, UpdatedAt: row.UpdatedAt,
 	}, nil
 }

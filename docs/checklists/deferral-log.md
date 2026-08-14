@@ -19,6 +19,17 @@ Do not delete entries. If a deferred item returns to MVP, add a new entry that r
 
 ---
 
+### DEF-20260808-04
+
+- Date: 2026-08-08
+- From flow/ID: `F-PLAYER-BOOK` real PSP (Stripe / VNPay / MoMo)
+- New post-mvp ID: `F-ADMIN-PLUS-10`
+- Reason: risk / dependency — MVP mock payment intent + complete/fail/expire
+- MVP workaround: staff or system marks payment complete in non-production; webhook contract reserved
+- Unblocks later wave: W12 (or earlier if payment goes live before ads)
+- Resolved (W8): HTTP mock `POST /payments/{id}/complete` and `/fail` (own/staff). No PSP webhook. Real gateway remains F-ADMIN-PLUS-10.
+- Decided in: plan `mvp_api_flow_checklists`
+
 ### DEF-20260814-06
 
 - Date: 2026-08-14
@@ -130,6 +141,7 @@ Do not delete entries. If a deferred item returns to MVP, add a new entry that r
 - Reason: risk / dependency — MVP mock payment intent + complete/fail/expire
 - MVP workaround: staff or system marks payment complete in non-production; webhook contract reserved
 - Unblocks later wave: W12 (or earlier if payment goes live before ads)
+- Resolved (W8): HTTP mock `POST /payments/{id}/complete` and `/fail` (own/staff). No PSP webhook. Real gateway remains F-ADMIN-PLUS-10.
 - Decided in: plan `mvp_api_flow_checklists`
 
 ### DEF-20260808-05

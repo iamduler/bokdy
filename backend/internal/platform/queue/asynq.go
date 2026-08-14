@@ -19,6 +19,7 @@ const (
 	TaskAvailabilitySync    = "scheduling:availability_sync"
 	TaskReservationExpire   = "reservation:expire"
 	TaskBookingExpireUnpaid = "booking:expire_unpaid"
+	TaskPaymentExpire       = "payment:expire"
 )
 
 type OutboxPayload struct {

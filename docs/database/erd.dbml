@@ -4731,6 +4731,8 @@ Table billing.invoices {
 
   paid_at timestamptz
 
+  refunded_amount decimal(18,2) [not null, default: 0, note: 'W8 mock refund total; invoice stays paid']
+
   created_at timestamptz [not null]
 
   updated_at timestamptz [not null]
@@ -4918,6 +4920,8 @@ Table payment.payment_intents {
     status
     provider_reference
   }
+
+  Note: 'W8 implements this table with method_type cash|mock (no payment_methods / attempts / allocations). Intent succeeded = settled.'
 }
 
 //////////////////////////////////////////////////////////////

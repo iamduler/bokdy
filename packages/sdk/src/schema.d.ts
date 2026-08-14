@@ -3596,6 +3596,53 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/bookings/{id}/invoice": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get invoice by booking
+         * @description Own booking only for players; staff read invoices of their organization.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: {
+                    /** @description If present on nested `/organizations/{id}/...` routes, must match path id. */
+                    "X-Organization-ID"?: components["parameters"]["XOrganizationIdOptional"];
+                };
+                path: {
+                    id: components["parameters"]["BookingId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Invoice */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Invoice"];
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/bookings/{id}/confirm": {
         parameters: {
             query?: never;
@@ -3837,6 +3884,316 @@ export interface paths {
                 404: components["responses"]["Error"];
                 409: components["responses"]["Error"];
                 422: components["responses"]["ValidationFailed"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/invoices/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get invoice
+         * @description Own invoice only for players; staff read invoices of their organization.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: {
+                    /** @description If present on nested `/organizations/{id}/...` routes, must match path id. */
+                    "X-Organization-ID"?: components["parameters"]["XOrganizationIdOptional"];
+                };
+                path: {
+                    id: components["parameters"]["InvoiceId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Invoice */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Invoice"];
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/invoices/{id}/void": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Void invoice (owner)
+         * @description Voids an `issued` invoice when the booking is already `canceled` (including unpaid expire).
+         *     Paid invoices cannot be voided. Emits InvoiceVoided.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                };
+                path: {
+                    id: components["parameters"]["InvoiceId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Invoice voided */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Invoice"];
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                409: components["responses"]["Error"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create payment
+         * @description Creates a payment intent against an `issued` invoice. Amount is always the invoice total.
+         *     One `pending` or `succeeded` intent per invoice; retry returns the existing intent.
+         *     Staff `method=cash` creates and completes in one request. Player `method=mock` stays pending
+         *     until `/complete` or `/fail`. PSP webhooks are reserved for a later wave.
+         *     Emits PaymentCreated; cash also emits PaymentSucceeded, InvoicePaid, and BookingConfirmed when the booking was pending.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    /** @description If present on nested `/organizations/{id}/...` routes, must match path id. */
+                    "X-Organization-ID"?: components["parameters"]["XOrganizationIdOptional"];
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CreatePaymentRequest"];
+                };
+            };
+            responses: {
+                /** @description Existing open payment returned */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Payment"];
+                    };
+                };
+                /** @description Payment created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Payment"];
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                409: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payments/{id}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Complete payment (mock)
+         * @description Mock complete for a pending intent (player own or staff). Marks the invoice paid and confirms
+         *     a pending booking. Already-succeeded is idempotent. Real PSP webhook is reserved.
+         *     Emits PaymentSucceeded, InvoicePaid, and BookingConfirmed when the booking was pending.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    /** @description If present on nested `/organizations/{id}/...` routes, must match path id. */
+                    "X-Organization-ID"?: components["parameters"]["XOrganizationIdOptional"];
+                };
+                path: {
+                    id: components["parameters"]["PaymentId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Payment completed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Payment"];
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                409: components["responses"]["Error"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payments/{id}/fail": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Fail payment (mock)
+         * @description Mock fail for a pending intent (player own or staff). Emits PaymentFailed. Real PSP webhook is reserved.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    /** @description If present on nested `/organizations/{id}/...` routes, must match path id. */
+                    "X-Organization-ID"?: components["parameters"]["XOrganizationIdOptional"];
+                };
+                path: {
+                    id: components["parameters"]["PaymentId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Payment failed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Payment"];
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                409: components["responses"]["Error"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/payments/{id}/refund": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refund payment (owner)
+         * @description Full-amount mock refund. Inserts a refund row; the original intent stays succeeded and the
+         *     invoice stays paid with `refunded_amount` updated. Does not cancel the booking. Emits PaymentRefunded.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                };
+                path: {
+                    id: components["parameters"]["PaymentId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Refund completed */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PaymentRefund"];
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                409: components["responses"]["Error"];
             };
         };
         delete?: never;
@@ -4560,6 +4917,78 @@ export interface components {
             /** Format: date-time */
             due_at?: string;
         };
+        Invoice: {
+            /** Format: uuid */
+            id: string;
+            public_id: string;
+            invoice_no: string;
+            /** Format: uuid */
+            booking_id: string;
+            /** Format: uuid */
+            customer_id: string;
+            /** @enum {string} */
+            status: "draft" | "issued" | "partially_paid" | "paid" | "void" | "canceled";
+            /** @example VND */
+            currency: string;
+            subtotal: number;
+            discount_amount: number;
+            tax_amount: number;
+            total_amount: number;
+            refunded_amount: number;
+            /** Format: date-time */
+            issued_at: string;
+            /** Format: date-time */
+            due_at?: string;
+            /** Format: date-time */
+            paid_at?: string;
+            /** Format: date-time */
+            created_at: string;
+        };
+        CreatePaymentRequest: {
+            /** Format: uuid */
+            invoice_id: string;
+            /**
+             * @description cash is staff-only and completes atomically
+             * @enum {string}
+             */
+            method: "cash" | "mock";
+        };
+        Payment: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            invoice_id: string;
+            /** Format: uuid */
+            customer_id: string;
+            amount: number;
+            /** @example VND */
+            currency: string;
+            /** @enum {string} */
+            status: "pending" | "succeeded" | "failed" | "expired";
+            /** @enum {string} */
+            method: "cash" | "mock";
+            /** Format: date-time */
+            expires_at?: string;
+            /** Format: date-time */
+            succeeded_at?: string;
+            /** Format: date-time */
+            created_at: string;
+        };
+        PaymentRefund: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            payment_id: string;
+            /** Format: uuid */
+            invoice_id: string;
+            amount: number;
+            /** @example VND */
+            currency: string;
+            /** @enum {string} */
+            status: "pending" | "completed" | "failed" | "canceled";
+            /** Format: date-time */
+            created_at: string;
+        };
         WalkInBookingResponse: {
             booking: components["schemas"]["Booking"];
             invoice: components["schemas"]["BookingInvoice"];
@@ -4688,6 +5117,8 @@ export interface components {
         PriceVersionId: string;
         ReservationId: string;
         BookingId: string;
+        InvoiceId: string;
+        PaymentId: string;
         /** @description Inclusive range start (UTC RFC3339) */
         AvailabilityFrom: string;
         /** @description Exclusive range end (UTC RFC3339) */

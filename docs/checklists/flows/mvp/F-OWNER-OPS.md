@@ -17,9 +17,9 @@ Phase: mvp
 | [x] | F-OWNER-OPS-09 | Complete | UC-BOOKING-005 | mvp | jwt+org Staff | `POST /api/v1/bookings/{id}/complete` | BookingCompleted | done | Do not emit loyalty/review. DEF-20260808-05 |
 | [x] | F-OWNER-OPS-10 | Cancel | UC-BOOKING-003 | mvp | jwt+org Staff | `POST /api/v1/bookings/{id}/cancel` | BookingCanceled | done | American spelling is canonical; releases the block. |
 | [x] | F-OWNER-OPS-11 | Reschedule | UC-BOOKING-004 | mvp | jwt+org Staff | `POST /api/v1/bookings/{id}/reschedule` | BookingRescheduled | done | Recalculates price and moves the block. |
-| [ ] | F-OWNER-OPS-12 | Collect payment | UC-PAYMENT-001 | mvp | jwt+org Staff | `POST /api/v1/payments` | PaymentCreated | ready | Mock gateway. DEF-20260808-04 |
-| [ ] | F-OWNER-OPS-13 | View invoice | — | mvp | jwt+org Staff | `GET /api/v1/invoices/{id}` | — | ready | Issued by booking flow. |
-| [ ] | F-OWNER-OPS-14 | Void invoice | UC-INVOICE-003 | mvp | jwt+org Owner | `POST /api/v1/invoices/{id}/void` | InvoiceVoided | ready |  |
-| [ ] | F-OWNER-OPS-15 | Refund | UC-PAYMENT-004 | mvp | jwt+org Owner | `POST /api/v1/payments/{id}/refund` | PaymentRefunded | ready | Never mutate original payment. |
+| [x] | F-OWNER-OPS-12 | Collect payment | UC-PAYMENT-001 | mvp | jwt+org Staff | `POST /api/v1/payments` | PaymentCreated | done | `cash` create+complete atomic; `mock` two-step. DEF-20260808-04 |
+| [x] | F-OWNER-OPS-13 | View invoice | — | mvp | jwt+org Staff | `GET /api/v1/invoices/{id}` | — | done | Issued by booking flow. Also `GET /bookings/{id}/invoice`. |
+| [x] | F-OWNER-OPS-14 | Void invoice | UC-INVOICE-003 | mvp | jwt+org Owner | `POST /api/v1/invoices/{id}/void` | InvoiceVoided | done | Issued + booking canceled/expired only. |
+| [x] | F-OWNER-OPS-15 | Refund | UC-PAYMENT-004 | mvp | jwt+org Owner | `POST /api/v1/payments/{id}/refund` | PaymentRefunded | done | Full amount; insert refund row; invoice stays paid. |
 | — | F-OWNER-OPS-16 | Mark no-show | — | post-mvp | jwt+org Staff | `POST /api/v1/bookings/{id}/no-show` | — | deferred | DEF-20260808-07 → `F-BOOKING-PLUS-01`. Missing UC. |
 | — | F-OWNER-OPS-17 | POS sale | UC-INVENTORY-002 | post-mvp | jwt+org Staff | `POST /api/v1/pos/sales` | — | deferred | DEF-20260808-01 → `F-POS-02` |

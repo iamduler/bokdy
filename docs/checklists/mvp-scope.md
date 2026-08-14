@@ -6,6 +6,18 @@ Status: Active
 
 Three audiences: Player, Owner (staff), Admin. Backend first. No FE wiring in W1–W9.
 
+## Billing + Payment freeze (W8, 2026-08-14)
+
+- Full tracker W8: F-PLAYER-BOOK-09–12, 21 + F-OWNER-OPS-12–15. No FE. Real PSP deferred (DEF-20260808-04).
+- Package `payment` owns intents/refunds **and** invoice GET/void HTTP. Booking still issues the invoice stub on create (W7). Booking exposes `ConfirmFromPayment` port only.
+- Schema: `payment.payment_intents` + `payment.refunds`. Method enum on intent: `cash` | `mock`. No `payment_attempts`, `payment_methods`, or separate `payments`/`allocations` tables.
+- `POST /payments`: amount must equal invoice total. One `pending|succeeded` intent per issued invoice (retry returns existing pending).
+- Staff `method=cash` → create+complete atomic. Player `method=mock` → pending, then `POST /payments/{id}/complete` or `/fail` (jwt own or Staff). No webhook URL.
+- Complete success: invoice `paid` + `paid_at`; booking `pending` → `confirmed` (clear unpaid TTL). Walk-in already confirmed → invoice paid only.
+- Extra read: `GET /bookings/{id}/invoice`. Void: Owner, invoice `issued`, booking `canceled|expired` only.
+- Refund: Owner, full amount, insert refund row; original intent stays `succeeded`; invoice stays `paid` + `refunded_amount`. Event `PaymentRefunded` only. Does not cancel booking or restore slots.
+- Intent TTL 15m capped by `booking.expires_at`. Worker `payment:expire`. Independent of `booking:expire_unpaid`.
+
 ## Reservation + Booking freeze (W7, 2026-08-14)
 
 - Full tracker W7 remaining: F-PLAYER-BOOK-04–07, 13, 15–20 + F-OWNER-OPS-03–11 + availability subtract. **No** F-PLAYER-BOOK-14 (`POST /bookings`) — hold-only player path (DEF-20260814-06).
@@ -13,7 +25,7 @@ Three audiences: Player, Owner (staff), Admin. Backend first. No FE wiring in W1
 - Schema MVP: one court + one time window per hold/booking via `*_resources` on `resource_id` (court); no `catalog.services` / multi-item.
 - Reservation API statuses: `pending` → `converted` | `canceled` | `expired`. No draft/confirmed on hold API.
 - Hold TTL **15m**; unpaid booking `pending` TTL **30m**. Workers: `reservation:expire`, `booking:expire_unpaid`.
-- Convert (player/staff) → Booking `pending` + billing invoice stub `issued` + `InvoiceIssued` (no payment/GET invoice HTTP — W8). Walk-in → Booking `confirmed` + invoice stub. Emit `BookingPriceCalculated` on hold/booking create (closes DEF-20260814-05).
+- Convert (player/staff) → Booking `pending` + billing invoice stub `issued` + `InvoiceIssued`. Walk-in → Booking `confirmed` + invoice stub. Emit `BookingPriceCalculated` on hold/booking create (closes DEF-20260814-05). Invoice GET/void and payments are W8.
 - Cancel/reschedule release slots; **no** PaymentRefunded in W7. Event spelling: `BookingCanceled`.
 - Player: JWT + CRM customer for tenant (link via existing me flow if needed). Staff: `customer_id` required; `RequireMembership`. Player routes resolve tenant from court (no org header).
 

@@ -4,7 +4,7 @@ info:
   version: 0.1.0
   description: |
     Bokdy foundation API (Identity + Organization + CRM + Catalog + Scheduling + Pricing
-    + Reservation + Booking).
+    + Reservation + Booking + Billing + Payment).
     Locale is taken from Accept-Language (missing → vi). Read models return a resolved name;
     owner edit payloads use name_en + name_vi.
     Auth: send X-Client (player|owner|admin) on register, login, refresh, logout.
@@ -27,6 +27,8 @@ tags:
   - name: Pricing
   - name: Reservations
   - name: Bookings
+  - name: Invoices
+  - name: Payments
   - name: Admin
 paths:
   /health:
@@ -2144,6 +2146,29 @@ paths:
           $ref: "#/components/responses/Error"
         "404":
           $ref: "#/components/responses/Error"
+  /api/v1/bookings/{id}/invoice:
+    get:
+      tags: [Invoices]
+      summary: Get invoice by booking
+      description: Own booking only for players; staff read invoices of their organization.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/BookingId"
+        - $ref: "#/components/parameters/XOrganizationIdOptional"
+      responses:
+        "200":
+          description: Invoice
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
   /api/v1/bookings/{id}/confirm:
     post:
       tags: [Bookings]
@@ -2285,6 +2310,185 @@ paths:
           $ref: "#/components/responses/Error"
         "422":
           $ref: "#/components/responses/ValidationFailed"
+  /api/v1/invoices/{id}:
+    get:
+      tags: [Invoices]
+      summary: Get invoice
+      description: Own invoice only for players; staff read invoices of their organization.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/InvoiceId"
+        - $ref: "#/components/parameters/XOrganizationIdOptional"
+      responses:
+        "200":
+          description: Invoice
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+  /api/v1/invoices/{id}/void:
+    post:
+      tags: [Invoices]
+      summary: Void invoice (owner)
+      description: |
+        Voids an `issued` invoice when the booking is already `canceled` (including unpaid expire).
+        Paid invoices cannot be voided. Emits InvoiceVoided.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/InvoiceId"
+        - $ref: "#/components/parameters/XOrganizationId"
+      responses:
+        "200":
+          description: Invoice voided
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+  /api/v1/payments:
+    post:
+      tags: [Payments]
+      summary: Create payment
+      description: |
+        Creates a payment intent against an `issued` invoice. Amount is always the invoice total.
+        One `pending` or `succeeded` intent per invoice; retry returns the existing intent.
+        Staff `method=cash` creates and completes in one request. Player `method=mock` stays pending
+        until `/complete` or `/fail`. PSP webhooks are reserved for a later wave.
+        Emits PaymentCreated; cash also emits PaymentSucceeded, InvoicePaid, and BookingConfirmed when the booking was pending.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XOrganizationIdOptional"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePaymentRequest"
+      responses:
+        "200":
+          description: Existing open payment returned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+        "201":
+          description: Payment created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /api/v1/payments/{id}/complete:
+    post:
+      tags: [Payments]
+      summary: Complete payment (mock)
+      description: |
+        Mock complete for a pending intent (player own or staff). Marks the invoice paid and confirms
+        a pending booking. Already-succeeded is idempotent. Real PSP webhook is reserved.
+        Emits PaymentSucceeded, InvoicePaid, and BookingConfirmed when the booking was pending.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PaymentId"
+        - $ref: "#/components/parameters/XOrganizationIdOptional"
+      responses:
+        "200":
+          description: Payment completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+  /api/v1/payments/{id}/fail:
+    post:
+      tags: [Payments]
+      summary: Fail payment (mock)
+      description: Mock fail for a pending intent (player own or staff). Emits PaymentFailed. Real PSP webhook is reserved.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PaymentId"
+        - $ref: "#/components/parameters/XOrganizationIdOptional"
+      responses:
+        "200":
+          description: Payment failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+  /api/v1/payments/{id}/refund:
+    post:
+      tags: [Payments]
+      summary: Refund payment (owner)
+      description: |
+        Full-amount mock refund. Inserts a refund row; the original intent stays succeeded and the
+        invoice stays paid with `refunded_amount` updated. Does not cancel the booking. Emits PaymentRefunded.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/PaymentId"
+        - $ref: "#/components/parameters/XOrganizationId"
+      responses:
+        "200":
+          description: Refund completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentRefund"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
   /api/v1/admin/health:
     get:
       tags: [Admin]
@@ -2360,6 +2564,20 @@ components:
         type: string
         format: uuid
     BookingId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    InvoiceId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    PaymentId:
       name: id
       in: path
       required: true
@@ -3144,6 +3362,57 @@ components:
         total_amount: { type: number }
         issued_at: { type: string, format: date-time }
         due_at: { type: string, format: date-time }
+    Invoice:
+      type: object
+      required: [id, public_id, invoice_no, booking_id, customer_id, status, currency, subtotal, discount_amount, tax_amount, total_amount, refunded_amount, issued_at, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        public_id: { type: string, minLength: 26, maxLength: 26 }
+        invoice_no: { type: string }
+        booking_id: { type: string, format: uuid }
+        customer_id: { type: string, format: uuid }
+        status: { type: string, enum: [draft, issued, partially_paid, paid, void, canceled] }
+        currency: { type: string, example: VND }
+        subtotal: { type: number }
+        discount_amount: { type: number }
+        tax_amount: { type: number }
+        total_amount: { type: number }
+        refunded_amount: { type: number }
+        issued_at: { type: string, format: date-time }
+        due_at: { type: string, format: date-time }
+        paid_at: { type: string, format: date-time }
+        created_at: { type: string, format: date-time }
+    CreatePaymentRequest:
+      type: object
+      required: [invoice_id, method]
+      properties:
+        invoice_id: { type: string, format: uuid }
+        method: { type: string, enum: [cash, mock], description: cash is staff-only and completes atomically }
+    Payment:
+      type: object
+      required: [id, invoice_id, customer_id, amount, currency, status, method, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        invoice_id: { type: string, format: uuid }
+        customer_id: { type: string, format: uuid }
+        amount: { type: number }
+        currency: { type: string, example: VND }
+        status: { type: string, enum: [pending, succeeded, failed, expired] }
+        method: { type: string, enum: [cash, mock] }
+        expires_at: { type: string, format: date-time }
+        succeeded_at: { type: string, format: date-time }
+        created_at: { type: string, format: date-time }
+    PaymentRefund:
+      type: object
+      required: [id, payment_id, invoice_id, amount, currency, status, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        payment_id: { type: string, format: uuid }
+        invoice_id: { type: string, format: uuid }
+        amount: { type: number }
+        currency: { type: string, example: VND }
+        status: { type: string, enum: [pending, completed, failed, canceled] }
+        created_at: { type: string, format: date-time }
     WalkInBookingResponse:
       type: object
       required: [booking, invoice]
