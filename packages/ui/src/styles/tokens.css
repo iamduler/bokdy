@@ -1,0 +1,72 @@
+/* Bokdy brand: white, black, sky, pink. Dark inverts surface/text only. */
+
+:root {
+  color-scheme: light;
+  --bokdy-background: #ffffff;
+  --bokdy-foreground: #0a0a0a;
+  --bokdy-primary: #0ea5e9;
+  --bokdy-primary-foreground: #ffffff;
+  --bokdy-accent: #ec4899;
+  --bokdy-accent-foreground: #ffffff;
+  --bokdy-border: #e5e5e5;
+  --bokdy-muted: #f5f5f5;
+  --bokdy-muted-foreground: #737373;
+  --bokdy-ring: #0ea5e9;
+  --bokdy-destructive: #dc2626;
+
+  --background: var(--bokdy-background);
+  --foreground: var(--bokdy-foreground);
+}
+
+.dark {
+  color-scheme: dark;
+  --bokdy-background: #0a0a0a;
+  --bokdy-foreground: #ffffff;
+  --bokdy-primary: #0ea5e9;
+  --bokdy-primary-foreground: #ffffff;
+  --bokdy-accent: #ec4899;
+  --bokdy-accent-foreground: #ffffff;
+  --bokdy-border: #262626;
+  --bokdy-muted: #171717;
+  --bokdy-muted-foreground: #a3a3a3;
+  --bokdy-ring: #0ea5e9;
+  --bokdy-destructive: #f87171;
+
+  --background: var(--bokdy-background);
+  --foreground: var(--bokdy-foreground);
+}
+
+/* identity.theme = system (register default): follow OS unless html.light */
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    color-scheme: dark;
+    --bokdy-background: #0a0a0a;
+    --bokdy-foreground: #ffffff;
+    --bokdy-primary: #0ea5e9;
+    --bokdy-primary-foreground: #ffffff;
+    --bokdy-accent: #ec4899;
+    --bokdy-accent-foreground: #ffffff;
+    --bokdy-border: #262626;
+    --bokdy-muted: #171717;
+    --bokdy-muted-foreground: #a3a3a3;
+    --bokdy-ring: #0ea5e9;
+    --bokdy-destructive: #f87171;
+
+    --background: var(--bokdy-background);
+    --foreground: var(--bokdy-foreground);
+  }
+}
+
+@theme inline {
+  --color-background: var(--bokdy-background);
+  --color-foreground: var(--bokdy-foreground);
+  --color-primary: var(--bokdy-primary);
+  --color-primary-foreground: var(--bokdy-primary-foreground);
+  --color-accent: var(--bokdy-accent);
+  --color-accent-foreground: var(--bokdy-accent-foreground);
+  --color-border: var(--bokdy-border);
+  --color-muted: var(--bokdy-muted);
+  --color-muted-foreground: var(--bokdy-muted-foreground);
+  --color-ring: var(--bokdy-ring);
+  --color-destructive: var(--bokdy-destructive);
+}

@@ -22,13 +22,20 @@ export class ApiError extends Error {
   }
 }
 
+type ErrorEnvelope = {
+  code?: string;
+  message?: string;
+  details?: ErrorDetail[];
+};
+
+export function apiErrorFromBody(json: unknown, status: number): ApiError {
+  const body = (json ?? {}) as ErrorEnvelope;
+  return new ApiError(body.code ?? "INTERNAL", body.message ?? "", status, body.details ?? []);
+}
+
 export async function readApiError(res: Response): Promise<ApiError> {
-  const json = (await res.json().catch(() => ({}))) as {
-    code?: string;
-    message?: string;
-    details?: ErrorDetail[];
-  };
-  return new ApiError(json.code ?? "INTERNAL", json.message ?? "", res.status, json.details ?? []);
+  const json = await res.json().catch(() => ({}));
+  return apiErrorFromBody(json, res.status);
 }
 
 export function errorMessageKey(err: ApiError): ErrorCode {

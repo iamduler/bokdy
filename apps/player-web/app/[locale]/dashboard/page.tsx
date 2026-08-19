@@ -4,14 +4,17 @@ import { Button } from "@bokdy/ui";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 
+import { useLogout } from "@/hooks/use-auth";
+
 export default function DashboardPage() {
   const t = useTranslations("shell");
   const tc = useTranslations("common");
   const locale = useLocale();
   const router = useRouter();
+  const logout = useLogout();
 
-  async function logout() {
-    await fetch("/api/auth/logout", { method: "POST" });
+  async function onLogout() {
+    await logout.mutateAsync().catch(() => undefined);
     router.push(`/${locale}/login`);
     router.refresh();
   }
@@ -20,11 +23,11 @@ export default function DashboardPage() {
     <main className="mx-auto flex min-h-dvh w-full max-w-3xl flex-col gap-6 p-4 md:p-8">
       <header className="flex items-center justify-between gap-4">
         <div>
-          <p className="text-sm text-zinc-500">{tc("appName")}</p>
+          <p className="text-sm text-muted-foreground">{tc("appName")}</p>
           <h1 className="text-2xl font-semibold tracking-tight">{t("welcome")}</h1>
-          <p className="mt-1 text-zinc-600">{t("subtitle")}</p>
+          <p className="mt-1 text-muted-foreground">{t("subtitle")}</p>
         </div>
-        <Button variant="outline" onClick={logout}>
+        <Button variant="outline" onClick={onLogout} disabled={logout.isPending}>
           {tc("logout")}
         </Button>
       </header>

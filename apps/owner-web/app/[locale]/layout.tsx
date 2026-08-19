@@ -1,6 +1,7 @@
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
+import { ThemeScript } from "@bokdy/ui";
 import { routing } from "@/i18n/routing";
 import { Providers } from "@/providers/providers";
 
@@ -20,7 +21,8 @@ export default async function LocaleLayout({
   setRequestLocale(locale);
   const messages = await getMessages();
   return (
-    <html lang={locale}>
+    <html lang={locale} suppressHydrationWarning>
+      <ThemeScript />
       <body className="min-h-dvh antialiased">
         <NextIntlClientProvider messages={messages}>
           <Providers>{children}</Providers>

@@ -6,7 +6,8 @@ import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { errorMessageKey, readApiError } from "@/lib/api/errors";
+import { useLogin } from "@/hooks/use-auth";
+import { ApiError, errorMessageKey } from "@/lib/api/errors";
 
 export default function LoginPage() {
   const t = useTranslations("auth");
@@ -14,28 +15,22 @@ export default function LoginPage() {
   const te = useTranslations("errors");
   const locale = useLocale();
   const router = useRouter();
+  const login = useLogin();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [pending, setPending] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setPending(true);
     setError(null);
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-    setPending(false);
-    if (!res.ok) {
-      const err = await readApiError(res);
-      setError(te(errorMessageKey(err)));
-      return;
+    try {
+      await login.mutateAsync({ email, password });
+      router.push(`/${locale}/dashboard`);
+      router.refresh();
+    } catch (err) {
+      const apiErr = err instanceof ApiError ? err : new ApiError("INTERNAL", "", 500);
+      setError(te(errorMessageKey(apiErr)));
     }
-    router.push(`/${locale}/dashboard`);
-    router.refresh();
   }
 
   return (
@@ -50,11 +45,11 @@ export default function LoginPage() {
             <Label htmlFor="password">{t("password")}</Label>
             <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
           </div>
-          {error ? <p className="text-sm text-red-600">{error}</p> : null}
-          <Button type="submit" className="w-full" disabled={pending}>
+          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+          <Button type="submit" className="w-full" disabled={login.isPending}>
             {t("submitLogin")}
           </Button>
-          <p className="text-sm text-zinc-600">
+          <p className="text-sm text-muted-foreground">
             {t("noAccount")}{" "}
             <Link className="underline" href={`/${locale}/register`}>
               {t("submitRegister")}

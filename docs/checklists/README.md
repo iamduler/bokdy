@@ -15,7 +15,9 @@ Read before adding or changing an HTTP route:
 3. [mvp-scope.md](mvp-scope.md) or [post-mvp-scope.md](post-mvp-scope.md)
 4. [docs/architecture/backend-feature-playbook.md](../architecture/backend-feature-playbook.md)
 
-Frontend apps must not invent endpoints. Wire UI only after the checklist row is `done` and OpenAPI is updated.
+Frontend apps must not invent endpoints. Wire UI only after the matching `flows/mvp/` row is `done` and OpenAPI lists the operation.
+
+FE screens, BFF usage beyond existing `/api/auth/*`, and i18n are tracked separately: [fe/README.md](fe/README.md) (FE DoD) and [frontend-e2e-tracker.md](frontend-e2e-tracker.md). Do not tick `F-*` rows for UI work.
 
 ---
 
@@ -108,6 +110,9 @@ Do not silently skip. Do not implement a post-MVP API “for convenience”. If 
 | [post-mvp-scope.md](post-mvp-scope.md) | Post-MVP catalog |
 | [deferral-log.md](deferral-log.md) | Every MVP → post-MVP move |
 | [backend-api-tracker.md](backend-api-tracker.md) | W1–W9 and W10+ |
-| [flows/README.md](flows/README.md) | Flow index |
+| [frontend-e2e-tracker.md](frontend-e2e-tracker.md) | FE wire roll-up (three apps) |
+| [fe/README.md](fe/README.md) | FE DoD, tick rules, implement order |
+| `fe/FE-*.md` | Per-audience FE wire rows |
+| [flows/README.md](flows/README.md) | Flow index (backend) |
 | `flows/mvp/` | Eight MVP journeys |
 | `flows/post-mvp/` | Later journeys |

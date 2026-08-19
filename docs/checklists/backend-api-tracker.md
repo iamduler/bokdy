@@ -41,4 +41,4 @@ Tick **Done** when every MVP row in that wave is `[x]` on the flow file.
 
 MVP backend waves W1–W9 are done. W10+ is tracker only (do not implement unless explicitly opened).
 
-FE wiring: none until the consumed row is `[x]` / `done` and OpenAPI lists the operation.
+FE wiring: follow [frontend-e2e-tracker.md](frontend-e2e-tracker.md). Wire UI only when the consumed `F-*` row is `[x]` / `done` and OpenAPI lists the operation.
