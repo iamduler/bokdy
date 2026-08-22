@@ -258,23 +258,227 @@
     "detailTimeline": "Timeline",
     "detailTimelineUnavailable": "Audit timeline unavailable — no API yet.",
     "detailTabs": {
-      "checklist": "Verification checklist",
-      "documents": "Documents",
-      "risk": "Risk analysis",
-      "comms": "Communications"
+      "overview": "Overview",
+      "branches": "Branches",
+      "courts": "Courts",
+      "team": "Team",
+      "billing": "Billing",
+      "activity": "Activity",
+      "audit": "Audit"
     },
-    "detailTabUnavailable": "This workspace is unavailable — no API yet.",
-    "detailLifecycle": "Lifecycle actions",
-    "detailLifecycleHint": "Activate, suspend, or restore based on organization status.",
-    "detailLifecycleNone": "No lifecycle action available for this status.",
-    "detailReviewerPanel": "Assigned reviewer",
-    "detailReviewerUnavailable": "Reviewer assignment unavailable — no API yet.",
-    "detailRiskPanel": "Risk",
-    "detailRiskPanelUnavailable": "AI risk scoring unavailable — no API yet.",
-    "detailProgress": "Verification progress",
-    "detailProgressUnavailable": "Verification progress unavailable — no API yet.",
-    "detailKycActions": "KYC approval",
-    "detailKycActionsUnavailable": "Approve / reject KYC unavailable — no API yet.",
+    "detailSubnav": {
+      "organizations": "Organizations",
+      "crumbBranches": "Branches",
+      "crumbCourts": "Courts",
+      "crumbTeam": "Team",
+      "crumbBilling": "Billing",
+      "crumbActivity": "Activity",
+      "crumbActions": "Actions",
+      "pill": {
+        "branches": "Branches",
+        "team": "Team",
+        "billing": "Billing",
+        "actions": "Actions"
+      }
+    },
+    "detailMetrics": {
+      "branches": "Branches",
+      "courts": "Courts",
+      "staff": "Staff",
+      "players": "Players",
+      "revenue": "Monthly revenue",
+      "occupancy": "Occupancy",
+      "health": "Health score"
+    },
+    "detailOverview": {
+      "verified": "Verified",
+      "ownerLabel": "Owner",
+      "headerActions": "Actions",
+      "headerBilling": "Subscription",
+      "headerActivity": "Activity",
+      "plan": {
+        "starter": "Starter",
+        "pro": "Pro",
+        "enterprise": "Enterprise"
+      },
+      "revenueTrend": "Revenue — last 6 months",
+      "topBranches": "Top performing branches",
+      "viewAll": "View all",
+      "branchMeta": "{courts} courts · {occupancy}% occupancy",
+      "healthBreakdown": "Health score breakdown",
+      "health": {
+        "operations": "Operations",
+        "finance": "Finance",
+        "satisfaction": "Satisfaction",
+        "compliance": "Compliance",
+        "growth": "Growth rate"
+      },
+      "aiSummary": "AI organization summary",
+      "insights": {
+        "insight1": "August revenue up 18% vs July, mainly from District 7 branch.",
+        "insight2": "Peak-hour occupancy at 94% — consider adding courts.",
+        "insight3": "3 staff members have not logged in for 14 days — follow up recommended."
+      },
+      "pendingTasks": "Pending tasks",
+      "tasks": {
+        "task1": "Verify business license",
+        "task2": "Review Q2 tax report",
+        "task3": "Complete new branch onboarding"
+      },
+      "riskAlerts": "Risk alerts",
+      "alerts": {
+        "riskAlert": "Business license expires in 15 days. Request renewal from the organization."
+      },
+      "viewAllActions": "View all actions"
+    },
+    "detailBranches": {
+      "title": "Branches — {name}",
+      "subtitle": "{branches} branches · {courts} courts",
+      "grid": "Grid",
+      "map": "Map",
+      "addBranch": "Add branch",
+      "occupancy": "{value}% occupancy",
+      "maintenance": "Maintenance",
+      "courtsCount": "{count} courts",
+      "ownerApp": "Owner app",
+      "mapPlaceholder": "Branch map — preview data"
+    },
+    "detailCourts": {
+      "title": "Courts — {name}",
+      "subtitle": "{total} courts · {urgent} urgent maintenance",
+      "filterSport": "Sport filter",
+      "allSports": "All sports",
+      "export": "Export",
+      "fieldSport": "Sport",
+      "fieldSurface": "Surface",
+      "fieldType": "Type",
+      "fieldBranch": "Branch",
+      "indoor": "Indoor",
+      "outdoor": "Outdoor",
+      "usageMeta": "Occupancy · {rate} bookings",
+      "maintenance": {
+        "ok": "Good",
+        "scheduled": "Scheduled",
+        "urgent": "Urgent"
+      }
+    },
+    "detailTeam": {
+      "title": "Team — {name}",
+      "subtitle": "{count} members · {pending} pending invite",
+      "invite": "Invite staff",
+      "colMember": "Member",
+      "colRole": "Role",
+      "colBranch": "Branch",
+      "colLastLogin": "Last login",
+      "colStatus": "Status",
+      "rolesAction": "Roles",
+      "roleDistribution": "Role distribution",
+      "roles": {
+        "owner": "Organization owner",
+        "branchManager": "Branch manager",
+        "receptionist": "Receptionist",
+        "cashier": "Cashier",
+        "coach": "Coach",
+        "staff": "Staff"
+      },
+      "memberStatus": {
+        "active": "Active",
+        "inactive": "Inactive",
+        "pending": "Pending"
+      }
+    },
+    "detailBilling": {
+      "title": "Subscription & billing — {name}",
+      "viewInvoices": "View invoices",
+      "upgrade": "Upgrade plan",
+      "currentPlan": "Current plan",
+      "plan": {
+        "starter": "Starter",
+        "pro": "Pro",
+        "enterprise": "Enterprise"
+      },
+      "perMonth": "/month",
+      "renewal": "Renewal",
+      "cycle": "Billing cycle",
+      "monthly": "Monthly",
+      "paymentStatus": "Payment",
+      "paid": "Paid",
+      "method": "Method",
+      "usage": "Usage",
+      "usageLabels": {
+        "branchesUsed": "Branches in use",
+        "courtsUsed": "Courts",
+        "staffSeats": "Staff seats",
+        "apiCalls": "API calls / month"
+      },
+      "history": "Billing history",
+      "historyLabels": {
+        "paymentAug": "August payment",
+        "paymentJul": "July payment",
+        "upgradeEnterprise": "Upgrade to Enterprise"
+      },
+      "paymentStatusLabels": {
+        "paid": "Paid",
+        "failed": "Failed"
+      }
+    },
+    "detailActivity": {
+      "title": "Activity — {name}",
+      "filterCategory": "Category filter",
+      "allCategories": "All categories",
+      "export": "Export",
+      "categories": {
+        "operation": "Operations",
+        "revenue": "Revenue",
+        "staff": "Staff",
+        "verification": "Verification"
+      },
+      "events": {
+        "event1": "Go Vap branch added",
+        "event1Detail": "By organization owner · 6 courts",
+        "event2": "Reached cumulative revenue milestone",
+        "event2Detail": "Major milestone since joining Bokdy",
+        "event3": "Coach invited to team",
+        "event3Detail": "By branch manager · District 1 branch",
+        "event4": "Organization verified by admin",
+        "event4Detail": "License and legal information verified"
+      }
+    },
+    "detailActions": {
+      "title": "Actions — {name}",
+      "groups": {
+        "business": "Business",
+        "operations": "Operations",
+        "commercial": "Commercial",
+        "administration": "Administration"
+      },
+      "items": {
+        "ownerApp": "View owner app",
+        "ownerAppDesc": "Open the organization management interface",
+        "openBranches": "Open branches",
+        "openBranchesDesc": "View all organization branches",
+        "contactOwner": "Contact owner",
+        "contactOwnerDesc": "Send email to organization owner",
+        "createBranch": "Create branch",
+        "createBranchDesc": "Add a new branch to the organization",
+        "createCourt": "Create court",
+        "createCourtDesc": "Add a court to a branch",
+        "inviteStaff": "Invite staff",
+        "inviteStaffDesc": "Send an invitation to join the organization",
+        "upgradePlan": "Upgrade plan",
+        "upgradePlanDesc": "Change the organization subscription",
+        "viewPayments": "View payments",
+        "viewPaymentsDesc": "Invoice and payment history",
+        "suspend": "Suspend organization",
+        "suspendDesc": "Stop operations — affects staff and players",
+        "activate": "Activate organization",
+        "activateDesc": "Enable normal operations",
+        "restore": "Restore organization",
+        "restoreDesc": "Restore from suspended state",
+        "auditLog": "View audit log",
+        "auditLogDesc": "Full organization change history"
+      }
+    },
     "activate": "Activate",
     "activateSuccess": "Organization activated.",
     "activateConflict": "This organization cannot be activated. Use Restore if it is suspended.",

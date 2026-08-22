@@ -258,23 +258,227 @@
     "detailTimeline": "Timeline",
     "detailTimelineUnavailable": "Timeline kiểm toán chưa có — chưa có API.",
     "detailTabs": {
-      "checklist": "Checklist xác minh",
-      "documents": "Hồ sơ tài liệu",
-      "risk": "Phân tích rủi ro",
-      "comms": "Giao tiếp"
+      "overview": "Tổng quan",
+      "branches": "Chi nhánh",
+      "courts": "Sân",
+      "team": "Nhân sự",
+      "billing": "Thuê bao",
+      "activity": "Hoạt động",
+      "audit": "Audit"
     },
-    "detailTabUnavailable": "Không gian làm việc này chưa có — chưa có API.",
-    "detailLifecycle": "Thao tác vòng đời",
-    "detailLifecycleHint": "Kích hoạt, tạm ngưng hoặc khôi phục theo trạng thái tổ chức.",
-    "detailLifecycleNone": "Không có thao tác vòng đời cho trạng thái này.",
-    "detailReviewerPanel": "Reviewer phụ trách",
-    "detailReviewerUnavailable": "Gán reviewer chưa có — chưa có API.",
-    "detailRiskPanel": "Rủi ro",
-    "detailRiskPanelUnavailable": "Điểm rủi ro AI chưa có — chưa có API.",
-    "detailProgress": "Tiến độ xác minh",
-    "detailProgressUnavailable": "Tiến độ xác minh chưa có — chưa có API.",
-    "detailKycActions": "Phê duyệt KYC",
-    "detailKycActionsUnavailable": "Duyệt / từ chối KYC chưa có — chưa có API.",
+    "detailSubnav": {
+      "organizations": "Tổ chức",
+      "crumbBranches": "Chi nhánh",
+      "crumbCourts": "Sân",
+      "crumbTeam": "Nhân sự",
+      "crumbBilling": "Thuê bao",
+      "crumbActivity": "Hoạt động",
+      "crumbActions": "Hành động",
+      "pill": {
+        "branches": "Chi nhánh",
+        "team": "Nhân sự",
+        "billing": "Thuê bao",
+        "actions": "Hành động"
+      }
+    },
+    "detailMetrics": {
+      "branches": "Chi nhánh",
+      "courts": "Sân",
+      "staff": "Nhân viên",
+      "players": "Người chơi",
+      "revenue": "Doanh thu/tháng",
+      "occupancy": "Tỉ lệ sử dụng",
+      "health": "Health score"
+    },
+    "detailOverview": {
+      "verified": "Đã xác minh",
+      "ownerLabel": "Chủ sở hữu",
+      "headerActions": "Hành động",
+      "headerBilling": "Gói thuê bao",
+      "headerActivity": "Hoạt động",
+      "plan": {
+        "starter": "Starter",
+        "pro": "Pro",
+        "enterprise": "Enterprise"
+      },
+      "revenueTrend": "Doanh thu 6 tháng gần nhất",
+      "topBranches": "Chi nhánh hoạt động tốt nhất",
+      "viewAll": "Xem tất cả",
+      "branchMeta": "{courts} sân · {occupancy}% lấp đầy",
+      "healthBreakdown": "Cấu thành Health Score",
+      "health": {
+        "operations": "Vận hành",
+        "finance": "Tài chính",
+        "satisfaction": "Sự hài lòng",
+        "compliance": "Tuân thủ",
+        "growth": "Tốc độ tăng trưởng"
+      },
+      "aiSummary": "AI Organization Summary",
+      "insights": {
+        "insight1": "Doanh thu tháng 8 tăng 18% so với tháng 7, chủ yếu từ chi nhánh Q.7.",
+        "insight2": "Tỉ lệ lấp đầy giờ cao điểm đạt 94% — xem xét mở thêm sân.",
+        "insight3": "3 nhân viên chưa đăng nhập trong 14 ngày, có thể cần follow-up."
+      },
+      "pendingTasks": "Việc cần làm",
+      "tasks": {
+        "task1": "Xác minh giấy phép kinh doanh",
+        "task2": "Xem xét báo cáo thuế Q2",
+        "task3": "Hoàn tất onboarding chi nhánh mới"
+      },
+      "riskAlerts": "Risk Alerts",
+      "alerts": {
+        "riskAlert": "Giấy phép kinh doanh sẽ hết hạn trong 15 ngày. Yêu cầu tổ chức gia hạn ngay."
+      },
+      "viewAllActions": "Xem tất cả hành động"
+    },
+    "detailBranches": {
+      "title": "Chi nhánh — {name}",
+      "subtitle": "{branches} chi nhánh · {courts} sân",
+      "grid": "Lưới",
+      "map": "Bản đồ",
+      "addBranch": "Thêm chi nhánh",
+      "occupancy": "{value}% lấp đầy",
+      "maintenance": "Bảo trì",
+      "courtsCount": "{count} sân",
+      "ownerApp": "Owner App",
+      "mapPlaceholder": "Bản đồ chi nhánh — dữ liệu preview"
+    },
+    "detailCourts": {
+      "title": "Sân thể thao — {name}",
+      "subtitle": "{total} sân · {urgent} cần bảo trì gấp",
+      "filterSport": "Lọc môn",
+      "allSports": "Tất cả môn",
+      "export": "Xuất",
+      "fieldSport": "Môn",
+      "fieldSurface": "Mặt sân",
+      "fieldType": "Loại",
+      "fieldBranch": "Chi nhánh",
+      "indoor": "Trong nhà",
+      "outdoor": "Ngoài trời",
+      "usageMeta": "Tỉ lệ sử dụng · {rate} booking",
+      "maintenance": {
+        "ok": "Tốt",
+        "scheduled": "Lên lịch",
+        "urgent": "Khẩn cấp"
+      }
+    },
+    "detailTeam": {
+      "title": "Nhân sự — {name}",
+      "subtitle": "{count} thành viên · {pending} đang chờ mời",
+      "invite": "Mời nhân viên",
+      "colMember": "Thành viên",
+      "colRole": "Vai trò",
+      "colBranch": "Chi nhánh",
+      "colLastLogin": "Đăng nhập cuối",
+      "colStatus": "Trạng thái",
+      "rolesAction": "Vai trò",
+      "roleDistribution": "Phân bổ vai trò",
+      "roles": {
+        "owner": "Organization Owner",
+        "branchManager": "Branch Manager",
+        "receptionist": "Receptionist",
+        "cashier": "Cashier",
+        "coach": "Coach",
+        "staff": "Staff"
+      },
+      "memberStatus": {
+        "active": "Hoạt động",
+        "inactive": "Không hoạt động",
+        "pending": "Chờ xác nhận"
+      }
+    },
+    "detailBilling": {
+      "title": "Thuê bao & Thanh toán — {name}",
+      "viewInvoices": "Xem hóa đơn",
+      "upgrade": "Nâng cấp gói",
+      "currentPlan": "Gói hiện tại",
+      "plan": {
+        "starter": "Starter",
+        "pro": "Pro",
+        "enterprise": "Enterprise"
+      },
+      "perMonth": "/tháng",
+      "renewal": "Gia hạn",
+      "cycle": "Chu kỳ",
+      "monthly": "Hàng tháng",
+      "paymentStatus": "Thanh toán",
+      "paid": "Đã thanh toán",
+      "method": "Phương thức",
+      "usage": "Mức sử dụng",
+      "usageLabels": {
+        "branchesUsed": "Chi nhánh đang dùng",
+        "courtsUsed": "Sân thể thao",
+        "staffSeats": "Nhân viên (ghế)",
+        "apiCalls": "API calls / tháng"
+      },
+      "history": "Lịch sử thanh toán",
+      "historyLabels": {
+        "paymentAug": "Thanh toán tháng 8",
+        "paymentJul": "Thanh toán tháng 7",
+        "upgradeEnterprise": "Nâng cấp lên Enterprise"
+      },
+      "paymentStatusLabels": {
+        "paid": "Đã thanh toán",
+        "failed": "Thất bại"
+      }
+    },
+    "detailActivity": {
+      "title": "Activity — {name}",
+      "filterCategory": "Lọc loại",
+      "allCategories": "Tất cả loại",
+      "export": "Xuất",
+      "categories": {
+        "operation": "Vận hành",
+        "revenue": "Doanh thu",
+        "staff": "Nhân sự",
+        "verification": "Xác minh"
+      },
+      "events": {
+        "event1": "Chi nhánh Gò Vấp được thêm",
+        "event1Detail": "Bởi chủ sở hữu · 6 sân",
+        "event2": "Đạt mốc doanh thu tích lũy",
+        "event2Detail": "Mốc quan trọng từ khi gia nhập Bokdy",
+        "event3": "Huấn luyện viên được mời",
+        "event3Detail": "Bởi quản lý chi nhánh · Q.1",
+        "event4": "Tổ chức được xác minh bởi Admin",
+        "event4Detail": "Xác minh giấy phép và thông tin pháp lý"
+      }
+    },
+    "detailActions": {
+      "title": "Hành động — {name}",
+      "groups": {
+        "business": "Kinh doanh",
+        "operations": "Vận hành",
+        "commercial": "Thương mại",
+        "administration": "Quản trị"
+      },
+      "items": {
+        "ownerApp": "Xem Owner App",
+        "ownerAppDesc": "Mở giao diện quản lý của tổ chức",
+        "openBranches": "Mở chi nhánh",
+        "openBranchesDesc": "Xem tất cả chi nhánh của tổ chức",
+        "contactOwner": "Liên hệ chủ sở hữu",
+        "contactOwnerDesc": "Gửi email đến chủ sở hữu",
+        "createBranch": "Tạo chi nhánh",
+        "createBranchDesc": "Thêm chi nhánh mới vào tổ chức",
+        "createCourt": "Tạo sân",
+        "createCourtDesc": "Thêm sân thể thao vào chi nhánh",
+        "inviteStaff": "Mời nhân viên",
+        "inviteStaffDesc": "Gửi lời mời tham gia tổ chức",
+        "upgradePlan": "Nâng cấp gói",
+        "upgradePlanDesc": "Thay đổi gói thuê bao của tổ chức",
+        "viewPayments": "Xem thanh toán",
+        "viewPaymentsDesc": "Lịch sử hóa đơn và thanh toán",
+        "suspend": "Tạm khóa tổ chức",
+        "suspendDesc": "Ngừng hoạt động — ảnh hưởng nhân viên và người chơi",
+        "activate": "Kích hoạt tổ chức",
+        "activateDesc": "Khôi phục hoạt động bình thường",
+        "restore": "Kích hoạt lại",
+        "restoreDesc": "Khôi phục từ trạng thái tạm khóa",
+        "auditLog": "Xem Audit Log",
+        "auditLogDesc": "Lịch sử thay đổi toàn bộ tổ chức"
+      }
+    },
     "activate": "Kích hoạt",
     "activateSuccess": "Đã kích hoạt tổ chức.",
     "activateConflict": "Không thể kích hoạt tổ chức này. Dùng Khôi phục nếu đang tạm ngưng.",

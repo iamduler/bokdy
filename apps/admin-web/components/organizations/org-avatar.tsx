@@ -28,12 +28,13 @@ function colorClassForName(name: string): string {
 
 type OrgAvatarProps = {
   name: string;
-  size?: "sm" | "md";
+  size?: "sm" | "md" | "lg";
   className?: string;
 };
 
 export function OrgAvatar({ name, size = "md", className }: OrgAvatarProps) {
-  const px = size === "sm" ? "h-9 w-9 text-xs" : "h-10 w-10 text-sm";
+  const px =
+    size === "sm" ? "h-9 w-9 text-xs" : size === "lg" ? "h-[52px] w-[52px] text-lg" : "h-10 w-10 text-sm";
   return (
     <div
       className={cn(

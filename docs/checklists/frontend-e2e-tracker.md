@@ -21,6 +21,7 @@ Tick **Done** when every **mvp** row in that group is `[x]` on the audience file
 | :---: | --- | --- | --- | --- | --- |
 | [x] | Shared | [fe/FE-SHARED.md](fe/FE-SHARED.md) | all | — | done |
 | [ ] | Admin | [fe/FE-ADMIN.md](fe/FE-ADMIN.md) | admin-web :3002 | — | mvp rows done; verify smoke still open |
+| [ ] | Admin org UI | [fe/FE-ADMIN-ORG.md](fe/FE-ADMIN-ORG.md) | admin-web :3002 | F-ADMIN-ORG APIs | partial — Figma scaffold done; mock data |
 | [ ] | Owner | [fe/FE-OWNER.md](fe/FE-OWNER.md) | owner-web :3001 | Admin not a hard dep; do after admin E2E | ready |
 | [ ] | Identity OTP/Google | OpenAPI + `identity` | Go + player-web | Not W1; player freeze 2026-08-19 | blocked |
 | [ ] | Player | [fe/FE-PLAYER.md](fe/FE-PLAYER.md) | player-web :3000 | OTP/Google rows blocked; marketplace APIs ready | partial |

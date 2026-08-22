@@ -4,6 +4,8 @@ Audience: SystemAdmin
 Wave: W9 · Context: `organization`, `platform`  
 Phase: mvp
 
+Org directory/detail extensions (Figma, analytics, sub-resources): [F-ADMIN-ORG.md](F-ADMIN-ORG.md). Frontend: [FE-ADMIN-ORG.md](../../fe/FE-ADMIN-ORG.md).
+
 
 | Done | ID         | Step                  | UC                  | Phase    | Gate  | Proposed API                                     | Events                | Status   | Notes                                                       |
 | ---- | ---------- | --------------------- | ------------------- | -------- | ----- | ------------------------------------------------ | --------------------- | -------- | ----------------------------------------------------------- |

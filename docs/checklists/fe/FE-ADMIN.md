@@ -5,6 +5,8 @@ App: `apps/admin-web` (port 3002)
 Backend: [F-ADMIN.md](../flows/mvp/F-ADMIN.md) W9 done; [F-AUTH.md](../flows/mvp/F-AUTH.md) W1 done  
 Phase: mvp
 
+Parent checklist: [FE-ADMIN.md](FE-ADMIN.md). **Org directory + detail (Figma):** [FE-ADMIN-ORG.md](FE-ADMIN-ORG.md).
+
 Implement **this file first** among the three audiences (after FE-SHARED client on admin-web).
 
 Envelope: `{ data: ... }`. List organizations = `{ data: AdminOrganization[] }`. Path `{id}` is **UUID**, not `public_id`. Admin org APIs do not require `X-Organization-ID`.
