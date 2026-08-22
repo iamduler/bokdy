@@ -13,7 +13,7 @@ function loginPath(pathname: string) {
 
 export default function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
-  const isProtected = /^(\/(en|vi))?\/(dashboard|organizations|profile|sessions)(\/|$)/.test(pathname);
+  const isProtected = /^(\/(en|vi))?\/(dashboard|organizations|users|profile|sessions)(\/|$)/.test(pathname);
   if (isProtected && !req.cookies.get(AUTH_PRESENT_COOKIE)) {
     return NextResponse.redirect(new URL(loginPath(pathname), req.url));
   }

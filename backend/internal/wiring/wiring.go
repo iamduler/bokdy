@@ -132,4 +132,9 @@ func RegisterRoutes(api *gin.RouterGroup, app *server.Application) {
 
 	admin := api.Group("/admin", jwt, middleware.RequireSystemAdmin())
 	orgHandler.RegisterAdminRoutes(admin)
+	adminUserRepo := identitypg.NewAdminUserRepo(app.DB.Pool)
+	adminUserSvc := identityservice.NewAdminUserService(
+		app.DB.Pool, userRepo, adminUserRepo, sessionRepo, roleRepo, authSvc,
+	)
+	identityhandler.NewAdminUserHandler(adminUserSvc).RegisterAdminRoutes(admin)
 }

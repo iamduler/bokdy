@@ -27,7 +27,8 @@ Roll-up: [frontend-e2e-tracker.md](../frontend-e2e-tracker.md).
 1. [FE-SHARED.md](FE-SHARED.md) — tokens + `lib/api` client (start on `admin-web`, copy the pattern)
 2. [FE-ADMIN.md](FE-ADMIN.md) — **first audience E2E**
 3. [FE-ADMIN-ORG.md](FE-ADMIN-ORG.md) — org directory + detail (Figma OrgDirectory); wire APIs incrementally
-4. [FE-OWNER.md](FE-OWNER.md) — onboard → venue → CRM → ops (walk-in is the dashboard CTA)
+4. [FE-ADMIN-USERS.md](FE-ADMIN-USERS.md) — user directories (players / owners / admins) + detail
+5. [FE-OWNER.md](FE-OWNER.md) — onboard → venue → CRM → ops (walk-in is the dashboard CTA)
 4. Identity OTP + Google (OpenAPI + Go) when player auth freeze requires it
 5. [FE-PLAYER.md](FE-PLAYER.md) — marketplace hold → mock pay → convert
 
@@ -99,5 +100,6 @@ Browser never holds JWT.
 | [FE-SHARED.md](FE-SHARED.md) | All three apps |
 | [FE-ADMIN.md](FE-ADMIN.md) | `apps/admin-web` |
 | [FE-ADMIN-ORG.md](FE-ADMIN-ORG.md) | `apps/admin-web` — organizations directory & detail |
+| [FE-ADMIN-USERS.md](FE-ADMIN-USERS.md) | `apps/admin-web` — user directories (players / owners / admins) |
 | [FE-OWNER.md](FE-OWNER.md) | `apps/owner-web` |
 | [FE-PLAYER.md](FE-PLAYER.md) | `apps/player-web` |

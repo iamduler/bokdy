@@ -5,7 +5,7 @@ App: `apps/admin-web` (port 3002)
 Backend: [F-ADMIN.md](../flows/mvp/F-ADMIN.md) W9 done; [F-AUTH.md](../flows/mvp/F-AUTH.md) W1 done  
 Phase: mvp
 
-Parent checklist: [FE-ADMIN.md](FE-ADMIN.md). **Org directory + detail (Figma):** [FE-ADMIN-ORG.md](FE-ADMIN-ORG.md).
+Parent checklist: [FE-ADMIN.md](FE-ADMIN.md). **Org directory + detail (Figma):** [FE-ADMIN-ORG.md](FE-ADMIN-ORG.md). **User directories (Figma, 3 audiences):** [FE-ADMIN-USERS.md](FE-ADMIN-USERS.md).
 
 Implement **this file first** among the three audiences (after FE-SHARED client on admin-web).
 

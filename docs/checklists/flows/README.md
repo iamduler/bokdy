@@ -15,6 +15,7 @@ Tick **Done** only when every MVP row in that file is `[x]` (post-MVP `—` rows
 | [ ] | F-PLAYER-BOOK | [mvp/F-PLAYER-BOOK.md](mvp/F-PLAYER-BOOK.md) | Player | W5, W6, W7, W8 |
 | [ ] | F-ADMIN | [mvp/F-ADMIN.md](mvp/F-ADMIN.md) | Admin | W9 |
 | [ ] | F-ADMIN-ORG | [mvp/F-ADMIN-ORG.md](mvp/F-ADMIN-ORG.md) | Admin | W9+ (org extensions) |
+| [ ] | F-ADMIN-USERS | [mvp/F-ADMIN-USERS.md](mvp/F-ADMIN-USERS.md) | Admin | W9+ (user directories) |
 
 ## Post-MVP (`flows/post-mvp/`)
 

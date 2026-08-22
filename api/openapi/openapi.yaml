@@ -2837,6 +2837,483 @@ paths:
           $ref: "#/components/responses/Error"
         "409":
           $ref: "#/components/responses/Error"
+  /api/v1/admin/users/players:
+    get:
+      tags: [Admin]
+      summary: List player users
+      description: End users without active staff membership and not system admins.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/AdminUserSearch"
+        - $ref: "#/components/parameters/AdminUserStatus"
+        - name: email_verified
+          in: query
+          schema: { type: boolean }
+        - $ref: "#/components/parameters/AdminUserLimit"
+      responses:
+        "200":
+          description: Player users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminPlayerUser"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /api/v1/admin/users/players/stats:
+    get:
+      tags: [Admin]
+      summary: Player directory statistics
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUserDirectoryStats"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+  /api/v1/admin/users/players/{id}:
+    get:
+      tags: [Admin]
+      summary: Get player user
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "200":
+          description: Player user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminPlayerUser"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+  /api/v1/admin/users/players/{id}/summary:
+    get:
+      tags: [Admin]
+      summary: Player activity summary
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "200":
+          description: Summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminPlayerSummary"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+  /api/v1/admin/users/owners:
+    get:
+      tags: [Admin]
+      summary: List owner-portal users (staff)
+      description: Users with at least one staff membership (org_owner or org_staff).
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/AdminUserSearch"
+        - $ref: "#/components/parameters/AdminUserStatus"
+        - name: staff_role
+          in: query
+          schema:
+            type: string
+            enum: [org_owner, org_staff]
+        - name: organization_id
+          in: query
+          schema: { type: string, format: uuid }
+        - $ref: "#/components/parameters/AdminUserLimit"
+      responses:
+        "200":
+          description: Owner-portal users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminOwnerUser"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /api/v1/admin/users/owners/stats:
+    get:
+      tags: [Admin]
+      summary: Owner directory statistics
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUserDirectoryStats"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+  /api/v1/admin/users/owners/{id}:
+    get:
+      tags: [Admin]
+      summary: Get owner-portal user
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "200":
+          description: Owner user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminOwnerUser"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+  /api/v1/admin/users/owners/{id}/organizations:
+    get:
+      tags: [Admin]
+      summary: List organizations for owner user
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "200":
+          description: Organization memberships
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminUserOrganization"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+  /api/v1/admin/users/admins:
+    get:
+      tags: [Admin]
+      summary: List system admin users
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/AdminUserSearch"
+        - $ref: "#/components/parameters/AdminUserStatus"
+        - $ref: "#/components/parameters/AdminUserLimit"
+      responses:
+        "200":
+          description: System admins
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminSystemUser"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /api/v1/admin/users/admins/stats:
+    get:
+      tags: [Admin]
+      summary: Admin directory statistics
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUserDirectoryStats"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+  /api/v1/admin/users/admins/{id}:
+    get:
+      tags: [Admin]
+      summary: Get system admin user
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "200":
+          description: Admin user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminSystemUser"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+  /api/v1/admin/users/{id}/suspend:
+    post:
+      tags: [Admin]
+      summary: Suspend user
+      description: Active user → suspended. Revokes all active sessions.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SuspendUserRequest"
+      responses:
+        "200":
+          description: User suspended
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUser"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /api/v1/admin/users/{id}/restore:
+    post:
+      tags: [Admin]
+      summary: Restore suspended user
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "200":
+          description: User restored
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUser"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+  /api/v1/admin/users/{id}/activate:
+    post:
+      tags: [Admin]
+      summary: Activate pending user
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "200":
+          description: User activated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUser"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+  /api/v1/admin/users/{id}/sessions:
+    get:
+      tags: [Admin]
+      summary: List user sessions (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "200":
+          description: Sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Session"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+  /api/v1/admin/users/{id}/sessions/revoke-all:
+    post:
+      tags: [Admin]
+      summary: Revoke all user sessions (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "204":
+          description: Revoked
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+  /api/v1/admin/users/{id}/sessions/{session_id}:
+    delete:
+      tags: [Admin]
+      summary: Revoke user session (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+        - name: session_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204":
+          description: Revoked
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+  /api/v1/admin/users/{id}/permissions:
+    get:
+      tags: [Admin]
+      summary: List user role assignments
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+        - name: scope
+          in: query
+          schema:
+            type: string
+            enum: [tenant, system]
+      responses:
+        "200":
+          description: Permissions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUserPermissions"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+  /api/v1/admin/users/{id}/activity:
+    get:
+      tags: [Admin]
+      summary: User authentication activity
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
+      responses:
+        "200":
+          description: Activity events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminUserActivityEvent"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+  /api/v1/admin/users/{id}/reset-password:
+    post:
+      tags: [Admin]
+      summary: Send password reset email
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "204":
+          description: Email sent if account exists
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+  /api/v1/admin/users/{id}/force-email-verify:
+    post:
+      tags: [Admin]
+      summary: Mark email verified and activate user
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "200":
+          description: User updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUser"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
 components:
   securitySchemes:
     bearerAuth:
@@ -2851,6 +3328,28 @@ components:
       schema:
         type: string
         format: uuid
+    UserId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    AdminUserSearch:
+      name: q
+      in: query
+      schema: { type: string }
+      description: Filter by email or display name
+    AdminUserStatus:
+      name: status
+      in: query
+      schema:
+        type: string
+        enum: [pending, active, suspended, locked]
+    AdminUserLimit:
+      name: limit
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
     StaffId:
       name: staffId
       in: path
@@ -3125,6 +3624,109 @@ components:
       required: [reason]
       properties:
         reason: { type: string, minLength: 1 }
+    AdminUser:
+      type: object
+      required: [id, public_id, status, is_system_admin]
+      properties:
+        id: { type: string, format: uuid }
+        public_id: { type: string, minLength: 26, maxLength: 26 }
+        email: { type: string, format: email }
+        display_name: { type: string }
+        full_name: { type: string }
+        phone: { type: string }
+        status: { type: string, enum: [pending, active, suspended, locked, deleted] }
+        is_system_admin: { type: boolean }
+        last_login_at: { type: string, format: date-time, description: UTC }
+        email_verified_at: { type: string, format: date-time, description: UTC }
+        phone_verified_at: { type: string, format: date-time, description: UTC }
+        created_at: { type: string, format: date-time, description: UTC }
+    AdminPlayerUser:
+      allOf:
+        - $ref: "#/components/schemas/AdminUser"
+    AdminOwnerUser:
+      allOf:
+        - $ref: "#/components/schemas/AdminUser"
+        - type: object
+          properties:
+            staff_role: { type: string, enum: [org_owner, org_staff] }
+            staff_title: { type: string }
+            staff_status: { type: string, enum: [invited, active, suspended, resigned] }
+            primary_organization:
+              $ref: "#/components/schemas/AdminUserOrganizationRef"
+    AdminSystemUser:
+      allOf:
+        - $ref: "#/components/schemas/AdminUser"
+    AdminUserOrganizationRef:
+      type: object
+      required: [id]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, description: Resolved from Accept-Language }
+        name_en: { type: string }
+        name_vi: { type: string }
+        code: { type: string }
+    AdminUserOrganization:
+      type: object
+      required: [organization_id, staff_id, staff_role, staff_status]
+      properties:
+        organization_id: { type: string, format: uuid }
+        staff_id: { type: string, format: uuid }
+        name: { type: string }
+        name_en: { type: string }
+        name_vi: { type: string }
+        code: { type: string }
+        staff_role: { type: string, enum: [org_owner, org_staff] }
+        staff_title: { type: string }
+        staff_status: { type: string, enum: [invited, active, suspended, resigned] }
+        branch_count: { type: integer, minimum: 0 }
+        joined_at: { type: string, format: date-time, description: UTC }
+    AdminUserDirectoryStats:
+      type: object
+      required: [total, active, suspended, pending]
+      properties:
+        total: { type: integer, minimum: 0 }
+        active: { type: integer, minimum: 0 }
+        suspended: { type: integer, minimum: 0 }
+        pending: { type: integer, minimum: 0 }
+        new_this_week: { type: integer, minimum: 0 }
+    AdminPlayerSummary:
+      type: object
+      required: [booking_count]
+      properties:
+        booking_count: { type: integer, minimum: 0 }
+        transaction_count: { type: integer, minimum: 0 }
+        refund_count: { type: integer, minimum: 0 }
+        total_spend_minor: { type: integer, minimum: 0 }
+        currency_code: { type: string }
+    AdminUserPermissions:
+      type: object
+      required: [roles]
+      properties:
+        roles:
+          type: array
+          items:
+            type: object
+            required: [role_code]
+            properties:
+              role_code: { type: string }
+              tenant_id: { type: string, format: uuid }
+              organization_id: { type: string, format: uuid }
+    AdminUserActivityEvent:
+      type: object
+      required: [id, event_type, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        event_type: { type: string, enum: [login_success, login_failed] }
+        ip_address: { type: string }
+        user_agent: { type: string }
+        created_at: { type: string, format: date-time, description: UTC }
+    SuspendUserRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason: { type: string, minLength: 1 }
+        note: { type: string }
+        duration: { type: string, enum: [indefinite, temporary] }
     CreateOrganizationRequest:
       type: object
       description: At least one of name, name_en, or name_vi is required.

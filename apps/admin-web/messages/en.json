@@ -78,12 +78,16 @@
     "userMenu": "Account menu",
     "navGroups": {
       "platform": "Platform",
+      "users": "Users",
       "account": "Account"
     },
     "nav": {
       "commandCenter": "Command Center",
       "health": "Platform health",
       "organizations": "Organizations",
+      "usersPlayers": "Players",
+      "usersOwners": "Owners & staff",
+      "usersAdmins": "Admins",
       "revenue": "Revenue & GMV",
       "support": "Support",
       "risk": "Risk & fraud",
@@ -97,6 +101,9 @@
       "health": "Platform health",
       "organizations": "Organizations",
       "organizationDetail": "Organization detail",
+      "usersPlayers": "Players",
+      "usersOwners": "Owners & staff",
+      "usersAdmins": "Admins",
       "revenue": "Revenue & GMV",
       "support": "Support",
       "risk": "Risk & fraud",
@@ -507,6 +514,163 @@
       "active": "Active",
       "suspended": "Suspended",
       "canceled": "Canceled"
+    }
+  },
+  "users": {
+    "unavailable": "N/A",
+    "verified": "Verified",
+    "unverified": "Unverified",
+    "loadError": "Could not load users.",
+    "emptyNone": "No users yet.",
+    "emptyFilter": "No users match your filters.",
+    "notFound": "User not found.",
+    "detailLoadError": "Could not load user.",
+    "backToList": "Back to list",
+    "viewDetail": "View detail",
+    "audience": {
+      "players": "Players",
+      "owners": "Owners & staff",
+      "admins": "Admins"
+    },
+    "audienceHint": {
+      "players": "End users on player-web without active staff membership.",
+      "owners": "Owner-portal users with organization staff roles.",
+      "admins": "Platform system administrators."
+    },
+    "status": {
+      "active": "Active",
+      "suspended": "Suspended",
+      "pending": "Pending",
+      "locked": "Locked",
+      "deleted": "Deleted"
+    },
+    "columns": {
+      "user": "User",
+      "staffRole": "Staff role",
+      "organization": "Organization",
+      "status": "Status",
+      "emailVerified": "Email verified",
+      "lastLogin": "Last login",
+      "mfa": "MFA",
+      "risk": "Risk",
+      "actions": "Actions"
+    },
+    "filters": {
+      "search": "Search",
+      "searchPlaceholder": "Name or email…",
+      "status": "Status",
+      "all": "All",
+      "emailVerified": "Email verified",
+      "verified": "Verified",
+      "unverified": "Unverified",
+      "staffRole": "Staff role",
+      "roleOwner": "Owner",
+      "roleStaff": "Staff",
+      "filterSearch": "Search…",
+      "filterEmpty": "No matches",
+      "resultCount": "{count} results",
+      "statusOption": {
+        "active": "Active",
+        "suspended": "Suspended",
+        "pending": "Pending",
+        "locked": "Locked"
+      }
+    },
+    "kpis": {
+      "total": "Total users",
+      "active": "Active",
+      "newThisWeek": "New this week",
+      "suspended": "Suspended"
+    },
+    "detailSubnav": {
+      "user": "User",
+      "overview": "Overview",
+      "sessions": "Sessions",
+      "organizations": "Organizations",
+      "permissions": "Permissions",
+      "activity": "Activity",
+      "security": "Security"
+    },
+    "detail": {
+      "activate": "Activate",
+      "suspend": "Suspend",
+      "restore": "Restore"
+    },
+    "suspend": {
+      "title": "Suspend user",
+      "hint": "All active sessions will be revoked. The user cannot sign in until restored.",
+      "reason": "Reason",
+      "cancel": "Cancel",
+      "submit": "Suspend"
+    },
+    "overview": {
+      "accountInfo": "Account information",
+      "email": "Email",
+      "phone": "Phone",
+      "created": "Created",
+      "lastLogin": "Last login",
+      "emailVerified": "Email verified",
+      "mfa": "MFA",
+      "yes": "Yes",
+      "no": "No",
+      "suspendedNotice": "This account is suspended.",
+      "bookings": "Bookings",
+      "transactions": "Transactions",
+      "refunds": "Refunds",
+      "spend": "Total spend",
+      "riskScore": "Risk score"
+    },
+    "sessions": {
+      "count": "{count} sessions",
+      "loadError": "Could not load sessions.",
+      "revokeAll": "Revoke all",
+      "revoke": "Revoke",
+      "status": "Status",
+      "unknownDevice": "Unknown device",
+      "empty": "No sessions."
+    },
+    "activity": {
+      "title": "Authentication history",
+      "loadError": "Could not load activity.",
+      "empty": "No activity yet.",
+      "event": {
+        "login_success": "Login success",
+        "login_failed": "Login failed"
+      }
+    },
+    "organizations": {
+      "count": "{count} organizations",
+      "loadError": "Could not load organizations.",
+      "role": "Role",
+      "branches": "Branches",
+      "viewOrg": "View organization",
+      "empty": "No organization memberships."
+    },
+    "permissions": {
+      "roles": "Assigned roles",
+      "loadError": "Could not load permissions.",
+      "empty": "No roles assigned.",
+      "matrixPreview": "Permission matrix (preview)",
+      "group": {
+        "booking": "Booking"
+      },
+      "perm": {
+        "viewCourts": "View courts",
+        "createBooking": "Create booking",
+        "cancelBooking": "Cancel booking"
+      }
+    },
+    "security": {
+      "mfa": "Two-factor authentication",
+      "emailVerify": "Email verification",
+      "passkey": "Passkey",
+      "verified": "Verified",
+      "unverified": "Not verified",
+      "dangerZone": "Security actions",
+      "resetPassword": "Send reset password email",
+      "forceEmailVerify": "Mark email verified",
+      "resetMfa": "Reset MFA",
+      "resetSent": "If the account has email, reset instructions were sent."
     }
   },
   "errors": {

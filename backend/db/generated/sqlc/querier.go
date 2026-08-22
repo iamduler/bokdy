@@ -28,6 +28,13 @@ type Querier interface {
 	ConfirmBooking(ctx context.Context, arg ConfirmBookingParams) error
 	ConsumePasswordResetToken(ctx context.Context, id uuid.UUID) error
 	ConvertReservation(ctx context.Context, arg ConvertReservationParams) error
+	CountAdminOwners(ctx context.Context) (int32, error)
+	CountAdminOwnersByStatus(ctx context.Context) (CountAdminOwnersByStatusRow, error)
+	CountAdminPlayers(ctx context.Context) (int32, error)
+	CountAdminPlayersByStatus(ctx context.Context) (CountAdminPlayersByStatusRow, error)
+	CountAdminSystemUsers(ctx context.Context) (int32, error)
+	CountAdminSystemUsersByStatus(ctx context.Context) (CountAdminSystemUsersByStatusRow, error)
+	CountBookingsByUser(ctx context.Context, userID *uuid.UUID) (int32, error)
 	CountBranchesByOrganization(ctx context.Context, organizationID uuid.UUID) (int32, error)
 	CountConflictingBlocks(ctx context.Context, arg CountConflictingBlocksParams) (int64, error)
 	CountNonArchivedCourtsByType(ctx context.Context, arg CountNonArchivedCourtsByTypeParams) (int64, error)
@@ -133,9 +140,12 @@ type Querier interface {
 	FindTenantByID(ctx context.Context, id uuid.UUID) (FindTenantByIDRow, error)
 	FindUserByEmail(ctx context.Context, lower string) (FindUserByEmailRow, error)
 	FindUserByID(ctx context.Context, id uuid.UUID) (FindUserByIDRow, error)
+	GetAdminOwnerPrimaryStaff(ctx context.Context, id uuid.UUID) (GetAdminOwnerPrimaryStaffRow, error)
+	GetAdminUserByID(ctx context.Context, id uuid.UUID) (GetAdminUserByIDRow, error)
 	GetCustomerProfile(ctx context.Context, customerID uuid.UUID) (GetCustomerProfileRow, error)
 	GetPasswordHash(ctx context.Context, userID uuid.UUID) (string, error)
 	GetUserProfile(ctx context.Context, userID uuid.UUID) (GetUserProfileRow, error)
+	HasActiveStaffMembership(ctx context.Context, userID uuid.UUID) (bool, error)
 	HasTenantRole(ctx context.Context, arg HasTenantRoleParams) (bool, error)
 	InsertBusinessHour(ctx context.Context, arg InsertBusinessHourParams) error
 	InsertCategoryPrice(ctx context.Context, arg InsertCategoryPriceParams) error
@@ -145,6 +155,10 @@ type Querier interface {
 	LinkCustomerUser(ctx context.Context, arg LinkCustomerUserParams) error
 	ListActiveCourtIDsByLocation(ctx context.Context, locationID uuid.UUID) ([]uuid.UUID, error)
 	ListActiveLocales(ctx context.Context) ([]ListActiveLocalesRow, error)
+	ListAdminOwners(ctx context.Context, arg ListAdminOwnersParams) ([]ListAdminOwnersRow, error)
+	ListAdminPlayers(ctx context.Context, arg ListAdminPlayersParams) ([]ListAdminPlayersRow, error)
+	ListAdminSystemUsers(ctx context.Context, arg ListAdminSystemUsersParams) ([]ListAdminSystemUsersRow, error)
+	ListAdminUserOrganizations(ctx context.Context, userID uuid.UUID) ([]ListAdminUserOrganizationsRow, error)
 	ListBookingsByCustomers(ctx context.Context, arg ListBookingsByCustomersParams) ([]BookingBooking, error)
 	ListBookingsByTenant(ctx context.Context, arg ListBookingsByTenantParams) ([]BookingBooking, error)
 	ListBranchesByOrg(ctx context.Context, organizationID uuid.UUID) ([]ListBranchesByOrgRow, error)
@@ -162,6 +176,7 @@ type Querier interface {
 	ListExpiredPendingReservations(ctx context.Context, arg ListExpiredPendingReservationsParams) ([]ReservationReservation, error)
 	ListFormerProvinces(ctx context.Context, countryID uuid.UUID) ([]ListFormerProvincesRow, error)
 	ListHolidaysOverlapping(ctx context.Context, arg ListHolidaysOverlappingParams) ([]ListHolidaysOverlappingRow, error)
+	ListLoginHistoryByUser(ctx context.Context, arg ListLoginHistoryByUserParams) ([]ListLoginHistoryByUserRow, error)
 	ListMarketplaceCourts(ctx context.Context, locationID uuid.UUID) ([]ListMarketplaceCourtsRow, error)
 	ListOrganizationsAdmin(ctx context.Context, arg ListOrganizationsAdminParams) ([]ListOrganizationsAdminRow, error)
 	ListOrganizationsByUser(ctx context.Context, userID uuid.UUID) ([]ListOrganizationsByUserRow, error)

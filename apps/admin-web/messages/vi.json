@@ -78,12 +78,16 @@
     "userMenu": "Menu tài khoản",
     "navGroups": {
       "platform": "Nền tảng",
+      "users": "Người dùng",
       "account": "Tài khoản"
     },
     "nav": {
       "commandCenter": "Command Center",
       "health": "Sức khoẻ nền tảng",
       "organizations": "Tổ chức",
+      "usersPlayers": "Người chơi",
+      "usersOwners": "Chủ sân & nhân viên",
+      "usersAdmins": "Quản trị viên",
       "revenue": "Doanh thu & GMV",
       "support": "Hỗ trợ",
       "risk": "Rủi ro & Gian lận",
@@ -97,6 +101,9 @@
       "health": "Sức khoẻ nền tảng",
       "organizations": "Quản lý tổ chức",
       "organizationDetail": "Chi tiết tổ chức",
+      "usersPlayers": "Người chơi",
+      "usersOwners": "Chủ sân & nhân viên",
+      "usersAdmins": "Quản trị viên",
       "revenue": "Doanh thu & GMV",
       "support": "Hỗ trợ khách hàng",
       "risk": "Rủi ro & Gian lận",
@@ -507,6 +514,163 @@
       "active": "Hoạt động",
       "suspended": "Tạm ngưng",
       "canceled": "Đã hủy"
+    }
+  },
+  "users": {
+    "unavailable": "Chưa có",
+    "verified": "Đã xác minh",
+    "unverified": "Chưa xác minh",
+    "loadError": "Không tải được danh sách người dùng.",
+    "emptyNone": "Chưa có người dùng.",
+    "emptyFilter": "Không có người dùng phù hợp bộ lọc.",
+    "notFound": "Không tìm thấy người dùng.",
+    "detailLoadError": "Không tải được người dùng.",
+    "backToList": "Quay lại danh sách",
+    "viewDetail": "Xem chi tiết",
+    "audience": {
+      "players": "Người chơi",
+      "owners": "Chủ sân & nhân viên",
+      "admins": "Quản trị viên"
+    },
+    "audienceHint": {
+      "players": "Người dùng player-web, không có staff active.",
+      "owners": "User owner-web có vai trò staff trong tổ chức.",
+      "admins": "Quản trị viên hệ thống (is_system_admin)."
+    },
+    "status": {
+      "active": "Hoạt động",
+      "suspended": "Tạm ngưng",
+      "pending": "Chờ xác minh",
+      "locked": "Đã khóa",
+      "deleted": "Đã xóa"
+    },
+    "columns": {
+      "user": "Người dùng",
+      "staffRole": "Vai trò staff",
+      "organization": "Tổ chức",
+      "status": "Trạng thái",
+      "emailVerified": "Email xác minh",
+      "lastLogin": "Đăng nhập cuối",
+      "mfa": "MFA",
+      "risk": "Rủi ro",
+      "actions": "Hành động"
+    },
+    "filters": {
+      "search": "Tìm kiếm",
+      "searchPlaceholder": "Tên hoặc email…",
+      "status": "Trạng thái",
+      "all": "Tất cả",
+      "emailVerified": "Email xác minh",
+      "verified": "Đã xác minh",
+      "unverified": "Chưa xác minh",
+      "staffRole": "Vai trò staff",
+      "roleOwner": "Chủ tổ chức",
+      "roleStaff": "Nhân viên",
+      "filterSearch": "Tìm…",
+      "filterEmpty": "Không có kết quả",
+      "resultCount": "{count} kết quả",
+      "statusOption": {
+        "active": "Hoạt động",
+        "suspended": "Tạm ngưng",
+        "pending": "Chờ xác minh",
+        "locked": "Đã khóa"
+      }
+    },
+    "kpis": {
+      "total": "Tổng người dùng",
+      "active": "Hoạt động",
+      "newThisWeek": "Mới tuần này",
+      "suspended": "Đã tạm ngưng"
+    },
+    "detailSubnav": {
+      "user": "Người dùng",
+      "overview": "Tổng quan",
+      "sessions": "Phiên hoạt động",
+      "organizations": "Tổ chức",
+      "permissions": "Phân quyền",
+      "activity": "Lịch sử hoạt động",
+      "security": "Bảo mật"
+    },
+    "detail": {
+      "activate": "Kích hoạt",
+      "suspend": "Tạm ngưng",
+      "restore": "Khôi phục"
+    },
+    "suspend": {
+      "title": "Tạm ngưng người dùng",
+      "hint": "Tất cả phiên đăng nhập sẽ bị thu hồi. User không thể đăng nhập cho đến khi khôi phục.",
+      "reason": "Lý do",
+      "cancel": "Huỷ",
+      "submit": "Tạm ngưng"
+    },
+    "overview": {
+      "accountInfo": "Thông tin tài khoản",
+      "email": "Email",
+      "phone": "Số điện thoại",
+      "created": "Ngày tạo",
+      "lastLogin": "Đăng nhập cuối",
+      "emailVerified": "Email xác minh",
+      "mfa": "MFA",
+      "yes": "Có",
+      "no": "Không",
+      "suspendedNotice": "Tài khoản đang bị tạm ngưng.",
+      "bookings": "Đặt sân",
+      "transactions": "Giao dịch",
+      "refunds": "Hoàn tiền",
+      "spend": "Tổng chi tiêu",
+      "riskScore": "Điểm rủi ro"
+    },
+    "sessions": {
+      "count": "{count} phiên",
+      "loadError": "Không tải được phiên.",
+      "revokeAll": "Thu hồi tất cả",
+      "revoke": "Thu hồi",
+      "status": "Trạng thái",
+      "unknownDevice": "Thiết bị không xác định",
+      "empty": "Không có phiên."
+    },
+    "activity": {
+      "title": "Lịch sử xác thực",
+      "loadError": "Không tải được lịch sử.",
+      "empty": "Chưa có hoạt động.",
+      "event": {
+        "login_success": "Đăng nhập thành công",
+        "login_failed": "Đăng nhập thất bại"
+      }
+    },
+    "organizations": {
+      "count": "{count} tổ chức",
+      "loadError": "Không tải được tổ chức.",
+      "role": "Vai trò",
+      "branches": "Chi nhánh",
+      "viewOrg": "Xem tổ chức",
+      "empty": "Chưa thuộc tổ chức nào."
+    },
+    "permissions": {
+      "roles": "Vai trò được gán",
+      "loadError": "Không tải được phân quyền.",
+      "empty": "Chưa có vai trò.",
+      "matrixPreview": "Ma trận quyền (xem trước)",
+      "group": {
+        "booking": "Đặt sân"
+      },
+      "perm": {
+        "viewCourts": "Xem sân",
+        "createBooking": "Đặt sân",
+        "cancelBooking": "Hủy đặt sân"
+      }
+    },
+    "security": {
+      "mfa": "Xác thực 2 yếu tố",
+      "emailVerify": "Xác minh email",
+      "passkey": "Passkey",
+      "verified": "Đã xác minh",
+      "unverified": "Chưa xác minh",
+      "dangerZone": "Hành động bảo mật",
+      "resetPassword": "Gửi email đặt lại mật khẩu",
+      "forceEmailVerify": "Đánh dấu email đã xác minh",
+      "resetMfa": "Đặt lại MFA",
+      "resetSent": "Nếu tài khoản có email, hướng dẫn đặt lại đã được gửi."
     }
   },
   "errors": {

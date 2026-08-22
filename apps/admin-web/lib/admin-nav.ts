@@ -22,6 +22,9 @@ export type AdminNavItemId =
   | "commandCenter"
   | "health"
   | "organizations"
+  | "usersPlayers"
+  | "usersOwners"
+  | "usersAdmins"
   | "revenue"
   | "support"
   | "risk"
@@ -30,7 +33,7 @@ export type AdminNavItemId =
   | "profile"
   | "sessions";
 
-export type AdminNavGroupId = "platform" | "account";
+export type AdminNavGroupId = "platform" | "users" | "account";
 
 export type AdminNavItem = {
   id: AdminNavItemId;
@@ -59,6 +62,8 @@ export type AdminNavIcon =
   | "settings"
   | "layoutDashboard"
   | "user"
+  | "users"
+  | "userCog"
   | "monitorSmartphone";
 
 export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
@@ -79,6 +84,33 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
       { id: "support", labelKey: "support", status: "missing", icon: "ticket" },
       { id: "risk", labelKey: "risk", status: "missing", icon: "shield" },
       { id: "platform", labelKey: "platform", status: "missing", icon: "settings" },
+    ],
+  },
+  {
+    id: "users",
+    labelKey: "users",
+    items: [
+      {
+        id: "usersPlayers",
+        labelKey: "usersPlayers",
+        href: "/users/players",
+        status: "ready",
+        icon: "user",
+      },
+      {
+        id: "usersOwners",
+        labelKey: "usersOwners",
+        href: "/users/owners",
+        status: "ready",
+        icon: "userCog",
+      },
+      {
+        id: "usersAdmins",
+        labelKey: "usersAdmins",
+        href: "/users/admins",
+        status: "ready",
+        icon: "shield",
+      },
     ],
   },
 ];

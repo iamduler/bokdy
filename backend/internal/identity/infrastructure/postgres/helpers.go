@@ -19,3 +19,10 @@ func nullUUID(id *uuid.UUID) *uuid.UUID {
 func uuidPtr(id uuid.UUID) *uuid.UUID {
 	return &id
 }
+
+func derefStr(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}

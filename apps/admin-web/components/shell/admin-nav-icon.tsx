@@ -10,6 +10,8 @@ import {
   Shield,
   Ticket,
   User,
+  UserCog,
+  Users,
   Zap,
   type LucideIcon,
 } from "lucide-react";
@@ -26,6 +28,8 @@ const ICONS: Record<AdminNavIcon, LucideIcon> = {
   settings: Settings,
   layoutDashboard: LayoutDashboard,
   user: User,
+  users: Users,
+  userCog: UserCog,
   monitorSmartphone: MonitorSmartphone,
 };
 

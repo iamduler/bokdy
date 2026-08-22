@@ -6,6 +6,8 @@ Phase: mvp
 
 Org directory/detail extensions (Figma, analytics, sub-resources): [F-ADMIN-ORG.md](F-ADMIN-ORG.md). Frontend: [FE-ADMIN-ORG.md](../../fe/FE-ADMIN-ORG.md).
 
+User management (3 directories, lifecycle, sessions): [F-ADMIN-USERS.md](F-ADMIN-USERS.md). Frontend: [FE-ADMIN-USERS.md](../../fe/FE-ADMIN-USERS.md).
+
 
 | Done | ID         | Step                  | UC                  | Phase    | Gate  | Proposed API                                     | Events                | Status   | Notes                                                       |
 | ---- | ---------- | --------------------- | ------------------- | -------- | ----- | ------------------------------------------------ | --------------------- | -------- | ----------------------------------------------------------- |
