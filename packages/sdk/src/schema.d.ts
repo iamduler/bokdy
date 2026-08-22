@@ -120,6 +120,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reference/locales": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List active locales
+         * @description Public catalog of active UI locales from `reference.locales`
+         *     (code, English name, native endonym, flag emoji). Used by locale switchers.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Active locales (default first, then code) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["Locale"][];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/register": {
         parameters: {
             query?: never;
@@ -475,6 +517,118 @@ export interface paths {
                 422: components["responses"]["ValidationFailed"];
             };
         };
+        trace?: never;
+    };
+    "/api/v1/identity/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List current user sessions */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["Session"][];
+                        };
+                    };
+                };
+                401: components["responses"]["Error"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/identity/sessions/revoke-all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Revoke all current user sessions */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Revoked */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                401: components["responses"]["Error"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/identity/sessions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke one current user session */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Revoked */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                401: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/organizations": {
@@ -4886,6 +5040,19 @@ export interface components {
                 slots: components["schemas"]["TimeSlot"][];
             }[];
         };
+        Locale: {
+            /** Format: uuid */
+            id: string;
+            /** @description BCP-47 language code */
+            code: string;
+            /** @description English label */
+            name: string;
+            /** @description Endonym (Tiếng Việt, English) */
+            native_name: string;
+            /** @description Flag emoji */
+            emoji: string;
+            is_default: boolean;
+        };
         MarketplaceBranch: {
             public_id: string;
             /** Format: uuid */
@@ -5291,6 +5458,23 @@ export interface components {
         };
         MeResponse: {
             user?: components["schemas"]["User"];
+        };
+        Session: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            device_id?: string;
+            /** @enum {string} */
+            status: "active" | "expired" | "revoked";
+            ip_address?: string;
+            user_agent?: string;
+            /** Format: date-time */
+            last_activity_at?: string;
+            /** Format: date-time */
+            expires_at: string;
+            /** Format: date-time */
+            created_at: string;
+            is_current_session: boolean;
         };
         TokenResponseEnvelope: {
             data?: {

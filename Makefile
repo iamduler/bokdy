@@ -17,6 +17,15 @@ DEV_COMPOSE_FILE=deployments/docker-compose.dev.yml
 server:
 	go -C $(BACKEND_DIR) run ./cmd/api
 
+admin-web:
+	pnpm --filter @bokdy/admin-web dev
+
+owner-web:
+	pnpm --filter @bokdy/owner-web dev
+
+player-web:
+	pnpm --filter @bokdy/player-web dev
+
 worker:
 	go -C $(BACKEND_DIR) run ./cmd/worker
 
@@ -75,3 +84,4 @@ dev:
 
 .PHONY: server worker migrate_up migrate_down migrate_status migrate_create install_tools
 .PHONY: db_create db_setup seed sqlc_schema sqlc test vet check build noapp stop_noapp dev
+.PHONY: admin-web owner-web player-web

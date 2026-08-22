@@ -1318,3 +1318,25 @@ CREATE UNIQUE INDEX refunds_one_completed_intent_uidx
     WHERE status = 'completed';
 
 
+-- >>> 00017_locales_emoji.sql
+ALTER TABLE reference.locales
+    ADD COLUMN emoji varchar(16) NOT NULL DEFAULT '';
+
+UPDATE reference.locales
+SET emoji = '🇻🇳',
+    name = 'Vietnamese',
+    native_name = 'Tiếng Việt',
+    updated_at = now()
+WHERE code = 'vi';
+
+UPDATE reference.locales
+SET emoji = '🇬🇧',
+    name = 'English',
+    native_name = 'English',
+    updated_at = now()
+WHERE code = 'en';
+
+ALTER TABLE reference.locales
+    ALTER COLUMN emoji DROP DEFAULT;
+
+

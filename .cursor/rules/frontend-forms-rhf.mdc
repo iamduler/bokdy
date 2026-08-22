@@ -1,0 +1,37 @@
+---
+description: All frontend forms use React Hook Form + Zod for validation
+globs:
+  - apps/**/components/**/*.tsx
+  - apps/**/app/**/*.tsx
+  - packages/ui/src/common/auth-*.tsx
+alwaysApply: false
+---
+
+# Forms: React Hook Form + Zod
+
+Every user-editable `<form>` validates with **React Hook Form** + **Zod** (`zodResolver`). Do not use ad-hoc `useState` + `onSubmit` checks for field validation.
+
+```tsx
+// ❌ BAD — manual field state / HTML-only required
+const [email, setEmail] = useState("");
+<form onSubmit={(e) => { e.preventDefault(); /* … */ }}>
+
+// ✅ GOOD
+const schema = useMemo(() => loginSchema({ … }), [te]);
+const { register, handleSubmit, formState: { errors } } = useForm({
+  resolver: zodResolver(schema),
+  defaultValues: { email: "", password: "" },
+});
+<form onSubmit={handleSubmit(onSubmit)}>
+  <Input {...register("email")} />
+  {errors.email?.message ? <p>{errors.email.message}</p> : null}
+```
+
+## Conventions
+
+- Schemas live in `apps/<app>/lib/validation/<feature>.ts` (factory with i18n messages).
+- Wire fields with `register` or `Controller`; show `errors.<field>.message` via i18n strings.
+- Keep API / mutation errors separate from field errors (`AuthAlert` / toast).
+- Shared inputs that accept `register()` must `forwardRef` to the native control (`AuthField`, `AuthPasswordField`, `Input`).
+
+Do not invent another form library. Full text: `docs/architecture/frontend-feature-playbook.md`.

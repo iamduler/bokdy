@@ -24,6 +24,7 @@ tags:
   - name: Courts
   - name: Schedule
   - name: Marketplace
+  - name: Reference
   - name: Pricing
   - name: Reservations
   - name: Bookings
@@ -72,6 +73,26 @@ paths:
             text/html:
               schema:
                 type: string
+  /api/v1/reference/locales:
+    get:
+      tags: [Reference]
+      summary: List active locales
+      description: |
+        Public catalog of active UI locales from `reference.locales`
+        (code, English name, native endonym, flag emoji). Used by locale switchers.
+      responses:
+        "200":
+          description: Active locales (default first, then code)
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Locale"
   /api/v1/auth/register:
     post:
       tags: [Auth]
@@ -242,6 +263,57 @@ paths:
           $ref: "#/components/responses/Error"
         "422":
           $ref: "#/components/responses/ValidationFailed"
+  /api/v1/identity/sessions:
+    get:
+      tags: [Identity]
+      summary: List current user sessions
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Session"
+        "401":
+          $ref: "#/components/responses/Error"
+  /api/v1/identity/sessions/revoke-all:
+    post:
+      tags: [Identity]
+      summary: Revoke all current user sessions
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: Revoked
+        "401":
+          $ref: "#/components/responses/Error"
+  /api/v1/identity/sessions/{id}:
+    delete:
+      tags: [Identity]
+      summary: Revoke one current user session
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Revoked
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
   /api/v1/organizations:
     get:
       tags: [Organizations]
@@ -3271,6 +3343,16 @@ components:
                 type: array
                 items:
                   $ref: "#/components/schemas/TimeSlot"
+    Locale:
+      type: object
+      required: [id, code, name, native_name, emoji, is_default]
+      properties:
+        id: { type: string, format: uuid }
+        code: { type: string, description: BCP-47 language code }
+        name: { type: string, description: English label }
+        native_name: { type: string, description: "Endonym (Tiếng Việt, English)" }
+        emoji: { type: string, description: Flag emoji }
+        is_default: { type: boolean }
     MarketplaceBranch:
       type: object
       required: [public_id, organization_id, code, name, status]
@@ -3629,6 +3711,19 @@ components:
       properties:
         user:
           $ref: "#/components/schemas/User"
+    Session:
+      type: object
+      required: [id, status, expires_at, created_at, is_current_session]
+      properties:
+        id: { type: string, format: uuid }
+        device_id: { type: string, format: uuid }
+        status: { type: string, enum: [active, expired, revoked] }
+        ip_address: { type: string }
+        user_agent: { type: string }
+        last_activity_at: { type: string, format: date-time }
+        expires_at: { type: string, format: date-time }
+        created_at: { type: string, format: date-time }
+        is_current_session: { type: boolean }
     TokenResponseEnvelope:
       type: object
       properties:

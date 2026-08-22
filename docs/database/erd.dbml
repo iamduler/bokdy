@@ -5578,6 +5578,8 @@ Table reference.locales {
 
   native_name varchar(255) [not null]
 
+  emoji varchar(16) [not null]
+
   is_default boolean [not null, default: false]
 
   is_active boolean [not null, default: true]
@@ -5591,7 +5593,7 @@ Table reference.locales {
     is_default
   }
 
-  Note: 'BCP-47. name = English, native_name = endonym. Not name_en/name_vi. vi is default. Accept-Language missing → vi.'
+  Note: 'BCP-47. name = English label, native_name = endonym (Tiếng Việt, English), emoji = flag. Not name_en/name_vi. vi is default. Accept-Language missing → vi.'
 }
 
 Table reference.countries {

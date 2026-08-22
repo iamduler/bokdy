@@ -13,6 +13,7 @@ sql:
       - "internal/platform/persistence/queries/billing/*.sql"
       - "internal/platform/persistence/queries/payment/*.sql"
       - "internal/platform/persistence/queries/pricing/*.sql"
+      - "internal/platform/persistence/queries/reference/*.sql"
     schema: "db/schema.sql"
     gen:
       go:

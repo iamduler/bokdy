@@ -30,7 +30,7 @@ API docs (dev): [http://localhost:8088/docs](http://localhost:8088/docs)
 
 ### Smoke path
 
-1. Register via Owner web (`http://localhost:3001/en/login`) — account stays `pending`
+1. Register via Owner web (`http://localhost:3001/login`) — account stays `pending`
 2. Verify email: token is in `backend/logs/mail.log` → `POST /api/v1/auth/verify`
 3. Login (BFF sends `X-Client: owner`) → `POST /api/v1/organizations` with Bearer token
 4. Login as bootstrap admin (`BOOTSTRAP_ADMIN_EMAIL`, `X-Client: admin`) → `GET /api/v1/admin/health`

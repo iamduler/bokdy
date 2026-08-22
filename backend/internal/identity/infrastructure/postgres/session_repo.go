@@ -59,10 +59,47 @@ func (r *SessionRepo) FindRefreshByHash(ctx context.Context, tokenHash string) (
 	return rt, s, nil
 }
 
+func (r *SessionRepo) ListByUser(ctx context.Context, userID uuid.UUID) ([]entity.SessionSummary, error) {
+	rows, err := r.q.ListSessionsByUser(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]entity.SessionSummary, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, entity.SessionSummary{
+			ID:             row.ID,
+			UserID:         row.UserID,
+			DeviceID:       row.DeviceID,
+			Status:         entity.SessionStatus(row.Status),
+			IPAddress:      row.IpAddress,
+			UserAgent:      row.UserAgent,
+			LastActivityAt: row.LastActivityAt,
+			ExpiresAt:      row.ExpiresAt,
+			CreatedAt:      row.CreatedAt,
+		})
+	}
+	return out, nil
+}
+
 func (r *SessionRepo) RevokeSession(ctx context.Context, tx pgx.Tx, sessionID uuid.UUID) error {
 	q := r.q.WithTx(tx)
 	if err := q.RevokeSessionByID(ctx, sessionID); err != nil {
 		return err
+	}
+	return q.RevokeRefreshTokensBySession(ctx, sessionID)
+}
+
+func (r *SessionRepo) RevokeOwnedSession(ctx context.Context, tx pgx.Tx, userID, sessionID uuid.UUID) error {
+	q := r.q.WithTx(tx)
+	affected, err := q.RevokeOwnedSessionByID(ctx, dbsqlc.RevokeOwnedSessionByIDParams{
+		ID:     sessionID,
+		UserID: userID,
+	})
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return pgx.ErrNoRows
 	}
 	return q.RevokeRefreshTokensBySession(ctx, sessionID)
 }

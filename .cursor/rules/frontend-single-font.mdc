@@ -1,0 +1,22 @@
+---
+description: Single sans font stack — never use font-mono or a second UI typeface
+globs:
+  - packages/ui/src/**/*.{tsx,ts,css}
+  - apps/**/*.{tsx,ts,css}
+alwaysApply: false
+---
+
+# Typography: one font family
+
+UI uses a **single sans stack** (`font-sans` / `--bokdy-font-sans`: Be Vietnam Pro → Roboto). Do not introduce a second typeface for codes, OTP, or IDs.
+
+```tsx
+// ❌ BAD
+className="font-mono text-xs"
+<code className="font-mono">…
+
+// ✅ GOOD — same family; use size/weight/tracking only
+className="text-xs tracking-wide"
+```
+
+Do not add `font-mono`, `font-serif`, or extra `next/font` faces for UI chrome. OTP and IDs stay in `font-sans`.

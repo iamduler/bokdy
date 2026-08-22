@@ -1,38 +1,54 @@
 "use client";
 
 import { AuthCard, Button, Input, Label } from "@bokdy/ui";
-import Link from "next/link";
-import { useLocale, useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useTranslations } from "next-intl";
+import { useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
 
 import { useLogin, useRegister } from "@/hooks/use-auth";
+import { Link, useRouter } from "@/i18n/navigation";
 import { ApiError, errorMessageKey } from "@/lib/api/errors";
+import { registerSchema, type RegisterFormValues } from "@/lib/validation/auth";
 
 export default function RegisterPage() {
   const t = useTranslations("auth");
   const tc = useTranslations("common");
   const te = useTranslations("errors");
-  const locale = useLocale();
   const router = useRouter();
-  const register = useRegister();
+  const registerUser = useRegister();
   const login = useLogin();
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  const schema = useMemo(
+    () =>
+      registerSchema({
+        required: te("REQUIRED"),
+        emailInvalid: te("EMAIL_INVALID"),
+        passwordPolicy: te("PASSWORD_POLICY"),
+      }),
+    [te],
+  );
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<RegisterFormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: { full_name: "", email: "", password: "" },
+  });
+
+  async function onSubmit(values: RegisterFormValues) {
     setError(null);
     try {
-      await register.mutateAsync({ email, password, full_name: fullName });
+      await registerUser.mutateAsync(values);
       try {
-        await login.mutateAsync({ email, password });
-        router.push(`/${locale}/dashboard`);
+        await login.mutateAsync({ email: values.email, password: values.password });
+        router.push("/dashboard");
         router.refresh();
       } catch {
-        router.push(`/${locale}/login`);
+        router.push("/login");
       }
     } catch (err) {
       const apiErr = err instanceof ApiError ? err : new ApiError("INTERNAL", "", 500);
@@ -40,24 +56,31 @@ export default function RegisterPage() {
     }
   }
 
-  const pending = register.isPending || login.isPending;
+  const pending = registerUser.isPending || login.isPending;
 
   return (
     <main className="flex min-h-dvh items-center justify-center p-4">
       <AuthCard title={`${tc("appName")} — ${t("registerTitle")}`}>
-        <form className="space-y-4" onSubmit={onSubmit}>
+        <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
           <div className="space-y-2">
             <Label htmlFor="fullName">{t("fullName")}</Label>
-            <Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+            <Input id="fullName" autoComplete="name" {...register("full_name")} />
+            {errors.full_name?.message ? (
+              <p className="text-sm text-destructive">{errors.full_name.message}</p>
+            ) : null}
           </div>
           <div className="space-y-2">
             <Label htmlFor="email">{t("email")}</Label>
-            <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <Input id="email" type="email" autoComplete="email" {...register("email")} />
+            {errors.email?.message ? <p className="text-sm text-destructive">{errors.email.message}</p> : null}
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">{t("password")}</Label>
-            <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} />
+            <Input id="password" type="password" autoComplete="new-password" {...register("password")} />
             <p className="text-xs text-muted-foreground">{t("passwordHint")}</p>
+            {errors.password?.message ? (
+              <p className="text-sm text-destructive">{errors.password.message}</p>
+            ) : null}
           </div>
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
           <Button type="submit" className="w-full" disabled={pending}>
@@ -65,7 +88,7 @@ export default function RegisterPage() {
           </Button>
           <p className="text-sm text-muted-foreground">
             {t("hasAccount")}{" "}
-            <Link className="underline" href={`/${locale}/login`}>
+            <Link className="underline" href="/login">
               {t("submitLogin")}
             </Link>
           </p>

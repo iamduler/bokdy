@@ -10,6 +10,7 @@ var (
 	ErrUserNotFound       = apperr.New(apperr.CodeNotFound, "user not found")
 	ErrInvalidToken       = apperr.New(apperr.CodeUnauthorized, "invalid or expired token")
 	ErrWeakPassword       = apperr.New(apperr.CodeValidation, "password does not meet policy")
+	ErrSessionNotFound    = apperr.New(apperr.CodeNotFound, "session not found")
 	ErrClientRequired     = apperr.New(apperr.CodeValidation, "X-Client header is required")
 	ErrClientInvalid      = apperr.New(apperr.CodeValidation, "X-Client must be player, owner, or admin")
 	ErrClientForbidden    = apperr.New(apperr.CodeForbidden, "client is not allowed for this account")

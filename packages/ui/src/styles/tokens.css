@@ -13,9 +13,16 @@
   --bokdy-muted-foreground: #737373;
   --bokdy-ring: #0ea5e9;
   --bokdy-destructive: #dc2626;
+  --bokdy-popover: #ffffff;
+  --bokdy-popover-foreground: #0a0a0a;
+  /* next/font sets --font-be-vietnam-pro / --font-roboto on <html>; string names are CSS fallbacks */
+  --bokdy-font-sans: var(--font-be-vietnam-pro, "Be Vietnam Pro"), var(--font-roboto, Roboto), ui-sans-serif,
+    system-ui, sans-serif;
 
   --background: var(--bokdy-background);
   --foreground: var(--bokdy-foreground);
+  --popover: var(--bokdy-popover);
+  --popover-foreground: var(--bokdy-popover-foreground);
 }
 
 .dark {
@@ -26,14 +33,18 @@
   --bokdy-primary-foreground: #ffffff;
   --bokdy-accent: #ec4899;
   --bokdy-accent-foreground: #ffffff;
-  --bokdy-border: #262626;
-  --bokdy-muted: #171717;
+  --bokdy-border: #404040;
+  --bokdy-muted: #262626;
   --bokdy-muted-foreground: #a3a3a3;
   --bokdy-ring: #0ea5e9;
   --bokdy-destructive: #f87171;
+  --bokdy-popover: #171717;
+  --bokdy-popover-foreground: #fafafa;
 
   --background: var(--bokdy-background);
   --foreground: var(--bokdy-foreground);
+  --popover: var(--bokdy-popover);
+  --popover-foreground: var(--bokdy-popover-foreground);
 }
 
 /* identity.theme = system (register default): follow OS unless html.light */
@@ -46,15 +57,83 @@
     --bokdy-primary-foreground: #ffffff;
     --bokdy-accent: #ec4899;
     --bokdy-accent-foreground: #ffffff;
-    --bokdy-border: #262626;
-    --bokdy-muted: #171717;
+    --bokdy-border: #404040;
+    --bokdy-muted: #262626;
     --bokdy-muted-foreground: #a3a3a3;
     --bokdy-ring: #0ea5e9;
     --bokdy-destructive: #f87171;
+    --bokdy-popover: #171717;
+    --bokdy-popover-foreground: #fafafa;
 
     --background: var(--bokdy-background);
     --foreground: var(--bokdy-foreground);
+    --popover: var(--bokdy-popover);
+    --popover-foreground: var(--bokdy-popover-foreground);
   }
+}
+
+/* Audience shell palette — set by .shell--{admin|owner|player}, not inline in TSX.
+   Admin follows html light/dark (same pattern as --bokdy-*); owner/player stay light-locked for now. */
+.shell--admin {
+  --shell-bg: #f8fafc;
+  --shell-surface: #ffffff;
+  --shell-card: #ffffff;
+  --shell-border: rgba(15, 23, 42, 0.08);
+  --shell-border-strong: rgba(15, 23, 42, 0.14);
+  --shell-text: #0f172a;
+  --shell-text-muted: #475569;
+  --shell-accent: #0ea5e9;
+  --shell-accent-soft: rgba(14, 165, 233, 0.12);
+}
+
+.dark .shell--admin {
+  --shell-bg: #0a0a0a;
+  --shell-surface: #171717;
+  --shell-card: #262626;
+  --shell-border: rgba(255, 255, 255, 0.1);
+  --shell-border-strong: rgba(255, 255, 255, 0.16);
+  --shell-text: #fafafa;
+  --shell-text-muted: #a3a3a3;
+  --shell-accent: #0ea5e9;
+  --shell-accent-soft: rgba(14, 165, 233, 0.16);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) .shell--admin {
+    --shell-bg: #0a0a0a;
+    --shell-surface: #171717;
+    --shell-card: #262626;
+    --shell-border: rgba(255, 255, 255, 0.1);
+    --shell-border-strong: rgba(255, 255, 255, 0.16);
+    --shell-text: #fafafa;
+    --shell-text-muted: #a3a3a3;
+    --shell-accent: #0ea5e9;
+    --shell-accent-soft: rgba(14, 165, 233, 0.16);
+  }
+}
+
+.shell--owner {
+  --shell-bg: #f8fafc;
+  --shell-surface: #ffffff;
+  --shell-card: #ffffff;
+  --shell-border: rgba(15, 23, 42, 0.08);
+  --shell-border-strong: rgba(15, 23, 42, 0.14);
+  --shell-text: #0f172a;
+  --shell-text-muted: #475569;
+  --shell-accent: #0d9488;
+  --shell-accent-soft: rgba(13, 148, 136, 0.12);
+}
+
+.shell--player {
+  --shell-bg: #f8fafc;
+  --shell-surface: #ffffff;
+  --shell-card: #ffffff;
+  --shell-border: rgba(15, 23, 42, 0.08);
+  --shell-border-strong: rgba(15, 23, 42, 0.14);
+  --shell-text: #0f172a;
+  --shell-text-muted: #475569;
+  --shell-accent: #0ea5e9;
+  --shell-accent-soft: rgba(14, 165, 233, 0.12);
 }
 
 @theme inline {
@@ -69,4 +148,18 @@
   --color-muted-foreground: var(--bokdy-muted-foreground);
   --color-ring: var(--bokdy-ring);
   --color-destructive: var(--bokdy-destructive);
+  --color-popover: var(--bokdy-popover);
+  --color-popover-foreground: var(--bokdy-popover-foreground);
+  --font-sans: var(--bokdy-font-sans);
+
+  /* Shell — resolved under .shell--* */
+  --color-shell-bg: var(--shell-bg);
+  --color-shell-surface: var(--shell-surface);
+  --color-shell-card: var(--shell-card);
+  --color-shell-border: var(--shell-border);
+  --color-shell-border-strong: var(--shell-border-strong);
+  --color-shell-text: var(--shell-text);
+  --color-shell-text-muted: var(--shell-text-muted);
+  --color-shell-accent: var(--shell-accent);
+  --color-shell-accent-soft: var(--shell-accent-soft);
 }

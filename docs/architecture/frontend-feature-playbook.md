@@ -86,7 +86,7 @@ UI last. Never start from a fat `page.tsx` that calls `fetch`.
 3. lib/api/<module>.ts — typed wrappers over /api/go (SDK types)
 4. hooks/use-<module>.ts — query-key factory + useQuery / useMutation
 5. i18n keys in messages/en.json and messages/vi.json
-6. React Hook Form + Zod for the first multi-field domain form (already named in tech-stack.md)
+6. React Hook Form + Zod for **every** form (field validation — do not use ad-hoc `useState` submit checks)
 7. Feature components; primitives from @bokdy/ui only
 8. Thin page on the correct audience app; extend proxy.ts if the route needs auth
 9. Loading / Empty / Error; map error.code → next-intl
@@ -222,7 +222,7 @@ TanStack Query is already provided in `providers/providers.tsx`. Use it for all 
 | Kind | Owner |
 | --- | --- |
 | Server data | TanStack Query |
-| Forms | React Hook Form + Zod (`tech-stack.md`; add the packages on the first multi-field domain form — do not invent another form library) |
+| Forms | React Hook Form + Zod for **all** forms (`tech-stack.md`; schemas in `lib/validation/`; do not invent another form library) |
 | Local UI (open dialog, tab) | `useState` / `useReducer` |
 | List filters + page | URL search params |
 
@@ -312,11 +312,11 @@ Existing BFF (do not replace):
 
 Cookie prefixes differ per app (`bokdy_owner_session`, …). Do not share cookies across Player / Owner / Admin.
 
-`proxy.ts` currently protects `/{en\|vi}/dashboard`. When adding a new authenticated route tree, extend that matcher (or equivalent) so guests redirect to `/{locale}/login`. Do not create `middleware.ts`.
+`proxy.ts` currently protects dashboard (and admin `/organizations`, `/profile`) with **or without** a locale prefix. Unprefixed paths are `vi`; guests on `/en/...` redirect to `/en/login`. Do not create `middleware.ts`.
 
 Owner tenant context: BFF already forwards `X-Organization-ID` from the org cookie. Set that cookie when the user selects an organization — do not invent a second tenant header.
 
-Locale: forward the browser `Accept-Language` (match `[locale]` segment, e.g. `vi` or `en`). Missing header → Go defaults to `vi`. Do not send `X-Locale` or `?locale=`. Read models expose resolved `name`; owner edit forms use `name_en` + `name_vi`. See `docs/architecture/i18n.md`.
+Locale: forward the browser `Accept-Language` (match `[locale]` segment, e.g. `vi` or `en`). Missing header → Go defaults to `vi`. Do not send `X-Locale` or `?locale=`. Read models expose resolved `name`; owner edit forms use `name_en` + `name_vi`. Locale **switcher labels** come from `GET /api/v1/reference/locales` (`native_name` + `emoji`) — do not hardcode language names in FE messages. next-intl `routing.locales` remains build-time for `messages/*.json`. See `docs/architecture/i18n.md`.
 
 Trace: BFF mints W3C `traceparent` + 32-hex `X-Trace-ID` when the browser omits them (`goProxyHeaders`), forwards them to Go, and echoes them on the response. See `docs/architecture/observability.md`.
 
@@ -331,7 +331,7 @@ Permissions:
 
 # i18n and copy
 
-- Library: next-intl. Locales: `en` (default), `vi`. `localePrefix: "always"`.
+- Library: next-intl. Locales: `vi` (default) + `en`. `localePrefix: "as-needed"` — unprefixed paths are Vietnamese (`/organizations`); English uses `/en/...`. `localeDetection: false` so Accept-Language does not rewrite `/login` → `/en/login`.
 - Every user-facing string goes through translations. No hardcoded English or Vietnamese in JSX (except brand name already in `common.appName`).
 - Keep the current two files: `messages/en.json`, `messages/vi.json`. Nest keys by namespace (`auth`, `shell`, `organization`, `errors`, …). API error codes live under `errors` keyed exactly as `packages/config/error-codes.json`. Do not invent a `messages/*/enums/` tree unless a backend enum sync pipeline exists.
 - Status / enum **values** come from domain docs and the API. Labels live in i18n keyed by that value. Prefer an API `*_label` field when present.
@@ -346,7 +346,7 @@ Navigation: add `i18n/navigation.ts` with next-intl `createNavigation(routing)` 
 
 Stack (frozen): Next.js App Router, TypeScript, Tailwind CSS, shadcn-style `@bokdy/ui`, Lucide, TanStack Query, next-intl. Tables: TanStack Table when the first data table ships. Charts: Recharts when the first chart ships. Testing names in `tech-stack.md` (Vitest, Testing Library, Playwright) — add when writing the first test, do not swap libraries.
 
-- Form controls come from `@bokdy/ui` (or new primitives added there). Do not drop raw `<input>` / `<select>` / `<textarea>` in feature code except inside `packages/ui`.
+- Form controls and interactive primitives come from `@bokdy/ui` as **shadcn/ui** patterns (Radix + CVA). Do not hand-roll dropdowns/dialogs/selects in apps. Do not drop raw `<input>` / `<select>` / `<textarea>` in feature code except inside `packages/ui`.
 - Mobile-first layouts (`AGENTS.md`).
 - Icon-only controls need `aria-label` (and a tooltip when one exists).
 - Every screen that loads remote data implements **Loading**, **Empty**, and **Error** (with retry where a refetch exists).

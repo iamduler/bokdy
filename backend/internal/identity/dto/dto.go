@@ -78,3 +78,15 @@ type UserDTO struct {
 type MeResponse struct {
 	User UserDTO `json:"user"`
 }
+
+type SessionDTO struct {
+	ID               string  `json:"id"`
+	DeviceID         *string `json:"device_id,omitempty"`
+	Status           string  `json:"status"`
+	IPAddress        *string `json:"ip_address,omitempty"`
+	UserAgent        *string `json:"user_agent,omitempty"`
+	LastActivityAt   *string `json:"last_activity_at,omitempty"`
+	ExpiresAt        string  `json:"expires_at"`
+	CreatedAt        string  `json:"created_at"`
+	IsCurrentSession bool    `json:"is_current_session"`
+}

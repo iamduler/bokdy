@@ -39,6 +39,9 @@ func (h *AuthHandler) RegisterRoutes(rg *gin.RouterGroup, jwt gin.HandlerFunc) {
 	{
 		identity.GET("/me", h.Me)
 		identity.PATCH("/me", h.UpdateMe)
+		identity.GET("/sessions", h.ListSessions)
+		identity.DELETE("/sessions/:id", h.RevokeSession)
+		identity.POST("/sessions/revoke-all", h.RevokeAllSessions)
 	}
 }
 
@@ -206,6 +209,56 @@ func (h *AuthHandler) UpdateMe(c *gin.Context) {
 	httpx.OK(c, dto.MeResponse{User: toUserDTO(user, profile, ident, roles, requestctx.Email(c.Request.Context()))})
 }
 
+func (h *AuthHandler) ListSessions(c *gin.Context) {
+	uid, ok := requestctx.UserID(c.Request.Context())
+	if !ok {
+		httpx.Error(c, errUnauthorized())
+		return
+	}
+	currentSessionID, _ := requestctx.SessionID(c.Request.Context())
+	sessions, err := h.auth.ListSessions(c.Request.Context(), uid, currentSessionID)
+	if err != nil {
+		httpx.Error(c, err)
+		return
+	}
+	out := make([]dto.SessionDTO, 0, len(sessions))
+	for _, session := range sessions {
+		out = append(out, toSessionDTO(session))
+	}
+	httpx.OK(c, out)
+}
+
+func (h *AuthHandler) RevokeSession(c *gin.Context) {
+	uid, ok := requestctx.UserID(c.Request.Context())
+	if !ok {
+		httpx.Error(c, errUnauthorized())
+		return
+	}
+	sessionID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		httpx.Error(c, errInvalidID())
+		return
+	}
+	if err := h.auth.RevokeSessionByUser(c.Request.Context(), uid, sessionID); err != nil {
+		httpx.Error(c, err)
+		return
+	}
+	httpx.NoContent(c)
+}
+
+func (h *AuthHandler) RevokeAllSessions(c *gin.Context) {
+	uid, ok := requestctx.UserID(c.Request.Context())
+	if !ok {
+		httpx.Error(c, errUnauthorized())
+		return
+	}
+	if err := h.auth.RevokeAllSessions(c.Request.Context(), uid); err != nil {
+		httpx.Error(c, err)
+		return
+	}
+	httpx.NoContent(c)
+}
+
 func toUserDTO(user *entity.User, profile *entity.UserProfile, ident *entity.Identity, roles []entity.UserRole, email string) dto.UserDTO {
 	roleCodes := make([]string, 0, len(roles))
 	for _, r := range roles {
@@ -259,4 +312,18 @@ func uuidPtrString(id *uuid.UUID) *string {
 	}
 	s := id.String()
 	return &s
+}
+
+func toSessionDTO(session entity.SessionSummary) dto.SessionDTO {
+	return dto.SessionDTO{
+		ID:               session.ID.String(),
+		DeviceID:         uuidPtrString(session.DeviceID),
+		Status:           string(session.Status),
+		IPAddress:        session.IPAddress,
+		UserAgent:        session.UserAgent,
+		LastActivityAt:   formatUTC(session.LastActivityAt),
+		ExpiresAt:        session.ExpiresAt.UTC().Format(time.RFC3339),
+		CreatedAt:        session.CreatedAt.UTC().Format(time.RFC3339),
+		IsCurrentSession: session.IsCurrent,
+	}
 }

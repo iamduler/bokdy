@@ -2,6 +2,8 @@ import { apiErrorFromBody } from "@/lib/api/errors";
 
 export type LoginInput = { email: string; password: string };
 export type RegisterInput = { email: string; password: string; full_name?: string };
+export type ForgotPasswordInput = { email: string };
+export type ResetPasswordInput = { token: string; new_password: string };
 
 async function authRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
@@ -43,4 +45,18 @@ export function logout() {
 
 export function getSession() {
   return authRequest<{ data?: unknown }>("session", { method: "GET" });
+}
+
+export function forgotPassword(input: ForgotPasswordInput) {
+  return authRequest<void>("password/forgot", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function resetPassword(input: ResetPasswordInput) {
+  return authRequest<void>("password/reset", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
 }

@@ -219,3 +219,32 @@ Notes
 - Editable: names, phone, `locale_id`, `timezone`, `country_id`, `preferred_currency_code`, `theme`, `date_format`.
 - Not editable: `email_verified_at`, `phone_verified_at` (system-set; email verify sets the former).
 - Timestamps are UTC. FE converts for display.
+
+---
+
+# UC-AUTH-008 List And Revoke Sessions
+
+Actors
+
+- User
+
+Preconditions
+
+- User is authenticated.
+
+Validations
+
+- Session belongs to the authenticated user.
+
+Flow
+
+1. List active and historical sessions for the current user.
+2. Revoke one session or revoke all sessions.
+
+Events
+
+- UserLoggedOut
+
+Result
+
+- Session access is revoked.

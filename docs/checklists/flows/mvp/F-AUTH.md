@@ -17,3 +17,4 @@ Go keeps one `/api/v1/auth/*` surface. Three BFF logins send `X-Client`. Mutatio
 | [x] | F-AUTH-07 | Confirm reset | UC-AUTH-006 | mvp | public | `POST /api/v1/auth/password/reset` | PasswordReset | done | Revokes all sessions. New password BR-806. |
 | [x] | F-AUTH-08 | Current user | — | mvp | jwt | `GET /api/v1/identity/me` | — | done | Prefs + verified_at UTC. No event. |
 | [x] | F-AUTH-09 | Update own profile | UC-AUTH-007 | mvp | jwt | `PATCH /api/v1/identity/me` | UserProfileUpdated | done | Prefs editable. verified_at read-only. |
+| [x] | F-AUTH-10 | List / revoke sessions | UC-AUTH-008 | mvp | jwt | `GET /api/v1/identity/sessions`, `DELETE /api/v1/identity/sessions/{id}`, `POST /api/v1/identity/sessions/revoke-all` | UserLoggedOut | done | Users can revoke one non-current session or revoke all sessions. |

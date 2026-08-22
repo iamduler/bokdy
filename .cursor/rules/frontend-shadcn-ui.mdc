@@ -1,0 +1,30 @@
+---
+description: Shared UI primitives come from shadcn/ui patterns in @bokdy/ui
+globs:
+  - packages/ui/src/**/*.{tsx,ts}
+  - apps/**/components/**/*.tsx
+  - apps/**/app/**/*.tsx
+alwaysApply: false
+---
+
+# UI: shadcn/ui via `@bokdy/ui`
+
+Interactive UI primitives (Button, Input, Label, Card, Combobox, DropdownMenu, …) live in [`packages/ui`](packages/ui) as **shadcn/ui-style** components (Radix + CVA + Tailwind). Apps import from `@bokdy/ui` — do not reinvent menus, dialogs, or selects with ad-hoc `useState` + absolute divs.
+
+```tsx
+// ❌ BAD — hand-rolled dropdown
+<button onClick={() => setOpen(!open)} />
+{open ? <ul className="absolute …">…</ul> : null}
+
+// ✅ GOOD — Combobox / DropdownMenu from @bokdy/ui
+import { Combobox, Button } from "@bokdy/ui";
+```
+
+Locale and theme switchers must use **Combobox** (Popover + Command) with the **nav dropdown layout** in `.cursor/rules/frontend-dropdown-layout.mdc` (Meronfarm-style: ghost trigger, icon + `sm:` label, `ChevronDown`, check only when selected on the right, `rounded-xl` panel).
+
+## Conventions
+
+- Add new primitives under `packages/ui/src/ui/` following shadcn structure; export from `packages/ui/src/index.ts`.
+- Prefer existing `@bokdy/ui` exports before copying another design system into an app.
+- Domain chrome (auth shell, feature layouts) may compose primitives; it must not replace them.
+- Stack freeze: Tailwind + shadcn/ui — see `docs/architecture/tech-stack.md` / `AGENTS.md`.

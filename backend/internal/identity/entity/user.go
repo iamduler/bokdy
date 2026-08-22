@@ -74,12 +74,26 @@ const (
 type Session struct {
 	ID             uuid.UUID
 	UserID         uuid.UUID
+	DeviceID       *uuid.UUID
 	Status         SessionStatus
 	IPAddress      *string
 	UserAgent      *string
 	LastActivityAt *time.Time
 	ExpiresAt      time.Time
 	CreatedAt      time.Time
+}
+
+type SessionSummary struct {
+	ID             uuid.UUID
+	UserID         uuid.UUID
+	DeviceID       *uuid.UUID
+	Status         SessionStatus
+	IPAddress      *string
+	UserAgent      *string
+	LastActivityAt *time.Time
+	ExpiresAt      time.Time
+	CreatedAt      time.Time
+	IsCurrent      bool
 }
 
 type RefreshToken struct {

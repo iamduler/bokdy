@@ -5,16 +5,21 @@ import { AUTH_PRESENT_COOKIE } from "./lib/auth";
 
 const intl = createMiddleware(routing);
 
+function loginPath(pathname: string) {
+  const prefixed = pathname.match(/^\/(en|vi)(\/|$)/);
+  if (!prefixed || prefixed[1] === routing.defaultLocale) return "/login";
+  return `/${prefixed[1]}/login`;
+}
+
 export default function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
-  const isProtected = /\/(en|vi)\/dashboard(\/|$)/.test(pathname);
+  const isProtected = /^(\/(en|vi))?\/(dashboard|organizations|profile|sessions)(\/|$)/.test(pathname);
   if (isProtected && !req.cookies.get(AUTH_PRESENT_COOKIE)) {
-    const locale = pathname.split("/")[1] || "en";
-    return NextResponse.redirect(new URL(`/${locale}/login`, req.url));
+    return NextResponse.redirect(new URL(loginPath(pathname), req.url));
   }
   return intl(req);
 }
 
 export const config = {
-  matcher: ["/", "/(en|vi)/:path*"],
+  matcher: ["/((?!api|_next|_vercel|.*\\..*).*)"],
 };

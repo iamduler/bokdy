@@ -1,21 +1,20 @@
 "use client";
 
 import { Button } from "@bokdy/ui";
-import { useLocale, useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 import { useLogout } from "@/hooks/use-auth";
+import { useRouter } from "@/i18n/navigation";
 
 export default function DashboardPage() {
   const t = useTranslations("shell");
   const tc = useTranslations("common");
-  const locale = useLocale();
   const router = useRouter();
   const logout = useLogout();
 
   async function onLogout() {
     await logout.mutateAsync().catch(() => undefined);
-    router.push(`/${locale}/login`);
+    router.push("/login");
     router.refresh();
   }
 

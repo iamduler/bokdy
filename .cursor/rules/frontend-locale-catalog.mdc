@@ -1,0 +1,18 @@
+---
+description: Locale switcher catalog comes from reference.locales API, not hardcoded FE labels
+globs:
+  - apps/**/components/**/locale*.tsx
+  - apps/**/hooks/use-locales.ts
+  - apps/**/lib/api/reference.ts
+alwaysApply: false
+---
+
+# Locale catalog from API
+
+Do not hardcode UI language labels (`Tiếng Việt`, `English`) or flag emojis in FE messages or switcher ternaries.
+
+- Catalog: `GET /api/v1/reference/locales` → `code`, `name`, `native_name`, `emoji`, `is_default`
+- Switcher display: `emoji` + `native_name`
+- next-intl `routing.locales` stays build-time for `messages/*.json` only; intersect API codes with that list before `router.replace`
+
+See `docs/architecture/i18n.md` and `docs/architecture/frontend-feature-playbook.md`.

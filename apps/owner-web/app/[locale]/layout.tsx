@@ -1,8 +1,8 @@
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
-import { ThemeScript } from "@bokdy/ui";
 import { routing } from "@/i18n/routing";
+import { fontVariables } from "@/lib/fonts";
 import { Providers } from "@/providers/providers";
 
 export function generateStaticParams() {
@@ -21,9 +21,8 @@ export default async function LocaleLayout({
   setRequestLocale(locale);
   const messages = await getMessages();
   return (
-    <html lang={locale} suppressHydrationWarning>
-      <ThemeScript />
-      <body className="min-h-dvh antialiased">
+    <html lang={locale} className={fontVariables} suppressHydrationWarning>
+      <body className="min-h-dvh font-sans antialiased">
         <NextIntlClientProvider messages={messages}>
           <Providers>{children}</Providers>
         </NextIntlClientProvider>

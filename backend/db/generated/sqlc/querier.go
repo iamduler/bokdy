@@ -141,6 +141,7 @@ type Querier interface {
 	IsActiveStaffMember(ctx context.Context, arg IsActiveStaffMemberParams) (bool, error)
 	LinkCustomerUser(ctx context.Context, arg LinkCustomerUserParams) error
 	ListActiveCourtIDsByLocation(ctx context.Context, locationID uuid.UUID) ([]uuid.UUID, error)
+	ListActiveLocales(ctx context.Context) ([]ListActiveLocalesRow, error)
 	ListBookingsByCustomers(ctx context.Context, arg ListBookingsByCustomersParams) ([]BookingBooking, error)
 	ListBookingsByTenant(ctx context.Context, arg ListBookingsByTenantParams) ([]BookingBooking, error)
 	ListBranchesByOrg(ctx context.Context, organizationID uuid.UUID) ([]ListBranchesByOrgRow, error)
@@ -160,6 +161,7 @@ type Querier interface {
 	ListOrganizationsByUser(ctx context.Context, userID uuid.UUID) ([]ListOrganizationsByUserRow, error)
 	ListPriceVersionsByList(ctx context.Context, priceListID uuid.UUID) ([]PricingPriceVersion, error)
 	ListResourceBlocksOverlapping(ctx context.Context, arg ListResourceBlocksOverlappingParams) ([]ListResourceBlocksOverlappingRow, error)
+	ListSessionsByUser(ctx context.Context, userID uuid.UUID) ([]IdentitySession, error)
 	ListStaffByOrg(ctx context.Context, organizationID uuid.UUID) ([]ListStaffByOrgRow, error)
 	ListTimeRules(ctx context.Context, priceVersionID uuid.UUID) ([]PricingTimeRule, error)
 	ListTimeSlots(ctx context.Context, arg ListTimeSlotsParams) ([]ListTimeSlotsRow, error)
@@ -181,6 +183,7 @@ type Querier interface {
 	RetireActiveVersions(ctx context.Context, arg RetireActiveVersionsParams) error
 	RetireDraftPriceVersion(ctx context.Context, arg RetireDraftPriceVersionParams) error
 	RevokeActiveSessionsForUser(ctx context.Context, userID uuid.UUID) error
+	RevokeOwnedSessionByID(ctx context.Context, arg RevokeOwnedSessionByIDParams) (int64, error)
 	RevokeRefreshTokenByID(ctx context.Context, id uuid.UUID) error
 	RevokeRefreshTokensBySession(ctx context.Context, sessionID uuid.UUID) error
 	RevokeRefreshTokensForUser(ctx context.Context, userID uuid.UUID) error

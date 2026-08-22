@@ -107,6 +107,43 @@ func (q *Queries) FindRefreshTokenByHash(ctx context.Context, tokenHash string) 
 	return i, err
 }
 
+const listSessionsByUser = `-- name: ListSessionsByUser :many
+SELECT id, user_id, device_id, status, ip_address, user_agent, last_activity_at, expires_at, created_at
+FROM identity.sessions
+WHERE user_id = $1
+ORDER BY created_at DESC
+`
+
+func (q *Queries) ListSessionsByUser(ctx context.Context, userID uuid.UUID) ([]IdentitySession, error) {
+	rows, err := q.db.Query(ctx, listSessionsByUser, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []IdentitySession{}
+	for rows.Next() {
+		var i IdentitySession
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.DeviceID,
+			&i.Status,
+			&i.IpAddress,
+			&i.UserAgent,
+			&i.LastActivityAt,
+			&i.ExpiresAt,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const recordLoginHistory = `-- name: RecordLoginHistory :exec
 INSERT INTO identity.login_histories (id, user_id, session_id, is_success, ip_address, user_agent, created_at)
 VALUES ($1, $2, $4, $3, $5::inet, $6, now())
@@ -140,6 +177,25 @@ UPDATE identity.sessions SET status = 'revoked' WHERE user_id = $1 AND status = 
 func (q *Queries) RevokeActiveSessionsForUser(ctx context.Context, userID uuid.UUID) error {
 	_, err := q.db.Exec(ctx, revokeActiveSessionsForUser, userID)
 	return err
+}
+
+const revokeOwnedSessionByID = `-- name: RevokeOwnedSessionByID :execrows
+UPDATE identity.sessions
+SET status = 'revoked'
+WHERE id = $1 AND user_id = $2 AND status = 'active'
+`
+
+type RevokeOwnedSessionByIDParams struct {
+	ID     uuid.UUID `json:"id"`
+	UserID uuid.UUID `json:"user_id"`
+}
+
+func (q *Queries) RevokeOwnedSessionByID(ctx context.Context, arg RevokeOwnedSessionByIDParams) (int64, error) {
+	result, err := q.db.Exec(ctx, revokeOwnedSessionByID, arg.ID, arg.UserID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const revokeRefreshTokenByID = `-- name: RevokeRefreshTokenByID :exec

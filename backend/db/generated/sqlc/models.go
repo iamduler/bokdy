@@ -2355,6 +2355,7 @@ type ReferenceLocale struct {
 	UpdatedAt  time.Time `json:"updated_at"`
 	Name       string    `json:"name"`
 	NativeName string    `json:"native_name"`
+	Emoji      string    `json:"emoji"`
 }
 
 type ReservationReservation struct {

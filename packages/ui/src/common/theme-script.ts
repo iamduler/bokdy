@@ -11,8 +11,9 @@ export function applyBokdyTheme(theme: BokdyTheme) {
   if (theme === "dark") root.classList.add("dark");
 }
 
-const bootScript = `(function(){try{var t=localStorage.getItem("${THEME_STORAGE_KEY}")||"system";var r=document.documentElement;r.classList.remove("light","dark");if(t==="light")r.classList.add("light");else if(t==="dark")r.classList.add("dark");}catch(e){}})();`;
-
-export function ThemeScript() {
-  return <script dangerouslySetInnerHTML={{ __html: bootScript }} />;
-}
+/**
+ * Boot snippet for theme class on `<html>`.
+ * Inject via `useServerInsertedHTML` (Next apps) — do not render `<script>` in JSX
+ * (React 19 / Next 16 warns and skips client execution).
+ */
+export const THEME_BOOT_SCRIPT = `(function(){try{var t=localStorage.getItem("${THEME_STORAGE_KEY}")||"system";var r=document.documentElement;r.classList.remove("light","dark");if(t==="light")r.classList.add("light");else if(t==="dark")r.classList.add("dark");}catch(e){}})();`;

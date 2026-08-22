@@ -250,6 +250,61 @@ func (s *AuthService) Login(ctx context.Context, in LoginInput) (*AuthResult, er
 	return s.issueSession(ctx, user, in.IPAddress, in.UserAgent, "UserLoggedIn")
 }
 
+func (s *AuthService) ListSessions(ctx context.Context, userID, currentSessionID uuid.UUID) ([]entity.SessionSummary, error) {
+	sessions, err := s.sessions.ListByUser(ctx, userID)
+	if err != nil {
+		return nil, apperr.Wrap(err, apperr.CodeInternal, "list sessions")
+	}
+	for i := range sessions {
+		sessions[i].IsCurrent = sessions[i].ID == currentSessionID
+	}
+	return sessions, nil
+}
+
+func (s *AuthService) RevokeSessionByUser(ctx context.Context, userID, sessionID uuid.UUID) error {
+	var outboxID uuid.UUID
+	err := persistence.WithinTx(ctx, s.pool, func(tx pgx.Tx) error {
+		if err := s.sessions.RevokeOwnedSession(ctx, tx, userID, sessionID); err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return iderrors.ErrSessionNotFound
+			}
+			return err
+		}
+		oid, err := events.Append(ctx, tx, events.Event{
+			Type: "UserLoggedOut", AggregateType: "Session", AggregateID: sessionID,
+			ActorType: events.ActorUser, ActorID: &userID, EntityType: "Session", EntityID: sessionID,
+		})
+		outboxID = oid
+		return err
+	})
+	if err != nil {
+		return err
+	}
+	events.AfterCommit(ctx, s.outbox, outboxID)
+	return nil
+}
+
+func (s *AuthService) RevokeAllSessions(ctx context.Context, userID uuid.UUID) error {
+	var outboxID uuid.UUID
+	err := persistence.WithinTx(ctx, s.pool, func(tx pgx.Tx) error {
+		if err := s.sessions.RevokeAllForUser(ctx, tx, userID); err != nil {
+			return err
+		}
+		oid, err := events.Append(ctx, tx, events.Event{
+			Type: "UserLoggedOut", AggregateType: "User", AggregateID: userID,
+			ActorType: events.ActorUser, ActorID: &userID, EntityType: "User", EntityID: userID,
+			Payload: map[string]any{"scope": "all_sessions"},
+		})
+		outboxID = oid
+		return err
+	})
+	if err != nil {
+		return apperr.Wrap(err, apperr.CodeInternal, "revoke all sessions")
+	}
+	events.AfterCommit(ctx, s.outbox, outboxID)
+	return nil
+}
+
 func (s *AuthService) Refresh(ctx context.Context, client entity.Client, refreshToken string, ip, ua *string) (*AuthResult, error) {
 	hash := hashToken(refreshToken)
 	rt, session, err := s.sessions.FindRefreshByHash(ctx, hash)
