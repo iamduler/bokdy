@@ -12,6 +12,19 @@ import (
 	"github.com/google/uuid"
 )
 
+const countBranchesByOrganization = `-- name: CountBranchesByOrganization :one
+SELECT COUNT(*)::int AS branch_count
+FROM organization.locations
+WHERE organization_id = $1 AND deleted_at IS NULL
+`
+
+func (q *Queries) CountBranchesByOrganization(ctx context.Context, organizationID uuid.UUID) (int32, error) {
+	row := q.db.QueryRow(ctx, countBranchesByOrganization, organizationID)
+	var branch_count int32
+	err := row.Scan(&branch_count)
+	return branch_count, err
+}
+
 const createBusinessUnit = `-- name: CreateBusinessUnit :exec
 INSERT INTO organization.business_units (id, organization_id, code, name_en, name_vi, status, created_at, updated_at)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
@@ -292,7 +305,12 @@ func (q *Queries) FindTenantByID(ctx context.Context, id uuid.UUID) (FindTenantB
 const listOrganizationsAdmin = `-- name: ListOrganizationsAdmin :many
 SELECT o.id, o.public_id, o.tenant_id, o.code, COALESCE(o.name_en, '') AS name_en, COALESCE(o.name_vi, '') AS name_vi, o.organization_type,
        COALESCE(o.phone, '') AS phone, COALESCE(o.email, '') AS email, o.status, o.created_at, o.updated_at,
-       t.status AS tenant_status
+       t.status AS tenant_status,
+       (
+         SELECT COUNT(*)::int
+         FROM organization.locations l
+         WHERE l.organization_id = o.id AND l.deleted_at IS NULL
+       ) AS branch_count
 FROM organization.organizations o
 JOIN organization.tenants t ON t.id = o.tenant_id
 WHERE o.deleted_at IS NULL
@@ -306,14 +324,27 @@ WHERE o.deleted_at IS NULL
     OR lower(COALESCE(o.name_en, '')) LIKE '%' || lower($2::text) || '%'
     OR lower(COALESCE(o.name_vi, '')) LIKE '%' || lower($2::text) || '%'
   )
+  AND (
+    $3::uuid IS NULL
+    OR EXISTS (
+      SELECT 1
+      FROM organization.locations l
+      JOIN organization.location_addresses a ON a.location_id = l.id
+      WHERE l.organization_id = o.id
+        AND l.deleted_at IS NULL
+        AND a.division_scheme = 'current_v2'
+        AND a.province_id = $3::uuid
+    )
+  )
 ORDER BY o.created_at DESC
-LIMIT $3
+LIMIT $4
 `
 
 type ListOrganizationsAdminParams struct {
-	StatusFilter *string `json:"status_filter"`
-	Q            string  `json:"q"`
-	RowLimit     int32   `json:"row_limit"`
+	StatusFilter *string    `json:"status_filter"`
+	Q            string     `json:"q"`
+	ProvinceID   *uuid.UUID `json:"province_id"`
+	RowLimit     int32      `json:"row_limit"`
 }
 
 type ListOrganizationsAdminRow struct {
@@ -330,10 +361,16 @@ type ListOrganizationsAdminRow struct {
 	CreatedAt        time.Time                      `json:"created_at"`
 	UpdatedAt        time.Time                      `json:"updated_at"`
 	TenantStatus     OrganizationTenantStatus       `json:"tenant_status"`
+	BranchCount      int32                          `json:"branch_count"`
 }
 
 func (q *Queries) ListOrganizationsAdmin(ctx context.Context, arg ListOrganizationsAdminParams) ([]ListOrganizationsAdminRow, error) {
-	rows, err := q.db.Query(ctx, listOrganizationsAdmin, arg.StatusFilter, arg.Q, arg.RowLimit)
+	rows, err := q.db.Query(ctx, listOrganizationsAdmin,
+		arg.StatusFilter,
+		arg.Q,
+		arg.ProvinceID,
+		arg.RowLimit,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -355,6 +392,7 @@ func (q *Queries) ListOrganizationsAdmin(ctx context.Context, arg ListOrganizati
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.TenantStatus,
+			&i.BranchCount,
 		); err != nil {
 			return nil, err
 		}

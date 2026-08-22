@@ -93,6 +93,116 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/Locale"
+  /api/v1/reference/admin-units/provinces:
+    get:
+      tags: [Reference]
+      summary: List provinces or cities (VN)
+      description: |
+        Public catalog of Vietnamese provinces/cities. Use `former_v3` for the pre-merger
+        63-province catalog or `current_v2` for the post-merger 34-province catalog.
+      parameters:
+        - name: scheme
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/AdminDivisionScheme"
+      responses:
+        "200":
+          description: Provinces
+          headers:
+            Cache-Control:
+              schema: { type: string }
+              description: public, max-age=86400
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AdminUnit"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /api/v1/reference/admin-units/districts:
+    get:
+      tags: [Reference]
+      summary: List districts (former_v3 only)
+      parameters:
+        - name: province_id
+          in: query
+          required: true
+          schema: { type: string, format: uuid }
+          description: UUID from `former_v3` province list
+      responses:
+        "200":
+          description: Districts
+          headers:
+            Cache-Control:
+              schema: { type: string }
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AdminUnit"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /api/v1/reference/admin-units/wards:
+    get:
+      tags: [Reference]
+      summary: List or search wards
+      parameters:
+        - name: scheme
+          in: query
+          required: true
+          schema:
+            $ref: "#/components/schemas/AdminDivisionScheme"
+        - name: province_id
+          in: query
+          schema: { type: string, format: uuid }
+          description: Required when scheme is `current_v2`
+        - name: district_id
+          in: query
+          schema: { type: string, format: uuid }
+          description: Required when scheme is `former_v3`
+        - name: q
+          in: query
+          schema: { type: string, minLength: 2 }
+          description: Optional search (max 50 results)
+      responses:
+        "200":
+          description: Wards
+          headers:
+            Cache-Control:
+              schema: { type: string }
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AdminUnit"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
   /api/v1/auth/register:
     post:
       tags: [Auth]
@@ -2601,6 +2711,10 @@ paths:
         - name: limit
           in: query
           schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
+        - name: province_id
+          in: query
+          schema: { type: string, format: uuid }
+          description: Filter orgs with at least one branch in this province (current_v2 address)
       responses:
         "200":
           description: Organizations
@@ -3002,9 +3116,10 @@ components:
       allOf:
         - $ref: "#/components/schemas/Organization"
         - type: object
-          required: [tenant_status]
+          required: [tenant_status, branch_count]
           properties:
             tenant_status: { type: string, enum: [trial, active, suspended, canceled] }
+            branch_count: { type: integer, minimum: 0, description: Non-archived branch (location) count }
     SuspendOrganizationRequest:
       type: object
       required: [reason]
@@ -3079,15 +3194,30 @@ components:
         token: { type: string }
     BranchAddress:
       type: object
+      required: [division_scheme]
       properties:
+        division_scheme:
+          $ref: "#/components/schemas/AdminDivisionScheme"
         country_id: { type: string, format: uuid }
-        state: { type: string }
-        city: { type: string }
-        district: { type: string }
-        ward: { type: string }
+        province_former_id: { type: string, format: uuid }
+        district_former_id: { type: string, format: uuid }
+        ward_former_id: { type: string, format: uuid }
+        province_id: { type: string, format: uuid }
+        ward_id: { type: string, format: uuid }
         address_line_1: { type: string }
         address_line_2: { type: string }
-        postal_code: { type: string }
+    AdminDivisionScheme:
+      type: string
+      enum: [former_v3, current_v2]
+    AdminUnit:
+      type: object
+      required: [id, code, name, name_en, name_vi]
+      properties:
+        id: { type: string, format: uuid }
+        code: { type: string }
+        name: { type: string, description: Resolved from Accept-Language }
+        name_en: { type: string }
+        name_vi: { type: string }
     Branch:
       type: object
       required: [id, public_id, organization_id, code, name, status]
@@ -3103,8 +3233,10 @@ components:
         email: { type: string, format: email }
         timezone: { type: string }
         status: { type: string, enum: [active, inactive, maintenance, archived] }
-        address:
-          $ref: "#/components/schemas/BranchAddress"
+        addresses:
+          type: array
+          items:
+            $ref: "#/components/schemas/BranchAddress"
     CreateBranchRequest:
       type: object
       description: At least one of name_en or name_vi is required. Initial status is inactive.
@@ -3115,8 +3247,10 @@ components:
         phone: { type: string }
         email: { type: string, format: email }
         timezone: { type: string }
-        address:
-          $ref: "#/components/schemas/BranchAddress"
+        addresses:
+          type: array
+          items:
+            $ref: "#/components/schemas/BranchAddress"
     UpdateBranchRequest:
       type: object
       properties:
@@ -3126,8 +3260,10 @@ components:
         phone: { type: string }
         email: { type: string, format: email }
         timezone: { type: string }
-        address:
-          $ref: "#/components/schemas/BranchAddress"
+        addresses:
+          type: array
+          items:
+            $ref: "#/components/schemas/BranchAddress"
     CustomerContact:
       type: object
       required: [type, value, is_primary, is_verified]
@@ -3367,8 +3503,8 @@ components:
         email: { type: string }
         timezone: { type: string }
         status: { type: string }
-        city: { type: string }
-        district: { type: string }
+        province_name: { type: string }
+        ward_name: { type: string }
         address_line_1: { type: string }
     MarketplaceCourt:
       type: object

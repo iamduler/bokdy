@@ -11,9 +11,10 @@ import (
 )
 
 type AdminListFilter struct {
-	Q      string
-	Status *entity.OrganizationStatus
-	Limit  int
+	Q          string
+	Status     *entity.OrganizationStatus
+	ProvinceID *uuid.UUID
+	Limit      int
 }
 
 type OrganizationRepository interface {
@@ -25,6 +26,7 @@ type OrganizationRepository interface {
 	LockTenantByID(ctx context.Context, tx pgx.Tx, tenantID uuid.UUID) (*entity.Tenant, error)
 	ListByUser(ctx context.Context, userID uuid.UUID) ([]entity.Organization, error)
 	ListAdmin(ctx context.Context, filter AdminListFilter) ([]AdminOrganization, error)
+	CountBranches(ctx context.Context, orgID uuid.UUID) (int, error)
 	Update(ctx context.Context, tx pgx.Tx, org *entity.Organization) error
 	UpdateStatus(ctx context.Context, tx pgx.Tx, orgID uuid.UUID, status entity.OrganizationStatus, at time.Time) error
 	UpdateTenantStatus(ctx context.Context, tx pgx.Tx, tenantID uuid.UUID, status entity.TenantStatus, at time.Time) error
@@ -34,4 +36,5 @@ type OrganizationRepository interface {
 type AdminOrganization struct {
 	Organization entity.Organization
 	TenantStatus entity.TenantStatus
+	BranchCount  int
 }

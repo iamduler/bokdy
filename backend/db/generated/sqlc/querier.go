@@ -28,6 +28,7 @@ type Querier interface {
 	ConfirmBooking(ctx context.Context, arg ConfirmBookingParams) error
 	ConsumePasswordResetToken(ctx context.Context, id uuid.UUID) error
 	ConvertReservation(ctx context.Context, arg ConvertReservationParams) error
+	CountBranchesByOrganization(ctx context.Context, organizationID uuid.UUID) (int32, error)
 	CountConflictingBlocks(ctx context.Context, arg CountConflictingBlocksParams) (int64, error)
 	CountNonArchivedCourtsByType(ctx context.Context, arg CountNonArchivedCourtsByTypeParams) (int64, error)
 	CountOverlappingBlocks(ctx context.Context, arg CountOverlappingBlocksParams) (int64, error)
@@ -72,12 +73,14 @@ type Querier interface {
 	CreateUser(ctx context.Context, arg CreateUserParams) error
 	CreateUserProfile(ctx context.Context, arg CreateUserProfileParams) error
 	DeleteBusinessHoursByLocation(ctx context.Context, locationID uuid.UUID) error
+	DeleteLocationAddresses(ctx context.Context, locationID uuid.UUID) error
 	DeleteMaintenanceBlock(ctx context.Context, arg DeleteMaintenanceBlockParams) error
 	DeleteMaintenanceBlocksByResource(ctx context.Context, resourceID uuid.UUID) error
 	DeleteProjectionsFrom(ctx context.Context, arg DeleteProjectionsFromParams) error
 	DeleteResourceBlock(ctx context.Context, arg DeleteResourceBlockParams) error
 	DeleteTimeSlotsFrom(ctx context.Context, arg DeleteTimeSlotsFromParams) error
 	DeleteTypedBlock(ctx context.Context, arg DeleteTypedBlockParams) error
+	DistrictFormerExists(ctx context.Context, id uuid.UUID) (bool, error)
 	ExpirePaymentIntent(ctx context.Context, arg ExpirePaymentIntentParams) error
 	ExpirePendingInvitations(ctx context.Context, expiresAt time.Time) ([]OrganizationStaffInvitation, error)
 	ExpireReservation(ctx context.Context, arg ExpireReservationParams) error
@@ -149,12 +152,15 @@ type Querier interface {
 	ListCategoryPrices(ctx context.Context, priceVersionID uuid.UUID) ([]PricingCategoryPrice, error)
 	ListCourtTypesByTenant(ctx context.Context, arg ListCourtTypesByTenantParams) ([]ListCourtTypesByTenantRow, error)
 	ListCourts(ctx context.Context, arg ListCourtsParams) ([]ListCourtsRow, error)
+	ListCurrentProvinces(ctx context.Context, countryID uuid.UUID) ([]ListCurrentProvincesRow, error)
 	ListCustomerContacts(ctx context.Context, customerID uuid.UUID) ([]ListCustomerContactsRow, error)
 	ListCustomersByTenant(ctx context.Context, arg ListCustomersByTenantParams) ([]ListCustomersByTenantRow, error)
 	ListCustomersByUser(ctx context.Context, userID *uuid.UUID) ([]ListCustomersByUserRow, error)
+	ListDistrictsFormer(ctx context.Context, provinceFormerID uuid.UUID) ([]ListDistrictsFormerRow, error)
 	ListExpiredPendingBookings(ctx context.Context, arg ListExpiredPendingBookingsParams) ([]BookingBooking, error)
 	ListExpiredPendingIntents(ctx context.Context, arg ListExpiredPendingIntentsParams) ([]PaymentPaymentIntent, error)
 	ListExpiredPendingReservations(ctx context.Context, arg ListExpiredPendingReservationsParams) ([]ReservationReservation, error)
+	ListFormerProvinces(ctx context.Context, countryID uuid.UUID) ([]ListFormerProvincesRow, error)
 	ListHolidaysOverlapping(ctx context.Context, arg ListHolidaysOverlappingParams) ([]ListHolidaysOverlappingRow, error)
 	ListMarketplaceCourts(ctx context.Context, locationID uuid.UUID) ([]ListMarketplaceCourtsRow, error)
 	ListOrganizationsAdmin(ctx context.Context, arg ListOrganizationsAdminParams) ([]ListOrganizationsAdminRow, error)
@@ -167,6 +173,8 @@ type Querier interface {
 	ListTimeSlots(ctx context.Context, arg ListTimeSlotsParams) ([]ListTimeSlotsRow, error)
 	ListUserRoles(ctx context.Context, userID uuid.UUID) ([]ListUserRolesRow, error)
 	ListUserRolesByTenant(ctx context.Context, arg ListUserRolesByTenantParams) ([]ListUserRolesByTenantRow, error)
+	ListWardsCurrent(ctx context.Context, provinceID uuid.UUID) ([]ListWardsCurrentRow, error)
+	ListWardsFormer(ctx context.Context, districtFormerID uuid.UUID) ([]ListWardsFormerRow, error)
 	LockInvoiceByID(ctx context.Context, id uuid.UUID) (LockInvoiceByIDRow, error)
 	LockOrganizationByID(ctx context.Context, id uuid.UUID) (LockOrganizationByIDRow, error)
 	LockPaymentIntentByID(ctx context.Context, id uuid.UUID) (PaymentPaymentIntent, error)
@@ -176,6 +184,8 @@ type Querier interface {
 	MarkVerificationVerified(ctx context.Context, id uuid.UUID) error
 	NextPriceVersionNumber(ctx context.Context, priceListID uuid.UUID) (int32, error)
 	Ping(ctx context.Context) (int32, error)
+	ProvinceCurrentExists(ctx context.Context, id uuid.UUID) (bool, error)
+	ProvinceFormerExists(ctx context.Context, id uuid.UUID) (bool, error)
 	PublishPriceVersion(ctx context.Context, arg PublishPriceVersionParams) error
 	RecordLoginHistory(ctx context.Context, arg RecordLoginHistoryParams) error
 	RemoveUserRole(ctx context.Context, arg RemoveUserRoleParams) error
@@ -189,6 +199,8 @@ type Querier interface {
 	RevokeRefreshTokensForUser(ctx context.Context, userID uuid.UUID) error
 	RevokeSessionByID(ctx context.Context, id uuid.UUID) error
 	SearchMarketplaceBranches(ctx context.Context, arg SearchMarketplaceBranchesParams) ([]SearchMarketplaceBranchesRow, error)
+	SearchWardsCurrent(ctx context.Context, arg SearchWardsCurrentParams) ([]SearchWardsCurrentRow, error)
+	SearchWardsFormer(ctx context.Context, arg SearchWardsFormerParams) ([]SearchWardsFormerRow, error)
 	SucceedPaymentIntent(ctx context.Context, arg SucceedPaymentIntentParams) error
 	TouchUserLastLogin(ctx context.Context, arg TouchUserLastLoginParams) error
 	UpdateBookingResourceSchedule(ctx context.Context, arg UpdateBookingResourceScheduleParams) error

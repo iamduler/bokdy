@@ -104,8 +104,8 @@ type marketplaceBranchDTO struct {
 	Email          string `json:"email,omitempty"`
 	Timezone       string `json:"timezone,omitempty"`
 	Status         string `json:"status"`
-	City           string `json:"city,omitempty"`
-	District       string `json:"district,omitempty"`
+	ProvinceName   string `json:"province_name,omitempty"`
+	WardName       string `json:"ward_name,omitempty"`
 	AddressLine1   string `json:"address_line_1,omitempty"`
 }
 
@@ -458,7 +458,7 @@ func toMarketBranchDTO(c *gin.Context, b *repository.MarketplaceBranch) marketpl
 		PublicID: b.PublicID, OrganizationID: b.OrganizationID.String(), Code: b.Code,
 		Name:   i18n.DisplayName(i18n.FromContext(c.Request.Context()), b.NameEn, b.NameVi),
 		NameEn: b.NameEn, NameVi: b.NameVi, Phone: b.Phone, Email: b.Email, Timezone: b.Timezone,
-		Status: b.Status, City: b.City, District: b.District, AddressLine1: b.AddressLine1,
+		Status: b.Status, ProvinceName: b.ProvinceName, WardName: b.WardName, AddressLine1: b.AddressLine1,
 	}
 }
 

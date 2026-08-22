@@ -21,6 +21,21 @@
     "welcome": "Chào mừng đến Bokdy Owner",
     "subtitle": "Scaffold nền tảng — chưa có domain nghiệp vụ."
   },
+  "branch": {
+    "address": {
+      "scheme": "Loại địa chỉ",
+      "schemeCurrent": "Hiện hành (2 cấp, sau sáp nhập)",
+      "schemeFormer": "Trước sáp nhập (3 cấp)",
+      "province": "Tỉnh / Thành phố",
+      "district": "Quận / Huyện",
+      "ward": "Phường / Xã",
+      "provincePlaceholder": "Chọn tỉnh/thành",
+      "districtPlaceholder": "Chọn quận/huyện",
+      "wardPlaceholder": "Chọn phường/xã",
+      "line1": "Địa chỉ dòng 1",
+      "line2": "Địa chỉ dòng 2"
+    }
+  },
   "errors": {
     "UNAUTHORIZED": "Vui lòng đăng nhập để tiếp tục",
     "FORBIDDEN": "Bạn không có quyền truy cập",

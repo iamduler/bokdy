@@ -2,10 +2,16 @@
 
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 
-import { OrganizationFilters } from "@/components/organizations/organization-filters";
+import { OrganizationCreateDialog } from "@/components/organizations/organization-create-dialog";
+import { OrganizationDirectoryFilters } from "@/components/organizations/organization-directory-filters";
+import { OrganizationDirectoryHeader } from "@/components/organizations/organization-directory-header";
+import { OrganizationDirectoryKpis } from "@/components/organizations/organization-directory-kpis";
+import { deriveOrganizationDirectoryStats } from "@/components/organizations/organization-directory-stats";
 import { OrganizationList } from "@/components/organizations/organization-list";
+import { usePageShellTitle } from "@/components/shell/shell-title";
+import { useAdminOrganizations } from "@/hooks/use-admin-organizations";
 import type { OrgStatus } from "@/lib/api/admin";
 
 const ORG_STATUSES = new Set<OrgStatus>(["active", "inactive", "suspended", "archived"]);
@@ -22,20 +28,47 @@ function parseLimit(raw: string | null): number {
 }
 
 function OrganizationsPageContent() {
-  const t = useTranslations("organization");
+  const ts = useTranslations("shell");
+  usePageShellTitle(ts("pageTitles.organizations"));
   const searchParams = useSearchParams();
+  const [createOpen, setCreateOpen] = useState(false);
 
   const q = searchParams.get("q") ?? "";
   const status = parseStatus(searchParams.get("status"));
+  const provinceId = searchParams.get("province_id") ?? "";
   const limit = parseLimit(searchParams.get("limit"));
-  const hasFilters = Boolean(q.trim() || status);
+  const hasFilters = Boolean(q.trim() || status || provinceId);
+
+  const params = {
+    q: q.trim() || undefined,
+    status: status || undefined,
+    province_id: provinceId || undefined,
+    limit,
+  };
+
+  const { data, isLoading, isError, refetch, isFetching } = useAdminOrganizations(params);
+  const orgs = data ?? [];
+  const stats = deriveOrganizationDirectoryStats(data);
 
   return (
-    <main className="mx-auto w-full max-w-5xl space-y-6 p-4 md:p-8">
-      <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
-      <OrganizationFilters q={q} status={status} />
-      <OrganizationList q={q.trim() || undefined} status={status || undefined} limit={limit} hasFilters={hasFilters} />
-    </main>
+    <div className="flex min-h-full flex-col overflow-hidden">
+      <OrganizationDirectoryHeader
+        stats={stats}
+        isLoading={isLoading}
+        onOpenCreate={() => setCreateOpen(true)}
+      />
+      <OrganizationDirectoryKpis stats={stats} isLoading={isLoading} />
+      <OrganizationDirectoryFilters q={q} status={status} provinceId={provinceId} resultCount={orgs.length} />
+      <OrganizationList
+        orgs={orgs}
+        hasFilters={hasFilters}
+        isLoading={isLoading}
+        isError={isError}
+        isFetching={isFetching}
+        onRetry={() => void refetch()}
+      />
+      <OrganizationCreateDialog open={createOpen} onClose={() => setCreateOpen(false)} />
+    </div>
   );
 }
 

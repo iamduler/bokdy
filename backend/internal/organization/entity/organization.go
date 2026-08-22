@@ -183,19 +183,27 @@ type Branch struct {
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
 	DeletedAt      *time.Time
-	Address        *BranchAddress
+	Addresses      []BranchAddress
 }
 
+type AdminDivisionScheme string
+
+const (
+	AdminDivisionFormerV3  AdminDivisionScheme = "former_v3"
+	AdminDivisionCurrentV2 AdminDivisionScheme = "current_v2"
+)
+
 type BranchAddress struct {
-	ID           uuid.UUID
-	LocationID   uuid.UUID
-	CountryID    *uuid.UUID
-	State        string
-	City         string
-	District     string
-	Ward         string
-	AddressLine1 string
-	AddressLine2 string
-	PostalCode   string
-	UpdatedAt    time.Time
+	ID               uuid.UUID
+	LocationID       uuid.UUID
+	DivisionScheme   AdminDivisionScheme
+	CountryID        *uuid.UUID
+	ProvinceFormerID *uuid.UUID
+	DistrictFormerID *uuid.UUID
+	WardFormerID     *uuid.UUID
+	ProvinceID       *uuid.UUID
+	WardID           *uuid.UUID
+	AddressLine1     string
+	AddressLine2     string
+	UpdatedAt        time.Time
 }

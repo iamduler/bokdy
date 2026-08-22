@@ -65,6 +65,12 @@ Project Bokdy {
 // - Do not encode every business rule as a DB constraint.
 // - Phase 2 domains stay out: inventory, POS / cash shift, loyalty, ads, review.
 //
+// Vietnam addresses
+// - Do not use state, city, or postal_code on address satellites.
+// - Use FK catalogs reference.province* / reference.ward* (and *_former for pre-merger).
+// - Branch (location_addresses): up to two rows per location — former_v3 and current_v2.
+// - Customer (customer_addresses): one row per address with division_scheme.
+//
 
 //////////////////////////////////////////////////////////////
 // INFRASTRUCTURE
@@ -1157,6 +1163,14 @@ Enum subscription_status {
   canceled
 }
 
+Enum admin_division_scheme {
+  former_v3
+  current_v2
+}
+
+// former_v3: province_former → district_former → ward_former (pre-merger, 3 levels).
+// current_v2: province → ward (post-merger, 2 levels).
+
 //////////////////////////////////////////////////////////////
 // TENANT
 //////////////////////////////////////////////////////////////
@@ -1332,29 +1346,44 @@ Table organization.locations {
 Table organization.location_addresses {
   id uuid [pk]
 
-  location_id uuid [not null, unique]
+  location_id uuid [not null]
+
+  division_scheme admin_division_scheme [not null]
 
   country_id uuid
 
-  state varchar(100)
+  province_former_id uuid
 
-  city varchar(100)
+  district_former_id uuid
 
-  district varchar(100)
+  ward_former_id uuid
 
-  ward varchar(100)
+  province_id uuid
+
+  ward_id uuid
 
   address_line_1 varchar(255)
 
   address_line_2 varchar(255)
-
-  postal_code varchar(20)
 
   latitude decimal(10,7)
 
   longitude decimal(10,7)
 
   updated_at timestamptz [not null]
+
+  indexes {
+    location_id
+    division_scheme
+    (location_id, division_scheme) [unique]
+    province_former_id
+    district_former_id
+    ward_former_id
+    province_id
+    ward_id
+  }
+
+  Note: 'Branch address satellite. 1:N with locations — at most one row per division_scheme (former_v3 + current_v2) so players can search by pre- or post-merger admin units. former_v3: province_former_id, district_former_id, ward_former_id required; current FKs null. current_v2: province_id, ward_id required; former FKs null. No state, city, district/ward text, or postal_code. CHECK constraints in migration.'
 }
 
 Table organization.location_settings {
@@ -1800,21 +1829,23 @@ Table crm.customer_addresses {
 
   label varchar(100)
 
+  division_scheme admin_division_scheme [not null]
+
   country_id uuid
 
-  state varchar(100)
+  province_former_id uuid
 
-  city varchar(100)
+  district_former_id uuid
 
-  district varchar(100)
+  ward_former_id uuid
 
-  ward varchar(100)
+  province_id uuid
+
+  ward_id uuid
 
   address_line_1 varchar(255)
 
   address_line_2 varchar(255)
-
-  postal_code varchar(20)
 
   latitude decimal(10,7)
 
@@ -1829,7 +1860,15 @@ Table crm.customer_addresses {
   indexes {
     customer_id
     is_default
+    division_scheme
+    province_former_id
+    district_former_id
+    ward_former_id
+    province_id
+    ward_id
   }
+
+  Note: 'One row per customer address with division_scheme (former_v3 or current_v2). Same FK rules as organization.location_addresses. No state, city, district/ward text, or postal_code.'
 }
 
 //////////////////////////////////////////////////////////////
@@ -5567,6 +5606,12 @@ TableGroup "Reference" {
   reference.countries
   reference.country_translations
   reference.currencies
+  reference.province_former
+  reference.district_former
+  reference.ward_former
+  reference.province
+  reference.ward
+  reference.ward_former_successors
 }
 
 Table reference.locales {
@@ -5668,6 +5713,156 @@ Table reference.currencies {
   }
 
   Note: 'ISO 4217. Locale 3+: add currency_translations.'
+}
+
+Table reference.province_former {
+  id uuid [pk]
+
+  country_id uuid [not null]
+
+  code varchar(20) [not null]
+
+  name_en varchar(255) [not null]
+
+  name_vi varchar(255) [not null]
+
+  is_active boolean [not null, default: true]
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    country_id
+    is_active
+    (country_id, code) [unique]
+  }
+
+  Note: 'Pre-merger (3-level) province / city catalog (tỉnh, thành phố trực thuộc TW). Seed from official GSO data when provided.'
+}
+
+Table reference.district_former {
+  id uuid [pk]
+
+  province_former_id uuid [not null]
+
+  code varchar(20) [not null]
+
+  name_en varchar(255) [not null]
+
+  name_vi varchar(255) [not null]
+
+  is_active boolean [not null, default: true]
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    province_former_id
+    is_active
+    (province_former_id, code) [unique]
+  }
+
+  Note: 'Pre-merger district (quận, huyện, thị xã, thành phố thuộc tỉnh). Parent: province_former.'
+}
+
+Table reference.ward_former {
+  id uuid [pk]
+
+  district_former_id uuid [not null]
+
+  code varchar(20) [not null]
+
+  name_en varchar(255) [not null]
+
+  name_vi varchar(255) [not null]
+
+  is_active boolean [not null, default: true]
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    district_former_id
+    is_active
+    (district_former_id, code) [unique]
+  }
+
+  Note: 'Pre-merger ward (phường, xã, thị trấn). Parent: district_former.'
+}
+
+Table reference.province {
+  id uuid [pk]
+
+  country_id uuid [not null]
+
+  code varchar(20) [not null]
+
+  name_en varchar(255) [not null]
+
+  name_vi varchar(255) [not null]
+
+  is_active boolean [not null, default: true]
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    country_id
+    is_active
+    (country_id, code) [unique]
+  }
+
+  Note: 'Post-merger province catalog (2-level model). Seed from official GSO data when provided.'
+}
+
+Table reference.ward {
+  id uuid [pk]
+
+  province_id uuid [not null]
+
+  code varchar(20) [not null]
+
+  name_en varchar(255) [not null]
+
+  name_vi varchar(255) [not null]
+
+  is_active boolean [not null, default: true]
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  indexes {
+    province_id
+    is_active
+    (province_id, code) [unique]
+  }
+
+  Note: 'Post-merger ward (phường, xã). Parent: province. No district level after merger.'
+}
+
+Table reference.ward_former_successors {
+  id uuid [pk]
+
+  ward_former_id uuid [not null]
+
+  ward_id uuid [not null]
+
+  effective_on date
+
+  created_at timestamptz [not null]
+
+  indexes {
+    ward_former_id
+    ward_id
+    (ward_former_id, ward_id) [unique]
+  }
+
+  Note: 'Optional merger mapping ward_former → ward for cross-era search. Seed when mapping file is provided.'
 }
 
 //////////////////////////////////////////////////////////////
@@ -6376,6 +6571,8 @@ Table analytics.dimension_locations {
   city varchar(255)
 
   country varchar(255)
+
+  Note: 'Denormalized analytics slice. Replace city with province name when analytics wave runs; see reference.province.'
 }
 
 Table analytics.dimension_services {
@@ -6402,6 +6599,14 @@ Ref: identity.users.id > identity.user_profiles.user_id
 Ref: reference.locales.id > identity.user_profiles.locale_id
 Ref: reference.countries.id > identity.user_profiles.country_id
 Ref: reference.currencies.code > identity.user_profiles.preferred_currency_code
+
+Ref: reference.countries.id > reference.province_former.country_id
+Ref: reference.province_former.id > reference.district_former.province_former_id
+Ref: reference.district_former.id > reference.ward_former.district_former_id
+Ref: reference.countries.id > reference.province.country_id
+Ref: reference.province.id > reference.ward.province_id
+Ref: reference.ward_former.id > reference.ward_former_successors.ward_former_id
+Ref: reference.ward.id > reference.ward_former_successors.ward_id
 
 Ref: identity.users.id > identity.identities.user_id
 Ref: identity.identities.id > identity.identity_verifications.identity_id
@@ -6433,6 +6638,11 @@ Ref: organization.organizations.id > organization.business_units.organization_id
 
 Ref: organization.organizations.id > organization.locations.organization_id
 Ref: organization.locations.id > organization.location_addresses.location_id
+Ref: reference.province_former.id > organization.location_addresses.province_former_id
+Ref: reference.district_former.id > organization.location_addresses.district_former_id
+Ref: reference.ward_former.id > organization.location_addresses.ward_former_id
+Ref: reference.province.id > organization.location_addresses.province_id
+Ref: reference.ward.id > organization.location_addresses.ward_id
 Ref: reference.locales.id > organization.tenants.locale_id
 Ref: reference.locales.id > crm.customers.preferred_locale_id
 Ref: reference.countries.id > reference.country_translations.country_id
@@ -6467,6 +6677,11 @@ Ref: crm.customers.id > crm.customer_profiles.customer_id
 Ref: crm.customers.id > crm.customer_contacts.customer_id
 Ref: crm.customers.id > crm.customer_addresses.customer_id
 Ref: reference.countries.id > crm.customer_addresses.country_id
+Ref: reference.province_former.id > crm.customer_addresses.province_former_id
+Ref: reference.district_former.id > crm.customer_addresses.district_former_id
+Ref: reference.ward_former.id > crm.customer_addresses.ward_former_id
+Ref: reference.province.id > crm.customer_addresses.province_id
+Ref: reference.ward.id > crm.customer_addresses.ward_id
 
 Ref: organization.tenants.id > crm.customer_tags.tenant_id
 Ref: crm.customer_tags.id > crm.customer_tag_assignments.tag_id

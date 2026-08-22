@@ -1558,6 +1558,48 @@ func (ns NullPricingPricingRuleType) Value() (driver.Value, error) {
 	return string(ns.PricingPricingRuleType), nil
 }
 
+type ReferenceAdminDivisionScheme string
+
+const (
+	ReferenceAdminDivisionSchemeFormerV3  ReferenceAdminDivisionScheme = "former_v3"
+	ReferenceAdminDivisionSchemeCurrentV2 ReferenceAdminDivisionScheme = "current_v2"
+)
+
+func (e *ReferenceAdminDivisionScheme) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = ReferenceAdminDivisionScheme(s)
+	case string:
+		*e = ReferenceAdminDivisionScheme(s)
+	default:
+		return fmt.Errorf("unsupported scan type for ReferenceAdminDivisionScheme: %T", src)
+	}
+	return nil
+}
+
+type NullReferenceAdminDivisionScheme struct {
+	ReferenceAdminDivisionScheme ReferenceAdminDivisionScheme `json:"reference_admin_division_scheme"`
+	Valid                        bool                         `json:"valid"` // Valid is true if ReferenceAdminDivisionScheme is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullReferenceAdminDivisionScheme) Scan(value interface{}) error {
+	if value == nil {
+		ns.ReferenceAdminDivisionScheme, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.ReferenceAdminDivisionScheme.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullReferenceAdminDivisionScheme) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.ReferenceAdminDivisionScheme), nil
+}
+
 type ReservationReservationSource string
 
 const (
@@ -1868,6 +1910,26 @@ type CrmCustomer struct {
 	DeletedAt        *time.Time        `json:"deleted_at"`
 }
 
+type CrmCustomerAddress struct {
+	ID               uuid.UUID                    `json:"id"`
+	CustomerID       uuid.UUID                    `json:"customer_id"`
+	Label            *string                      `json:"label"`
+	DivisionScheme   ReferenceAdminDivisionScheme `json:"division_scheme"`
+	CountryID        *uuid.UUID                   `json:"country_id"`
+	ProvinceFormerID *uuid.UUID                   `json:"province_former_id"`
+	DistrictFormerID *uuid.UUID                   `json:"district_former_id"`
+	WardFormerID     *uuid.UUID                   `json:"ward_former_id"`
+	ProvinceID       *uuid.UUID                   `json:"province_id"`
+	WardID           *uuid.UUID                   `json:"ward_id"`
+	AddressLine1     *string                      `json:"address_line_1"`
+	AddressLine2     *string                      `json:"address_line_2"`
+	Latitude         pgtype.Numeric               `json:"latitude"`
+	Longitude        pgtype.Numeric               `json:"longitude"`
+	IsDefault        bool                         `json:"is_default"`
+	CreatedAt        time.Time                    `json:"created_at"`
+	UpdatedAt        time.Time                    `json:"updated_at"`
+}
+
 type CrmCustomerContact struct {
 	ID          uuid.UUID      `json:"id"`
 	CustomerID  uuid.UUID      `json:"customer_id"`
@@ -2126,19 +2188,20 @@ type OrganizationLocation struct {
 }
 
 type OrganizationLocationAddress struct {
-	ID           uuid.UUID      `json:"id"`
-	LocationID   uuid.UUID      `json:"location_id"`
-	CountryID    *uuid.UUID     `json:"country_id"`
-	State        *string        `json:"state"`
-	City         *string        `json:"city"`
-	District     *string        `json:"district"`
-	Ward         *string        `json:"ward"`
-	AddressLine1 *string        `json:"address_line_1"`
-	AddressLine2 *string        `json:"address_line_2"`
-	PostalCode   *string        `json:"postal_code"`
-	Latitude     pgtype.Numeric `json:"latitude"`
-	Longitude    pgtype.Numeric `json:"longitude"`
-	UpdatedAt    time.Time      `json:"updated_at"`
+	ID               uuid.UUID                    `json:"id"`
+	LocationID       uuid.UUID                    `json:"location_id"`
+	CountryID        *uuid.UUID                   `json:"country_id"`
+	AddressLine1     *string                      `json:"address_line_1"`
+	AddressLine2     *string                      `json:"address_line_2"`
+	Latitude         pgtype.Numeric               `json:"latitude"`
+	Longitude        pgtype.Numeric               `json:"longitude"`
+	UpdatedAt        time.Time                    `json:"updated_at"`
+	DivisionScheme   ReferenceAdminDivisionScheme `json:"division_scheme"`
+	ProvinceFormerID *uuid.UUID                   `json:"province_former_id"`
+	DistrictFormerID *uuid.UUID                   `json:"district_former_id"`
+	WardFormerID     *uuid.UUID                   `json:"ward_former_id"`
+	ProvinceID       *uuid.UUID                   `json:"province_id"`
+	WardID           *uuid.UUID                   `json:"ward_id"`
 }
 
 type OrganizationLocationSetting struct {
@@ -2346,6 +2409,17 @@ type ReferenceCurrency struct {
 	UpdatedAt     time.Time `json:"updated_at"`
 }
 
+type ReferenceDistrictFormer struct {
+	ID               uuid.UUID `json:"id"`
+	ProvinceFormerID uuid.UUID `json:"province_former_id"`
+	Code             string    `json:"code"`
+	NameEn           string    `json:"name_en"`
+	NameVi           string    `json:"name_vi"`
+	IsActive         bool      `json:"is_active"`
+	CreatedAt        time.Time `json:"created_at"`
+	UpdatedAt        time.Time `json:"updated_at"`
+}
+
 type ReferenceLocale struct {
 	ID         uuid.UUID `json:"id"`
 	Code       string    `json:"code"`
@@ -2356,6 +2430,58 @@ type ReferenceLocale struct {
 	Name       string    `json:"name"`
 	NativeName string    `json:"native_name"`
 	Emoji      string    `json:"emoji"`
+}
+
+type ReferenceProvince struct {
+	ID        uuid.UUID `json:"id"`
+	CountryID uuid.UUID `json:"country_id"`
+	Code      string    `json:"code"`
+	NameEn    string    `json:"name_en"`
+	NameVi    string    `json:"name_vi"`
+	IsActive  bool      `json:"is_active"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+type ReferenceProvinceFormer struct {
+	ID        uuid.UUID `json:"id"`
+	CountryID uuid.UUID `json:"country_id"`
+	Code      string    `json:"code"`
+	NameEn    string    `json:"name_en"`
+	NameVi    string    `json:"name_vi"`
+	IsActive  bool      `json:"is_active"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+type ReferenceWard struct {
+	ID         uuid.UUID `json:"id"`
+	ProvinceID uuid.UUID `json:"province_id"`
+	Code       string    `json:"code"`
+	NameEn     string    `json:"name_en"`
+	NameVi     string    `json:"name_vi"`
+	IsActive   bool      `json:"is_active"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
+}
+
+type ReferenceWardFormer struct {
+	ID               uuid.UUID `json:"id"`
+	DistrictFormerID uuid.UUID `json:"district_former_id"`
+	Code             string    `json:"code"`
+	NameEn           string    `json:"name_en"`
+	NameVi           string    `json:"name_vi"`
+	IsActive         bool      `json:"is_active"`
+	CreatedAt        time.Time `json:"created_at"`
+	UpdatedAt        time.Time `json:"updated_at"`
+}
+
+type ReferenceWardFormerSuccessor struct {
+	ID           uuid.UUID   `json:"id"`
+	WardFormerID uuid.UUID   `json:"ward_former_id"`
+	WardID       uuid.UUID   `json:"ward_id"`
+	EffectiveOn  pgtype.Date `json:"effective_on"`
+	CreatedAt    time.Time   `json:"created_at"`
 }
 
 type ReservationReservation struct {

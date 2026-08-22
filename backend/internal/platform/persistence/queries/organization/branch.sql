@@ -5,8 +5,19 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13);
 
 -- name: CreateLocationAddress :exec
 INSERT INTO organization.location_addresses
-    (id, location_id, country_id, state, city, district, ward, address_line_1, address_line_2, postal_code, updated_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, now());
+    (id, location_id, division_scheme, country_id, province_former_id, district_former_id, ward_former_id,
+     province_id, ward_id, address_line_1, address_line_2, latitude, longitude, updated_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, now());
+
+-- name: UpdateLocationAddress :exec
+UPDATE organization.location_addresses
+SET country_id = $3, province_former_id = $4, district_former_id = $5, ward_former_id = $6,
+    province_id = $7, ward_id = $8, address_line_1 = $9, address_line_2 = $10,
+    latitude = $11, longitude = $12, updated_at = now()
+WHERE location_id = $1 AND division_scheme = $2;
+
+-- name: DeleteLocationAddresses :exec
+DELETE FROM organization.location_addresses WHERE location_id = $1;
 
 -- name: CreateLocationSettings :exec
 INSERT INTO organization.location_settings (id, location_id, updated_at)
@@ -16,22 +27,34 @@ VALUES ($1, $2, now());
 SELECT l.id, l.public_id, l.business_unit_id, l.organization_id, l.code,
        COALESCE(l.name_en, '') AS name_en, COALESCE(l.name_vi, '') AS name_vi, COALESCE(l.phone, '') AS phone, COALESCE(l.email, '') AS email,
        COALESCE(l.timezone, '') AS timezone, l.status, l.created_at, l.updated_at, l.deleted_at,
-       a.id AS address_id, a.country_id, COALESCE(a.state, '') AS state, COALESCE(a.city, '') AS city, COALESCE(a.district, '') AS district,
-       COALESCE(a.ward, '') AS ward, COALESCE(a.address_line_1, '') AS address_line_1, COALESCE(a.address_line_2, '') AS address_line_2,
-       COALESCE(a.postal_code, '') AS postal_code, a.updated_at AS address_updated_at
+       ac.id AS current_address_id, ac.country_id AS current_country_id,
+       ac.province_id AS current_province_id, ac.ward_id AS current_ward_id,
+       COALESCE(ac.address_line_1, '') AS current_address_line_1, COALESCE(ac.address_line_2, '') AS current_address_line_2,
+       ac.latitude AS current_latitude, ac.longitude AS current_longitude, ac.updated_at AS current_address_updated_at,
+       af.id AS former_address_id, af.country_id AS former_country_id,
+       af.province_former_id, af.district_former_id, af.ward_former_id,
+       COALESCE(af.address_line_1, '') AS former_address_line_1, COALESCE(af.address_line_2, '') AS former_address_line_2,
+       af.latitude AS former_latitude, af.longitude AS former_longitude, af.updated_at AS former_address_updated_at
 FROM organization.locations l
-LEFT JOIN organization.location_addresses a ON a.location_id = l.id
+LEFT JOIN organization.location_addresses ac ON ac.location_id = l.id AND ac.division_scheme = 'current_v2'
+LEFT JOIN organization.location_addresses af ON af.location_id = l.id AND af.division_scheme = 'former_v3'
 WHERE l.organization_id = $1 AND l.id = $2 AND l.deleted_at IS NULL;
 
 -- name: ListBranchesByOrg :many
 SELECT l.id, l.public_id, l.business_unit_id, l.organization_id, l.code,
        COALESCE(l.name_en, '') AS name_en, COALESCE(l.name_vi, '') AS name_vi, COALESCE(l.phone, '') AS phone, COALESCE(l.email, '') AS email,
        COALESCE(l.timezone, '') AS timezone, l.status, l.created_at, l.updated_at, l.deleted_at,
-       a.id AS address_id, a.country_id, COALESCE(a.state, '') AS state, COALESCE(a.city, '') AS city, COALESCE(a.district, '') AS district,
-       COALESCE(a.ward, '') AS ward, COALESCE(a.address_line_1, '') AS address_line_1, COALESCE(a.address_line_2, '') AS address_line_2,
-       COALESCE(a.postal_code, '') AS postal_code, a.updated_at AS address_updated_at
+       ac.id AS current_address_id, ac.country_id AS current_country_id,
+       ac.province_id AS current_province_id, ac.ward_id AS current_ward_id,
+       COALESCE(ac.address_line_1, '') AS current_address_line_1, COALESCE(ac.address_line_2, '') AS current_address_line_2,
+       ac.latitude AS current_latitude, ac.longitude AS current_longitude, ac.updated_at AS current_address_updated_at,
+       af.id AS former_address_id, af.country_id AS former_country_id,
+       af.province_former_id, af.district_former_id, af.ward_former_id,
+       COALESCE(af.address_line_1, '') AS former_address_line_1, COALESCE(af.address_line_2, '') AS former_address_line_2,
+       af.latitude AS former_latitude, af.longitude AS former_longitude, af.updated_at AS former_address_updated_at
 FROM organization.locations l
-LEFT JOIN organization.location_addresses a ON a.location_id = l.id
+LEFT JOIN organization.location_addresses ac ON ac.location_id = l.id AND ac.division_scheme = 'current_v2'
+LEFT JOIN organization.location_addresses af ON af.location_id = l.id AND af.division_scheme = 'former_v3'
 WHERE l.organization_id = $1 AND l.deleted_at IS NULL AND l.status <> 'archived'
 ORDER BY l.created_at ASC;
 
@@ -39,12 +62,6 @@ ORDER BY l.created_at ASC;
 UPDATE organization.locations
 SET code = $3, name_en = $4, name_vi = $5, phone = $6, email = $7, timezone = $8, updated_at = now()
 WHERE organization_id = $1 AND id = $2 AND deleted_at IS NULL;
-
--- name: UpdateLocationAddress :exec
-UPDATE organization.location_addresses
-SET country_id = $2, state = $3, city = $4, district = $5, ward = $6,
-    address_line_1 = $7, address_line_2 = $8, postal_code = $9, updated_at = now()
-WHERE location_id = $1;
 
 -- name: UpdateLocationStatus :exec
 UPDATE organization.locations SET status = $3, updated_at = now()

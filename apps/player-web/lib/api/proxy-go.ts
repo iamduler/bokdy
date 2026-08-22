@@ -8,6 +8,11 @@ import {
 
 export const GO_X_CLIENT = "player";
 
+/** Match backend AUTH_ACCESS_TOKEN_TTL default (15m). */
+const ACCESS_COOKIE_MAX_AGE = 15 * 60;
+/** Match backend AUTH_REFRESH_TOKEN_TTL / AUTH_SESSION_TTL default (720h). */
+const REFRESH_COOKIE_MAX_AGE = 30 * 24 * 60 * 60;
+
 export function goBaseUrl(): string {
   return (
     process.env.API_INTERNAL_URL ??
@@ -39,21 +44,21 @@ export async function setAuthCookiesOnStore(opts: {
     sameSite: "lax",
     secure,
     path: "/",
-    maxAge: 15 * 60,
+    maxAge: ACCESS_COOKIE_MAX_AGE,
   });
   store.set(REFRESH_COOKIE, opts.refreshToken, {
     httpOnly: true,
     sameSite: "lax",
     secure,
     path: "/",
-    maxAge: 7 * 24 * 60 * 60,
+    maxAge: REFRESH_COOKIE_MAX_AGE,
   });
   store.set(AUTH_PRESENT_COOKIE, "1", {
     httpOnly: false,
     sameSite: "lax",
     secure,
     path: "/",
-    maxAge: 7 * 24 * 60 * 60,
+    maxAge: REFRESH_COOKIE_MAX_AGE,
   });
 }
 
@@ -62,6 +67,56 @@ export async function clearAuthCookiesOnStore() {
   store.delete(SESSION_COOKIE);
   store.delete(REFRESH_COOKIE);
   store.delete(AUTH_PRESENT_COOKIE);
+}
+
+/** Deduplicate concurrent refresh rotations (single-use refresh tokens). */
+let refreshInFlight: Promise<string | null> | null = null;
+
+/**
+ * Exchange httpOnly refresh cookie for a new access+refresh pair.
+ * Returns the new access token, or null if refresh is impossible/failed.
+ */
+export function refreshSessionFromCookie(): Promise<string | null> {
+  if (!refreshInFlight) {
+    refreshInFlight = doRefreshSessionFromCookie().finally(() => {
+      refreshInFlight = null;
+    });
+  }
+  return refreshInFlight;
+}
+
+async function doRefreshSessionFromCookie(): Promise<string | null> {
+  const tokens = await readSessionTokens();
+  const refreshToken = tokens?.refreshToken;
+  if (!refreshToken) return null;
+
+  const upstream = await fetch(`${goBaseUrl().replace(/\/$/, "")}/auth/refresh`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      "X-Client": GO_X_CLIENT,
+    },
+    body: JSON.stringify({ refresh_token: refreshToken }),
+    cache: "no-store",
+  });
+
+  if (!upstream.ok) {
+    if (upstream.status === 401 || upstream.status === 403) {
+      await clearAuthCookiesOnStore();
+    }
+    return null;
+  }
+
+  const json = (await upstream.json().catch(() => null)) as {
+    data?: { access_token?: string; refresh_token?: string };
+  } | null;
+  const access = json?.data?.access_token;
+  const refresh = json?.data?.refresh_token;
+  if (!access || !refresh) return null;
+
+  await setAuthCookiesOnStore({ accessToken: access, refreshToken: refresh });
+  return access;
 }
 
 const ZERO_TRACE = "0".repeat(32);
@@ -125,10 +180,7 @@ export function goClientResponseHeaders(res: Response, fallbackTrace?: string): 
   return out;
 }
 
-export async function proxyToGo(
-  path: string,
-  init: RequestInit = {},
-): Promise<Response> {
+export async function proxyToGo(path: string, init: RequestInit = {}): Promise<Response> {
   const tokens = await readSessionTokens();
   const headers = new Headers(init.headers);
   headers.set("Accept", "application/json");
@@ -140,4 +192,21 @@ export async function proxyToGo(
   }
   const url = `${goBaseUrl().replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
   return fetch(url, { ...init, headers, cache: "no-store" });
+}
+
+/** Proxy to Go; on 401, rotate via refresh cookie once and retry. */
+export async function proxyToGoWithRefresh(
+  path: string,
+  init: RequestInit = {},
+): Promise<Response> {
+  const first = await proxyToGo(path, init);
+  if (first.status !== 401) return first;
+
+  const tokens = await readSessionTokens();
+  if (!tokens?.refreshToken) return first;
+
+  const access = await refreshSessionFromCookie();
+  if (!access) return first;
+
+  return proxyToGo(path, init);
 }

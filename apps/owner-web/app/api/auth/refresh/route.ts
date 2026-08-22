@@ -1,12 +1,42 @@
 import { NextResponse } from "next/server";
-import { GO_X_CLIENT, goBaseUrl, setAuthCookiesOnStore } from "@/lib/api/proxy-go";
+import {
+  GO_X_CLIENT,
+  goBaseUrl,
+  readSessionTokens,
+  setAuthCookiesOnStore,
+} from "@/lib/api/proxy-go";
 
 export async function POST(req: Request) {
-  const body = await req.text();
+  const rawBody = await req.text();
+  let refreshToken: string | undefined;
+
+  const cookieTokens = await readSessionTokens();
+  if (cookieTokens?.refreshToken) {
+    refreshToken = cookieTokens.refreshToken;
+  } else if (rawBody) {
+    try {
+      const parsed = JSON.parse(rawBody) as { refresh_token?: string };
+      refreshToken = parsed.refresh_token;
+    } catch {
+      // keep undefined
+    }
+  }
+
+  if (!refreshToken) {
+    return NextResponse.json(
+      { code: "UNAUTHORIZED", message: "missing refresh token" },
+      { status: 401 },
+    );
+  }
+
   const upstream = await fetch(`${goBaseUrl().replace(/\/$/, "")}/auth/refresh`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json", "X-Client": GO_X_CLIENT },
-    body,
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      "X-Client": GO_X_CLIENT,
+    },
+    body: JSON.stringify({ refresh_token: refreshToken }),
     cache: "no-store",
   });
   const text = await upstream.text();

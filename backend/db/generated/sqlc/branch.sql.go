@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const branchCodeExists = `-- name: BranchCodeExists :one
@@ -108,35 +109,42 @@ func (q *Queries) CreateLocation(ctx context.Context, arg CreateLocationParams) 
 
 const createLocationAddress = `-- name: CreateLocationAddress :exec
 INSERT INTO organization.location_addresses
-    (id, location_id, country_id, state, city, district, ward, address_line_1, address_line_2, postal_code, updated_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, now())
+    (id, location_id, division_scheme, country_id, province_former_id, district_former_id, ward_former_id,
+     province_id, ward_id, address_line_1, address_line_2, latitude, longitude, updated_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, now())
 `
 
 type CreateLocationAddressParams struct {
-	ID           uuid.UUID  `json:"id"`
-	LocationID   uuid.UUID  `json:"location_id"`
-	CountryID    *uuid.UUID `json:"country_id"`
-	State        *string    `json:"state"`
-	City         *string    `json:"city"`
-	District     *string    `json:"district"`
-	Ward         *string    `json:"ward"`
-	AddressLine1 *string    `json:"address_line_1"`
-	AddressLine2 *string    `json:"address_line_2"`
-	PostalCode   *string    `json:"postal_code"`
+	ID               uuid.UUID                    `json:"id"`
+	LocationID       uuid.UUID                    `json:"location_id"`
+	DivisionScheme   ReferenceAdminDivisionScheme `json:"division_scheme"`
+	CountryID        *uuid.UUID                   `json:"country_id"`
+	ProvinceFormerID *uuid.UUID                   `json:"province_former_id"`
+	DistrictFormerID *uuid.UUID                   `json:"district_former_id"`
+	WardFormerID     *uuid.UUID                   `json:"ward_former_id"`
+	ProvinceID       *uuid.UUID                   `json:"province_id"`
+	WardID           *uuid.UUID                   `json:"ward_id"`
+	AddressLine1     *string                      `json:"address_line_1"`
+	AddressLine2     *string                      `json:"address_line_2"`
+	Latitude         pgtype.Numeric               `json:"latitude"`
+	Longitude        pgtype.Numeric               `json:"longitude"`
 }
 
 func (q *Queries) CreateLocationAddress(ctx context.Context, arg CreateLocationAddressParams) error {
 	_, err := q.db.Exec(ctx, createLocationAddress,
 		arg.ID,
 		arg.LocationID,
+		arg.DivisionScheme,
 		arg.CountryID,
-		arg.State,
-		arg.City,
-		arg.District,
-		arg.Ward,
+		arg.ProvinceFormerID,
+		arg.DistrictFormerID,
+		arg.WardFormerID,
+		arg.ProvinceID,
+		arg.WardID,
 		arg.AddressLine1,
 		arg.AddressLine2,
-		arg.PostalCode,
+		arg.Latitude,
+		arg.Longitude,
 	)
 	return err
 }
@@ -156,15 +164,30 @@ func (q *Queries) CreateLocationSettings(ctx context.Context, arg CreateLocation
 	return err
 }
 
+const deleteLocationAddresses = `-- name: DeleteLocationAddresses :exec
+DELETE FROM organization.location_addresses WHERE location_id = $1
+`
+
+func (q *Queries) DeleteLocationAddresses(ctx context.Context, locationID uuid.UUID) error {
+	_, err := q.db.Exec(ctx, deleteLocationAddresses, locationID)
+	return err
+}
+
 const findBranchByID = `-- name: FindBranchByID :one
 SELECT l.id, l.public_id, l.business_unit_id, l.organization_id, l.code,
        COALESCE(l.name_en, '') AS name_en, COALESCE(l.name_vi, '') AS name_vi, COALESCE(l.phone, '') AS phone, COALESCE(l.email, '') AS email,
        COALESCE(l.timezone, '') AS timezone, l.status, l.created_at, l.updated_at, l.deleted_at,
-       a.id AS address_id, a.country_id, COALESCE(a.state, '') AS state, COALESCE(a.city, '') AS city, COALESCE(a.district, '') AS district,
-       COALESCE(a.ward, '') AS ward, COALESCE(a.address_line_1, '') AS address_line_1, COALESCE(a.address_line_2, '') AS address_line_2,
-       COALESCE(a.postal_code, '') AS postal_code, a.updated_at AS address_updated_at
+       ac.id AS current_address_id, ac.country_id AS current_country_id,
+       ac.province_id AS current_province_id, ac.ward_id AS current_ward_id,
+       COALESCE(ac.address_line_1, '') AS current_address_line_1, COALESCE(ac.address_line_2, '') AS current_address_line_2,
+       ac.latitude AS current_latitude, ac.longitude AS current_longitude, ac.updated_at AS current_address_updated_at,
+       af.id AS former_address_id, af.country_id AS former_country_id,
+       af.province_former_id, af.district_former_id, af.ward_former_id,
+       COALESCE(af.address_line_1, '') AS former_address_line_1, COALESCE(af.address_line_2, '') AS former_address_line_2,
+       af.latitude AS former_latitude, af.longitude AS former_longitude, af.updated_at AS former_address_updated_at
 FROM organization.locations l
-LEFT JOIN organization.location_addresses a ON a.location_id = l.id
+LEFT JOIN organization.location_addresses ac ON ac.location_id = l.id AND ac.division_scheme = 'current_v2'
+LEFT JOIN organization.location_addresses af ON af.location_id = l.id AND af.division_scheme = 'former_v3'
 WHERE l.organization_id = $1 AND l.id = $2 AND l.deleted_at IS NULL
 `
 
@@ -174,30 +197,39 @@ type FindBranchByIDParams struct {
 }
 
 type FindBranchByIDRow struct {
-	ID               uuid.UUID                  `json:"id"`
-	PublicID         string                     `json:"public_id"`
-	BusinessUnitID   uuid.UUID                  `json:"business_unit_id"`
-	OrganizationID   uuid.UUID                  `json:"organization_id"`
-	Code             string                     `json:"code"`
-	NameEn           string                     `json:"name_en"`
-	NameVi           string                     `json:"name_vi"`
-	Phone            string                     `json:"phone"`
-	Email            string                     `json:"email"`
-	Timezone         string                     `json:"timezone"`
-	Status           OrganizationLocationStatus `json:"status"`
-	CreatedAt        time.Time                  `json:"created_at"`
-	UpdatedAt        time.Time                  `json:"updated_at"`
-	DeletedAt        *time.Time                 `json:"deleted_at"`
-	AddressID        *uuid.UUID                 `json:"address_id"`
-	CountryID        *uuid.UUID                 `json:"country_id"`
-	State            string                     `json:"state"`
-	City             string                     `json:"city"`
-	District         string                     `json:"district"`
-	Ward             string                     `json:"ward"`
-	AddressLine1     string                     `json:"address_line_1"`
-	AddressLine2     string                     `json:"address_line_2"`
-	PostalCode       string                     `json:"postal_code"`
-	AddressUpdatedAt *time.Time                 `json:"address_updated_at"`
+	ID                      uuid.UUID                  `json:"id"`
+	PublicID                string                     `json:"public_id"`
+	BusinessUnitID          uuid.UUID                  `json:"business_unit_id"`
+	OrganizationID          uuid.UUID                  `json:"organization_id"`
+	Code                    string                     `json:"code"`
+	NameEn                  string                     `json:"name_en"`
+	NameVi                  string                     `json:"name_vi"`
+	Phone                   string                     `json:"phone"`
+	Email                   string                     `json:"email"`
+	Timezone                string                     `json:"timezone"`
+	Status                  OrganizationLocationStatus `json:"status"`
+	CreatedAt               time.Time                  `json:"created_at"`
+	UpdatedAt               time.Time                  `json:"updated_at"`
+	DeletedAt               *time.Time                 `json:"deleted_at"`
+	CurrentAddressID        *uuid.UUID                 `json:"current_address_id"`
+	CurrentCountryID        *uuid.UUID                 `json:"current_country_id"`
+	CurrentProvinceID       *uuid.UUID                 `json:"current_province_id"`
+	CurrentWardID           *uuid.UUID                 `json:"current_ward_id"`
+	CurrentAddressLine1     string                     `json:"current_address_line_1"`
+	CurrentAddressLine2     string                     `json:"current_address_line_2"`
+	CurrentLatitude         pgtype.Numeric             `json:"current_latitude"`
+	CurrentLongitude        pgtype.Numeric             `json:"current_longitude"`
+	CurrentAddressUpdatedAt *time.Time                 `json:"current_address_updated_at"`
+	FormerAddressID         *uuid.UUID                 `json:"former_address_id"`
+	FormerCountryID         *uuid.UUID                 `json:"former_country_id"`
+	ProvinceFormerID        *uuid.UUID                 `json:"province_former_id"`
+	DistrictFormerID        *uuid.UUID                 `json:"district_former_id"`
+	WardFormerID            *uuid.UUID                 `json:"ward_former_id"`
+	FormerAddressLine1      string                     `json:"former_address_line_1"`
+	FormerAddressLine2      string                     `json:"former_address_line_2"`
+	FormerLatitude          pgtype.Numeric             `json:"former_latitude"`
+	FormerLongitude         pgtype.Numeric             `json:"former_longitude"`
+	FormerAddressUpdatedAt  *time.Time                 `json:"former_address_updated_at"`
 }
 
 func (q *Queries) FindBranchByID(ctx context.Context, arg FindBranchByIDParams) (FindBranchByIDRow, error) {
@@ -218,16 +250,25 @@ func (q *Queries) FindBranchByID(ctx context.Context, arg FindBranchByIDParams) 
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
-		&i.AddressID,
-		&i.CountryID,
-		&i.State,
-		&i.City,
-		&i.District,
-		&i.Ward,
-		&i.AddressLine1,
-		&i.AddressLine2,
-		&i.PostalCode,
-		&i.AddressUpdatedAt,
+		&i.CurrentAddressID,
+		&i.CurrentCountryID,
+		&i.CurrentProvinceID,
+		&i.CurrentWardID,
+		&i.CurrentAddressLine1,
+		&i.CurrentAddressLine2,
+		&i.CurrentLatitude,
+		&i.CurrentLongitude,
+		&i.CurrentAddressUpdatedAt,
+		&i.FormerAddressID,
+		&i.FormerCountryID,
+		&i.ProvinceFormerID,
+		&i.DistrictFormerID,
+		&i.WardFormerID,
+		&i.FormerAddressLine1,
+		&i.FormerAddressLine2,
+		&i.FormerLatitude,
+		&i.FormerLongitude,
+		&i.FormerAddressUpdatedAt,
 	)
 	return i, err
 }
@@ -236,40 +277,55 @@ const listBranchesByOrg = `-- name: ListBranchesByOrg :many
 SELECT l.id, l.public_id, l.business_unit_id, l.organization_id, l.code,
        COALESCE(l.name_en, '') AS name_en, COALESCE(l.name_vi, '') AS name_vi, COALESCE(l.phone, '') AS phone, COALESCE(l.email, '') AS email,
        COALESCE(l.timezone, '') AS timezone, l.status, l.created_at, l.updated_at, l.deleted_at,
-       a.id AS address_id, a.country_id, COALESCE(a.state, '') AS state, COALESCE(a.city, '') AS city, COALESCE(a.district, '') AS district,
-       COALESCE(a.ward, '') AS ward, COALESCE(a.address_line_1, '') AS address_line_1, COALESCE(a.address_line_2, '') AS address_line_2,
-       COALESCE(a.postal_code, '') AS postal_code, a.updated_at AS address_updated_at
+       ac.id AS current_address_id, ac.country_id AS current_country_id,
+       ac.province_id AS current_province_id, ac.ward_id AS current_ward_id,
+       COALESCE(ac.address_line_1, '') AS current_address_line_1, COALESCE(ac.address_line_2, '') AS current_address_line_2,
+       ac.latitude AS current_latitude, ac.longitude AS current_longitude, ac.updated_at AS current_address_updated_at,
+       af.id AS former_address_id, af.country_id AS former_country_id,
+       af.province_former_id, af.district_former_id, af.ward_former_id,
+       COALESCE(af.address_line_1, '') AS former_address_line_1, COALESCE(af.address_line_2, '') AS former_address_line_2,
+       af.latitude AS former_latitude, af.longitude AS former_longitude, af.updated_at AS former_address_updated_at
 FROM organization.locations l
-LEFT JOIN organization.location_addresses a ON a.location_id = l.id
+LEFT JOIN organization.location_addresses ac ON ac.location_id = l.id AND ac.division_scheme = 'current_v2'
+LEFT JOIN organization.location_addresses af ON af.location_id = l.id AND af.division_scheme = 'former_v3'
 WHERE l.organization_id = $1 AND l.deleted_at IS NULL AND l.status <> 'archived'
 ORDER BY l.created_at ASC
 `
 
 type ListBranchesByOrgRow struct {
-	ID               uuid.UUID                  `json:"id"`
-	PublicID         string                     `json:"public_id"`
-	BusinessUnitID   uuid.UUID                  `json:"business_unit_id"`
-	OrganizationID   uuid.UUID                  `json:"organization_id"`
-	Code             string                     `json:"code"`
-	NameEn           string                     `json:"name_en"`
-	NameVi           string                     `json:"name_vi"`
-	Phone            string                     `json:"phone"`
-	Email            string                     `json:"email"`
-	Timezone         string                     `json:"timezone"`
-	Status           OrganizationLocationStatus `json:"status"`
-	CreatedAt        time.Time                  `json:"created_at"`
-	UpdatedAt        time.Time                  `json:"updated_at"`
-	DeletedAt        *time.Time                 `json:"deleted_at"`
-	AddressID        *uuid.UUID                 `json:"address_id"`
-	CountryID        *uuid.UUID                 `json:"country_id"`
-	State            string                     `json:"state"`
-	City             string                     `json:"city"`
-	District         string                     `json:"district"`
-	Ward             string                     `json:"ward"`
-	AddressLine1     string                     `json:"address_line_1"`
-	AddressLine2     string                     `json:"address_line_2"`
-	PostalCode       string                     `json:"postal_code"`
-	AddressUpdatedAt *time.Time                 `json:"address_updated_at"`
+	ID                      uuid.UUID                  `json:"id"`
+	PublicID                string                     `json:"public_id"`
+	BusinessUnitID          uuid.UUID                  `json:"business_unit_id"`
+	OrganizationID          uuid.UUID                  `json:"organization_id"`
+	Code                    string                     `json:"code"`
+	NameEn                  string                     `json:"name_en"`
+	NameVi                  string                     `json:"name_vi"`
+	Phone                   string                     `json:"phone"`
+	Email                   string                     `json:"email"`
+	Timezone                string                     `json:"timezone"`
+	Status                  OrganizationLocationStatus `json:"status"`
+	CreatedAt               time.Time                  `json:"created_at"`
+	UpdatedAt               time.Time                  `json:"updated_at"`
+	DeletedAt               *time.Time                 `json:"deleted_at"`
+	CurrentAddressID        *uuid.UUID                 `json:"current_address_id"`
+	CurrentCountryID        *uuid.UUID                 `json:"current_country_id"`
+	CurrentProvinceID       *uuid.UUID                 `json:"current_province_id"`
+	CurrentWardID           *uuid.UUID                 `json:"current_ward_id"`
+	CurrentAddressLine1     string                     `json:"current_address_line_1"`
+	CurrentAddressLine2     string                     `json:"current_address_line_2"`
+	CurrentLatitude         pgtype.Numeric             `json:"current_latitude"`
+	CurrentLongitude        pgtype.Numeric             `json:"current_longitude"`
+	CurrentAddressUpdatedAt *time.Time                 `json:"current_address_updated_at"`
+	FormerAddressID         *uuid.UUID                 `json:"former_address_id"`
+	FormerCountryID         *uuid.UUID                 `json:"former_country_id"`
+	ProvinceFormerID        *uuid.UUID                 `json:"province_former_id"`
+	DistrictFormerID        *uuid.UUID                 `json:"district_former_id"`
+	WardFormerID            *uuid.UUID                 `json:"ward_former_id"`
+	FormerAddressLine1      string                     `json:"former_address_line_1"`
+	FormerAddressLine2      string                     `json:"former_address_line_2"`
+	FormerLatitude          pgtype.Numeric             `json:"former_latitude"`
+	FormerLongitude         pgtype.Numeric             `json:"former_longitude"`
+	FormerAddressUpdatedAt  *time.Time                 `json:"former_address_updated_at"`
 }
 
 func (q *Queries) ListBranchesByOrg(ctx context.Context, organizationID uuid.UUID) ([]ListBranchesByOrgRow, error) {
@@ -296,16 +352,25 @@ func (q *Queries) ListBranchesByOrg(ctx context.Context, organizationID uuid.UUI
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.DeletedAt,
-			&i.AddressID,
-			&i.CountryID,
-			&i.State,
-			&i.City,
-			&i.District,
-			&i.Ward,
-			&i.AddressLine1,
-			&i.AddressLine2,
-			&i.PostalCode,
-			&i.AddressUpdatedAt,
+			&i.CurrentAddressID,
+			&i.CurrentCountryID,
+			&i.CurrentProvinceID,
+			&i.CurrentWardID,
+			&i.CurrentAddressLine1,
+			&i.CurrentAddressLine2,
+			&i.CurrentLatitude,
+			&i.CurrentLongitude,
+			&i.CurrentAddressUpdatedAt,
+			&i.FormerAddressID,
+			&i.FormerCountryID,
+			&i.ProvinceFormerID,
+			&i.DistrictFormerID,
+			&i.WardFormerID,
+			&i.FormerAddressLine1,
+			&i.FormerAddressLine2,
+			&i.FormerLatitude,
+			&i.FormerLongitude,
+			&i.FormerAddressUpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -350,34 +415,41 @@ func (q *Queries) UpdateLocation(ctx context.Context, arg UpdateLocationParams) 
 
 const updateLocationAddress = `-- name: UpdateLocationAddress :exec
 UPDATE organization.location_addresses
-SET country_id = $2, state = $3, city = $4, district = $5, ward = $6,
-    address_line_1 = $7, address_line_2 = $8, postal_code = $9, updated_at = now()
-WHERE location_id = $1
+SET country_id = $3, province_former_id = $4, district_former_id = $5, ward_former_id = $6,
+    province_id = $7, ward_id = $8, address_line_1 = $9, address_line_2 = $10,
+    latitude = $11, longitude = $12, updated_at = now()
+WHERE location_id = $1 AND division_scheme = $2
 `
 
 type UpdateLocationAddressParams struct {
-	LocationID   uuid.UUID  `json:"location_id"`
-	CountryID    *uuid.UUID `json:"country_id"`
-	State        *string    `json:"state"`
-	City         *string    `json:"city"`
-	District     *string    `json:"district"`
-	Ward         *string    `json:"ward"`
-	AddressLine1 *string    `json:"address_line_1"`
-	AddressLine2 *string    `json:"address_line_2"`
-	PostalCode   *string    `json:"postal_code"`
+	LocationID       uuid.UUID                    `json:"location_id"`
+	DivisionScheme   ReferenceAdminDivisionScheme `json:"division_scheme"`
+	CountryID        *uuid.UUID                   `json:"country_id"`
+	ProvinceFormerID *uuid.UUID                   `json:"province_former_id"`
+	DistrictFormerID *uuid.UUID                   `json:"district_former_id"`
+	WardFormerID     *uuid.UUID                   `json:"ward_former_id"`
+	ProvinceID       *uuid.UUID                   `json:"province_id"`
+	WardID           *uuid.UUID                   `json:"ward_id"`
+	AddressLine1     *string                      `json:"address_line_1"`
+	AddressLine2     *string                      `json:"address_line_2"`
+	Latitude         pgtype.Numeric               `json:"latitude"`
+	Longitude        pgtype.Numeric               `json:"longitude"`
 }
 
 func (q *Queries) UpdateLocationAddress(ctx context.Context, arg UpdateLocationAddressParams) error {
 	_, err := q.db.Exec(ctx, updateLocationAddress,
 		arg.LocationID,
+		arg.DivisionScheme,
 		arg.CountryID,
-		arg.State,
-		arg.City,
-		arg.District,
-		arg.Ward,
+		arg.ProvinceFormerID,
+		arg.DistrictFormerID,
+		arg.WardFormerID,
+		arg.ProvinceID,
+		arg.WardID,
 		arg.AddressLine1,
 		arg.AddressLine2,
-		arg.PostalCode,
+		arg.Latitude,
+		arg.Longitude,
 	)
 	return err
 }

@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { goClientResponseHeaders, goProxyHeaders, proxyToGo } from "@/lib/api/proxy-go";
+import {
+  goClientResponseHeaders,
+  goProxyHeaders,
+  proxyToGoWithRefresh,
+} from "@/lib/api/proxy-go";
 
 async function handle(req: NextRequest, ctx: { params: Promise<{ path: string[] }> }) {
   const { path } = await ctx.params;
   const target = path.join("/");
   const body = ["GET", "HEAD"].includes(req.method) ? undefined : await req.text();
   const headers = goProxyHeaders(req);
-  const res = await proxyToGo(target + req.nextUrl.search, {
+  const res = await proxyToGoWithRefresh(target + req.nextUrl.search, {
     method: req.method,
     body,
     headers,

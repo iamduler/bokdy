@@ -21,6 +21,7 @@ type suspendOrgRequest struct {
 type adminOrgDTO struct {
 	orgDTO
 	TenantStatus string `json:"tenant_status"`
+	BranchCount  int    `json:"branch_count"`
 }
 
 func (h *OrganizationHandler) RegisterAdminRoutes(admin *gin.RouterGroup) {
@@ -45,6 +46,14 @@ func (h *OrganizationHandler) AdminList(c *gin.Context) {
 			return
 		}
 		filter.Status = &status
+	}
+	if raw := strings.TrimSpace(c.Query("province_id")); raw != "" {
+		provinceID, err := uuid.Parse(raw)
+		if err != nil {
+			httpx.Fail(c, apperr.CodeValidation, "invalid province_id")
+			return
+		}
+		filter.ProvinceID = &provinceID
 	}
 	items, err := h.orgs.AdminList(c.Request.Context(), filter)
 	if err != nil {
@@ -152,5 +161,6 @@ func toAdminOrgDTO(c *gin.Context, row service.AdminOrganization) adminOrgDTO {
 	return adminOrgDTO{
 		orgDTO:       toOrgDTO(c.Request.Context(), row.Organization),
 		TenantStatus: string(row.TenantStatus),
+		BranchCount:  row.BranchCount,
 	}
 }

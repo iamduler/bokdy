@@ -4,18 +4,16 @@ import { useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
 
 import { OrganizationDetail } from "@/components/organizations/organization-detail";
-import { Link } from "@/i18n/navigation";
+import { usePageShellTitle } from "@/components/shell/shell-title";
 
 export default function OrganizationDetailPage() {
-  const t = useTranslations("organization");
+  const ts = useTranslations("shell");
+  usePageShellTitle(ts("pageTitles.organizationDetail"));
   const params = useParams();
   const id = typeof params.id === "string" ? params.id : "";
 
   return (
-    <main className="mx-auto w-full max-w-5xl space-y-6 p-4 md:p-8">
-      <Link href="/organizations" className="text-sm text-muted-foreground hover:text-foreground hover:underline">
-        ← {t("backToList")}
-      </Link>
+    <main className="flex min-h-full w-full flex-col">
       <OrganizationDetail id={id} />
     </main>
   );

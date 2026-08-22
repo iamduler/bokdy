@@ -21,6 +21,21 @@
     "welcome": "Welcome to Bokdy Owner",
     "subtitle": "Foundation scaffold — no business domain yet."
   },
+  "branch": {
+    "address": {
+      "scheme": "Address scheme",
+      "schemeCurrent": "Current (2-level, post-merger)",
+      "schemeFormer": "Former (3-level, pre-merger)",
+      "province": "Province / City",
+      "district": "District",
+      "ward": "Ward / Commune",
+      "provincePlaceholder": "Select province",
+      "districtPlaceholder": "Select district",
+      "wardPlaceholder": "Select ward",
+      "line1": "Address line 1",
+      "line2": "Address line 2"
+    }
+  },
   "errors": {
     "UNAUTHORIZED": "Please sign in to continue",
     "FORBIDDEN": "You do not have access",

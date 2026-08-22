@@ -24,6 +24,7 @@ import (
 	"bokdy/internal/platform/middleware"
 	refhandler "bokdy/internal/platform/reference/handler"
 	refpg "bokdy/internal/platform/reference/infrastructure/postgres"
+	refredis "bokdy/internal/platform/reference/infrastructure/redis"
 	refservice "bokdy/internal/platform/reference/service"
 	"bokdy/internal/platform/server"
 	"bokdy/internal/platform/validation"
@@ -88,7 +89,12 @@ func RegisterRoutes(api *gin.RouterGroup, app *server.Application) {
 	catalogHandler := cataloghandler.NewCatalogHandler(catalogSvc)
 
 	jwt := middleware.JWTAuth(app.Tokens)
-	refhandler.NewLocaleHandler(refservice.NewLocaleService(refpg.NewLocaleRepo(app.DB.Pool))).RegisterRoutes(api)
+	localeRepo := refpg.NewLocaleRepo(app.DB.Pool)
+	adminUnitRepo := refredis.NewCachedAdminUnitRepo(refpg.NewAdminUnitRepo(app.DB.Pool), app.Redis)
+	refhandler.NewReferenceHandler(
+		refservice.NewLocaleService(localeRepo),
+		refservice.NewAdminUnitService(adminUnitRepo),
+	).RegisterRoutes(api)
 	authHandler.RegisterRoutes(api, jwt)
 	orgHandler.RegisterRoutes(api, jwt)
 	branchHandler.RegisterRoutes(api, jwt)

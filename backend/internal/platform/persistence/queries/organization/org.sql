@@ -76,7 +76,12 @@ WHERE id = $1;
 -- name: ListOrganizationsAdmin :many
 SELECT o.id, o.public_id, o.tenant_id, o.code, COALESCE(o.name_en, '') AS name_en, COALESCE(o.name_vi, '') AS name_vi, o.organization_type,
        COALESCE(o.phone, '') AS phone, COALESCE(o.email, '') AS email, o.status, o.created_at, o.updated_at,
-       t.status AS tenant_status
+       t.status AS tenant_status,
+       (
+         SELECT COUNT(*)::int
+         FROM organization.locations l
+         WHERE l.organization_id = o.id AND l.deleted_at IS NULL
+       ) AS branch_count
 FROM organization.organizations o
 JOIN organization.tenants t ON t.id = o.tenant_id
 WHERE o.deleted_at IS NULL
@@ -90,5 +95,23 @@ WHERE o.deleted_at IS NULL
     OR lower(COALESCE(o.name_en, '')) LIKE '%' || lower(sqlc.arg(q)::text) || '%'
     OR lower(COALESCE(o.name_vi, '')) LIKE '%' || lower(sqlc.arg(q)::text) || '%'
   )
+  AND (
+    sqlc.narg(province_id)::uuid IS NULL
+    OR EXISTS (
+      SELECT 1
+      FROM organization.locations l
+      JOIN organization.location_addresses a ON a.location_id = l.id
+      WHERE l.organization_id = o.id
+        AND l.deleted_at IS NULL
+        AND a.division_scheme = 'current_v2'
+        AND a.province_id = sqlc.narg(province_id)::uuid
+    )
+  )
 ORDER BY o.created_at DESC
 LIMIT sqlc.arg(row_limit);
+
+-- name: CountBranchesByOrganization :one
+SELECT COUNT(*)::int AS branch_count
+FROM organization.locations
+WHERE organization_id = $1 AND deleted_at IS NULL;
+

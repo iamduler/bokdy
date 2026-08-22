@@ -25,12 +25,14 @@ const (
 type AdminOrganization struct {
 	Organization *entity.Organization
 	TenantStatus entity.TenantStatus
+	BranchCount  int
 }
 
 type AdminListFilter struct {
-	Q      string
-	Status *entity.OrganizationStatus
-	Limit  int
+	Q          string
+	Status     *entity.OrganizationStatus
+	ProvinceID *uuid.UUID
+	Limit      int
 }
 
 func (s *OrganizationService) AssertOperable(ctx context.Context, orgID uuid.UUID) error {
@@ -78,7 +80,7 @@ func (s *OrganizationService) AdminList(ctx context.Context, filter AdminListFil
 		limit = adminListMax
 	}
 	rows, err := s.orgs.ListAdmin(ctx, repository.AdminListFilter{
-		Q: strings.TrimSpace(filter.Q), Status: filter.Status, Limit: limit,
+		Q: strings.TrimSpace(filter.Q), Status: filter.Status, ProvinceID: filter.ProvinceID, Limit: limit,
 	})
 	if err != nil {
 		return nil, apperr.Wrap(err, apperr.CodeInternal, "list organizations")
@@ -86,7 +88,11 @@ func (s *OrganizationService) AdminList(ctx context.Context, filter AdminListFil
 	out := make([]AdminOrganization, 0, len(rows))
 	for i := range rows {
 		org := rows[i].Organization
-		out = append(out, AdminOrganization{Organization: &org, TenantStatus: rows[i].TenantStatus})
+		out = append(out, AdminOrganization{
+			Organization: &org,
+			TenantStatus: rows[i].TenantStatus,
+			BranchCount:  rows[i].BranchCount,
+		})
 	}
 	return out, nil
 }
@@ -96,7 +102,7 @@ func (s *OrganizationService) AdminGet(ctx context.Context, orgID uuid.UUID) (*A
 	if err != nil {
 		return nil, err
 	}
-	return &AdminOrganization{Organization: org, TenantStatus: tenant.Status}, nil
+	return s.adminResult(ctx, org, tenant.Status)
 }
 
 func (s *OrganizationService) Activate(ctx context.Context, orgID, actor uuid.UUID) (*AdminOrganization, error) {
@@ -117,7 +123,7 @@ func (s *OrganizationService) Activate(ctx context.Context, orgID, actor uuid.UU
 		tenantNext = entity.TenantActive
 	}
 	if orgNext == org.Status && tenantNext == tenant.Status {
-		return &AdminOrganization{Organization: org, TenantStatus: tenant.Status}, nil
+		return s.adminResult(ctx, org, tenant.Status)
 	}
 	var outboxID uuid.UUID
 	err = persistence.WithinTx(ctx, s.pool, func(tx pgx.Tx) error {
@@ -156,7 +162,7 @@ func (s *OrganizationService) Activate(ctx context.Context, orgID, actor uuid.UU
 	}
 	events.AfterCommit(ctx, s.outbox, outboxID)
 	org.UpdatedAt = now
-	return &AdminOrganization{Organization: org, TenantStatus: tenant.Status}, nil
+	return s.adminResult(ctx, org, tenant.Status)
 }
 
 func (s *OrganizationService) Suspend(ctx context.Context, orgID, actor uuid.UUID, reason string) (*AdminOrganization, error) {
@@ -203,7 +209,7 @@ func (s *OrganizationService) Suspend(ctx context.Context, orgID, actor uuid.UUI
 	}
 	events.AfterCommit(ctx, s.outbox, outboxID)
 	org.UpdatedAt = now
-	return &AdminOrganization{Organization: org, TenantStatus: tenant.Status}, nil
+	return s.adminResult(ctx, org, tenant.Status)
 }
 
 func (s *OrganizationService) Restore(ctx context.Context, orgID, actor uuid.UUID) (*AdminOrganization, error) {
@@ -243,7 +249,19 @@ func (s *OrganizationService) Restore(ctx context.Context, orgID, actor uuid.UUI
 	}
 	events.AfterCommit(ctx, s.outbox, outboxID)
 	org.UpdatedAt = now
-	return &AdminOrganization{Organization: org, TenantStatus: tenantStatus}, nil
+	return s.adminResult(ctx, org, tenantStatus)
+}
+
+func (s *OrganizationService) adminResult(
+	ctx context.Context,
+	org *entity.Organization,
+	tenantStatus entity.TenantStatus,
+) (*AdminOrganization, error) {
+	branchCount, err := s.orgs.CountBranches(ctx, org.ID)
+	if err != nil {
+		return nil, apperr.Wrap(err, apperr.CodeInternal, "count branches")
+	}
+	return &AdminOrganization{Organization: org, TenantStatus: tenantStatus, BranchCount: branchCount}, nil
 }
 
 func (s *OrganizationService) loadOrgTenant(ctx context.Context, orgID uuid.UUID) (*entity.Organization, *entity.Tenant, error) {

@@ -33,6 +33,32 @@ export {
   DropdownMenuSubTrigger,
   DropdownMenuRadioGroup,
 } from "./ui/dropdown-menu";
+export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "./ui/tooltip";
+export { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar";
+export { Separator } from "./ui/separator";
+export { Badge } from "./ui/badge";
+export {
+  Table,
+  TableHeader,
+  TableBody,
+  TableFooter,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableCaption,
+} from "./ui/table";
+export { Checkbox } from "./ui/checkbox";
+export {
+  Sheet,
+  SheetTrigger,
+  SheetClose,
+  SheetPortal,
+  SheetOverlay,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "./ui/sheet";
 export { AuthCard } from "./common/auth-card";
 export { AuthSplitShell } from "./common/auth-split-shell";
 export {

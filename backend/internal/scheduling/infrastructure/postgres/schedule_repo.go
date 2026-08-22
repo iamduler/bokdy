@@ -282,7 +282,7 @@ func (r *ScheduleRepo) SearchBranches(ctx context.Context, q string, limit int) 
 	}
 	out := make([]repository.MarketplaceBranch, 0, len(rows))
 	for _, row := range rows {
-		out = append(out, marketplaceBranch(row.ID, row.PublicID, row.OrganizationID, row.Code, row.NameEn, row.NameVi, row.Phone, row.Email, row.Timezone, row.Status, row.City, row.District, row.AddressLine1))
+		out = append(out, marketplaceBranch(row.ID, row.PublicID, row.OrganizationID, row.Code, row.NameEn, row.NameVi, row.Phone, row.Email, row.Timezone, row.Status, row.ProvinceName, row.WardName, row.AddressLine1))
 	}
 	return out, nil
 }
@@ -295,7 +295,7 @@ func (r *ScheduleRepo) FindBranchByPublicID(ctx context.Context, publicID string
 		}
 		return nil, err
 	}
-	b := marketplaceBranch(row.ID, row.PublicID, row.OrganizationID, row.Code, row.NameEn, row.NameVi, row.Phone, row.Email, row.Timezone, row.Status, row.City, row.District, row.AddressLine1)
+	b := marketplaceBranch(row.ID, row.PublicID, row.OrganizationID, row.Code, row.NameEn, row.NameVi, row.Phone, row.Email, row.Timezone, row.Status, row.ProvinceName, row.WardName, row.AddressLine1)
 	return &b, nil
 }
 
@@ -336,9 +336,9 @@ func (r *ScheduleRepo) FindCourtByPublicID(ctx context.Context, publicID string)
 	return c, nil
 }
 
-func marketplaceBranch(id uuid.UUID, publicID string, orgID uuid.UUID, code, nameEn, nameVi, phone, email, tz, status, city, district, addr1 string) repository.MarketplaceBranch {
+func marketplaceBranch(id uuid.UUID, publicID string, orgID uuid.UUID, code, nameEn, nameVi, phone, email, tz, status, provinceName, wardName, addr1 string) repository.MarketplaceBranch {
 	return repository.MarketplaceBranch{
 		ID: id, PublicID: publicID, OrganizationID: orgID, Code: code, NameEn: nameEn, NameVi: nameVi,
-		Phone: phone, Email: email, Timezone: tz, Status: status, City: city, District: district, AddressLine1: addr1,
+		Phone: phone, Email: email, Timezone: tz, Status: status, ProvinceName: provinceName, WardName: wardName, AddressLine1: addr1,
 	}
 }

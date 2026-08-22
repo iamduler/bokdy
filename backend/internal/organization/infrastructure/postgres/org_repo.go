@@ -130,7 +130,7 @@ func (r *OrgRepo) ListAdmin(ctx context.Context, filter repository.AdminListFilt
 		statusFilter = &s
 	}
 	rows, err := r.q.ListOrganizationsAdmin(ctx, dbsqlc.ListOrganizationsAdminParams{
-		StatusFilter: statusFilter, Q: filter.Q, RowLimit: int32(filter.Limit),
+		StatusFilter: statusFilter, Q: filter.Q, ProvinceID: filter.ProvinceID, RowLimit: int32(filter.Limit),
 	})
 	if err != nil {
 		return nil, err
@@ -140,9 +140,18 @@ func (r *OrgRepo) ListAdmin(ctx context.Context, filter repository.AdminListFilt
 		out = append(out, repository.AdminOrganization{
 			Organization: *toOrg(row.ID, row.PublicID, row.TenantID, row.Code, row.NameEn, row.NameVi, row.OrganizationType, row.Phone, row.Email, row.Status, row.CreatedAt, row.UpdatedAt),
 			TenantStatus: entity.TenantStatus(row.TenantStatus),
+			BranchCount:  int(row.BranchCount),
 		})
 	}
 	return out, nil
+}
+
+func (r *OrgRepo) CountBranches(ctx context.Context, orgID uuid.UUID) (int, error) {
+	n, err := r.q.CountBranchesByOrganization(ctx, orgID)
+	if err != nil {
+		return 0, err
+	}
+	return int(n), nil
 }
 
 func (r *OrgRepo) Update(ctx context.Context, tx pgx.Tx, org *entity.Organization) error {

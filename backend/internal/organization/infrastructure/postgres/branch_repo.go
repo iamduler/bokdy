@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"bokdy/db/generated/sqlc"
+	dbsqlc "bokdy/db/generated/sqlc"
 	"bokdy/internal/organization/entity"
 	"bokdy/internal/organization/repository"
 	"bokdy/internal/platform/id"
@@ -36,16 +36,10 @@ func (r *BranchRepo) Create(ctx context.Context, tx pgx.Tx, branch *entity.Branc
 	}); err != nil {
 		return err
 	}
-	addr := branch.Address
-	if addr == nil {
-		addr = &entity.BranchAddress{}
-	}
-	if err := q.CreateLocationAddress(ctx, dbsqlc.CreateLocationAddressParams{
-		ID: id.MustNewUUID(), LocationID: branch.ID, CountryID: addr.CountryID,
-		State: nullStr(addr.State), City: nullStr(addr.City), District: nullStr(addr.District), Ward: nullStr(addr.Ward),
-		AddressLine1: nullStr(addr.AddressLine1), AddressLine2: nullStr(addr.AddressLine2), PostalCode: nullStr(addr.PostalCode),
-	}); err != nil {
-		return err
+	for _, addr := range branch.Addresses {
+		if err := q.CreateLocationAddress(ctx, toCreateAddressParams(branch.ID, addr)); err != nil {
+			return err
+		}
 	}
 	return q.CreateLocationSettings(ctx, dbsqlc.CreateLocationSettingsParams{
 		ID: id.MustNewUUID(), LocationID: branch.ID,
@@ -84,15 +78,18 @@ func (r *BranchRepo) Update(ctx context.Context, tx pgx.Tx, branch *entity.Branc
 	}); err != nil {
 		return err
 	}
-	if branch.Address == nil {
+	if branch.Addresses == nil {
 		return nil
 	}
-	a := branch.Address
-	return q.UpdateLocationAddress(ctx, dbsqlc.UpdateLocationAddressParams{
-		LocationID: branch.ID, CountryID: a.CountryID, State: nullStr(a.State), City: nullStr(a.City),
-		District: nullStr(a.District), Ward: nullStr(a.Ward), AddressLine1: nullStr(a.AddressLine1),
-		AddressLine2: nullStr(a.AddressLine2), PostalCode: nullStr(a.PostalCode),
-	})
+	if err := q.DeleteLocationAddresses(ctx, branch.ID); err != nil {
+		return err
+	}
+	for _, addr := range branch.Addresses {
+		if err := q.CreateLocationAddress(ctx, toCreateAddressParams(branch.ID, addr)); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (r *BranchRepo) UpdateStatus(ctx context.Context, tx pgx.Tx, orgID, branchID uuid.UUID, status entity.LocationStatus) error {
@@ -113,6 +110,22 @@ func (r *BranchRepo) NameExists(ctx context.Context, orgID uuid.UUID, nameEn, na
 	})
 }
 
+func toCreateAddressParams(locationID uuid.UUID, addr entity.BranchAddress) dbsqlc.CreateLocationAddressParams {
+	return dbsqlc.CreateLocationAddressParams{
+		ID:               id.MustNewUUID(),
+		LocationID:       locationID,
+		DivisionScheme:   dbsqlc.ReferenceAdminDivisionScheme(addr.DivisionScheme),
+		CountryID:        addr.CountryID,
+		ProvinceFormerID: addr.ProvinceFormerID,
+		DistrictFormerID: addr.DistrictFormerID,
+		WardFormerID:     addr.WardFormerID,
+		ProvinceID:       addr.ProvinceID,
+		WardID:           addr.WardID,
+		AddressLine1:     nullStr(addr.AddressLine1),
+		AddressLine2:     nullStr(addr.AddressLine2),
+	}
+}
+
 func toBranchFromFind(row dbsqlc.FindBranchByIDRow) *entity.Branch {
 	b := &entity.Branch{
 		ID: row.ID, PublicID: row.PublicID, BusinessUnitID: row.BusinessUnitID, OrganizationID: row.OrganizationID,
@@ -120,13 +133,10 @@ func toBranchFromFind(row dbsqlc.FindBranchByIDRow) *entity.Branch {
 		Timezone: row.Timezone, Status: entity.LocationStatus(row.Status), CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
 		DeletedAt: row.DeletedAt,
 	}
-	if row.AddressID != nil {
-		b.Address = &entity.BranchAddress{
-			ID: *row.AddressID, LocationID: row.ID, CountryID: row.CountryID, State: row.State, City: row.City,
-			District: row.District, Ward: row.Ward, AddressLine1: row.AddressLine1, AddressLine2: row.AddressLine2,
-			PostalCode: row.PostalCode, UpdatedAt: derefTime(row.AddressUpdatedAt),
-		}
-	}
+	b.Addresses = appendBranchAddresses(row.CurrentAddressID, row.CurrentCountryID, row.CurrentProvinceID, row.CurrentWardID,
+		row.CurrentAddressLine1, row.CurrentAddressLine2, row.CurrentAddressUpdatedAt,
+		row.FormerAddressID, row.FormerCountryID, row.ProvinceFormerID, row.DistrictFormerID, row.WardFormerID,
+		row.FormerAddressLine1, row.FormerAddressLine2, row.FormerAddressUpdatedAt, row.ID)
 	return b
 }
 
@@ -137,14 +147,37 @@ func toBranchFromList(row dbsqlc.ListBranchesByOrgRow) *entity.Branch {
 		Timezone: row.Timezone, Status: entity.LocationStatus(row.Status), CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
 		DeletedAt: row.DeletedAt,
 	}
-	if row.AddressID != nil {
-		b.Address = &entity.BranchAddress{
-			ID: *row.AddressID, LocationID: row.ID, CountryID: row.CountryID, State: row.State, City: row.City,
-			District: row.District, Ward: row.Ward, AddressLine1: row.AddressLine1, AddressLine2: row.AddressLine2,
-			PostalCode: row.PostalCode, UpdatedAt: derefTime(row.AddressUpdatedAt),
-		}
-	}
+	b.Addresses = appendBranchAddresses(row.CurrentAddressID, row.CurrentCountryID, row.CurrentProvinceID, row.CurrentWardID,
+		row.CurrentAddressLine1, row.CurrentAddressLine2, row.CurrentAddressUpdatedAt,
+		row.FormerAddressID, row.FormerCountryID, row.ProvinceFormerID, row.DistrictFormerID, row.WardFormerID,
+		row.FormerAddressLine1, row.FormerAddressLine2, row.FormerAddressUpdatedAt, row.ID)
 	return b
+}
+
+func appendBranchAddresses(
+	currentID, currentCountryID, currentProvinceID, currentWardID *uuid.UUID,
+	currentLine1, currentLine2 string, currentUpdatedAt *time.Time,
+	formerID, formerCountryID, provinceFormerID, districtFormerID, wardFormerID *uuid.UUID,
+	formerLine1, formerLine2 string, formerUpdatedAt *time.Time,
+	locationID uuid.UUID,
+) []entity.BranchAddress {
+	var out []entity.BranchAddress
+	if currentID != nil {
+		out = append(out, entity.BranchAddress{
+			ID: *currentID, LocationID: locationID, DivisionScheme: entity.AdminDivisionCurrentV2,
+			CountryID: currentCountryID, ProvinceID: currentProvinceID, WardID: currentWardID,
+			AddressLine1: currentLine1, AddressLine2: currentLine2, UpdatedAt: derefTime(currentUpdatedAt),
+		})
+	}
+	if formerID != nil {
+		out = append(out, entity.BranchAddress{
+			ID: *formerID, LocationID: locationID, DivisionScheme: entity.AdminDivisionFormerV3,
+			CountryID: formerCountryID, ProvinceFormerID: provinceFormerID, DistrictFormerID: districtFormerID,
+			WardFormerID: wardFormerID, AddressLine1: formerLine1, AddressLine2: formerLine2,
+			UpdatedAt: derefTime(formerUpdatedAt),
+		})
+	}
+	return out
 }
 
 func derefTime(t *time.Time) time.Time {

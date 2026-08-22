@@ -24,60 +24,62 @@ func NewBranchHandler(branches *service.BranchService) *BranchHandler {
 }
 
 type branchAddressRequest struct {
-	CountryID    *string `json:"country_id" binding:"omitempty,uuid"`
-	State        string  `json:"state"`
-	City         string  `json:"city"`
-	District     string  `json:"district"`
-	Ward         string  `json:"ward"`
-	AddressLine1 string  `json:"address_line_1"`
-	AddressLine2 string  `json:"address_line_2"`
-	PostalCode   string  `json:"postal_code"`
+	DivisionScheme   string  `json:"division_scheme" binding:"required,oneof=former_v3 current_v2"`
+	CountryID        *string `json:"country_id" binding:"omitempty,uuid"`
+	ProvinceFormerID *string `json:"province_former_id" binding:"omitempty,uuid"`
+	DistrictFormerID *string `json:"district_former_id" binding:"omitempty,uuid"`
+	WardFormerID     *string `json:"ward_former_id" binding:"omitempty,uuid"`
+	ProvinceID       *string `json:"province_id" binding:"omitempty,uuid"`
+	WardID           *string `json:"ward_id" binding:"omitempty,uuid"`
+	AddressLine1     string  `json:"address_line_1"`
+	AddressLine2     string  `json:"address_line_2"`
 }
 
 type createBranchRequest struct {
-	NameEn   string                `json:"name_en"`
-	NameVi   string                `json:"name_vi"`
-	Code     string                `json:"code"`
-	Phone    string                `json:"phone"`
-	Email    string                `json:"email" binding:"omitempty,email"`
-	Timezone string                `json:"timezone"`
-	Address  *branchAddressRequest `json:"address"`
+	NameEn    string                 `json:"name_en"`
+	NameVi    string                 `json:"name_vi"`
+	Code      string                 `json:"code"`
+	Phone     string                 `json:"phone"`
+	Email     string                 `json:"email" binding:"omitempty,email"`
+	Timezone  string                 `json:"timezone"`
+	Addresses []branchAddressRequest `json:"addresses"`
 }
 
 type updateBranchRequest struct {
-	NameEn   *string               `json:"name_en"`
-	NameVi   *string               `json:"name_vi"`
-	Code     *string               `json:"code"`
-	Phone    *string               `json:"phone"`
-	Email    *string               `json:"email" binding:"omitempty,email"`
-	Timezone *string               `json:"timezone"`
-	Address  *branchAddressRequest `json:"address"`
+	NameEn    *string                 `json:"name_en"`
+	NameVi    *string                 `json:"name_vi"`
+	Code      *string                 `json:"code"`
+	Phone     *string                 `json:"phone"`
+	Email     *string                 `json:"email" binding:"omitempty,email"`
+	Timezone  *string                 `json:"timezone"`
+	Addresses *[]branchAddressRequest `json:"addresses"`
 }
 
 type branchAddressDTO struct {
-	CountryID    string `json:"country_id,omitempty"`
-	State        string `json:"state,omitempty"`
-	City         string `json:"city,omitempty"`
-	District     string `json:"district,omitempty"`
-	Ward         string `json:"ward,omitempty"`
-	AddressLine1 string `json:"address_line_1,omitempty"`
-	AddressLine2 string `json:"address_line_2,omitempty"`
-	PostalCode   string `json:"postal_code,omitempty"`
+	DivisionScheme   string `json:"division_scheme"`
+	CountryID        string `json:"country_id,omitempty"`
+	ProvinceFormerID string `json:"province_former_id,omitempty"`
+	DistrictFormerID string `json:"district_former_id,omitempty"`
+	WardFormerID     string `json:"ward_former_id,omitempty"`
+	ProvinceID       string `json:"province_id,omitempty"`
+	WardID           string `json:"ward_id,omitempty"`
+	AddressLine1     string `json:"address_line_1,omitempty"`
+	AddressLine2     string `json:"address_line_2,omitempty"`
 }
 
 type branchDTO struct {
-	ID             string            `json:"id"`
-	PublicID       string            `json:"public_id"`
-	OrganizationID string            `json:"organization_id"`
-	Code           string            `json:"code"`
-	Name           string            `json:"name"`
-	NameEn         string            `json:"name_en,omitempty"`
-	NameVi         string            `json:"name_vi,omitempty"`
-	Phone          string            `json:"phone,omitempty"`
-	Email          string            `json:"email,omitempty"`
-	Timezone       string            `json:"timezone,omitempty"`
-	Status         string            `json:"status"`
-	Address        *branchAddressDTO `json:"address,omitempty"`
+	ID             string             `json:"id"`
+	PublicID       string             `json:"public_id"`
+	OrganizationID string             `json:"organization_id"`
+	Code           string             `json:"code"`
+	Name           string             `json:"name"`
+	NameEn         string             `json:"name_en,omitempty"`
+	NameVi         string             `json:"name_vi,omitempty"`
+	Phone          string             `json:"phone,omitempty"`
+	Email          string             `json:"email,omitempty"`
+	Timezone       string             `json:"timezone,omitempty"`
+	Status         string             `json:"status"`
+	Addresses      []branchAddressDTO `json:"addresses,omitempty"`
 }
 
 func (h *BranchHandler) RegisterRoutes(rg *gin.RouterGroup, jwt gin.HandlerFunc) {
@@ -215,11 +217,11 @@ func toCreateBranchInput(req createBranchRequest) (service.CreateBranchInput, er
 	in := service.CreateBranchInput{
 		NameEn: req.NameEn, NameVi: req.NameVi, Code: req.Code, Phone: req.Phone, Email: req.Email, Timezone: req.Timezone,
 	}
-	addr, err := toAddressInput(req.Address)
+	addrs, err := toAddressInputs(req.Addresses)
 	if err != nil {
 		return in, err
 	}
-	in.Address = addr
+	in.Addresses = addrs
 	return in, nil
 }
 
@@ -227,30 +229,65 @@ func toUpdateBranchInput(req updateBranchRequest) (service.UpdateBranchInput, er
 	in := service.UpdateBranchInput{
 		NameEn: req.NameEn, NameVi: req.NameVi, Code: req.Code, Phone: req.Phone, Email: req.Email, Timezone: req.Timezone,
 	}
-	addr, err := toAddressInput(req.Address)
-	if err != nil {
-		return in, err
+	if req.Addresses != nil {
+		addrs, err := toAddressInputs(*req.Addresses)
+		if err != nil {
+			return in, err
+		}
+		in.Addresses = &addrs
 	}
-	in.Address = addr
 	return in, nil
 }
 
-func toAddressInput(req *branchAddressRequest) (*service.BranchAddressInput, error) {
-	if req == nil {
-		return nil, nil
-	}
-	out := &service.BranchAddressInput{
-		State: req.State, City: req.City, District: req.District, Ward: req.Ward,
-		AddressLine1: req.AddressLine1, AddressLine2: req.AddressLine2, PostalCode: req.PostalCode,
-	}
-	if req.CountryID != nil && *req.CountryID != "" {
-		id, err := uuid.Parse(*req.CountryID)
+func toAddressInputs(reqs []branchAddressRequest) ([]service.BranchAddressInput, error) {
+	out := make([]service.BranchAddressInput, 0, len(reqs))
+	for _, req := range reqs {
+		addr, err := toAddressInput(req)
 		if err != nil {
-			return nil, apperr.New(apperr.CodeValidation, "invalid country_id")
+			return nil, err
 		}
-		out.CountryID = &id
+		out = append(out, addr)
 	}
 	return out, nil
+}
+
+func toAddressInput(req branchAddressRequest) (service.BranchAddressInput, error) {
+	out := service.BranchAddressInput{
+		DivisionScheme: entity.AdminDivisionScheme(req.DivisionScheme),
+		AddressLine1:   req.AddressLine1,
+		AddressLine2:   req.AddressLine2,
+	}
+	var err error
+	if out.CountryID, err = parseOptionalUUID(req.CountryID, "country_id"); err != nil {
+		return out, err
+	}
+	if out.ProvinceFormerID, err = parseOptionalUUID(req.ProvinceFormerID, "province_former_id"); err != nil {
+		return out, err
+	}
+	if out.DistrictFormerID, err = parseOptionalUUID(req.DistrictFormerID, "district_former_id"); err != nil {
+		return out, err
+	}
+	if out.WardFormerID, err = parseOptionalUUID(req.WardFormerID, "ward_former_id"); err != nil {
+		return out, err
+	}
+	if out.ProvinceID, err = parseOptionalUUID(req.ProvinceID, "province_id"); err != nil {
+		return out, err
+	}
+	if out.WardID, err = parseOptionalUUID(req.WardID, "ward_id"); err != nil {
+		return out, err
+	}
+	return out, nil
+}
+
+func parseOptionalUUID(raw *string, field string) (*uuid.UUID, error) {
+	if raw == nil || *raw == "" {
+		return nil, nil
+	}
+	id, err := uuid.Parse(*raw)
+	if err != nil {
+		return nil, apperr.New(apperr.CodeValidation, "invalid "+field)
+	}
+	return &id, nil
 }
 
 func toBranchDTO(ctx context.Context, branch *entity.Branch) branchDTO {
@@ -260,16 +297,38 @@ func toBranchDTO(ctx context.Context, branch *entity.Branch) branchDTO {
 		NameEn: branch.NameEn, NameVi: branch.NameVi, Phone: branch.Phone, Email: branch.Email,
 		Timezone: branch.Timezone, Status: string(branch.Status),
 	}
-	if branch.Address != nil {
-		addr := &branchAddressDTO{
-			State: branch.Address.State, City: branch.Address.City, District: branch.Address.District,
-			Ward: branch.Address.Ward, AddressLine1: branch.Address.AddressLine1,
-			AddressLine2: branch.Address.AddressLine2, PostalCode: branch.Address.PostalCode,
+	if len(branch.Addresses) > 0 {
+		dto.Addresses = make([]branchAddressDTO, 0, len(branch.Addresses))
+		for _, addr := range branch.Addresses {
+			dto.Addresses = append(dto.Addresses, toBranchAddressDTO(addr))
 		}
-		if branch.Address.CountryID != nil {
-			addr.CountryID = branch.Address.CountryID.String()
-		}
-		dto.Address = addr
+	}
+	return dto
+}
+
+func toBranchAddressDTO(addr entity.BranchAddress) branchAddressDTO {
+	dto := branchAddressDTO{
+		DivisionScheme: string(addr.DivisionScheme),
+		AddressLine1:   addr.AddressLine1,
+		AddressLine2:   addr.AddressLine2,
+	}
+	if addr.CountryID != nil {
+		dto.CountryID = addr.CountryID.String()
+	}
+	if addr.ProvinceFormerID != nil {
+		dto.ProvinceFormerID = addr.ProvinceFormerID.String()
+	}
+	if addr.DistrictFormerID != nil {
+		dto.DistrictFormerID = addr.DistrictFormerID.String()
+	}
+	if addr.WardFormerID != nil {
+		dto.WardFormerID = addr.WardFormerID.String()
+	}
+	if addr.ProvinceID != nil {
+		dto.ProvinceID = addr.ProvinceID.String()
+	}
+	if addr.WardID != nil {
+		dto.WardID = addr.WardID.String()
 	}
 	return dto
 }

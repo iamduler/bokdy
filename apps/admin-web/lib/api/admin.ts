@@ -10,6 +10,7 @@ export type TenantStatus = AdminOrganization["tenant_status"];
 export type AdminOrgListParams = {
   q?: string;
   status?: OrgStatus;
+  province_id?: string;
   limit?: number;
 };
 
@@ -18,6 +19,7 @@ function buildQuery(params: AdminOrgListParams): string {
   const q = params.q?.trim();
   if (q) qs.set("q", q);
   if (params.status) qs.set("status", params.status);
+  if (params.province_id) qs.set("province_id", params.province_id);
   if (params.limit != null) qs.set("limit", String(params.limit));
   const s = qs.toString();
   return s ? `?${s}` : "";
@@ -49,6 +51,30 @@ export function suspendOrganization(id: string, input: SuspendOrganizationInput)
 export function restoreOrganization(id: string) {
   return apiGo<AdminOrganization>(`admin/organizations/${encodeURIComponent(id)}/restore`, {
     method: "POST",
+  });
+}
+
+export type CreateOrganizationInput = {
+  name?: string;
+  name_en?: string;
+  name_vi?: string;
+  code?: string;
+  email?: string;
+  phone?: string;
+};
+
+/** Owner-path create; admin JWT becomes org owner staff. */
+export function createOrganization(input: CreateOrganizationInput) {
+  const body: CreateOrganizationInput = {};
+  if (input.name?.trim()) body.name = input.name.trim();
+  if (input.name_en?.trim()) body.name_en = input.name_en.trim();
+  if (input.name_vi?.trim()) body.name_vi = input.name_vi.trim();
+  if (input.code?.trim()) body.code = input.code.trim();
+  if (input.email?.trim()) body.email = input.email.trim();
+  if (input.phone?.trim()) body.phone = input.phone.trim();
+  return apiGo<AdminOrganization>("organizations", {
+    method: "POST",
+    body: JSON.stringify(body),
   });
 }
 

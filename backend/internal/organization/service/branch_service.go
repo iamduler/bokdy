@@ -39,34 +39,35 @@ func NewBranchService(
 }
 
 type BranchAddressInput struct {
-	CountryID    *uuid.UUID
-	State        string
-	City         string
-	District     string
-	Ward         string
-	AddressLine1 string
-	AddressLine2 string
-	PostalCode   string
+	DivisionScheme   entity.AdminDivisionScheme
+	CountryID        *uuid.UUID
+	ProvinceFormerID *uuid.UUID
+	DistrictFormerID *uuid.UUID
+	WardFormerID     *uuid.UUID
+	ProvinceID       *uuid.UUID
+	WardID           *uuid.UUID
+	AddressLine1     string
+	AddressLine2     string
 }
 
 type CreateBranchInput struct {
-	NameEn   string
-	NameVi   string
-	Code     string
-	Phone    string
-	Email    string
-	Timezone string
-	Address  *BranchAddressInput
+	NameEn    string
+	NameVi    string
+	Code      string
+	Phone     string
+	Email     string
+	Timezone  string
+	Addresses []BranchAddressInput
 }
 
 type UpdateBranchInput struct {
-	NameEn   *string
-	NameVi   *string
-	Code     *string
-	Phone    *string
-	Email    *string
-	Timezone *string
-	Address  *BranchAddressInput
+	NameEn    *string
+	NameVi    *string
+	Code      *string
+	Phone     *string
+	Email     *string
+	Timezone  *string
+	Addresses *[]BranchAddressInput
 }
 
 func (s *BranchService) requireOrgHeader(ctx context.Context) (uuid.UUID, error) {
@@ -125,12 +126,12 @@ func (s *BranchService) Create(ctx context.Context, actor uuid.UUID, in CreateBr
 		Code: code, NameEn: nameEn, NameVi: nameVi, Phone: strings.TrimSpace(in.Phone), Email: strings.TrimSpace(in.Email),
 		Timezone: strings.TrimSpace(in.Timezone), Status: entity.LocationInactive, CreatedAt: now, UpdatedAt: now,
 	}
-	if in.Address != nil {
-		branch.Address = &entity.BranchAddress{
-			CountryID: in.Address.CountryID, State: in.Address.State, City: in.Address.City,
-			District: in.Address.District, Ward: in.Address.Ward,
-			AddressLine1: in.Address.AddressLine1, AddressLine2: in.Address.AddressLine2, PostalCode: in.Address.PostalCode,
+	if len(in.Addresses) > 0 {
+		addrs, err := toBranchAddresses(in.Addresses)
+		if err != nil {
+			return nil, err
 		}
+		branch.Addresses = addrs
 	}
 	var outboxID uuid.UUID
 	err = persistence.WithinTx(ctx, s.pool, func(tx pgx.Tx) error {
@@ -250,12 +251,12 @@ func (s *BranchService) Update(ctx context.Context, branchID, actor uuid.UUID, i
 	if in.Timezone != nil {
 		branch.Timezone = strings.TrimSpace(*in.Timezone)
 	}
-	if in.Address != nil {
-		branch.Address = &entity.BranchAddress{
-			CountryID: in.Address.CountryID, State: in.Address.State, City: in.Address.City,
-			District: in.Address.District, Ward: in.Address.Ward,
-			AddressLine1: in.Address.AddressLine1, AddressLine2: in.Address.AddressLine2, PostalCode: in.Address.PostalCode,
+	if in.Addresses != nil {
+		addrs, err := toBranchAddresses(*in.Addresses)
+		if err != nil {
+			return nil, err
 		}
+		branch.Addresses = addrs
 	}
 	now := time.Now().UTC()
 	branch.UpdatedAt = now
@@ -374,4 +375,37 @@ func (s *BranchService) transition(
 	}
 	events.AfterCommit(ctx, s.outbox, outboxID)
 	return nil
+}
+
+func toBranchAddresses(inputs []BranchAddressInput) ([]entity.BranchAddress, error) {
+	out := make([]entity.BranchAddress, 0, len(inputs))
+	for _, in := range inputs {
+		scheme := in.DivisionScheme
+		if scheme != entity.AdminDivisionFormerV3 && scheme != entity.AdminDivisionCurrentV2 {
+			return nil, apperr.New(apperr.CodeValidation, "invalid division_scheme")
+		}
+		addr := entity.BranchAddress{
+			DivisionScheme: scheme,
+			CountryID:      in.CountryID,
+			AddressLine1:   strings.TrimSpace(in.AddressLine1),
+			AddressLine2:   strings.TrimSpace(in.AddressLine2),
+		}
+		switch scheme {
+		case entity.AdminDivisionFormerV3:
+			if in.ProvinceFormerID == nil || in.DistrictFormerID == nil || in.WardFormerID == nil {
+				return nil, apperr.New(apperr.CodeValidation, "former_v3 requires province_former_id, district_former_id, ward_former_id")
+			}
+			addr.ProvinceFormerID = in.ProvinceFormerID
+			addr.DistrictFormerID = in.DistrictFormerID
+			addr.WardFormerID = in.WardFormerID
+		case entity.AdminDivisionCurrentV2:
+			if in.ProvinceID == nil || in.WardID == nil {
+				return nil, apperr.New(apperr.CodeValidation, "current_v2 requires province_id and ward_id")
+			}
+			addr.ProvinceID = in.ProvinceID
+			addr.WardID = in.WardID
+		}
+		out = append(out, addr)
+	}
+	return out, nil
 }

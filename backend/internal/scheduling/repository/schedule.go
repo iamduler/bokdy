@@ -70,8 +70,8 @@ type MarketplaceBranch struct {
 	Email          string
 	Timezone       string
 	Status         string
-	City           string
-	District       string
+	ProvinceName   string
+	WardName       string
 	AddressLine1   string
 }
 

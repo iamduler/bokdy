@@ -162,6 +162,149 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reference/admin-units/provinces": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List provinces or cities (VN)
+         * @description Public catalog of Vietnamese provinces/cities. Use `former_v3` for the pre-merger
+         *     63-province catalog or `current_v2` for the post-merger 34-province catalog.
+         */
+        get: {
+            parameters: {
+                query: {
+                    scheme: components["schemas"]["AdminDivisionScheme"];
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Provinces */
+                200: {
+                    headers: {
+                        /** @description public, max-age=86400 */
+                        "Cache-Control"?: string;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["AdminUnit"][];
+                        };
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reference/admin-units/districts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List districts (former_v3 only) */
+        get: {
+            parameters: {
+                query: {
+                    /** @description UUID from `former_v3` province list */
+                    province_id: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Districts */
+                200: {
+                    headers: {
+                        "Cache-Control"?: string;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["AdminUnit"][];
+                        };
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                404: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reference/admin-units/wards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List or search wards */
+        get: {
+            parameters: {
+                query: {
+                    scheme: components["schemas"]["AdminDivisionScheme"];
+                    /** @description Required when scheme is `current_v2` */
+                    province_id?: string;
+                    /** @description Required when scheme is `former_v3` */
+                    district_id?: string;
+                    /** @description Optional search (max 50 results) */
+                    q?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Wards */
+                200: {
+                    headers: {
+                        "Cache-Control"?: string;
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["AdminUnit"][];
+                        };
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                404: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/register": {
         parameters: {
             query?: never;
@@ -4414,6 +4557,8 @@ export interface paths {
                     q?: string;
                     status?: "active" | "inactive" | "suspended" | "archived";
                     limit?: number;
+                    /** @description Filter orgs with at least one branch in this province (current_v2 address) */
+                    province_id?: string;
                 };
                 header?: never;
                 path?: never;
@@ -4699,6 +4844,8 @@ export interface components {
         AdminOrganization: components["schemas"]["Organization"] & {
             /** @enum {string} */
             tenant_status: "trial" | "active" | "suspended" | "canceled";
+            /** @description Non-archived branch (location) count */
+            branch_count: number;
         };
         SuspendOrganizationRequest: {
             reason: string;
@@ -4776,15 +4923,32 @@ export interface components {
             token: string;
         };
         BranchAddress: {
+            division_scheme: components["schemas"]["AdminDivisionScheme"];
             /** Format: uuid */
             country_id?: string;
-            state?: string;
-            city?: string;
-            district?: string;
-            ward?: string;
+            /** Format: uuid */
+            province_former_id?: string;
+            /** Format: uuid */
+            district_former_id?: string;
+            /** Format: uuid */
+            ward_former_id?: string;
+            /** Format: uuid */
+            province_id?: string;
+            /** Format: uuid */
+            ward_id?: string;
             address_line_1?: string;
             address_line_2?: string;
-            postal_code?: string;
+        };
+        /** @enum {string} */
+        AdminDivisionScheme: "former_v3" | "current_v2";
+        AdminUnit: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            /** @description Resolved from Accept-Language */
+            name: string;
+            name_en: string;
+            name_vi: string;
         };
         Branch: {
             /** Format: uuid */
@@ -4803,7 +4967,7 @@ export interface components {
             timezone?: string;
             /** @enum {string} */
             status: "active" | "inactive" | "maintenance" | "archived";
-            address?: components["schemas"]["BranchAddress"];
+            addresses?: components["schemas"]["BranchAddress"][];
         };
         /** @description At least one of name_en or name_vi is required. Initial status is inactive. */
         CreateBranchRequest: {
@@ -4814,7 +4978,7 @@ export interface components {
             /** Format: email */
             email?: string;
             timezone?: string;
-            address?: components["schemas"]["BranchAddress"];
+            addresses?: components["schemas"]["BranchAddress"][];
         };
         UpdateBranchRequest: {
             name_en?: string;
@@ -4824,7 +4988,7 @@ export interface components {
             /** Format: email */
             email?: string;
             timezone?: string;
-            address?: components["schemas"]["BranchAddress"];
+            addresses?: components["schemas"]["BranchAddress"][];
         };
         CustomerContact: {
             /** @enum {string} */
@@ -5065,8 +5229,8 @@ export interface components {
             email?: string;
             timezone?: string;
             status: string;
-            city?: string;
-            district?: string;
+            province_name?: string;
+            ward_name?: string;
             address_line_1?: string;
         };
         MarketplaceCourt: {
