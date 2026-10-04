@@ -79,7 +79,7 @@ export function OrganizationBranchesView() {
               return (
                 <div
                   key={b.name}
-                  className="overflow-hidden rounded-xl border border-border bg-card/40"
+                  className="overflow-hidden rounded-md border border-border bg-card/40"
                 >
                   <div className="relative flex h-[100px] items-center justify-center bg-linear-to-br from-muted to-card">
                     <LayoutGrid className="h-10 w-10 text-muted-foreground/30" aria-hidden />
@@ -100,7 +100,7 @@ export function OrganizationBranchesView() {
                     ) : null}
                   </div>
                   <div className="p-3.5">
-                    <p className="mb-0.5 text-sm font-extrabold text-foreground">{b.name}</p>
+                    <p className="mb-0.5 text-sm font-semibold text-foreground">{b.name}</p>
                     <p className="mb-2.5 text-xs text-muted-foreground">
                       {b.manager} · {t("courtsCount", { count: b.courts })}
                     </p>
@@ -120,7 +120,7 @@ export function OrganizationBranchesView() {
             })}
           </div>
         ) : (
-          <div className="relative h-[420px] overflow-hidden rounded-2xl border border-border bg-card/40">
+          <div className="relative h-[420px] overflow-hidden rounded-md border border-border bg-card/40">
             <div className="absolute inset-0 flex items-center justify-center bg-radial from-primary/5 to-transparent">
               <p className="max-w-xs text-center text-sm text-muted-foreground/60">{t("mapPlaceholder")}</p>
             </div>
@@ -143,7 +143,7 @@ export function OrganizationBranchesView() {
                       color,
                     )}
                   >
-                    <span className="rotate-45 text-[10px] font-black text-white">{pin.name}</span>
+                    <span className="rotate-45 text-[10px] font-semibold text-white">{pin.name}</span>
                   </div>
                 </div>
               );

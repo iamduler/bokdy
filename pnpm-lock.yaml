@@ -14,6 +14,9 @@ importers:
 
   apps/admin-web:
     dependencies:
+      '@bokdy/brand':
+        specifier: workspace:*
+        version: link:../../packages/brand
       '@bokdy/config':
         specifier: workspace:*
         version: link:../../packages/config
@@ -78,6 +81,9 @@ importers:
 
   apps/owner-web:
     dependencies:
+      '@bokdy/brand':
+        specifier: workspace:*
+        version: link:../../packages/brand
       '@bokdy/config':
         specifier: workspace:*
         version: link:../../packages/config
@@ -139,6 +145,9 @@ importers:
 
   apps/player-web:
     dependencies:
+      '@bokdy/brand':
+        specifier: workspace:*
+        version: link:../../packages/brand
       '@bokdy/config':
         specifier: workspace:*
         version: link:../../packages/config
@@ -194,6 +203,28 @@ importers:
       tailwindcss:
         specifier: ^4
         version: 4.3.3
+      typescript:
+        specifier: ^5
+        version: 5.9.3
+
+  packages/brand:
+    dependencies:
+      react:
+        specifier: ^19
+        version: 19.2.4
+      react-dom:
+        specifier: ^19
+        version: 19.2.4(react@19.2.4)
+    devDependencies:
+      '@bokdy/config':
+        specifier: workspace:*
+        version: link:../config
+      '@types/react':
+        specifier: ^19
+        version: 19.2.18
+      '@types/react-dom':
+        specifier: ^19
+        version: 19.2.4(@types/react@19.2.18)
       typescript:
         specifier: ^5
         version: 5.9.3

@@ -29,7 +29,7 @@ export function UserActivityView() {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-auto soft-scrollbar p-4 md:p-6">
-      <h2 className="mb-4 font-display text-base font-bold">{t("title")}</h2>
+      <h2 className="mb-4 text-base font-bold">{t("title")}</h2>
       <div className="space-y-3">
         {events.map((e) => (
           <div key={e.id} className="rounded-lg border border-border bg-card/60 p-3">

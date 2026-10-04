@@ -2,19 +2,21 @@
 
 import {
   Button,
-  Combobox,
   Input,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
   cn,
-  type ComboboxOption,
 } from "@bokdy/ui";
 import { Search, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import {
+  PopoverCommandSelect,
+  type PopoverCommandOption,
+} from "@/components/popover-command-select";
 import { useProvinces } from "@/hooks/use-admin-units";
 import { useRouter } from "@/i18n/navigation";
 import type { OrgStatus } from "@/lib/api/admin";
@@ -68,7 +70,7 @@ export function OrganizationDirectoryFilters({
 
   const hasFilters = Boolean(q.trim() || status || provinceId);
 
-  const statusOptions = useMemo<ComboboxOption[]>(
+  const statusOptions = useMemo<PopoverCommandOption[]>(
     () => [
       {
         value: "",
@@ -84,7 +86,7 @@ export function OrganizationDirectoryFilters({
     [t],
   );
 
-  const planOptions = useMemo<ComboboxOption[]>(
+  const planOptions = useMemo<PopoverCommandOption[]>(
     () => [
       {
         value: "",
@@ -95,7 +97,7 @@ export function OrganizationDirectoryFilters({
     [t],
   );
 
-  const provinceOptions = useMemo<ComboboxOption[]>(
+  const provinceOptions = useMemo<PopoverCommandOption[]>(
     () => [
       {
         value: "",
@@ -134,7 +136,7 @@ export function OrganizationDirectoryFilters({
         />
       </div>
 
-      <FilterCombobox
+      <FilterSelect
         value={status}
         onChange={(value) => replaceParams({ status: value || undefined })}
         ariaLabel={t("statusFilter")}
@@ -147,7 +149,7 @@ export function OrganizationDirectoryFilters({
       <Tooltip>
         <TooltipTrigger asChild>
           <span className="inline-flex">
-            <FilterCombobox
+            <FilterSelect
               value=""
               onChange={() => undefined}
               disabled
@@ -162,7 +164,7 @@ export function OrganizationDirectoryFilters({
         <TooltipContent>{t("directoryFilters.planUnavailable")}</TooltipContent>
       </Tooltip>
 
-      <FilterCombobox
+      <FilterSelect
         value={provinceId}
         onChange={(value) => replaceParams({ province_id: value || undefined })}
         ariaLabel={t("directoryFilters.province")}
@@ -195,7 +197,7 @@ export function OrganizationDirectoryFilters({
   );
 }
 
-function FilterCombobox({
+function FilterSelect({
   value,
   onChange,
   disabled,
@@ -211,13 +213,13 @@ function FilterCombobox({
   disabled?: boolean;
   ariaLabel: string;
   placeholder: string;
-  options: ComboboxOption[];
+  options: PopoverCommandOption[];
   searchPlaceholder: string;
   emptyText: string;
   className?: string;
 }) {
   return (
-    <Combobox
+    <PopoverCommandSelect
       value={value}
       onValueChange={onChange}
       options={options}

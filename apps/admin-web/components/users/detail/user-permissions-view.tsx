@@ -28,7 +28,7 @@ export function UserPermissionsView() {
           </Button>
         </div>
       ) : (
-        <div className="rounded-xl border border-border bg-card/60 p-4">
+        <div className="rounded-md border border-border bg-card/60 p-4">
           <p className="mb-3 text-xs font-bold uppercase text-muted-foreground">{t("roles")}</p>
           <ul className="space-y-2 text-sm">
             {(data?.roles ?? []).map((r, i) => (
@@ -43,7 +43,7 @@ export function UserPermissionsView() {
           </ul>
         </div>
       )}
-      <div className="rounded-xl border border-border bg-card/60 p-4 opacity-70">
+      <div className="rounded-md border border-border bg-card/60 p-4 opacity-70">
         <p className="mb-2 text-xs font-bold uppercase text-muted-foreground">{t("matrixPreview")}</p>
         {USER_DETAIL_MOCK.permissionGroups.map((g) => (
           <div key={g.group} className="mb-3">

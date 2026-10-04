@@ -33,15 +33,15 @@ export function OrganizationDirectoryKpis({ stats, isLoading }: OrganizationDire
         return (
           <div
             key={item.key}
-            className="rounded-[10px] border border-border bg-card/50 px-3.5 py-2.5"
+            className="rounded-md border border-border bg-card px-3.5 py-2.5"
           >
             <div className="mb-1.5 flex items-center justify-between gap-2">
               <Icon className={cn("h-[18px] w-[18px]", item.tone)} aria-hidden />
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                 {t(`directoryKpis.${item.key}`)}
               </span>
             </div>
-            <div className={cn("text-[28px] font-extrabold leading-none tracking-tight", item.tone)}>
+            <div className={cn("text-[28px] font-semibold leading-none tracking-tight", item.tone)}>
               {isLoading ? "—" : stats[item.key]}
             </div>
           </div>

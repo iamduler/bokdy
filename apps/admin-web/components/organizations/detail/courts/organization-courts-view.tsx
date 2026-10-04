@@ -64,17 +64,17 @@ export function OrganizationCourtsView() {
       <div className="flex-1 overflow-y-auto soft-scrollbar p-4 md:px-6 md:pb-6">
         <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filtered.map((c) => {
-            const maintVariant =
+            const maintClass =
               c.maintenance === "ok"
-                ? "success"
+                ? "border-transparent bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
                 : c.maintenance === "scheduled"
-                  ? "warning"
-                  : "danger";
+                  ? "border-transparent bg-amber-500/15 text-amber-800 dark:text-amber-300"
+                  : "border-transparent bg-destructive/15 text-destructive";
             return (
               <div
                 key={c.name}
                 className={cn(
-                  "relative overflow-hidden rounded-[13px] border bg-card/40 p-3.5",
+                  "relative overflow-hidden rounded-md border bg-card/40 p-3.5",
                   c.maintenance === "urgent" ? "border-destructive/40" : "border-border",
                 )}
               >
@@ -89,8 +89,8 @@ export function OrganizationCourtsView() {
                   )}
                 />
                 <div className="mb-2.5 flex items-start justify-between gap-2">
-                  <p className="text-[15px] font-extrabold text-foreground">{c.name}</p>
-                  <Badge variant={maintVariant} className="text-[10px]">
+                  <p className="text-[15px] font-semibold text-foreground">{c.name}</p>
+                  <Badge variant="outline" className={cn("text-[10px]", maintClass)}>
                     {t(`maintenance.${c.maintenance}`)}
                   </Badge>
                 </div>

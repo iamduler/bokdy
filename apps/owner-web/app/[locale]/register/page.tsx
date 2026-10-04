@@ -1,5 +1,6 @@
 "use client";
 
+import { BokdyMark } from "@bokdy/brand";
 import { AuthCard, Button, Input, Label } from "@bokdy/ui";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
@@ -60,7 +61,14 @@ export default function RegisterPage() {
 
   return (
     <main className="flex min-h-dvh items-center justify-center p-4">
-      <AuthCard title={`${tc("appName")} — ${t("registerTitle")}`}>
+      <AuthCard
+        title={
+          <span className="flex flex-col gap-2">
+            <BokdyMark alt={tc("appName")} className="h-7 w-auto" width={112} height={28} />
+            <span>{t("registerTitle")}</span>
+          </span>
+        }
+      >
         <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
           <div className="space-y-2">
             <Label htmlFor="fullName">{t("fullName")}</Label>

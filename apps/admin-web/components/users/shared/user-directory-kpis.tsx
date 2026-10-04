@@ -25,12 +25,12 @@ export function UserDirectoryKpis({ stats, isLoading }: UserDirectoryKpisProps) 
       {items.map((item) => (
         <div
           key={item.label}
-          className="rounded-lg border border-border bg-card/60 px-3 py-2.5"
+          className="rounded-md border border-border bg-card px-3 py-2.5"
         >
-          <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
             {item.label}
           </p>
-          <p className={cn("font-display text-xl font-extrabold", item.color)}>
+          <p className={cn("text-xl font-semibold tracking-tight", item.color)}>
             {isLoading ? "—" : (item.value ?? 0).toLocaleString()}
           </p>
         </div>

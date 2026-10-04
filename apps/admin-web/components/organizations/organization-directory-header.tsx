@@ -21,7 +21,7 @@ export function OrganizationDirectoryHeader({
   return (
     <div className="flex shrink-0 flex-col gap-3 px-4 pt-4 md:flex-row md:items-start md:px-6 md:pt-5">
       <div className="min-w-0 flex-1">
-        <h1 className="text-xl font-black tracking-tight text-foreground">{t("title")}</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">{t("title")}</h1>
         <p className="mt-0.5 text-xs text-muted-foreground md:text-[13px]">
           {isLoading
             ? "—"

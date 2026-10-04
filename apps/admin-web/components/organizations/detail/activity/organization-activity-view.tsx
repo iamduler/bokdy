@@ -67,7 +67,7 @@ export function OrganizationActivityView() {
               <div className="z-10 flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full border border-primary/30 bg-primary/10 text-sm">
                 {CAT_ICONS[e.cat] ?? "•"}
               </div>
-              <div className="flex-1 rounded-xl border border-border bg-card/40 px-4 py-3">
+              <div className="flex-1 rounded-md border border-border bg-card/40 px-4 py-3">
                 <div className="mb-1 flex items-start justify-between gap-3">
                   <p className="text-[13.5px] font-bold text-foreground">
                     {t(`events.${e.labelKey}`)}

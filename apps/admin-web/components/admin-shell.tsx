@@ -1,5 +1,9 @@
 "use client";
 
+/**
+ * Hallmark · theme: bokdy-custom · design-system: design.md · designed-as-app
+ */
+
 import {
   Sheet,
   SheetContent,
@@ -116,7 +120,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
         </aside>
 
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-          <SheetContent side="left" className="w-72 p-0" showClose>
+          <SheetContent side="left" className="w-72 p-0">
             <SheetHeader className="sr-only">
               <SheetTitle>{tc("appName")}</SheetTitle>
               <SheetDescription>{t("openMenu")}</SheetDescription>

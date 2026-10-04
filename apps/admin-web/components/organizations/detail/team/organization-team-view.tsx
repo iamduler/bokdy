@@ -93,7 +93,7 @@ export function OrganizationTeamView() {
                     <div className="flex items-center gap-2">
                       <div
                         className={cn(
-                          "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-extrabold",
+                          "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
                           ROLE_TONES[i % ROLE_TONES.length],
                         )}
                       >
@@ -118,12 +118,13 @@ export function OrganizationTeamView() {
                   </TableCell>
                   <TableCell>
                     <Badge
-                      variant={
+                      variant={m.status === "active" || m.status === "pending" ? "outline" : "secondary"}
+                      className={
                         m.status === "active"
-                          ? "success"
+                          ? "border-transparent bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
                           : m.status === "pending"
-                            ? "warning"
-                            : "secondary"
+                            ? "border-transparent bg-amber-500/15 text-amber-800 dark:text-amber-300"
+                            : undefined
                       }
                     >
                       {t(`memberStatus.${m.status}`)}

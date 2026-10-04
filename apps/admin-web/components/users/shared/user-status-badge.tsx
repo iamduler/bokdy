@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@bokdy/ui";
+import { Badge, cn } from "@bokdy/ui";
 import { useTranslations } from "next-intl";
 
 import type { UserStatus } from "@/lib/api/admin-users";
@@ -17,13 +17,8 @@ export function UserStatusBadge({ status }: { status: string }) {
   const t = useTranslations("users.status");
   const key = status in STYLES ? (status as UserStatus) : "deleted";
   return (
-    <span
-      className={cn(
-        "inline-flex rounded-md border px-2 py-0.5 text-xs font-semibold",
-        STYLES[key],
-      )}
-    >
+    <Badge variant="outline" className={cn("font-semibold", STYLES[key])}>
       {t(key)}
-    </span>
+    </Badge>
   );
 }

@@ -1,23 +1,25 @@
 ---
-description: Locale/theme (nav) dropdown — Bokdy chip Combobox
+description: Locale/theme (nav) dropdown — Popover + Command chip layout
 globs:
-  - packages/ui/src/ui/combobox.tsx
   - apps/**/components/**/locale-switcher.tsx
   - apps/**/components/**/theme-switcher.tsx
+  - apps/**/components/**/popover-command-select.tsx
   - apps/**/components/**/*Dropdown*.tsx
 alwaysApply: false
 ---
 
 # Dropdown display layout (nav switchers)
 
-Locale / theme (and similar header) switchers use `@bokdy/ui` **Combobox** `variant="nav"` — Bokdy chip chrome (sky primary / border / popover), not ghost Meronfarm or zinc panels.
+Locale / theme (and similar header) switchers compose `@bokdy/ui` **Popover + Command + Button** (classic shadcn combobox). In admin-web, reuse `PopoverCommandSelect` `variant="nav"` — Bokdy chip chrome (sky primary / border / popover), not zinc panels.
+
+Do not add a Combobox primitive under `packages/ui/src/ui/`.
 
 ## Trigger
 
 - Chip: `rounded-lg border border-border bg-background`, `px-2.5 py-1.5 text-xs font-semibold text-foreground`
 - Hover: `border-primary/40`, `bg-muted/60`
 - Open: `border-primary`, `ring-2 ring-primary/20`
-- Leading: icon or Twemoji `Emoji` (flag)
+- Leading: icon or Twemoji `Emoji` from `@bokdy/ui` (common chrome)
 - Label: `hidden sm:inline` (mobile = icon only)
 - Trailing: `ChevronDown` (size ~14); muted by default, `text-primary` when open
 
@@ -39,4 +41,4 @@ Locale / theme (and similar header) switchers use `@bokdy/ui` **Combobox** `vari
 - Trigger: `aria-haspopup`, `aria-expanded`, `aria-label`
 - Selected option: check + highlight
 
-Do not hand-roll `useState` + absolute `<ul>` for these switchers — use Combobox.
+Do not hand-roll `useState` + absolute `<ul>` for these switchers — compose Popover + Command.

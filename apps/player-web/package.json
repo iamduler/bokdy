@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@bokdy/brand": "workspace:*",
     "@bokdy/config": "workspace:*",
     "@bokdy/ui": "workspace:*",
     "@hookform/resolvers": "^5.9.1",

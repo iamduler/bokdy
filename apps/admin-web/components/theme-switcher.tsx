@@ -2,7 +2,6 @@
 
 import {
   applyBokdyTheme,
-  Combobox,
   THEME_STORAGE_KEY,
   type BokdyTheme,
 } from "@bokdy/ui";
@@ -10,6 +9,10 @@ import { Monitor, Moon, Sun } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 
+import {
+  PopoverCommandSelect,
+  type PopoverCommandOption,
+} from "@/components/popover-command-select";
 import { useUpdateMe } from "@/hooks/use-update-me";
 
 const THEMES: BokdyTheme[] = ["light", "dark", "system"];
@@ -47,7 +50,7 @@ export function ThemeSwitcher({
     setTheme(readStoredTheme());
   }, []);
 
-  const options = useMemo(() => {
+  const options = useMemo<PopoverCommandOption[]>(() => {
     const labels = {
       light: t("themeLight"),
       dark: t("themeDark"),
@@ -59,7 +62,7 @@ export function ThemeSwitcher({
         value,
         keywords: labels[value],
         label: labels[value],
-        leading: <Icon className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />,
+        leading: <Icon className="h-3.5 w-3.5" aria-hidden />,
       };
     });
   }, [t]);
@@ -80,7 +83,7 @@ export function ThemeSwitcher({
   }
 
   return (
-    <Combobox
+    <PopoverCommandSelect
       variant="nav"
       className={className}
       aria-label={t("theme")}

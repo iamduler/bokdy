@@ -1,12 +1,17 @@
 "use client";
 
-import { AuthActionButton, AuthAlert, AuthFormFrame, AuthPasswordField } from "@bokdy/ui";
+import { AuthActionButton, AuthAlert, AuthPasswordField } from "@bokdy/ui";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 
+import {
+  AdminAuthHeading,
+  austereActionClassName,
+  austerePasswordWrapClassName,
+} from "@/components/auth/admin-auth-heading";
 import { Link } from "@/i18n/navigation";
 import { useResetPassword } from "@/hooks/use-auth";
 import { ApiError, errorMessageKey } from "@/lib/api/errors";
@@ -53,38 +58,48 @@ export function ResetPasswordForm() {
 
   if (!token) {
     return (
-      <AuthFormFrame eyebrow={t("adminEyebrow")} title={t("resetPasswordTitle")} description={t("resetTokenMissing")}>
-        <div className="space-y-4">
-          <Link href="/forgot-password" className="text-sm font-medium text-shell-text hover:underline">
+      <div className="space-y-8 text-shell-text">
+        <AdminAuthHeading
+          title={t("resetPasswordTitle")}
+          description={t("resetTokenMissing")}
+        />
+        <div className="space-y-3">
+          <Link href="/forgot-password" className="block text-sm font-medium text-shell-text hover:underline">
             {t("forgotPasswordLink")}
           </Link>
-          <Link href="/login" className="text-sm text-shell-text-muted hover:text-shell-text hover:underline">
+          <Link href="/login" className="block text-sm text-shell-text-muted hover:text-shell-text hover:underline">
             {t("backToLogin")}
           </Link>
         </div>
-      </AuthFormFrame>
+      </div>
     );
   }
 
   if (success) {
     return (
-      <AuthFormFrame eyebrow={t("adminEyebrow")} title={t("resetPasswordTitle")} description={t("resetPasswordSuccess")}>
+      <div className="space-y-8 text-shell-text">
+        <AdminAuthHeading
+          title={t("resetPasswordTitle")}
+          description={t("resetPasswordSuccess")}
+        />
         <Link href="/login" className="text-sm font-medium text-shell-text hover:underline">
           {t("backToLogin")}
         </Link>
-      </AuthFormFrame>
+      </div>
     );
   }
 
   return (
-    <AuthFormFrame eyebrow={t("adminEyebrow")} title={t("resetPasswordTitle")} description={t("resetPasswordHint")}>
-      <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+    <div className="space-y-8 text-shell-text">
+      <AdminAuthHeading title={t("resetPasswordTitle")} description={t("resetPasswordHint")} />
+      <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
         <AuthPasswordField
           label={t("newPassword")}
           hint={t("passwordHint")}
           autoComplete="new-password"
           placeholder={t("newPasswordPlaceholder")}
           error={errors.newPassword?.message}
+          className={austerePasswordWrapClassName}
           {...register("newPassword")}
         />
         <AuthPasswordField
@@ -92,18 +107,23 @@ export function ResetPasswordForm() {
           autoComplete="new-password"
           placeholder={t("confirmPasswordPlaceholder")}
           error={errors.confirmPassword?.message}
+          className={austerePasswordWrapClassName}
           {...register("confirmPassword")}
         />
         {error ? <AuthAlert tone="danger">{error}</AuthAlert> : null}
-        <AuthActionButton type="submit" disabled={resetPassword.isPending}>
+        <AuthActionButton
+          type="submit"
+          disabled={resetPassword.isPending}
+          className={austereActionClassName}
+        >
           {t("submitResetPassword")}
         </AuthActionButton>
-        <p className="text-center text-sm">
+        <p className="text-sm">
           <Link href="/login" className="text-shell-text-muted hover:text-shell-text hover:underline">
             {t("backToLogin")}
           </Link>
         </p>
       </form>
-    </AuthFormFrame>
+    </div>
   );
 }

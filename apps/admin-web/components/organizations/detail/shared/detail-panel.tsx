@@ -14,7 +14,7 @@ export function DetailPanel({
   className?: string;
 }) {
   return (
-    <div className={cn("rounded-xl border border-border bg-card/40 p-4", className)}>
+    <div className={cn("rounded-md border border-border bg-card p-4", className)}>
       {title ? <DetailSectionHead>{title}</DetailSectionHead> : null}
       {children}
     </div>

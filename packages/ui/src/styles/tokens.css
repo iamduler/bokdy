@@ -13,8 +13,17 @@
   --bokdy-muted-foreground: #737373;
   --bokdy-ring: #0ea5e9;
   --bokdy-destructive: #dc2626;
+  --bokdy-destructive-foreground: #ffffff;
+  --bokdy-secondary: #f5f5f5;
+  --bokdy-secondary-foreground: #0a0a0a;
+  --bokdy-card: #ffffff;
+  --bokdy-card-foreground: #0a0a0a;
+  --bokdy-input: #e5e5e5;
   --bokdy-popover: #ffffff;
   --bokdy-popover-foreground: #0a0a0a;
+  /* Cobalt-disciplined radii (design.md) */
+  --radius: 0.375rem;
+  --radius-panel: 0.625rem;
   /* next/font sets --font-be-vietnam-pro / --font-roboto on <html>; string names are CSS fallbacks */
   --bokdy-font-sans: var(--font-be-vietnam-pro, "Be Vietnam Pro"), var(--font-roboto, Roboto), ui-sans-serif,
     system-ui, sans-serif;
@@ -39,6 +48,12 @@
   --bokdy-muted-foreground: #94a3b8;
   --bokdy-ring: #0ea5e9;
   --bokdy-destructive: #f87171;
+  --bokdy-destructive-foreground: #0a0a0a;
+  --bokdy-secondary: #0f1929;
+  --bokdy-secondary-foreground: #f8fafc;
+  --bokdy-card: #0f1929;
+  --bokdy-card-foreground: #f8fafc;
+  --bokdy-input: rgba(255, 255, 255, 0.1);
   --bokdy-popover: #0f1929;
   --bokdy-popover-foreground: #f8fafc;
 
@@ -63,6 +78,12 @@
     --bokdy-muted-foreground: #94a3b8;
     --bokdy-ring: #0ea5e9;
     --bokdy-destructive: #f87171;
+    --bokdy-destructive-foreground: #0a0a0a;
+    --bokdy-secondary: #0f1929;
+    --bokdy-secondary-foreground: #f8fafc;
+    --bokdy-card: #0f1929;
+    --bokdy-card-foreground: #f8fafc;
+    --bokdy-input: rgba(255, 255, 255, 0.1);
     --bokdy-popover: #0f1929;
     --bokdy-popover-foreground: #f8fafc;
 
@@ -79,24 +100,30 @@
   --shell-bg: #f8fafc;
   --shell-surface: #ffffff;
   --shell-card: #ffffff;
+  --shell-auth-atmosphere: #e0f2fe;
   --shell-border: rgba(15, 23, 42, 0.08);
   --shell-border-strong: rgba(15, 23, 42, 0.14);
   --shell-text: #0f172a;
   --shell-text-muted: #475569;
   --shell-accent: #0ea5e9;
   --shell-accent-soft: rgba(14, 165, 233, 0.12);
+  --shell-accent-secondary: #ec4899;
+  --shell-accent-secondary-soft: rgba(236, 72, 153, 0.12);
 }
 
 .dark .shell--admin {
   --shell-bg: #070d1c;
   --shell-surface: #0f1929;
   --shell-card: #0f1929;
+  --shell-auth-atmosphere: #070d1c;
   --shell-border: rgba(255, 255, 255, 0.1);
   --shell-border-strong: rgba(255, 255, 255, 0.16);
   --shell-text: #f8fafc;
   --shell-text-muted: #94a3b8;
   --shell-accent: #0ea5e9;
   --shell-accent-soft: rgba(14, 165, 233, 0.16);
+  --shell-accent-secondary: #ec4899;
+  --shell-accent-secondary-soft: rgba(236, 72, 153, 0.16);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -104,12 +131,15 @@
     --shell-bg: #070d1c;
     --shell-surface: #0f1929;
     --shell-card: #0f1929;
+    --shell-auth-atmosphere: #070d1c;
     --shell-border: rgba(255, 255, 255, 0.1);
     --shell-border-strong: rgba(255, 255, 255, 0.16);
     --shell-text: #f8fafc;
     --shell-text-muted: #94a3b8;
     --shell-accent: #0ea5e9;
     --shell-accent-soft: rgba(14, 165, 233, 0.16);
+    --shell-accent-secondary: #ec4899;
+    --shell-accent-secondary-soft: rgba(236, 72, 153, 0.16);
   }
 }
 
@@ -123,6 +153,8 @@
   --shell-text-muted: #475569;
   --shell-accent: #0d9488;
   --shell-accent-soft: rgba(13, 148, 136, 0.12);
+  --shell-accent-secondary: #ec4899;
+  --shell-accent-secondary-soft: rgba(236, 72, 153, 0.12);
 }
 
 .shell--player {
@@ -135,6 +167,8 @@
   --shell-text-muted: #475569;
   --shell-accent: #0ea5e9;
   --shell-accent-soft: rgba(14, 165, 233, 0.12);
+  --shell-accent-secondary: #ec4899;
+  --shell-accent-secondary-soft: rgba(236, 72, 153, 0.12);
 }
 
 @theme inline {
@@ -149,20 +183,32 @@
   --color-muted-foreground: var(--bokdy-muted-foreground);
   --color-ring: var(--bokdy-ring);
   --color-destructive: var(--bokdy-destructive);
+  --color-destructive-foreground: var(--bokdy-destructive-foreground);
+  --color-secondary: var(--bokdy-secondary);
+  --color-secondary-foreground: var(--bokdy-secondary-foreground);
+  --color-card: var(--bokdy-card);
+  --color-card-foreground: var(--bokdy-card-foreground);
+  --color-input: var(--bokdy-input);
   --color-popover: var(--bokdy-popover);
   --color-popover-foreground: var(--bokdy-popover-foreground);
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: var(--radius-panel);
   --font-sans: var(--bokdy-font-sans);
 
   /* Shell — resolved under .shell--* */
   --color-shell-bg: var(--shell-bg);
   --color-shell-surface: var(--shell-surface);
   --color-shell-card: var(--shell-card);
+  --color-shell-auth-atmosphere: var(--shell-auth-atmosphere);
   --color-shell-border: var(--shell-border);
   --color-shell-border-strong: var(--shell-border-strong);
   --color-shell-text: var(--shell-text);
   --color-shell-text-muted: var(--shell-text-muted);
   --color-shell-accent: var(--shell-accent);
   --color-shell-accent-soft: var(--shell-accent-soft);
+  --color-shell-accent-secondary: var(--shell-accent-secondary);
+  --color-shell-accent-secondary-soft: var(--shell-accent-secondary-soft);
 }
 
 /* Thin, low-contrast scrollbars for overflow containers */

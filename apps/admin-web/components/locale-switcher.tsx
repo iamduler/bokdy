@@ -1,9 +1,13 @@
 "use client";
 
-import { Combobox, Emoji } from "@bokdy/ui";
+import { Emoji } from "@bokdy/ui";
 import { useLocale, useTranslations } from "next-intl";
 import { useMemo } from "react";
 
+import {
+  PopoverCommandSelect,
+  type PopoverCommandOption,
+} from "@/components/popover-command-select";
 import { useLocales } from "@/hooks/use-locales";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
@@ -19,7 +23,7 @@ export function LocaleSwitcher({ className }: { className?: string }) {
   const router = useRouter();
   const { data: locales, isLoading, isError } = useLocales();
 
-  const options = useMemo(
+  const options = useMemo<PopoverCommandOption[]>(
     () =>
       (locales ?? [])
         .filter((item) => isRoutableLocale(item.code))
@@ -33,7 +37,7 @@ export function LocaleSwitcher({ className }: { className?: string }) {
   );
 
   return (
-    <Combobox
+    <PopoverCommandSelect
       variant="nav"
       className={className}
       aria-label={t("locale")}

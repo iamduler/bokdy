@@ -7,6 +7,7 @@ import { cn } from "../lib/utils";
 
 /**
  * Renders emoji via Twemoji SVG (consistent on Windows, where flag glyphs often fail).
+ * Domain chrome — not a shadcn/ui primitive.
  */
 export function Emoji({
   emoji,

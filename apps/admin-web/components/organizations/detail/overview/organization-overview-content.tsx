@@ -114,7 +114,7 @@ export function OrganizationOverviewContent() {
       </div>
 
       <div className="flex flex-col gap-3.5 overflow-y-auto soft-scrollbar border-border p-4 lg:border-l md:p-5">
-        <div className="overflow-hidden rounded-xl border border-primary/15 bg-card/40">
+        <div className="overflow-hidden rounded-md border border-primary/15 bg-card/40">
           <div className="flex items-center gap-2 border-b border-border bg-primary/10 px-3.5 py-2.5">
             <Bot className="h-4 w-4 text-primary" aria-hidden />
             <span className="text-xs font-bold text-primary">{t("aiSummary")}</span>
@@ -154,7 +154,7 @@ export function OrganizationOverviewContent() {
           })}
         </DetailPanel>
 
-        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5">
+        <div className="rounded-md border border-amber-500/30 bg-amber-500/10 p-3.5">
           <div className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">
             <AlertTriangle className="h-3.5 w-3.5" aria-hidden />
             {t("riskAlerts")}

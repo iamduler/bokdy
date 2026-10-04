@@ -23,13 +23,13 @@ export function UserSecurityView() {
     <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-auto soft-scrollbar p-4 md:p-6">
       <div className="grid gap-3 md:grid-cols-3">
         {cards.map((c) => (
-          <div key={c.label} className="rounded-xl border border-border bg-card/60 p-4">
+          <div key={c.label} className="rounded-md border border-border bg-card/60 p-4">
             <p className="text-xs text-muted-foreground">{c.label}</p>
             <div className="mt-2 text-sm font-semibold">{c.value}</div>
           </div>
         ))}
       </div>
-      <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4">
+      <div className="rounded-md border border-destructive/20 bg-destructive/5 p-4">
         <p className="mb-3 font-semibold text-destructive">{t("dangerZone")}</p>
         <div className="flex flex-wrap gap-2">
           <Button

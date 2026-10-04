@@ -29,7 +29,7 @@ export function UserOverviewView() {
             <p className="font-semibold text-red-700 dark:text-red-400">{t("suspendedNotice")}</p>
           </div>
         ) : null}
-        <div className="rounded-xl border border-border bg-card/60">
+        <div className="rounded-md border border-border bg-card/60">
           <div className="border-b border-border px-4 py-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">
             {t("accountInfo")}
           </div>
@@ -52,7 +52,7 @@ export function UserOverviewView() {
             ].map((s) => (
               <div key={s.label} className="rounded-lg border border-border bg-card/60 p-3">
                 <p className="text-[10px] font-bold uppercase text-muted-foreground">{s.label}</p>
-                <p className="font-display text-xl font-bold">
+                <p className="text-xl font-bold">
                   {s.value != null ? s.value : <UserUnavailableBadge />}
                 </p>
               </div>
@@ -61,9 +61,9 @@ export function UserOverviewView() {
         ) : null}
       </div>
       <aside className="w-full shrink-0 space-y-4 md:w-72">
-        <div className="rounded-xl border border-border bg-card/60 p-4">
+        <div className="rounded-md border border-border bg-card/60 p-4">
           <p className="text-xs font-bold uppercase text-muted-foreground">{t("riskScore")}</p>
-          <p className="font-display text-4xl font-black text-red-600">{USER_DETAIL_MOCK.riskScore}</p>
+          <p className="text-4xl font-semibold text-red-600">{USER_DETAIL_MOCK.riskScore}</p>
           <UserUnavailableBadge />
         </div>
       </aside>

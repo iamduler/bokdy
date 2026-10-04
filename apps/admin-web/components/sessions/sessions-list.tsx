@@ -34,7 +34,7 @@ export function SessionsList() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 rounded-2xl border border-border bg-background p-4 sm:flex-row sm:items-start sm:justify-between">
+      <div className="flex flex-col gap-3 rounded-md border border-border bg-background p-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="text-lg font-semibold">{t("title")}</h2>
           <p className="text-sm text-muted-foreground">{t("subtitle", { count: data.length })}</p>
@@ -50,7 +50,7 @@ export function SessionsList() {
         {data.map((session) => {
           const risk = riskForUserAgent(session.user_agent);
           return (
-            <div key={session.id} className="rounded-2xl border border-border bg-background p-4">
+            <div key={session.id} className="rounded-md border border-border bg-background p-4">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0 space-y-1">
                   <div className="flex flex-wrap items-center gap-2">

@@ -4,6 +4,7 @@ import * as React from "react";
 import { Eye, EyeOff } from "lucide-react";
 
 import { cn } from "../lib/utils";
+import { Alert, AlertDescription } from "../ui/alert";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
@@ -41,25 +42,45 @@ type AuthFieldProps = React.InputHTMLAttributes<HTMLInputElement> & {
   labelExtra?: React.ReactNode;
   hint?: React.ReactNode;
   error?: React.ReactNode;
+  leading?: React.ReactNode;
 };
 
 export const AuthField = React.forwardRef<HTMLInputElement, AuthFieldProps>(
-  function AuthField({ label, labelExtra, hint, error, className, ...props }, ref) {
+  function AuthField({ label, labelExtra, hint, error, leading, className, ...props }, ref) {
     return (
       <div className="space-y-2">
         <div className="flex items-center justify-between gap-4">
           <Label className="text-[11px] font-bold uppercase tracking-[0.14em] text-shell-text-muted">{label}</Label>
           {labelExtra}
         </div>
-        <Input
-          ref={ref}
-          className={cn(
-            "h-12 rounded-xl border-shell-border bg-shell-card text-shell-text placeholder:text-shell-text-muted focus-visible:ring-shell-accent",
-            error ? "border-rose-500/60 ring-1 ring-rose-500/25" : "hover:border-shell-border-strong",
-            className,
-          )}
-          {...props}
-        />
+        {leading ? (
+          <div
+            className={cn(
+              "flex h-12 items-center rounded-xl border bg-shell-card focus-within:ring-2 focus-within:ring-shell-accent",
+              error ? "border-rose-500/60 ring-1 ring-rose-500/25" : "border-shell-border hover:border-shell-border-strong",
+              className,
+            )}
+          >
+            <span className="ml-3 inline-flex shrink-0 text-shell-text-muted" aria-hidden>
+              {leading}
+            </span>
+            <Input
+              ref={ref}
+              className="h-full border-0 bg-transparent text-shell-text shadow-none focus-visible:ring-0"
+              {...props}
+            />
+          </div>
+        ) : (
+          <Input
+            ref={ref}
+            className={cn(
+              "h-12 rounded-xl border-shell-border bg-shell-card text-shell-text placeholder:text-shell-text-muted focus-visible:ring-shell-accent",
+              error ? "border-rose-500/60 ring-1 ring-rose-500/25" : "hover:border-shell-border-strong",
+              className,
+            )}
+            {...props}
+          />
+        )}
         {hint ? <p className="text-xs text-shell-text-muted">{hint}</p> : null}
         {error ? <p className="text-sm text-rose-600 dark:text-rose-300">{error}</p> : null}
       </div>
@@ -72,10 +93,11 @@ type AuthPasswordFieldProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, 
   labelExtra?: React.ReactNode;
   hint?: React.ReactNode;
   error?: React.ReactNode;
+  leading?: React.ReactNode;
 };
 
 export const AuthPasswordField = React.forwardRef<HTMLInputElement, AuthPasswordFieldProps>(
-  function AuthPasswordField({ label, labelExtra, hint, error, className, ...props }, ref) {
+  function AuthPasswordField({ label, labelExtra, hint, error, leading, className, ...props }, ref) {
     const [visible, setVisible] = React.useState(false);
 
     return (
@@ -91,20 +113,27 @@ export const AuthPasswordField = React.forwardRef<HTMLInputElement, AuthPassword
             className,
           )}
         >
+          {leading ? (
+            <span className="ml-3 inline-flex shrink-0 text-shell-text-muted" aria-hidden>
+              {leading}
+            </span>
+          ) : null}
           <Input
             ref={ref}
             type={visible ? "text" : "password"}
             className="h-full border-0 bg-transparent text-shell-text shadow-none focus-visible:ring-0"
             {...props}
           />
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon"
             onClick={() => setVisible((current) => !current)}
-            className="px-3 text-shell-text-muted transition-colors hover:text-shell-text"
+            className="mr-1 h-9 w-9 shrink-0 text-shell-text-muted hover:bg-transparent hover:text-shell-text"
             aria-label={visible ? "Hide password" : "Show password"}
           >
             {visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-          </button>
+          </Button>
         </div>
         {hint ? <p className="text-xs text-shell-text-muted">{hint}</p> : null}
         {error ? <p className="text-sm text-rose-600 dark:text-rose-300">{error}</p> : null}
@@ -121,13 +150,18 @@ export function AuthAlert({
   children: React.ReactNode;
 }) {
   const tones = {
-    neutral: "border-shell-border bg-shell-card text-shell-text-muted",
-    success: "border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-200",
-    warning: "border-amber-500/25 bg-amber-500/10 text-amber-700 dark:text-amber-200",
-    danger: "border-rose-500/25 bg-rose-500/10 text-rose-700 dark:text-rose-200",
+    neutral: "rounded-xl border-shell-border bg-shell-card text-shell-text-muted",
+    success:
+      "rounded-xl border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-200",
+    warning: "rounded-xl border-amber-500/25 bg-amber-500/10 text-amber-700 dark:text-amber-200",
+    danger: "rounded-xl border-rose-500/25 bg-rose-500/10 text-rose-700 dark:text-rose-200",
   } as const;
 
-  return <div className={cn("rounded-xl border px-4 py-3 text-sm", tones[tone])}>{children}</div>;
+  return (
+    <Alert variant={tone === "danger" ? "destructive" : "default"} className={tones[tone]}>
+      <AlertDescription>{children}</AlertDescription>
+    </Alert>
+  );
 }
 
 export function AuthOptionCard({

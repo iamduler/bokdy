@@ -72,12 +72,12 @@ export function OrganizationDetailSubnav() {
             {org.name}
           </Link>
           <span className="text-xs text-muted-foreground/60">›</span>
-          <span className="text-xs font-bold text-primary">{crumbLabel[view]}</span>
+          <span className="text-xs font-semibold text-primary">{crumbLabel[view]}</span>
         </>
       ) : (
         <>
           <span className="text-xs text-muted-foreground/60">›</span>
-          <span className="truncate text-xs font-bold text-primary">{org.name}</span>
+          <span className="truncate text-xs font-semibold text-primary">{org.name}</span>
         </>
       )}
       <div className="flex-1" />

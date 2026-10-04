@@ -50,7 +50,7 @@ export function UserSessionsView() {
         {sessions.map((s) => (
           <div
             key={s.id}
-            className="flex flex-col gap-3 rounded-xl border border-border bg-card/60 p-4 sm:flex-row sm:items-start sm:justify-between"
+            className="flex flex-col gap-3 rounded-md border border-border bg-card/60 p-4 sm:flex-row sm:items-start sm:justify-between"
           >
             <div className="min-w-0 space-y-1 text-sm">
               <p className="font-semibold">{s.user_agent ?? t("unknownDevice")}</p>

@@ -33,7 +33,7 @@ export function UserOrganizationsView() {
       <p className="mb-4 text-sm font-semibold">{t("count", { count: orgs.length })}</p>
       <div className="grid gap-3 md:grid-cols-2">
         {orgs.map((o) => (
-          <div key={o.staff_id} className="rounded-xl border border-border bg-card/60 p-4">
+          <div key={o.staff_id} className="rounded-md border border-border bg-card/60 p-4">
             <div className="flex items-start justify-between gap-2">
               <div>
                 <p className="font-bold">{o.name ?? o.name_en}</p>

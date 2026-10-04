@@ -1,31 +1,49 @@
 "use client";
 
-import * as React from "react";
-import { Check, ChevronDown } from "lucide-react";
-
-import { cn } from "../lib/utils";
-import { Button } from "./button";
 import {
+  Button,
   Command,
   CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem,
   CommandList,
-} from "./command";
-import { Popover, PopoverContent, PopoverTrigger } from "./popover";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  cn,
+} from "@bokdy/ui";
+import { Check, ChevronDown } from "lucide-react";
+import * as React from "react";
 
-export type ComboboxOption = {
+export type PopoverCommandOption = {
   value: string;
-  /** Plain text label (also used for cmdk filter with keywords) */
   label: string;
-  /** Plain text used by cmdk filter */
   keywords: string;
-  /** Leading icon / flag shown in trigger + row */
   leading?: React.ReactNode;
 };
 
-export function Combobox({
+type PopoverCommandSelectProps = {
+  value: string;
+  onValueChange: (value: string) => void;
+  options: PopoverCommandOption[];
+  placeholder?: string;
+  searchPlaceholder?: string;
+  emptyText?: string;
+  disabled?: boolean;
+  "aria-label"?: string;
+  className?: string;
+  align?: "start" | "center" | "end";
+  searchable?: boolean;
+  /** Nav switcher chip layout (locale/theme). */
+  variant?: "default" | "nav";
+};
+
+/**
+ * App composition of shadcn Popover + Command + Button (classic combobox pattern).
+ * Not a packages/ui primitive — keep nav/filter chrome here.
+ */
+export function PopoverCommandSelect({
   value,
   onValueChange,
   options,
@@ -37,22 +55,8 @@ export function Combobox({
   className,
   align = "end",
   searchable = false,
-  /** Nav switcher layout (locale/theme): Bokdy chip trigger, sm: label, check on selected */
   variant = "default",
-}: {
-  value: string;
-  onValueChange: (value: string) => void;
-  options: ComboboxOption[];
-  placeholder?: string;
-  searchPlaceholder?: string;
-  emptyText?: string;
-  disabled?: boolean;
-  "aria-label"?: string;
-  className?: string;
-  align?: "start" | "center" | "end";
-  searchable?: boolean;
-  variant?: "default" | "nav";
-}) {
+}: PopoverCommandSelectProps) {
   const [open, setOpen] = React.useState(false);
   const selected = options.find((option) => option.value === value);
   const isNav = variant === "nav";
@@ -71,7 +75,7 @@ export function Combobox({
           disabled={disabled}
           className={cn(
             isNav
-              ? "h-auto min-w-0 gap-1.5 rounded-lg border-border bg-background px-2.5 py-1.5 text-xs font-semibold text-foreground shadow-none hover:border-primary/40 hover:bg-muted/60 data-[state=open]:border-primary data-[state=open]:bg-muted/60 data-[state=open]:ring-2 data-[state=open]:ring-primary/20"
+              ? "h-auto min-w-0 gap-1.5 rounded-md border-border bg-background px-2.5 py-1.5 text-xs font-semibold text-foreground shadow-none hover:border-primary/50 hover:bg-primary/10! hover:text-foreground! data-[state=open]:border-primary data-[state=open]:bg-primary/10! data-[state=open]:text-foreground! data-[state=open]:ring-2 data-[state=open]:ring-primary/20"
               : "min-w-[8.5rem] justify-between gap-2 font-normal",
             className,
           )}
@@ -125,14 +129,21 @@ export function Combobox({
                     }}
                     className={cn(
                       isNav &&
-                        "group gap-2 rounded-md px-3 py-2 text-xs font-semibold data-[selected=true]:bg-muted",
+                        "group gap-2 rounded-md px-3 py-2 text-xs font-semibold text-foreground data-[selected=true]:bg-muted data-[selected=true]:text-foreground",
                       isActive &&
                         isNav &&
-                        "bg-primary/10 text-primary data-[selected=true]:bg-primary/15",
+                        "bg-primary/10 text-primary data-[selected=true]:bg-primary/15 data-[selected=true]:text-primary",
                     )}
                   >
                     {option.leading ? (
-                      <span className="inline-flex shrink-0 items-center group-hover:text-accent">
+                      <span
+                        className={cn(
+                          "inline-flex shrink-0 items-center",
+                          isActive
+                            ? "text-primary"
+                            : "text-muted-foreground group-data-[selected=true]:text-foreground",
+                        )}
+                      >
                         {option.leading}
                       </span>
                     ) : null}

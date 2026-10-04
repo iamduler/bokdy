@@ -55,16 +55,16 @@ export function OrganizationBillingView() {
 
       <div className="flex flex-1 flex-col gap-4 overflow-y-auto soft-scrollbar p-4 md:px-6 md:pb-6">
         <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-2">
-          <div className="rounded-xl border border-violet-500/30 bg-linear-to-br from-card to-violet-500/5 p-5">
+          <div className="rounded-md border border-violet-500/30 bg-linear-to-br from-card to-violet-500/5 p-5">
             <div className="mb-3.5 flex justify-between">
               <div>
                 <DetailSectionHead>{t("currentPlan")}</DetailSectionHead>
-                <p className="text-2xl font-extrabold text-violet-600 dark:text-violet-400">
+                <p className="text-2xl font-semibold text-violet-600 dark:text-violet-400">
                   {t(`plan.${DETAIL_MOCK.plan}`)}
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-xl font-extrabold">4,200,000</p>
+                <p className="text-xl font-semibold">4,200,000</p>
                 <p className="text-[11px] text-muted-foreground">{t("perMonth")}</p>
               </div>
             </div>
@@ -125,7 +125,14 @@ export function OrganizationBillingView() {
               </div>
               <div className="text-right">
                 <p className="text-xs font-bold">{h.amount}</p>
-                <Badge variant={h.status === "paid" ? "success" : "danger"} className="text-[10px]">
+                <Badge
+                  variant="outline"
+                  className={
+                    h.status === "paid"
+                      ? "border-transparent bg-emerald-500/15 text-[10px] text-emerald-700 dark:text-emerald-300"
+                      : "border-transparent bg-destructive/15 text-[10px] text-destructive"
+                  }
+                >
                   {t(`paymentStatusLabels.${h.status}`)}
                 </Badge>
               </div>

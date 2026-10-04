@@ -1,5 +1,6 @@
 "use client";
 
+import { BokdyMark } from "@bokdy/brand";
 import { Button } from "@bokdy/ui";
 import { useTranslations } from "next-intl";
 
@@ -22,7 +23,7 @@ export default function DashboardPage() {
     <main className="mx-auto flex min-h-dvh w-full max-w-3xl flex-col gap-6 p-4 md:p-8">
       <header className="flex items-center justify-between gap-4">
         <div>
-          <p className="text-sm text-muted-foreground">{tc("appName")}</p>
+          <BokdyMark alt={tc("appName")} className="mb-2 h-6 w-auto" width={96} height={24} />
           <h1 className="text-2xl font-semibold tracking-tight">{t("welcome")}</h1>
           <p className="mt-1 text-muted-foreground">{t("subtitle")}</p>
         </div>

@@ -52,7 +52,7 @@ Audiences:
 
 ```text
 apps/           # Next.js apps (player-web, owner-web, admin-web)
-packages/       # Shared TS (ui, config, sdk)
+packages/       # Shared TS (ui, config, sdk, brand)
 backend/        # Go modular monolith (module: bokdy)
 api/openapi/    # OpenAPI source of truth
 deployments/    # Docker compose + Dockerfiles

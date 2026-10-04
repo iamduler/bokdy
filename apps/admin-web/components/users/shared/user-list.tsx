@@ -94,19 +94,41 @@ export function UserList({
       <Table>
         <TableHeader className="sticky top-0 z-10 bg-background">
           <TableRow>
-            <TableHead>{t("columns.user")}</TableHead>
+            <TableHead className="text-[10.5px] font-bold uppercase tracking-wider">
+              {t("columns.user")}
+            </TableHead>
             {audience === "owners" ? (
               <>
-                <TableHead>{t("columns.staffRole")}</TableHead>
-                <TableHead>{t("columns.organization")}</TableHead>
+                <TableHead className="text-[10.5px] font-bold uppercase tracking-wider">
+                  {t("columns.staffRole")}
+                </TableHead>
+                <TableHead className="text-[10.5px] font-bold uppercase tracking-wider">
+                  {t("columns.organization")}
+                </TableHead>
               </>
             ) : null}
-            <TableHead>{t("columns.status")}</TableHead>
-            {audience === "players" ? <TableHead>{t("columns.emailVerified")}</TableHead> : null}
-            <TableHead>{t("columns.lastLogin")}</TableHead>
-            <TableHead>{t("columns.mfa")}</TableHead>
-            {audience === "players" ? <TableHead>{t("columns.risk")}</TableHead> : null}
-            <TableHead className="w-16">{t("columns.actions")}</TableHead>
+            <TableHead className="text-[10.5px] font-bold uppercase tracking-wider">
+              {t("columns.status")}
+            </TableHead>
+            {audience === "players" ? (
+              <TableHead className="text-[10.5px] font-bold uppercase tracking-wider">
+                {t("columns.emailVerified")}
+              </TableHead>
+            ) : null}
+            <TableHead className="text-[10.5px] font-bold uppercase tracking-wider">
+              {t("columns.lastLogin")}
+            </TableHead>
+            <TableHead className="text-[10.5px] font-bold uppercase tracking-wider">
+              {t("columns.mfa")}
+            </TableHead>
+            {audience === "players" ? (
+              <TableHead className="text-[10.5px] font-bold uppercase tracking-wider">
+                {t("columns.risk")}
+              </TableHead>
+            ) : null}
+            <TableHead className="w-16 text-[10.5px] font-bold uppercase tracking-wider">
+              {t("columns.actions")}
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

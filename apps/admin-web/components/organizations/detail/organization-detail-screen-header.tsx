@@ -36,7 +36,7 @@ export function OrganizationDetailScreenHeader({
         </Link>
       </Button>
       <div className="min-w-0 flex-1">
-        <h2 className="truncate text-base font-extrabold tracking-tight text-foreground">{title}</h2>
+        <h2 className="truncate text-base font-semibold tracking-tight text-foreground">{title}</h2>
         {subtitle ? <p className="text-xs text-muted-foreground">{subtitle}</p> : null}
       </div>
       {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}

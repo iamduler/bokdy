@@ -79,18 +79,36 @@ export function OrganizationList({
         <Table>
           <TableHeader className="sticky top-0 z-10 bg-background">
             <TableRow className="hover:bg-transparent">
-              <TableHead className="w-9">
+              <TableHead className="w-9 text-[10.5px] font-bold uppercase tracking-wider">
                 <BulkCheckbox />
               </TableHead>
-              <TableHead className="min-w-[200px]">{t("columns.organization")}</TableHead>
-              <TableHead className="w-28">{t("columns.sport")}</TableHead>
-              <TableHead className="w-20">{t("columns.branches")}</TableHead>
-              <TableHead className="w-16">{t("columns.courts")}</TableHead>
-              <TableHead className="w-24">{t("columns.plan")}</TableHead>
-              <TableHead className="w-28">{t("columns.revenue")}</TableHead>
-              <TableHead className="w-24">{t("columns.health")}</TableHead>
-              <TableHead className="w-20">{t("columns.risk")}</TableHead>
-              <TableHead className="w-32">{t("columns.status")}</TableHead>
+              <TableHead className="min-w-[200px] text-[10.5px] font-bold uppercase tracking-wider">
+                {t("columns.organization")}
+              </TableHead>
+              <TableHead className="w-28 text-[10.5px] font-bold uppercase tracking-wider">
+                {t("columns.sport")}
+              </TableHead>
+              <TableHead className="w-20 text-[10.5px] font-bold uppercase tracking-wider">
+                {t("columns.branches")}
+              </TableHead>
+              <TableHead className="w-16 text-[10.5px] font-bold uppercase tracking-wider">
+                {t("columns.courts")}
+              </TableHead>
+              <TableHead className="w-24 text-[10.5px] font-bold uppercase tracking-wider">
+                {t("columns.plan")}
+              </TableHead>
+              <TableHead className="w-28 text-[10.5px] font-bold uppercase tracking-wider">
+                {t("columns.revenue")}
+              </TableHead>
+              <TableHead className="w-24 text-[10.5px] font-bold uppercase tracking-wider">
+                {t("columns.health")}
+              </TableHead>
+              <TableHead className="w-20 text-[10.5px] font-bold uppercase tracking-wider">
+                {t("columns.risk")}
+              </TableHead>
+              <TableHead className="w-32 text-[10.5px] font-bold uppercase tracking-wider">
+                {t("columns.status")}
+              </TableHead>
               <TableHead className="w-28" />
             </TableRow>
           </TableHeader>

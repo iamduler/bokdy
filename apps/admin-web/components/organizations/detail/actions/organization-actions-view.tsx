@@ -91,7 +91,7 @@ function DisabledActionCard({
         <button
           type="button"
           disabled
-          className="flex w-full items-start gap-3 rounded-xl border border-border bg-card/30 p-3.5 text-left opacity-60"
+          className="flex w-full items-start gap-3 rounded-md border border-border bg-card/30 p-3.5 text-left opacity-60"
         >
           <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
           <div>
@@ -129,7 +129,7 @@ function WiredLifecycleAction({
   if (!show) return null;
 
   return (
-    <div className="rounded-xl border border-border bg-card/40 p-3.5">
+    <div className="rounded-md border border-border bg-card/40 p-3.5">
       <p className="mb-1 text-sm font-bold text-foreground">{labels[wired].label}</p>
       <p className="mb-3 text-xs text-muted-foreground">{labels[wired].desc}</p>
       {wired === "activate" ? (
@@ -159,7 +159,7 @@ export function OrganizationActionsView() {
               <div key={group.titleKey}>
                 <div className="mb-3 flex items-center gap-2">
                   <GroupIcon className="h-4 w-4 text-muted-foreground" aria-hidden />
-                  <h3 className="text-sm font-extrabold text-foreground">{t(`groups.${group.titleKey}`)}</h3>
+                  <h3 className="text-sm font-semibold text-foreground">{t(`groups.${group.titleKey}`)}</h3>
                 </div>
                 <div className="grid gap-2 sm:grid-cols-2">
                   {group.actions.map((action) => {

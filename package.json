@@ -13,7 +13,8 @@
     "test": "turbo run test",
     "player": "pnpm --filter @bokdy/player-web",
     "owner": "pnpm --filter @bokdy/owner-web",
-    "admin": "pnpm --filter @bokdy/admin-web"
+    "admin": "pnpm --filter @bokdy/admin-web",
+    "brand:sync-public": "node scripts/sync-brand-public.mjs"
   },
   "devDependencies": {
     "turbo": "^2.5.0"

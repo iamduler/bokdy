@@ -55,7 +55,7 @@ function UserDirectoryPageContent({ audience }: { audience: UserAudience }) {
   return (
     <div className="flex min-h-full flex-col overflow-hidden">
       <div className="shrink-0 border-b border-border px-4 py-4 md:px-6">
-        <h1 className="font-display text-xl font-bold">{t(`audience.${audience}`)}</h1>
+        <h1 className="text-xl font-semibold tracking-tight">{t(`audience.${audience}`)}</h1>
         <p className="text-sm text-muted-foreground">{t(`audienceHint.${audience}`)}</p>
       </div>
       <UserDirectoryKpis stats={statsQuery.data} isLoading={statsQuery.isLoading} />

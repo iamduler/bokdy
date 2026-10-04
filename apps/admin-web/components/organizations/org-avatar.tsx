@@ -38,7 +38,7 @@ export function OrgAvatar({ name, size = "md", className }: OrgAvatarProps) {
   return (
     <div
       className={cn(
-        "flex shrink-0 items-center justify-center rounded-lg border font-extrabold tracking-tight",
+        "flex shrink-0 items-center justify-center rounded-md border font-semibold tracking-tight",
         px,
         colorClassForName(name),
         className,

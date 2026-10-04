@@ -24,11 +24,11 @@ export function UserDetailHeader() {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0 space-y-2">
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="font-display text-xl font-bold">{userDisplayName(user)}</h1>
+            <h1 className="text-xl font-semibold tracking-tight">{userDisplayName(user)}</h1>
             <UserStatusBadge status={user.status} />
           </div>
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-            {user.email ? <span className="font-mono">{user.email}</span> : null}
+            {user.email ? <span className="tracking-wide">{user.email}</span> : null}
             {user.primary_organization?.name ? (
               <span>{user.primary_organization.name}</span>
             ) : null}

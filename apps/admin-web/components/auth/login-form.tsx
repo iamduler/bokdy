@@ -4,22 +4,24 @@ import {
   AuthActionButton,
   AuthAlert,
   AuthField,
-  AuthFormFrame,
   AuthPasswordField,
-  Button,
 } from "@bokdy/ui";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Lock, Mail } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 
+import {
+  AdminAuthHeading,
+  austereActionClassName,
+  austereFieldWrapClassName,
+  austerePasswordWrapClassName,
+} from "@/components/auth/admin-auth-heading";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useLogin } from "@/hooks/use-auth";
 import { ApiError, errorMessageKey } from "@/lib/api/errors";
-import { SEED_ADMIN } from "@/lib/dev/seed-admin";
 import { loginSchema, type LoginFormValues } from "@/lib/validation/auth";
-
-const showSeed = process.env.NODE_ENV === "development";
 
 export function LoginForm() {
   const t = useTranslations("auth");
@@ -27,6 +29,7 @@ export function LoginForm() {
   const router = useRouter();
   const login = useLogin();
   const [error, setError] = useState<string | null>(null);
+  const alertRef = useRef<HTMLDivElement>(null);
 
   const schema = useMemo(
     () =>
@@ -40,12 +43,17 @@ export function LoginForm() {
   const {
     register,
     handleSubmit,
-    setValue,
     formState: { errors },
   } = useForm<LoginFormValues>({
     resolver: zodResolver(schema),
     defaultValues: { email: "", password: "" },
   });
+
+  useEffect(() => {
+    if (error) {
+      alertRef.current?.focus();
+    }
+  }, [error]);
 
   async function onSubmit(values: LoginFormValues) {
     setError(null);
@@ -60,30 +68,20 @@ export function LoginForm() {
     }
   }
 
-  function fillSeed() {
-    setValue("email", SEED_ADMIN.email, {
-      shouldValidate: true,
-      shouldDirty: true,
-    });
-    setValue("password", SEED_ADMIN.password, {
-      shouldValidate: true,
-      shouldDirty: true,
-    });
-  }
-
   return (
-    <AuthFormFrame
-      eyebrow={t("adminEyebrow")}
-      title={t("loginTitle")}
-      description={t("loginSubtitle")}
-    >
-      <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+    <div className="space-y-6 text-shell-text">
+      <AdminAuthHeading title={t("loginTitle")} />
+
+      <form className="space-y-5" onSubmit={handleSubmit(onSubmit)} noValidate>
         <AuthField
           label={t("email")}
           type="email"
           autoComplete="email"
+          inputMode="email"
           placeholder={t("emailPlaceholder")}
           error={errors.email?.message}
+          leading={<Mail className="h-4 w-4" />}
+          className={austereFieldWrapClassName}
           {...register("email")}
         />
         <AuthPasswordField
@@ -91,7 +89,7 @@ export function LoginForm() {
           labelExtra={
             <Link
               href="/forgot-password"
-              className="text-xs text-shell-text-muted hover:text-shell-text"
+              className="cursor-pointer text-xs font-medium text-shell-accent underline-offset-4 transition-colors duration-200 hover:underline"
             >
               {t("forgotPasswordLink")}
             </Link>
@@ -99,40 +97,24 @@ export function LoginForm() {
           autoComplete="current-password"
           placeholder={t("passwordPlaceholder")}
           error={errors.password?.message}
+          leading={<Lock className="h-4 w-4" />}
+          className={austerePasswordWrapClassName}
           {...register("password")}
         />
-        {error ? <AuthAlert tone="danger">{error}</AuthAlert> : null}
-        <AuthActionButton type="submit" disabled={login.isPending}>
-          {t("submitLogin")}
+        {error ? (
+          <div ref={alertRef} tabIndex={-1} className="outline-none">
+            <AuthAlert tone="danger">{error}</AuthAlert>
+          </div>
+        ) : null}
+        <AuthActionButton
+          type="submit"
+          disabled={login.isPending}
+          aria-busy={login.isPending}
+          className={austereActionClassName}
+        >
+          {login.isPending ? t("submitLoginPending") : t("submitLogin")}
         </AuthActionButton>
       </form>
-
-      {showSeed ? (
-        <div className="rounded-xl border border-shell-border bg-shell-card px-4 py-3 text-sm text-shell-text-muted">
-          <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.14em]">
-            {t("seedTitle")}
-          </p>
-          <dl className="space-y-1 text-xs tracking-wide text-shell-text">
-            <div className="flex flex-wrap gap-x-2">
-              <dt className="text-shell-text-muted">{t("seedEmail")}:</dt>
-              <dd>{SEED_ADMIN.email}</dd>
-            </div>
-            <div className="flex flex-wrap gap-x-2">
-              <dt className="text-shell-text-muted">{t("seedPassword")}:</dt>
-              <dd>{SEED_ADMIN.password}</dd>
-            </div>
-          </dl>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="mt-3"
-            onClick={fillSeed}
-          >
-            {t("seedFill")}
-          </Button>
-        </div>
-      ) : null}
-    </AuthFormFrame>
+    </div>
   );
 }

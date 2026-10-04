@@ -1,9 +1,13 @@
 "use client";
 
-import { Input, Label, Combobox, type ComboboxOption } from "@bokdy/ui";
+import { Input, Label } from "@bokdy/ui";
 import { useTranslations } from "next-intl";
 import { useMemo } from "react";
 
+import {
+  PopoverCommandSelect,
+  type PopoverCommandOption,
+} from "@/components/popover-command-select";
 import { useRouter } from "@/i18n/navigation";
 import type { UserAudience, UserStatus } from "@/lib/api/admin-users";
 
@@ -44,7 +48,7 @@ export function UserDirectoryFilters({
     router.replace(`/users/${audience}${qs ? `?${qs}` : ""}`);
   };
 
-  const statusOptions = useMemo<ComboboxOption[]>(
+  const statusOptions = useMemo<PopoverCommandOption[]>(
     () => [
       { value: "", label: t("all"), keywords: t("all") },
       ...STATUS_OPTIONS.map((s) => ({
@@ -76,19 +80,20 @@ export function UserDirectoryFilters({
       </div>
       <div className="w-full md:w-44">
         <Label>{t("status")}</Label>
-        <Combobox
+        <PopoverCommandSelect
           value={status}
           options={statusOptions}
           onValueChange={(v) => patch({ status: v || null })}
           placeholder={t("all")}
           searchPlaceholder={t("filterSearch")}
           emptyText={t("filterEmpty")}
+          align="start"
         />
       </div>
       {audience === "players" ? (
         <div className="w-full md:w-44">
           <Label>{t("emailVerified")}</Label>
-          <Combobox
+          <PopoverCommandSelect
             value={emailVerified}
             options={[
               { value: "", label: t("all"), keywords: t("all") },
@@ -99,13 +104,14 @@ export function UserDirectoryFilters({
             placeholder={t("all")}
             searchPlaceholder={t("filterSearch")}
             emptyText={t("filterEmpty")}
+            align="start"
           />
         </div>
       ) : null}
       {audience === "owners" ? (
         <div className="w-full md:w-44">
           <Label>{t("staffRole")}</Label>
-          <Combobox
+          <PopoverCommandSelect
             value={staffRole}
             options={[
               { value: "", label: t("all"), keywords: t("all") },
@@ -116,6 +122,7 @@ export function UserDirectoryFilters({
             placeholder={t("all")}
             searchPlaceholder={t("filterSearch")}
             emptyText={t("filterEmpty")}
+            align="start"
           />
         </div>
       ) : null}

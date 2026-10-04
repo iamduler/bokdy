@@ -7,8 +7,7 @@
   },
   "auth": {
     "adminEyebrow": "Truy cập quản trị",
-    "loginTitle": "Đăng nhập",
-    "loginSubtitle": "Chỉ dành cho nhân sự nội bộ Bokdy đã được cấp quyền.",
+    "loginTitle": "Đăng nhập (Admin Portal)",
     "registerTitle": "Tạo tài khoản",
     "email": "Email",
     "emailPlaceholder": "staff@bokdy.vn",
@@ -17,6 +16,7 @@
     "passwordHint": "Ít nhất 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt",
     "fullName": "Họ tên",
     "submitLogin": "Đăng nhập",
+    "submitLoginPending": "Đang đăng nhập…",
     "submitRegister": "Đăng ký",
     "noAccount": "Chưa có tài khoản?",
     "hasAccount": "Đã có tài khoản?",
@@ -36,11 +36,7 @@
     "submitResetPassword": "Cập nhật mật khẩu",
     "resetPasswordSuccess": "Mật khẩu đã được cập nhật. Bạn có thể đăng nhập.",
     "resetTokenMissing": "Liên kết đặt lại không hợp lệ hoặc thiếu. Vui lòng yêu cầu liên kết mới.",
-    "resetTokenInvalid": "Liên kết đặt lại không hợp lệ hoặc đã hết hạn.",
-    "seedTitle": "Tài khoản seed local",
-    "seedEmail": "Email",
-    "seedPassword": "Mật khẩu",
-    "seedFill": "Điền sẵn"
+    "resetTokenInvalid": "Liên kết đặt lại không hợp lệ hoặc đã hết hạn."
   },
   "switchers": {
     "locale": "Ngôn ngữ",
@@ -51,7 +47,10 @@
   },
   "authShell": {
     "brand": "Bokdy Admin",
-    "imageAlt": "Sân thể thao Bokdy"
+    "imageAlt": "Sân thể thao Bokdy",
+    "featureAria": "Tổng quan nền tảng",
+    "featureTitle": "Play Book",
+    "featureTitleAccent": "Grow"
   },
   "shell": {
     "dashboard": "Bảng điều khiển",

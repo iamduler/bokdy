@@ -24,11 +24,14 @@ export function OrganizationOverviewHeader() {
         <OrgAvatar name={org.name} size="lg" />
         <div className="min-w-0 flex-1">
           <div className="mb-1 flex flex-wrap items-center gap-2">
-            <h1 className="truncate text-xl font-extrabold tracking-tight text-foreground">
+            <h1 className="truncate text-xl font-semibold tracking-tight text-foreground">
               {org.name}
             </h1>
             {DETAIL_MOCK.verified ? (
-              <Badge variant="info" className="text-[11px] font-bold">
+              <Badge
+                variant="outline"
+                className="border-transparent bg-sky-500/15 text-[11px] font-bold text-sky-800 dark:text-sky-300"
+              >
                 {t("detailOverview.verified")}
               </Badge>
             ) : null}

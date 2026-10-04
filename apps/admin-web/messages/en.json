@@ -7,8 +7,7 @@
   },
   "auth": {
     "adminEyebrow": "Administrator access",
-    "loginTitle": "Sign in",
-    "loginSubtitle": "Only for authorized Bokdy internal staff.",
+    "loginTitle": "Sign in to your account",
     "registerTitle": "Create account",
     "email": "Email",
     "emailPlaceholder": "staff@bokdy.vn",
@@ -17,6 +16,7 @@
     "passwordHint": "At least 8 characters, with uppercase, lowercase, a number, and a special character",
     "fullName": "Full name",
     "submitLogin": "Sign in",
+    "submitLoginPending": "Signing in…",
     "submitRegister": "Register",
     "noAccount": "Need an account?",
     "hasAccount": "Already have an account?",
@@ -36,11 +36,7 @@
     "submitResetPassword": "Update password",
     "resetPasswordSuccess": "Your password has been updated. You can sign in now.",
     "resetTokenMissing": "Reset link is invalid or missing. Request a new one.",
-    "resetTokenInvalid": "This reset link is invalid or has expired.",
-    "seedTitle": "Local seed account",
-    "seedEmail": "Email",
-    "seedPassword": "Password",
-    "seedFill": "Fill form"
+    "resetTokenInvalid": "This reset link is invalid or has expired."
   },
   "switchers": {
     "locale": "Language",
@@ -51,7 +47,10 @@
   },
   "authShell": {
     "brand": "Bokdy Admin",
-    "imageAlt": "Bokdy sports venue"
+    "imageAlt": "Bokdy sports venue",
+    "featureAria": "Platform overview",
+    "featureTitle": "Play Book",
+    "featureTitleAccent": "Grow"
   },
   "shell": {
     "dashboard": "Dashboard",

@@ -1,11 +1,16 @@
 "use client";
 
-import { AuthActionButton, AuthAlert, AuthField, AuthFormFrame } from "@bokdy/ui";
+import { AuthActionButton, AuthAlert, AuthField } from "@bokdy/ui";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 
+import {
+  AdminAuthHeading,
+  austereActionClassName,
+  austereFieldClassName,
+} from "@/components/auth/admin-auth-heading";
 import { Link } from "@/i18n/navigation";
 import { useForgotPassword } from "@/hooks/use-auth";
 import { ApiError, errorMessageKey } from "@/lib/api/errors";
@@ -44,7 +49,12 @@ export function ForgotPasswordForm() {
   }
 
   return (
-    <AuthFormFrame eyebrow={t("adminEyebrow")} title={t("forgotPasswordTitle")} description={t("forgotPasswordHint")}>
+    <div className="space-y-8 text-shell-text">
+      <AdminAuthHeading
+        title={t("forgotPasswordTitle")}
+        description={t("forgotPasswordHint")}
+      />
+
       {sent ? (
         <div className="space-y-4">
           <AuthAlert tone="success">{t("forgotPasswordSent")}</AuthAlert>
@@ -53,26 +63,31 @@ export function ForgotPasswordForm() {
           </Link>
         </div>
       ) : (
-        <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+        <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
           <AuthField
             label={t("email")}
             type="email"
             autoComplete="email"
             placeholder={t("emailPlaceholder")}
             error={errors.email?.message}
+            className={austereFieldClassName}
             {...register("email")}
           />
           {error ? <AuthAlert tone="danger">{error}</AuthAlert> : null}
-          <AuthActionButton type="submit" disabled={forgotPassword.isPending}>
+          <AuthActionButton
+            type="submit"
+            disabled={forgotPassword.isPending}
+            className={austereActionClassName}
+          >
             {t("submitForgotPassword")}
           </AuthActionButton>
-          <p className="text-center text-sm">
+          <p className="text-sm">
             <Link href="/login" className="text-shell-text-muted hover:text-shell-text hover:underline">
               {t("backToLogin")}
             </Link>
           </p>
         </form>
       )}
-    </AuthFormFrame>
+    </div>
   );
 }

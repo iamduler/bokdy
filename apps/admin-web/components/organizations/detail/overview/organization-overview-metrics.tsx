@@ -79,13 +79,13 @@ export function OrganizationOverviewMetrics() {
           return (
             <div
               key={item.key}
-              className="shrink-0 rounded-[10px] border border-border bg-card/50 px-3.5 py-2.5"
+              className="shrink-0 rounded-md border border-border bg-card px-3.5 py-2.5"
             >
               <Icon className={cn("mb-1.5 h-[18px] w-[18px]", item.tone)} aria-hidden />
-              <div className={cn("text-xl font-extrabold leading-none tracking-tight", valueTone)}>
+              <div className={cn("text-xl font-semibold leading-none tracking-tight", valueTone)}>
                 {val}
               </div>
-              <div className="mt-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              <div className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                 {t(item.key)}
               </div>
             </div>
