@@ -7,9 +7,8 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 
 import { useOrganizationDetail } from "../organization-detail-context";
-import { DetailHealthBar } from "../shared/detail-health-bar";
-import { DetailPanel } from "../shared/detail-panel";
-import { DetailSectionHead } from "../shared/detail-section-head";
+import { EntityDetailPanel } from "@/components/entity/detail-panel";
+import { EntitySectionHead } from "@/components/entity/section-head";
 import { DETAIL_MOCK } from "../shared/detail-mock-data";
 
 export function OrganizationOverviewContent() {
@@ -21,8 +20,8 @@ export function OrganizationOverviewContent() {
   return (
     <div className="grid min-h-0 flex-1 grid-cols-1 overflow-hidden lg:grid-cols-[minmax(0,1fr)_300px]">
       <div className="flex flex-col gap-3.5 overflow-y-auto soft-scrollbar p-5 md:px-6">
-        <DetailPanel>
-          <DetailSectionHead>{t("revenueTrend")}</DetailSectionHead>
+        <EntityDetailPanel>
+          <EntitySectionHead>{t("revenueTrend")}</EntitySectionHead>
           <div className="flex h-[60px] items-end gap-1">
             {DETAIL_MOCK.revenueTrend.map((v, i) => (
               <div
@@ -43,11 +42,11 @@ export function OrganizationOverviewContent() {
               </div>
             ))}
           </div>
-        </DetailPanel>
+        </EntityDetailPanel>
 
-        <DetailPanel>
+        <EntityDetailPanel>
           <div className="mb-3 flex items-center justify-between gap-2">
-            <DetailSectionHead>{t("topBranches")}</DetailSectionHead>
+            <EntitySectionHead>{t("topBranches")}</EntitySectionHead>
             <Link
               href={`/organizations/${orgId}/branches`}
               className="text-xs font-bold text-primary hover:underline"
@@ -77,10 +76,10 @@ export function OrganizationOverviewContent() {
               </span>
             </div>
           ))}
-        </DetailPanel>
+        </EntityDetailPanel>
 
-        <DetailPanel>
-          <DetailSectionHead>{t("healthBreakdown")}</DetailSectionHead>
+        <EntityDetailPanel>
+          <EntitySectionHead>{t("healthBreakdown")}</EntitySectionHead>
           {DETAIL_MOCK.healthBreakdown.map((s) => {
             const colorClass =
               s.score >= 80
@@ -110,7 +109,7 @@ export function OrganizationOverviewContent() {
               </div>
             );
           })}
-        </DetailPanel>
+        </EntityDetailPanel>
       </div>
 
       <div className="flex flex-col gap-3.5 overflow-y-auto soft-scrollbar border-border p-4 lg:border-l md:p-5">
@@ -131,7 +130,7 @@ export function OrganizationOverviewContent() {
           </div>
         </div>
 
-        <DetailPanel title={t("pendingTasks")}>
+        <EntityDetailPanel title={t("pendingTasks")}>
           {DETAIL_MOCK.tasks.map((task) => {
             const dotClass =
               task.priority === "high"
@@ -152,7 +151,7 @@ export function OrganizationOverviewContent() {
               </div>
             );
           })}
-        </DetailPanel>
+        </EntityDetailPanel>
 
         <div className="rounded-md border border-amber-500/30 bg-amber-500/10 p-3.5">
           <div className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">

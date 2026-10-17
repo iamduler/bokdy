@@ -1,30 +1,16 @@
 "use client";
 
-import { Badge, Button, cn, Tooltip, TooltipContent, TooltipTrigger } from "@bokdy/ui";
+import { Badge, cn } from "@bokdy/ui";
 import { ArrowUp, FileText } from "lucide-react";
 import { useTranslations } from "next-intl";
 
+import { EntityDetailPanel } from "@/components/entity/detail-panel";
+import { EntitySectionHead } from "@/components/entity/section-head";
+import { EntityUnavailableButton } from "@/components/entity/unavailable";
+
 import { OrganizationDetailScreenHeader } from "../organization-detail-screen-header";
 import { useOrganizationDetail } from "../organization-detail-context";
-import { DetailPanel } from "../shared/detail-panel";
-import { DetailSectionHead } from "../shared/detail-section-head";
 import { DETAIL_MOCK } from "../shared/detail-mock-data";
-
-function UnavailableButton({ label }: { label: string }) {
-  const t = useTranslations("organization");
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span className="inline-flex">
-          <Button type="button" variant="outline" size="sm" className="h-8 gap-1 text-xs" disabled>
-            {label}
-          </Button>
-        </span>
-      </TooltipTrigger>
-      <TooltipContent>{t("unavailable")}</TooltipContent>
-    </Tooltip>
-  );
-}
 
 export function OrganizationBillingView() {
   const t = useTranslations("organization.detailBilling");
@@ -37,18 +23,11 @@ export function OrganizationBillingView() {
         title={t("title", { name: org.name })}
         actions={
           <>
-            <UnavailableButton label={t("viewInvoices")} />
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="inline-flex">
-                  <Button type="button" size="sm" className="h-8 gap-1 text-xs" disabled>
-                    <ArrowUp className="h-3.5 w-3.5" />
-                    {t("upgrade")}
-                  </Button>
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>{tu("unavailable")}</TooltipContent>
-            </Tooltip>
+            <EntityUnavailableButton label={t("viewInvoices")} reason={tu("unavailable")} className="gap-1" />
+            <EntityUnavailableButton reason={tu("unavailable")} variant="default" className="gap-1">
+              <ArrowUp className="h-3.5 w-3.5" />
+              {t("upgrade")}
+            </EntityUnavailableButton>
           </>
         }
       />
@@ -58,7 +37,7 @@ export function OrganizationBillingView() {
           <div className="rounded-md border border-violet-500/30 bg-linear-to-br from-card to-violet-500/5 p-5">
             <div className="mb-3.5 flex justify-between">
               <div>
-                <DetailSectionHead>{t("currentPlan")}</DetailSectionHead>
+                <EntitySectionHead>{t("currentPlan")}</EntitySectionHead>
                 <p className="text-2xl font-semibold text-violet-600 dark:text-violet-400">
                   {t(`plan.${DETAIL_MOCK.plan}`)}
                 </p>
@@ -76,7 +55,7 @@ export function OrganizationBillingView() {
                 [t("method"), "VISA ****4242"],
               ].map(([k, v]) => (
                 <div key={String(k)}>
-                  <DetailSectionHead>{k}</DetailSectionHead>
+                  <EntitySectionHead>{k}</EntitySectionHead>
                   <p
                     className={cn(
                       "text-xs font-semibold",
@@ -90,7 +69,7 @@ export function OrganizationBillingView() {
             </div>
           </div>
 
-          <DetailPanel title={t("usage")}>
+          <EntityDetailPanel title={t("usage")}>
             {DETAIL_MOCK.billingUsage.map((u) => (
               <div key={u.labelKey} className="mb-3 last:mb-0">
                 <div className="mb-1 flex justify-between text-xs">
@@ -107,10 +86,10 @@ export function OrganizationBillingView() {
                 </div>
               </div>
             ))}
-          </DetailPanel>
+          </EntityDetailPanel>
         </div>
 
-        <DetailPanel title={t("history")}>
+        <EntityDetailPanel title={t("history")}>
           {DETAIL_MOCK.billingHistory.map((h) => (
             <div
               key={h.labelKey}
@@ -138,7 +117,7 @@ export function OrganizationBillingView() {
               </div>
             </div>
           ))}
-        </DetailPanel>
+        </EntityDetailPanel>
       </div>
     </div>
   );

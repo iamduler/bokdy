@@ -1,29 +1,33 @@
 "use client";
 
-import { Badge } from "@bokdy/ui";
 import { useTranslations } from "next-intl";
 
+import { EntityStatusBadge } from "@/components/entity/status-badge";
 import type { OrgStatus, TenantStatus } from "@/lib/api/admin";
 
-const ORG_STATUS_CLASS: Record<OrgStatus, string> = {
-  active: "border-transparent bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
-  inactive: "",
-  suspended: "border-transparent bg-amber-500/15 text-amber-800 dark:text-amber-300",
-  archived: "",
-};
+const BLUE =
+  "border-transparent bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300";
+const GREEN =
+  "border-transparent bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300";
+const SKY =
+  "border-transparent bg-sky-50 text-sky-700 dark:bg-sky-950 dark:text-sky-300";
+const PURPLE =
+  "border-transparent bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300";
+const RED =
+  "border-transparent bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300";
 
-const ORG_STATUS_VARIANT: Record<OrgStatus, "secondary" | "outline" | "default"> = {
-  active: "default",
-  inactive: "secondary",
-  suspended: "default",
-  archived: "outline",
+const ORG_STATUS_CLASS: Record<OrgStatus, string> = {
+  active: GREEN,
+  inactive: BLUE,
+  suspended: RED,
+  archived: PURPLE,
 };
 
 const TENANT_STATUS_CLASS: Record<TenantStatus, string> = {
-  trial: "border-transparent bg-sky-500/15 text-sky-800 dark:text-sky-300",
-  active: "border-transparent bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
-  suspended: "border-transparent bg-amber-500/15 text-amber-800 dark:text-amber-300",
-  canceled: "border-transparent bg-destructive/15 text-destructive",
+  trial: SKY,
+  active: GREEN,
+  suspended: RED,
+  canceled: RED,
 };
 
 type OrganizationStatusBadgeProps =
@@ -35,19 +39,8 @@ export function OrganizationStatusBadge(props: OrganizationStatusBadgeProps) {
   const tTenant = useTranslations("organization.tenantStatus");
 
   if (props.kind === "org") {
-    return (
-      <Badge
-        variant={ORG_STATUS_VARIANT[props.status]}
-        className={ORG_STATUS_CLASS[props.status] || undefined}
-      >
-        {tOrg(props.status)}
-      </Badge>
-    );
+    return <EntityStatusBadge className={ORG_STATUS_CLASS[props.status]} label={tOrg(props.status)} />;
   }
 
-  return (
-    <Badge variant="outline" className={TENANT_STATUS_CLASS[props.status]}>
-      {tTenant(props.status)}
-    </Badge>
-  );
+  return <EntityStatusBadge className={TENANT_STATUS_CLASS[props.status]} label={tTenant(props.status)} />;
 }

@@ -7,7 +7,7 @@ import { useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { OrganizationActionDialog } from "@/components/organizations/organization-action-dialog";
+import { EntityActionDialog } from "@/components/entity/action-dialog";
 import { useSuspendUser } from "@/hooks/use-admin-users";
 import { ApiError, errorMessageKey } from "@/lib/api/errors";
 
@@ -54,7 +54,7 @@ export function UserSuspendDialog({ open, onClose, userId }: UserSuspendDialogPr
   }
 
   return (
-    <OrganizationActionDialog open={open} title={t("title")} closeLabel={t("cancel")} onClose={close}>
+    <EntityActionDialog open={open} title={t("title")} closeLabel={t("cancel")} onClose={close}>
       <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
         <p className="text-sm text-muted-foreground">{t("hint")}</p>
         <div className="space-y-1.5">
@@ -87,6 +87,6 @@ export function UserSuspendDialog({ open, onClose, userId }: UserSuspendDialogPr
           </Button>
         </div>
       </form>
-    </OrganizationActionDialog>
+    </EntityActionDialog>
   );
 }

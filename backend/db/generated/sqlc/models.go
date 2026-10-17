@@ -1387,6 +1387,135 @@ func (ns NullPlatformAuditLogActivityType) Value() (driver.Value, error) {
 	return string(ns.PlatformAuditLogActivityType), nil
 }
 
+type PlatformFileStatus string
+
+const (
+	PlatformFileStatusTemporary PlatformFileStatus = "temporary"
+	PlatformFileStatusActive    PlatformFileStatus = "active"
+	PlatformFileStatusArchived  PlatformFileStatus = "archived"
+)
+
+func (e *PlatformFileStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = PlatformFileStatus(s)
+	case string:
+		*e = PlatformFileStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for PlatformFileStatus: %T", src)
+	}
+	return nil
+}
+
+type NullPlatformFileStatus struct {
+	PlatformFileStatus PlatformFileStatus `json:"platform_file_status"`
+	Valid              bool               `json:"valid"` // Valid is true if PlatformFileStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullPlatformFileStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.PlatformFileStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.PlatformFileStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullPlatformFileStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.PlatformFileStatus), nil
+}
+
+type PlatformFileStorage string
+
+const (
+	PlatformFileStorageLocal PlatformFileStorage = "local"
+	PlatformFileStorageS3    PlatformFileStorage = "s3"
+	PlatformFileStorageGcs   PlatformFileStorage = "gcs"
+	PlatformFileStorageAzure PlatformFileStorage = "azure"
+)
+
+func (e *PlatformFileStorage) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = PlatformFileStorage(s)
+	case string:
+		*e = PlatformFileStorage(s)
+	default:
+		return fmt.Errorf("unsupported scan type for PlatformFileStorage: %T", src)
+	}
+	return nil
+}
+
+type NullPlatformFileStorage struct {
+	PlatformFileStorage PlatformFileStorage `json:"platform_file_storage"`
+	Valid               bool                `json:"valid"` // Valid is true if PlatformFileStorage is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullPlatformFileStorage) Scan(value interface{}) error {
+	if value == nil {
+		ns.PlatformFileStorage, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.PlatformFileStorage.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullPlatformFileStorage) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.PlatformFileStorage), nil
+}
+
+type PlatformFileVisibility string
+
+const (
+	PlatformFileVisibilityPublic  PlatformFileVisibility = "public"
+	PlatformFileVisibilityPrivate PlatformFileVisibility = "private"
+)
+
+func (e *PlatformFileVisibility) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = PlatformFileVisibility(s)
+	case string:
+		*e = PlatformFileVisibility(s)
+	default:
+		return fmt.Errorf("unsupported scan type for PlatformFileVisibility: %T", src)
+	}
+	return nil
+}
+
+type NullPlatformFileVisibility struct {
+	PlatformFileVisibility PlatformFileVisibility `json:"platform_file_visibility"`
+	Valid                  bool                   `json:"valid"` // Valid is true if PlatformFileVisibility is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullPlatformFileVisibility) Scan(value interface{}) error {
+	if value == nil {
+		ns.PlatformFileVisibility, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.PlatformFileVisibility.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullPlatformFileVisibility) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.PlatformFileVisibility), nil
+}
+
 type PricingAdjustmentType string
 
 const (
@@ -2232,6 +2361,22 @@ type OrganizationOrganization struct {
 	CreatedAt        time.Time                      `json:"created_at"`
 	UpdatedAt        time.Time                      `json:"updated_at"`
 	DeletedAt        *time.Time                     `json:"deleted_at"`
+	BannerFileID     *uuid.UUID                     `json:"banner_file_id"`
+}
+
+type OrganizationOrganizationAddress struct {
+	ID               uuid.UUID                    `json:"id"`
+	OrganizationID   uuid.UUID                    `json:"organization_id"`
+	DivisionScheme   ReferenceAdminDivisionScheme `json:"division_scheme"`
+	CountryID        *uuid.UUID                   `json:"country_id"`
+	ProvinceFormerID *uuid.UUID                   `json:"province_former_id"`
+	DistrictFormerID *uuid.UUID                   `json:"district_former_id"`
+	WardFormerID     *uuid.UUID                   `json:"ward_former_id"`
+	ProvinceID       *uuid.UUID                   `json:"province_id"`
+	WardID           *uuid.UUID                   `json:"ward_id"`
+	AddressLine1     *string                      `json:"address_line_1"`
+	AddressLine2     *string                      `json:"address_line_2"`
+	UpdatedAt        time.Time                    `json:"updated_at"`
 }
 
 type OrganizationOrganizationSetting struct {
@@ -2329,6 +2474,33 @@ type PlatformAuditLog struct {
 	IpAddress     *string                      `json:"ip_address"`
 	UserAgent     *string                      `json:"user_agent"`
 	CreatedAt     time.Time                    `json:"created_at"`
+}
+
+type PlatformFile struct {
+	ID           uuid.UUID              `json:"id"`
+	TenantID     uuid.UUID              `json:"tenant_id"`
+	Storage      PlatformFileStorage    `json:"storage"`
+	Bucket       *string                `json:"bucket"`
+	Path         string                 `json:"path"`
+	OriginalName *string                `json:"original_name"`
+	Filename     *string                `json:"filename"`
+	MimeType     *string                `json:"mime_type"`
+	Extension    *string                `json:"extension"`
+	Size         *int64                 `json:"size"`
+	Checksum     *string                `json:"checksum"`
+	Visibility   PlatformFileVisibility `json:"visibility"`
+	Status       PlatformFileStatus     `json:"status"`
+	CreatedBy    *uuid.UUID             `json:"created_by"`
+	CreatedAt    time.Time              `json:"created_at"`
+	DeletedAt    *time.Time             `json:"deleted_at"`
+}
+
+type PlatformFileReference struct {
+	ID         uuid.UUID `json:"id"`
+	FileID     uuid.UUID `json:"file_id"`
+	EntityType string    `json:"entity_type"`
+	EntityID   uuid.UUID `json:"entity_id"`
+	CreatedAt  time.Time `json:"created_at"`
 }
 
 type PricingCategoryPrice struct {

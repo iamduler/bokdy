@@ -2,6 +2,8 @@ package handler
 
 import (
 	"context"
+	"io"
+	"net/http"
 
 	"bokdy/internal/organization/entity"
 	"bokdy/internal/organization/service"
@@ -23,21 +25,39 @@ func NewOrganizationHandler(orgs *service.OrganizationService) *OrganizationHand
 	return &OrganizationHandler{orgs: orgs}
 }
 
+type headquartersRequest struct {
+	ProvinceID   string `json:"province_id"`
+	WardID       string `json:"ward_id"`
+	AddressLine1 string `json:"address_line_1"`
+	AddressLine2 string `json:"address_line_2"`
+}
+
 type createOrgRequest struct {
-	Name   string `json:"name"`
-	NameEn string `json:"name_en"`
-	NameVi string `json:"name_vi"`
-	Code   string `json:"code"`
-	Email  string `json:"email"`
-	Phone  string `json:"phone"`
+	Name             string               `json:"name"`
+	NameEn           string               `json:"name_en"`
+	NameVi           string               `json:"name_vi"`
+	LegalName        string               `json:"legal_name"`
+	OrganizationType string               `json:"organization_type"`
+	Slug             string               `json:"slug"`
+	Code             string               `json:"code"`
+	TaxCode          string               `json:"tax_code"`
+	Email            string               `json:"email"`
+	Phone            string               `json:"phone"`
+	Website          string               `json:"website"`
+	Headquarters     *headquartersRequest `json:"headquarters"`
 }
 
 type updateOrgRequest struct {
-	NameEn *string `json:"name_en"`
-	NameVi *string `json:"name_vi"`
-	Code   *string `json:"code"`
-	Email  *string `json:"email"`
-	Phone  *string `json:"phone"`
+	NameEn           *string              `json:"name_en"`
+	NameVi           *string              `json:"name_vi"`
+	LegalName        *string              `json:"legal_name"`
+	OrganizationType *string              `json:"organization_type"`
+	Slug             *string              `json:"slug"`
+	TaxCode          *string              `json:"tax_code"`
+	Email            *string              `json:"email"`
+	Phone            *string              `json:"phone"`
+	Website          *string              `json:"website"`
+	Headquarters     *headquartersRequest `json:"headquarters"`
 }
 
 type inviteRequest struct {
@@ -70,11 +90,33 @@ type orgDTO struct {
 	TenantID string `json:"tenant_id"`
 	Code     string `json:"code"`
 	Name     string `json:"name"`
-	NameEn   string `json:"name_en,omitempty"`
-	NameVi   string `json:"name_vi,omitempty"`
-	Email    string `json:"email,omitempty"`
-	Phone    string `json:"phone,omitempty"`
-	Status   string `json:"status"`
+	NameEn           string `json:"name_en,omitempty"`
+	NameVi           string `json:"name_vi,omitempty"`
+	LegalName        string `json:"legal_name,omitempty"`
+	OrganizationType string `json:"organization_type,omitempty"`
+	Slug             string `json:"slug,omitempty"`
+	TaxCode          string `json:"tax_code,omitempty"`
+	Email            string `json:"email,omitempty"`
+	Phone            string `json:"phone,omitempty"`
+	Website          string `json:"website,omitempty"`
+	LogoFileID       string `json:"logo_file_id,omitempty"`
+	BannerFileID     string `json:"banner_file_id,omitempty"`
+	Status           string `json:"status"`
+	Headquarters     *hqDTO `json:"headquarters,omitempty"`
+}
+
+type hqDTO struct {
+	ProvinceID   string      `json:"province_id,omitempty"`
+	WardID       string      `json:"ward_id,omitempty"`
+	AddressLine1 string      `json:"address_line_1,omitempty"`
+	AddressLine2 string      `json:"address_line_2,omitempty"`
+	Former       []formerDTO `json:"former,omitempty"`
+}
+
+type formerDTO struct {
+	ProvinceFormerID string `json:"province_former_id"`
+	DistrictFormerID string `json:"district_former_id"`
+	WardFormerID     string `json:"ward_former_id"`
 }
 
 type staffDTO struct {
@@ -101,8 +143,11 @@ func (h *OrganizationHandler) RegisterRoutes(rg *gin.RouterGroup, jwt gin.Handle
 		orgs.GET("", h.ListMine)
 		orgs.POST("/invitations/accept", h.AcceptInvitation)
 		orgs.POST("/invitations/reject", h.RejectInvitation)
+		orgs.GET("/slug-available", h.SlugAvailable)
 		orgs.GET("/:id", h.Get)
 		orgs.PATCH("/:id", h.Update)
+		orgs.POST("/:id/media", h.UploadMedia)
+		rg.GET("/files/:id", jwt, h.DownloadFile)
 		orgs.GET("/:id/staff", h.ListStaff)
 		orgs.POST("/:id/staff", h.AddStaff)
 		orgs.PATCH("/:id/staff/:staffId", h.UpdateStaff)
@@ -126,14 +171,26 @@ func (h *OrganizationHandler) Create(c *gin.Context) {
 	if !httpx.BindJSON(c, &req) {
 		return
 	}
+	hq, err := parseHeadquarters(req.Headquarters)
+	if err != nil {
+		httpx.Error(c, err)
+		return
+	}
 	org, err := h.orgs.Create(c.Request.Context(), uid, service.CreateOrganizationInput{
-		Name: req.Name, NameEn: req.NameEn, NameVi: req.NameVi, Code: req.Code, Email: req.Email, Phone: req.Phone,
+		Name: req.Name, NameEn: req.NameEn, NameVi: req.NameVi, LegalName: req.LegalName,
+		OrganizationType: req.OrganizationType, Slug: req.Slug, Code: req.Code, TaxCode: req.TaxCode,
+		Email: req.Email, Phone: req.Phone, Website: req.Website, Headquarters: hq,
 	})
 	if err != nil {
 		httpx.Error(c, err)
 		return
 	}
-	httpx.Created(c, toOrgDTO(c.Request.Context(), org))
+	dto, err := h.present(c, org)
+	if err != nil {
+		httpx.Error(c, err)
+		return
+	}
+	httpx.Created(c, dto)
 }
 
 func (h *OrganizationHandler) ListMine(c *gin.Context) {
@@ -170,7 +227,12 @@ func (h *OrganizationHandler) Get(c *gin.Context) {
 		httpx.Error(c, err)
 		return
 	}
-	httpx.OK(c, toOrgDTO(c.Request.Context(), org))
+	dto, err := h.present(c, org)
+	if err != nil {
+		httpx.Error(c, err)
+		return
+	}
+	httpx.OK(c, dto)
 }
 
 func (h *OrganizationHandler) Update(c *gin.Context) {
@@ -188,22 +250,174 @@ func (h *OrganizationHandler) Update(c *gin.Context) {
 	if !httpx.BindJSON(c, &req) {
 		return
 	}
+	hq, err := parseHeadquarters(req.Headquarters)
+	if err != nil {
+		httpx.Error(c, err)
+		return
+	}
 	org, err := h.orgs.Update(c.Request.Context(), orgID, uid, service.UpdateOrganizationInput{
-		NameEn: req.NameEn, NameVi: req.NameVi, Code: req.Code, Email: req.Email, Phone: req.Phone,
+		NameEn: req.NameEn, NameVi: req.NameVi, LegalName: req.LegalName, OrganizationType: req.OrganizationType,
+		Slug: req.Slug, TaxCode: req.TaxCode, Email: req.Email, Phone: req.Phone, Website: req.Website,
+		Headquarters: hq,
 	})
 	if err != nil {
 		httpx.Error(c, err)
 		return
 	}
-	httpx.OK(c, toOrgDTO(c.Request.Context(), org))
+	dto, err := h.present(c, org)
+	if err != nil {
+		httpx.Error(c, err)
+		return
+	}
+	httpx.OK(c, dto)
 }
 
 func toOrgDTO(ctx context.Context, org *entity.Organization) orgDTO {
-	return orgDTO{
+	dto := orgDTO{
 		ID: org.ID.String(), PublicID: org.PublicID, TenantID: org.TenantID.String(), Code: org.Code,
 		Name:   i18n.DisplayName(i18n.FromContext(ctx), org.NameEn, org.NameVi),
-		NameEn: org.NameEn, NameVi: org.NameVi, Email: org.Email, Phone: org.Phone, Status: string(org.Status),
+		NameEn: org.NameEn, NameVi: org.NameVi, LegalName: org.LegalName,
+		OrganizationType: string(org.OrganizationType), Slug: org.Slug, TaxCode: org.TaxCode,
+		Email: org.Email, Phone: org.Phone, Website: org.Website, Status: string(org.Status),
 	}
+	if org.LogoFileID != nil {
+		dto.LogoFileID = org.LogoFileID.String()
+	}
+	if org.BannerFileID != nil {
+		dto.BannerFileID = org.BannerFileID.String()
+	}
+	return dto
+}
+
+func (h *OrganizationHandler) present(c *gin.Context, org *entity.Organization) (orgDTO, error) {
+	dto := toOrgDTO(c.Request.Context(), org)
+	rows, err := h.orgs.ListHeadquarters(c.Request.Context(), org.ID)
+	if err != nil {
+		return orgDTO{}, err
+	}
+	if len(rows) == 0 {
+		return dto, nil
+	}
+	hq := &hqDTO{}
+	for _, row := range rows {
+		if row.DivisionScheme == entity.AdminDivisionCurrentV2 {
+			if row.ProvinceID != nil {
+				hq.ProvinceID = row.ProvinceID.String()
+			}
+			if row.WardID != nil {
+				hq.WardID = row.WardID.String()
+			}
+			hq.AddressLine1 = row.AddressLine1
+			hq.AddressLine2 = row.AddressLine2
+			continue
+		}
+		if row.ProvinceFormerID == nil || row.DistrictFormerID == nil || row.WardFormerID == nil {
+			continue
+		}
+		hq.Former = append(hq.Former, formerDTO{
+			ProvinceFormerID: row.ProvinceFormerID.String(),
+			DistrictFormerID: row.DistrictFormerID.String(),
+			WardFormerID:     row.WardFormerID.String(),
+		})
+	}
+	dto.Headquarters = hq
+	return dto, nil
+}
+
+func parseHeadquarters(req *headquartersRequest) (*service.HeadquartersInput, error) {
+	if req == nil {
+		return nil, nil
+	}
+	out := &service.HeadquartersInput{AddressLine1: req.AddressLine1, AddressLine2: req.AddressLine2}
+	if req.ProvinceID != "" {
+		id, err := uuid.Parse(req.ProvinceID)
+		if err != nil {
+			return nil, apperr.New(apperr.CodeValidation, "invalid province_id")
+		}
+		out.ProvinceID = id
+	}
+	if req.WardID != "" {
+		id, err := uuid.Parse(req.WardID)
+		if err != nil {
+			return nil, apperr.New(apperr.CodeValidation, "invalid ward_id")
+		}
+		out.WardID = id
+	}
+	return out, nil
+}
+
+func (h *OrganizationHandler) SlugAvailable(c *gin.Context) {
+	exclude := uuid.Nil
+	if raw := c.Query("exclude_id"); raw != "" {
+		id, err := uuid.Parse(raw)
+		if err != nil {
+			httpx.Error(c, apperr.New(apperr.CodeBadRequest, "invalid exclude_id"))
+			return
+		}
+		exclude = id
+	}
+	ok, err := h.orgs.SlugAvailable(c.Request.Context(), c.Query("slug"), exclude)
+	if err != nil {
+		httpx.Error(c, err)
+		return
+	}
+	httpx.OK(c, gin.H{"available": ok, "slug": c.Query("slug")})
+}
+
+func (h *OrganizationHandler) UploadMedia(c *gin.Context) {
+	uid, ok := requestctx.UserID(c.Request.Context())
+	if !ok {
+		httpx.Error(c, apperr.New(apperr.CodeUnauthorized, "unauthorized"))
+		return
+	}
+	orgID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		httpx.Error(c, apperr.New(apperr.CodeBadRequest, "invalid organization id"))
+		return
+	}
+	file, header, err := c.Request.FormFile("file")
+	if err != nil {
+		httpx.Error(c, apperr.New(apperr.CodeValidation, "file is required"))
+		return
+	}
+	defer file.Close()
+	body, err := io.ReadAll(io.LimitReader(file, 5<<20+1))
+	if err != nil {
+		httpx.Error(c, apperr.Wrap(err, apperr.CodeBadRequest, "read file"))
+		return
+	}
+	mimeType := header.Header.Get("Content-Type")
+	if mimeType == "" {
+		mimeType = http.DetectContentType(body)
+	}
+	org, err := h.orgs.SaveImage(c.Request.Context(), orgID, uid, c.PostForm("kind"), header.Filename, mimeType, body)
+	if err != nil {
+		httpx.Error(c, err)
+		return
+	}
+	dto, err := h.present(c, org)
+	if err != nil {
+		httpx.Error(c, err)
+		return
+	}
+	httpx.OK(c, dto)
+}
+
+func (h *OrganizationHandler) DownloadFile(c *gin.Context) {
+	fileID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		httpx.Error(c, apperr.New(apperr.CodeBadRequest, "invalid file id"))
+		return
+	}
+	path, mime, err := h.orgs.OpenFile(c.Request.Context(), fileID)
+	if err != nil {
+		httpx.Error(c, err)
+		return
+	}
+	if mime != "" {
+		c.Header("Content-Type", mime)
+	}
+	c.File(path)
 }
 
 func toStaffDTO(row service.StaffWithRoles) staffDTO {

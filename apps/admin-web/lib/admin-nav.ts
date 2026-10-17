@@ -1,7 +1,8 @@
 /**
  * Admin shell navigation — mirrors Figma Make `ADMIN_NAV` plus Account items.
  *
- * `status: "missing"` items stay visible and labeled “Chưa có”; do not call deferred APIs.
+ * `status: "missing"` stays in this list as the extension catalog and is not rendered.
+ * Flip an item to `ready` and set `href` when its API exists.
  *
  * Proposed APIs for missing surfaces (do not implement in this shell migrate):
  * - commandCenter → analytics / live ops (`F-ANALYTICS`)
@@ -114,6 +115,18 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     ],
   },
 ];
+
+/** Groups shown in the sidebar: ready items only, empty groups omitted. */
+export function visibleAdminNavGroups(
+  groups: AdminNavGroup[] = ADMIN_NAV_GROUPS,
+): AdminNavGroup[] {
+  return groups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => item.status === "ready" && item.href),
+    }))
+    .filter((group) => group.items.length > 0);
+}
 
 export const ADMIN_SIDEBAR_COLLAPSE_KEY = "bokdy.admin.sidebar.collapsed";
 

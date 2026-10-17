@@ -57,8 +57,8 @@ func (q *Queries) CreateBusinessUnit(ctx context.Context, arg CreateBusinessUnit
 
 const createOrganization = `-- name: CreateOrganization :exec
 INSERT INTO organization.organizations
-    (id, public_id, tenant_id, code, name_en, name_vi, organization_type, phone, email, status, created_at, updated_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+    (id, public_id, tenant_id, code, name_en, name_vi, legal_name, organization_type, tax_code, phone, email, website, status, created_at, updated_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
 `
 
 type CreateOrganizationParams struct {
@@ -68,9 +68,12 @@ type CreateOrganizationParams struct {
 	Code             string                         `json:"code"`
 	NameEn           *string                        `json:"name_en"`
 	NameVi           *string                        `json:"name_vi"`
+	LegalName        *string                        `json:"legal_name"`
 	OrganizationType OrganizationOrganizationType   `json:"organization_type"`
+	TaxCode          *string                        `json:"tax_code"`
 	Phone            *string                        `json:"phone"`
 	Email            *string                        `json:"email"`
+	Website          *string                        `json:"website"`
 	Status           OrganizationOrganizationStatus `json:"status"`
 	CreatedAt        time.Time                      `json:"created_at"`
 	UpdatedAt        time.Time                      `json:"updated_at"`
@@ -84,9 +87,12 @@ func (q *Queries) CreateOrganization(ctx context.Context, arg CreateOrganization
 		arg.Code,
 		arg.NameEn,
 		arg.NameVi,
+		arg.LegalName,
 		arg.OrganizationType,
+		arg.TaxCode,
 		arg.Phone,
 		arg.Email,
+		arg.Website,
 		arg.Status,
 		arg.CreatedAt,
 		arg.UpdatedAt,
@@ -182,10 +188,16 @@ func (q *Queries) FindDefaultBusinessUnit(ctx context.Context, arg FindDefaultBu
 }
 
 const findOrganizationByID = `-- name: FindOrganizationByID :one
-SELECT id, public_id, tenant_id, code, COALESCE(name_en, '') AS name_en, COALESCE(name_vi, '') AS name_vi, organization_type,
-       COALESCE(phone, '') AS phone, COALESCE(email, '') AS email, status, created_at, updated_at
-FROM organization.organizations
-WHERE id = $1 AND deleted_at IS NULL
+SELECT o.id, o.public_id, o.tenant_id, o.code,
+       COALESCE(o.name_en, '') AS name_en, COALESCE(o.name_vi, '') AS name_vi,
+       COALESCE(o.legal_name, '') AS legal_name, o.organization_type,
+       COALESCE(o.tax_code, '') AS tax_code,
+       COALESCE(o.phone, '') AS phone, COALESCE(o.email, '') AS email,
+       COALESCE(o.website, '') AS website, o.logo_file_id, o.banner_file_id,
+       o.status, o.created_at, o.updated_at, t.slug
+FROM organization.organizations o
+JOIN organization.tenants t ON t.id = o.tenant_id
+WHERE o.id = $1 AND o.deleted_at IS NULL
 `
 
 type FindOrganizationByIDRow struct {
@@ -195,12 +207,18 @@ type FindOrganizationByIDRow struct {
 	Code             string                         `json:"code"`
 	NameEn           string                         `json:"name_en"`
 	NameVi           string                         `json:"name_vi"`
+	LegalName        string                         `json:"legal_name"`
 	OrganizationType OrganizationOrganizationType   `json:"organization_type"`
+	TaxCode          string                         `json:"tax_code"`
 	Phone            string                         `json:"phone"`
 	Email            string                         `json:"email"`
+	Website          string                         `json:"website"`
+	LogoFileID       *uuid.UUID                     `json:"logo_file_id"`
+	BannerFileID     *uuid.UUID                     `json:"banner_file_id"`
 	Status           OrganizationOrganizationStatus `json:"status"`
 	CreatedAt        time.Time                      `json:"created_at"`
 	UpdatedAt        time.Time                      `json:"updated_at"`
+	Slug             string                         `json:"slug"`
 }
 
 func (q *Queries) FindOrganizationByID(ctx context.Context, id uuid.UUID) (FindOrganizationByIDRow, error) {
@@ -213,21 +231,33 @@ func (q *Queries) FindOrganizationByID(ctx context.Context, id uuid.UUID) (FindO
 		&i.Code,
 		&i.NameEn,
 		&i.NameVi,
+		&i.LegalName,
 		&i.OrganizationType,
+		&i.TaxCode,
 		&i.Phone,
 		&i.Email,
+		&i.Website,
+		&i.LogoFileID,
+		&i.BannerFileID,
 		&i.Status,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Slug,
 	)
 	return i, err
 }
 
 const findOrganizationByTenant = `-- name: FindOrganizationByTenant :one
-SELECT id, public_id, tenant_id, code, COALESCE(name_en, '') AS name_en, COALESCE(name_vi, '') AS name_vi, organization_type,
-       COALESCE(phone, '') AS phone, COALESCE(email, '') AS email, status, created_at, updated_at
-FROM organization.organizations
-WHERE tenant_id = $1 AND deleted_at IS NULL
+SELECT o.id, o.public_id, o.tenant_id, o.code,
+       COALESCE(o.name_en, '') AS name_en, COALESCE(o.name_vi, '') AS name_vi,
+       COALESCE(o.legal_name, '') AS legal_name, o.organization_type,
+       COALESCE(o.tax_code, '') AS tax_code,
+       COALESCE(o.phone, '') AS phone, COALESCE(o.email, '') AS email,
+       COALESCE(o.website, '') AS website, o.logo_file_id, o.banner_file_id,
+       o.status, o.created_at, o.updated_at, t.slug
+FROM organization.organizations o
+JOIN organization.tenants t ON t.id = o.tenant_id
+WHERE o.tenant_id = $1 AND o.deleted_at IS NULL
 `
 
 type FindOrganizationByTenantRow struct {
@@ -237,12 +267,18 @@ type FindOrganizationByTenantRow struct {
 	Code             string                         `json:"code"`
 	NameEn           string                         `json:"name_en"`
 	NameVi           string                         `json:"name_vi"`
+	LegalName        string                         `json:"legal_name"`
 	OrganizationType OrganizationOrganizationType   `json:"organization_type"`
+	TaxCode          string                         `json:"tax_code"`
 	Phone            string                         `json:"phone"`
 	Email            string                         `json:"email"`
+	Website          string                         `json:"website"`
+	LogoFileID       *uuid.UUID                     `json:"logo_file_id"`
+	BannerFileID     *uuid.UUID                     `json:"banner_file_id"`
 	Status           OrganizationOrganizationStatus `json:"status"`
 	CreatedAt        time.Time                      `json:"created_at"`
 	UpdatedAt        time.Time                      `json:"updated_at"`
+	Slug             string                         `json:"slug"`
 }
 
 func (q *Queries) FindOrganizationByTenant(ctx context.Context, tenantID uuid.UUID) (FindOrganizationByTenantRow, error) {
@@ -255,12 +291,18 @@ func (q *Queries) FindOrganizationByTenant(ctx context.Context, tenantID uuid.UU
 		&i.Code,
 		&i.NameEn,
 		&i.NameVi,
+		&i.LegalName,
 		&i.OrganizationType,
+		&i.TaxCode,
 		&i.Phone,
 		&i.Email,
+		&i.Website,
+		&i.LogoFileID,
+		&i.BannerFileID,
 		&i.Status,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Slug,
 	)
 	return i, err
 }
@@ -302,9 +344,25 @@ func (q *Queries) FindTenantByID(ctx context.Context, id uuid.UUID) (FindTenantB
 	return i, err
 }
 
+const findTenantBySlug = `-- name: FindTenantBySlug :one
+SELECT id FROM organization.tenants WHERE slug = $1
+`
+
+func (q *Queries) FindTenantBySlug(ctx context.Context, slug string) (uuid.UUID, error) {
+	row := q.db.QueryRow(ctx, findTenantBySlug, slug)
+	var id uuid.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
 const listOrganizationsAdmin = `-- name: ListOrganizationsAdmin :many
-SELECT o.id, o.public_id, o.tenant_id, o.code, COALESCE(o.name_en, '') AS name_en, COALESCE(o.name_vi, '') AS name_vi, o.organization_type,
-       COALESCE(o.phone, '') AS phone, COALESCE(o.email, '') AS email, o.status, o.created_at, o.updated_at,
+SELECT o.id, o.public_id, o.tenant_id, o.code,
+       COALESCE(o.name_en, '') AS name_en, COALESCE(o.name_vi, '') AS name_vi,
+       COALESCE(o.legal_name, '') AS legal_name, o.organization_type,
+       COALESCE(o.tax_code, '') AS tax_code,
+       COALESCE(o.phone, '') AS phone, COALESCE(o.email, '') AS email,
+       COALESCE(o.website, '') AS website, o.logo_file_id, o.banner_file_id,
+       o.status, o.created_at, o.updated_at, t.slug,
        t.status AS tenant_status,
        (
          SELECT COUNT(*)::int
@@ -354,12 +412,18 @@ type ListOrganizationsAdminRow struct {
 	Code             string                         `json:"code"`
 	NameEn           string                         `json:"name_en"`
 	NameVi           string                         `json:"name_vi"`
+	LegalName        string                         `json:"legal_name"`
 	OrganizationType OrganizationOrganizationType   `json:"organization_type"`
+	TaxCode          string                         `json:"tax_code"`
 	Phone            string                         `json:"phone"`
 	Email            string                         `json:"email"`
+	Website          string                         `json:"website"`
+	LogoFileID       *uuid.UUID                     `json:"logo_file_id"`
+	BannerFileID     *uuid.UUID                     `json:"banner_file_id"`
 	Status           OrganizationOrganizationStatus `json:"status"`
 	CreatedAt        time.Time                      `json:"created_at"`
 	UpdatedAt        time.Time                      `json:"updated_at"`
+	Slug             string                         `json:"slug"`
 	TenantStatus     OrganizationTenantStatus       `json:"tenant_status"`
 	BranchCount      int32                          `json:"branch_count"`
 }
@@ -385,12 +449,18 @@ func (q *Queries) ListOrganizationsAdmin(ctx context.Context, arg ListOrganizati
 			&i.Code,
 			&i.NameEn,
 			&i.NameVi,
+			&i.LegalName,
 			&i.OrganizationType,
+			&i.TaxCode,
 			&i.Phone,
 			&i.Email,
+			&i.Website,
+			&i.LogoFileID,
+			&i.BannerFileID,
 			&i.Status,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.Slug,
 			&i.TenantStatus,
 			&i.BranchCount,
 		); err != nil {
@@ -405,9 +475,15 @@ func (q *Queries) ListOrganizationsAdmin(ctx context.Context, arg ListOrganizati
 }
 
 const listOrganizationsByUser = `-- name: ListOrganizationsByUser :many
-SELECT o.id, o.public_id, o.tenant_id, o.code, COALESCE(o.name_en, '') AS name_en, COALESCE(o.name_vi, '') AS name_vi, o.organization_type,
-       COALESCE(o.phone, '') AS phone, COALESCE(o.email, '') AS email, o.status, o.created_at, o.updated_at
+SELECT o.id, o.public_id, o.tenant_id, o.code,
+       COALESCE(o.name_en, '') AS name_en, COALESCE(o.name_vi, '') AS name_vi,
+       COALESCE(o.legal_name, '') AS legal_name, o.organization_type,
+       COALESCE(o.tax_code, '') AS tax_code,
+       COALESCE(o.phone, '') AS phone, COALESCE(o.email, '') AS email,
+       COALESCE(o.website, '') AS website, o.logo_file_id, o.banner_file_id,
+       o.status, o.created_at, o.updated_at, t.slug
 FROM organization.organizations o
+JOIN organization.tenants t ON t.id = o.tenant_id
 JOIN organization.staff_members s ON s.organization_id = o.id
 WHERE s.user_id = $1 AND s.status = 'active' AND o.deleted_at IS NULL
 ORDER BY o.created_at ASC
@@ -420,12 +496,18 @@ type ListOrganizationsByUserRow struct {
 	Code             string                         `json:"code"`
 	NameEn           string                         `json:"name_en"`
 	NameVi           string                         `json:"name_vi"`
+	LegalName        string                         `json:"legal_name"`
 	OrganizationType OrganizationOrganizationType   `json:"organization_type"`
+	TaxCode          string                         `json:"tax_code"`
 	Phone            string                         `json:"phone"`
 	Email            string                         `json:"email"`
+	Website          string                         `json:"website"`
+	LogoFileID       *uuid.UUID                     `json:"logo_file_id"`
+	BannerFileID     *uuid.UUID                     `json:"banner_file_id"`
 	Status           OrganizationOrganizationStatus `json:"status"`
 	CreatedAt        time.Time                      `json:"created_at"`
 	UpdatedAt        time.Time                      `json:"updated_at"`
+	Slug             string                         `json:"slug"`
 }
 
 func (q *Queries) ListOrganizationsByUser(ctx context.Context, userID uuid.UUID) ([]ListOrganizationsByUserRow, error) {
@@ -444,12 +526,18 @@ func (q *Queries) ListOrganizationsByUser(ctx context.Context, userID uuid.UUID)
 			&i.Code,
 			&i.NameEn,
 			&i.NameVi,
+			&i.LegalName,
 			&i.OrganizationType,
+			&i.TaxCode,
 			&i.Phone,
 			&i.Email,
+			&i.Website,
+			&i.LogoFileID,
+			&i.BannerFileID,
 			&i.Status,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.Slug,
 		); err != nil {
 			return nil, err
 		}
@@ -462,8 +550,10 @@ func (q *Queries) ListOrganizationsByUser(ctx context.Context, userID uuid.UUID)
 }
 
 const lockOrganizationByID = `-- name: LockOrganizationByID :one
-SELECT id, public_id, tenant_id, code, COALESCE(name_en, '') AS name_en, COALESCE(name_vi, '') AS name_vi, organization_type,
-       COALESCE(phone, '') AS phone, COALESCE(email, '') AS email, status, created_at, updated_at
+SELECT id, public_id, tenant_id, code, COALESCE(name_en, '') AS name_en, COALESCE(name_vi, '') AS name_vi,
+       COALESCE(legal_name, '') AS legal_name, organization_type, COALESCE(tax_code, '') AS tax_code,
+       COALESCE(phone, '') AS phone, COALESCE(email, '') AS email, COALESCE(website, '') AS website,
+       logo_file_id, banner_file_id, status, created_at, updated_at, ''::text AS slug
 FROM organization.organizations
 WHERE id = $1 AND deleted_at IS NULL
 FOR UPDATE
@@ -476,12 +566,18 @@ type LockOrganizationByIDRow struct {
 	Code             string                         `json:"code"`
 	NameEn           string                         `json:"name_en"`
 	NameVi           string                         `json:"name_vi"`
+	LegalName        string                         `json:"legal_name"`
 	OrganizationType OrganizationOrganizationType   `json:"organization_type"`
+	TaxCode          string                         `json:"tax_code"`
 	Phone            string                         `json:"phone"`
 	Email            string                         `json:"email"`
+	Website          string                         `json:"website"`
+	LogoFileID       *uuid.UUID                     `json:"logo_file_id"`
+	BannerFileID     *uuid.UUID                     `json:"banner_file_id"`
 	Status           OrganizationOrganizationStatus `json:"status"`
 	CreatedAt        time.Time                      `json:"created_at"`
 	UpdatedAt        time.Time                      `json:"updated_at"`
+	Slug             string                         `json:"slug"`
 }
 
 func (q *Queries) LockOrganizationByID(ctx context.Context, id uuid.UUID) (LockOrganizationByIDRow, error) {
@@ -494,12 +590,18 @@ func (q *Queries) LockOrganizationByID(ctx context.Context, id uuid.UUID) (LockO
 		&i.Code,
 		&i.NameEn,
 		&i.NameVi,
+		&i.LegalName,
 		&i.OrganizationType,
+		&i.TaxCode,
 		&i.Phone,
 		&i.Email,
+		&i.Website,
+		&i.LogoFileID,
+		&i.BannerFileID,
 		&i.Status,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Slug,
 	)
 	return i, err
 }
@@ -544,27 +646,38 @@ func (q *Queries) LockTenantByID(ctx context.Context, id uuid.UUID) (LockTenantB
 
 const updateOrganization = `-- name: UpdateOrganization :exec
 UPDATE organization.organizations
-SET code = $2, name_en = $3, name_vi = $4, phone = $5, email = $6, updated_at = now()
+SET name_en = $2, name_vi = $3, legal_name = $4, organization_type = $5, tax_code = $6,
+    phone = $7, email = $8, website = $9, logo_file_id = $10, banner_file_id = $11, updated_at = now()
 WHERE id = $1 AND deleted_at IS NULL
 `
 
 type UpdateOrganizationParams struct {
-	ID     uuid.UUID `json:"id"`
-	Code   string    `json:"code"`
-	NameEn *string   `json:"name_en"`
-	NameVi *string   `json:"name_vi"`
-	Phone  *string   `json:"phone"`
-	Email  *string   `json:"email"`
+	ID               uuid.UUID                    `json:"id"`
+	NameEn           *string                      `json:"name_en"`
+	NameVi           *string                      `json:"name_vi"`
+	LegalName        *string                      `json:"legal_name"`
+	OrganizationType OrganizationOrganizationType `json:"organization_type"`
+	TaxCode          *string                      `json:"tax_code"`
+	Phone            *string                      `json:"phone"`
+	Email            *string                      `json:"email"`
+	Website          *string                      `json:"website"`
+	LogoFileID       *uuid.UUID                   `json:"logo_file_id"`
+	BannerFileID     *uuid.UUID                   `json:"banner_file_id"`
 }
 
 func (q *Queries) UpdateOrganization(ctx context.Context, arg UpdateOrganizationParams) error {
 	_, err := q.db.Exec(ctx, updateOrganization,
 		arg.ID,
-		arg.Code,
 		arg.NameEn,
 		arg.NameVi,
+		arg.LegalName,
+		arg.OrganizationType,
+		arg.TaxCode,
 		arg.Phone,
 		arg.Email,
+		arg.Website,
+		arg.LogoFileID,
+		arg.BannerFileID,
 	)
 	return err
 }
@@ -583,6 +696,22 @@ type UpdateOrganizationStatusParams struct {
 
 func (q *Queries) UpdateOrganizationStatus(ctx context.Context, arg UpdateOrganizationStatusParams) error {
 	_, err := q.db.Exec(ctx, updateOrganizationStatus, arg.ID, arg.Status, arg.UpdatedAt)
+	return err
+}
+
+const updateTenantSlug = `-- name: UpdateTenantSlug :exec
+UPDATE organization.tenants
+SET slug = $2, updated_at = now()
+WHERE id = $1
+`
+
+type UpdateTenantSlugParams struct {
+	ID   uuid.UUID `json:"id"`
+	Slug string    `json:"slug"`
+}
+
+func (q *Queries) UpdateTenantSlug(ctx context.Context, arg UpdateTenantSlugParams) error {
+	_, err := q.db.Exec(ctx, updateTenantSlug, arg.ID, arg.Slug)
 	return err
 }
 

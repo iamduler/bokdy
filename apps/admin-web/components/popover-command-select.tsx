@@ -67,7 +67,7 @@ export function PopoverCommandSelect({
         <Button
           type="button"
           variant={isNav ? "outline" : "ghost"}
-          size="sm"
+          size={isNav ? "sm" : "default"}
           role="combobox"
           aria-haspopup="listbox"
           aria-expanded={open}
@@ -76,7 +76,7 @@ export function PopoverCommandSelect({
           className={cn(
             isNav
               ? "h-auto min-w-0 gap-1.5 rounded-md border-border bg-background px-2.5 py-1.5 text-xs font-semibold text-foreground shadow-none hover:border-primary/50 hover:bg-primary/10! hover:text-foreground! data-[state=open]:border-primary data-[state=open]:bg-primary/10! data-[state=open]:text-foreground! data-[state=open]:ring-2 data-[state=open]:ring-primary/20"
-              : "min-w-[8.5rem] justify-between gap-2 font-normal",
+              : "h-9 min-w-[8.5rem] justify-between gap-2 px-3 font-normal shadow-xs hover:bg-background! hover:text-foreground!",
             className,
           )}
         >

@@ -31,6 +31,26 @@ type OrganizationRepository interface {
 	UpdateStatus(ctx context.Context, tx pgx.Tx, orgID uuid.UUID, status entity.OrganizationStatus, at time.Time) error
 	UpdateTenantStatus(ctx context.Context, tx pgx.Tx, tenantID uuid.UUID, status entity.TenantStatus, at time.Time) error
 	FindDefaultBusinessUnit(ctx context.Context, orgID uuid.UUID) (*entity.BusinessUnit, error)
+	ReplaceAddresses(ctx context.Context, tx pgx.Tx, orgID uuid.UUID, rows []entity.OrganizationAddress) error
+	ListAddresses(ctx context.Context, orgID uuid.UUID) ([]entity.OrganizationAddress, error)
+	ListFormerWards(ctx context.Context, wardID uuid.UUID) ([]entity.OrganizationAddress, error)
+	TenantIDBySlug(ctx context.Context, slug string) (*uuid.UUID, error)
+	UpdateTenantSlug(ctx context.Context, tx pgx.Tx, tenantID uuid.UUID, slug string) error
+	InsertFile(ctx context.Context, tx pgx.Tx, in StoredFile) error
+	FindFile(ctx context.Context, id uuid.UUID) (*StoredFile, error)
+}
+
+type StoredFile struct {
+	ID        uuid.UUID
+	TenantID  uuid.UUID
+	OrgID     uuid.UUID
+	Path      string
+	MimeType  string
+	Size      int64
+	Checksum  string
+	Filename  string
+	Extension string
+	CreatedBy uuid.UUID
 }
 
 type AdminOrganization struct {

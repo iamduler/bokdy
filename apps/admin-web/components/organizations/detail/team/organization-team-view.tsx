@@ -2,7 +2,6 @@
 
 import {
   Badge,
-  Button,
   cn,
   Table,
   TableBody,
@@ -10,33 +9,16 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
 } from "@bokdy/ui";
 import { Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
 
+import { EntitySectionHead } from "@/components/entity/section-head";
+import { EntityUnavailableButton } from "@/components/entity/unavailable";
+
 import { OrganizationDetailScreenHeader } from "../organization-detail-screen-header";
 import { useOrganizationDetail } from "../organization-detail-context";
-import { DetailSectionHead } from "../shared/detail-section-head";
 import { DETAIL_MOCK } from "../shared/detail-mock-data";
-
-function UnavailableButton({ label }: { label: string }) {
-  const t = useTranslations("organization");
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span className="inline-flex">
-          <Button type="button" variant="outline" size="sm" className="h-7 px-2 text-[11px]" disabled>
-            {label}
-          </Button>
-        </span>
-      </TooltipTrigger>
-      <TooltipContent>{t("unavailable")}</TooltipContent>
-    </Tooltip>
-  );
-}
 
 const ROLE_TONES = [
   "text-violet-600 dark:text-violet-400 bg-violet-500/15",
@@ -58,17 +40,10 @@ export function OrganizationTeamView() {
         title={t("title", { name: org.name })}
         subtitle={t("subtitle", { count: DETAIL_MOCK.team.length, pending: pendingCount })}
         actions={
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="inline-flex">
-                <Button type="button" size="sm" className="h-8 gap-1 text-xs" disabled>
-                  <Plus className="h-3.5 w-3.5" />
-                  {t("invite")}
-                </Button>
-              </span>
-            </TooltipTrigger>
-            <TooltipContent>{tu("unavailable")}</TooltipContent>
-          </Tooltip>
+          <EntityUnavailableButton reason={tu("unavailable")} variant="default" className="gap-1">
+            <Plus className="h-3.5 w-3.5" />
+            {t("invite")}
+          </EntityUnavailableButton>
         }
       />
 
@@ -132,8 +107,16 @@ export function OrganizationTeamView() {
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-1">
-                      <UnavailableButton label={tu("view")} />
-                      <UnavailableButton label={t("rolesAction")} />
+                      <EntityUnavailableButton
+                        label={tu("view")}
+                        reason={tu("unavailable")}
+                        className="h-7 px-2 text-[11px]"
+                      />
+                      <EntityUnavailableButton
+                        label={t("rolesAction")}
+                        reason={tu("unavailable")}
+                        className="h-7 px-2 text-[11px]"
+                      />
                     </div>
                   </TableCell>
                 </TableRow>
@@ -143,7 +126,7 @@ export function OrganizationTeamView() {
         </div>
 
         <div className="overflow-y-auto soft-scrollbar border-border p-4 lg:border-l">
-          <DetailSectionHead>{t("roleDistribution")}</DetailSectionHead>
+          <EntitySectionHead>{t("roleDistribution")}</EntitySectionHead>
           {DETAIL_MOCK.roleDistribution.map((r, i) => (
             <div key={r.roleKey} className="mb-3">
               <div className="mb-1 flex justify-between text-xs">

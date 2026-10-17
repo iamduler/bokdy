@@ -54,27 +54,69 @@ export function restoreOrganization(id: string) {
   });
 }
 
-export type CreateOrganizationInput = {
-  name?: string;
+export type OrganizationType =
+  | "company"
+  | "club"
+  | "school"
+  | "government"
+  | "individual"
+  | "other";
+
+export type OrganizationHeadquartersInput = {
+  province_id?: string;
+  ward_id?: string;
+  address_line_1?: string;
+  address_line_2?: string;
+};
+
+export type OrganizationProfileInput = {
   name_en?: string;
   name_vi?: string;
-  code?: string;
+  legal_name?: string;
+  organization_type?: OrganizationType;
+  slug?: string;
+  tax_code?: string;
   email?: string;
   phone?: string;
+  website?: string;
+  headquarters?: OrganizationHeadquartersInput;
 };
+
+export type CreateOrganizationInput = OrganizationProfileInput & {
+  name?: string;
+};
+
+export type UpdateOrganizationInput = OrganizationProfileInput;
+
+/** Owner-path update. System admin is allowed; status is unchanged. */
+export function updateOrganization(id: string, input: UpdateOrganizationInput) {
+  return apiGo<AdminOrganization>(`organizations/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+}
 
 /** Owner-path create; admin JWT becomes org owner staff. */
 export function createOrganization(input: CreateOrganizationInput) {
-  const body: CreateOrganizationInput = {};
-  if (input.name?.trim()) body.name = input.name.trim();
-  if (input.name_en?.trim()) body.name_en = input.name_en.trim();
-  if (input.name_vi?.trim()) body.name_vi = input.name_vi.trim();
-  if (input.code?.trim()) body.code = input.code.trim();
-  if (input.email?.trim()) body.email = input.email.trim();
-  if (input.phone?.trim()) body.phone = input.phone.trim();
   return apiGo<AdminOrganization>("organizations", {
     method: "POST",
-    body: JSON.stringify(body),
+    body: JSON.stringify(input),
+  });
+}
+
+export function checkOrganizationSlug(slug: string, excludeId?: string) {
+  const qs = new URLSearchParams({ slug });
+  if (excludeId) qs.set("exclude_id", excludeId);
+  return apiGo<{ available: boolean; slug: string }>(`organizations/slug-available?${qs}`);
+}
+
+export function uploadOrganizationMedia(id: string, kind: "logo" | "banner", file: Blob) {
+  const body = new FormData();
+  body.set("kind", kind);
+  body.set("file", file, `${kind}.jpg`);
+  return apiGo<AdminOrganization>(`organizations/${encodeURIComponent(id)}/media`, {
+    method: "POST",
+    body,
   });
 }
 

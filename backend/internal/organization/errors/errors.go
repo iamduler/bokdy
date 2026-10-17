@@ -23,6 +23,7 @@ var (
 	ErrOrgHeaderRequired     = apperr.New(apperr.CodeBadRequest, "X-Organization-ID is required")
 	ErrUserNotFound          = apperr.New(apperr.CodeNotFound, "user not found")
 	ErrOrganizationSuspended = apperr.New(apperr.CodeForbidden, "organization is suspended")
+	ErrSlugTaken             = apperr.New(apperr.CodeConflict, "slug is already taken")
 	ErrInvalidOrgStatus      = apperr.New(apperr.CodeConflict, "invalid organization status for this action")
 	ErrSuspendReasonRequired = apperr.New(apperr.CodeValidation, "suspension reason is required")
 )

@@ -14,7 +14,7 @@ import {
   type SuspendOrganizationFormValues,
 } from "@/lib/validation/suspend-organization";
 
-import { OrganizationActionDialog } from "./organization-action-dialog";
+import { EntityActionDialog } from "@/components/entity/action-dialog";
 
 type OrganizationSuspendDialogProps = {
   orgId: string;
@@ -88,7 +88,7 @@ export function OrganizationSuspendDialog({ orgId, status }: OrganizationSuspend
         <p className="text-sm text-emerald-600 dark:text-emerald-400">{t("suspendSuccess")}</p>
       ) : null}
 
-      <OrganizationActionDialog open={open} title={t("suspendTitle")} closeLabel={t("cancel")} onClose={close}>
+      <EntityActionDialog open={open} title={t("suspendTitle")} closeLabel={t("cancel")} onClose={close}>
         <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
           <p className="text-sm text-muted-foreground">{t("suspendHint")}</p>
           <div className="space-y-1.5">
@@ -117,7 +117,7 @@ export function OrganizationSuspendDialog({ orgId, status }: OrganizationSuspend
             </Button>
           </div>
         </form>
-      </OrganizationActionDialog>
+      </EntityActionDialog>
     </div>
   );
 }

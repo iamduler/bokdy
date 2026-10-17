@@ -178,7 +178,7 @@ export function UserList({
                     <TooltipTrigger asChild>
                       <Link
                         href={`${base}/${user.id}`}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-input hover:bg-accent"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-input hover:bg-primary hover:text-primary-foreground"
                         aria-label={t("viewDetail")}
                       >
                         <Eye className="h-4 w-4" />

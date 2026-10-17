@@ -1,6 +1,6 @@
 "use client";
 
-import { Tooltip, TooltipContent, TooltipTrigger } from "@bokdy/ui";
+import { EntityUnavailable } from "@/components/entity/unavailable";
 import {
   Building2,
   CreditCard,
@@ -86,22 +86,19 @@ function DisabledActionCard({
 }) {
   const tu = useTranslations("organization");
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <button
-          type="button"
-          disabled
-          className="flex w-full items-start gap-3 rounded-md border border-border bg-card/30 p-3.5 text-left opacity-60"
-        >
-          <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
-          <div>
-            <p className="text-sm font-bold text-foreground">{label}</p>
-            <p className="text-xs text-muted-foreground">{description}</p>
-          </div>
-        </button>
-      </TooltipTrigger>
-      <TooltipContent>{tu("unavailable")}</TooltipContent>
-    </Tooltip>
+    <EntityUnavailable reason={tu("unavailable")} className="w-full">
+      <button
+        type="button"
+        disabled
+        className="flex w-full items-start gap-3 rounded-md border border-border bg-card/30 p-3.5 text-left opacity-60"
+      >
+        <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+        <div>
+          <p className="text-sm font-bold text-foreground">{label}</p>
+          <p className="text-xs text-muted-foreground">{description}</p>
+        </div>
+      </button>
+    </EntityUnavailable>
   );
 }
 

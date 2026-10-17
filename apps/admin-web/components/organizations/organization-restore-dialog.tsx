@@ -8,7 +8,7 @@ import { useRestoreOrganization } from "@/hooks/use-restore-organization";
 import type { OrgStatus } from "@/lib/api/admin";
 import { ApiError, errorMessageKey } from "@/lib/api/errors";
 
-import { OrganizationActionDialog } from "./organization-action-dialog";
+import { EntityActionDialog } from "@/components/entity/action-dialog";
 
 type OrganizationRestoreDialogProps = {
   orgId: string;
@@ -65,7 +65,7 @@ export function OrganizationRestoreDialog({ orgId, status }: OrganizationRestore
         <p className="text-sm text-emerald-600 dark:text-emerald-400">{t("restoreSuccess")}</p>
       ) : null}
 
-      <OrganizationActionDialog open={open} title={t("restoreTitle")} closeLabel={t("cancel")} onClose={close}>
+      <EntityActionDialog open={open} title={t("restoreTitle")} closeLabel={t("cancel")} onClose={close}>
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">{t("restoreHint")}</p>
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
@@ -78,7 +78,7 @@ export function OrganizationRestoreDialog({ orgId, status }: OrganizationRestore
             </Button>
           </div>
         </div>
-      </OrganizationActionDialog>
+      </EntityActionDialog>
     </div>
   );
 }

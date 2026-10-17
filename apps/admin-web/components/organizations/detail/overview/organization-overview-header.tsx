@@ -4,7 +4,8 @@ import { Badge, Button } from "@bokdy/ui";
 import { Activity, CreditCard, Zap } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-import { OrgAvatar } from "@/components/organizations/org-avatar";
+import { EntityAvatar } from "@/components/entity/avatar";
+import { EntityIdentityHeader } from "@/components/entity/identity-header";
 import { OrganizationStatusBadge } from "@/components/organizations/organization-status-badge";
 import { Link } from "@/i18n/navigation";
 
@@ -16,36 +17,34 @@ export function OrganizationOverviewHeader() {
   const { org, orgId } = useOrganizationDetail();
 
   return (
-    <div className="shrink-0 px-6 pt-3.5">
-      <div className="mb-3 flex flex-wrap items-center gap-3.5">
-        <Button asChild variant="ghost" size="sm" className="h-8 px-2 text-muted-foreground">
-          <Link href="/organizations">←</Link>
-        </Button>
-        <OrgAvatar name={org.name} size="lg" />
-        <div className="min-w-0 flex-1">
-          <div className="mb-1 flex flex-wrap items-center gap-2">
-            <h1 className="truncate text-xl font-semibold tracking-tight text-foreground">
-              {org.name}
-            </h1>
-            {DETAIL_MOCK.verified ? (
-              <Badge
-                variant="outline"
-                className="border-transparent bg-sky-500/15 text-[11px] font-bold text-sky-800 dark:text-sky-300"
-              >
-                {t("detailOverview.verified")}
-              </Badge>
-            ) : null}
-            <OrganizationStatusBadge kind="org" status={org.status} />
-            <Badge variant="secondary" className="text-[11px] font-bold capitalize">
-              {t(`detailOverview.plan.${DETAIL_MOCK.plan}`)}
+    <EntityIdentityHeader
+      backHref="/organizations"
+      backLabel="←"
+      avatar={<EntityAvatar name={org.name} size="lg" />}
+      title={org.name}
+      badges={
+        <>
+          {DETAIL_MOCK.verified ? (
+            <Badge
+              variant="outline"
+              className="border-transparent bg-sky-500/15 text-[11px] font-bold text-sky-800 dark:text-sky-300"
+            >
+              {t("detailOverview.verified")}
             </Badge>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            {DETAIL_MOCK.province} · {DETAIL_MOCK.sport} · {t("detailOverview.ownerLabel")}:{" "}
-            {DETAIL_MOCK.owner}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
+          ) : null}
+          <OrganizationStatusBadge kind="org" status={org.status} />
+          <Badge variant="secondary" className="text-[11px] font-bold capitalize">
+            {t(`detailOverview.plan.${DETAIL_MOCK.plan}`)}
+          </Badge>
+        </>
+      }
+      meta={
+        <p className="text-xs text-muted-foreground">
+          {DETAIL_MOCK.province} · {DETAIL_MOCK.sport} · {t("detailOverview.ownerLabel")}: {DETAIL_MOCK.owner}
+        </p>
+      }
+      actions={
+        <>
           <Button asChild variant="outline" size="sm" className="h-8 gap-1.5 text-xs">
             <Link href={`/organizations/${orgId}/actions`}>
               <Zap className="h-3.5 w-3.5" />
@@ -64,8 +63,8 @@ export function OrganizationOverviewHeader() {
               {t("detailOverview.headerActivity")}
             </Link>
           </Button>
-        </div>
-      </div>
-    </div>
+        </>
+      }
+    />
   );
 }

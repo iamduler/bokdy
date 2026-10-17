@@ -4,20 +4,12 @@
  * Hallmark · theme: bokdy-custom · design-system: design.md · designed-as-app
  */
 
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  TooltipProvider,
-  cn,
-} from "@bokdy/ui";
+import { SidebarInset, SidebarProvider, Toaster, TooltipProvider } from "@bokdy/ui";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { AdminHeader } from "@/components/shell/admin-header";
-import { AdminSidebarChrome } from "@/components/shell/admin-sidebar";
+import { AdminSidebar } from "@/components/shell/admin-sidebar";
 import { ShellTitleProvider } from "@/components/shell/shell-title";
 import { useLogout } from "@/hooks/use-auth";
 import { useMe } from "@/hooks/use-me";
@@ -58,14 +50,12 @@ function displayNameFromMe(user: {
 
 export function AdminShell({ children }: { children: ReactNode }) {
   const tc = useTranslations("common");
-  const t = useTranslations("shell");
   const router = useRouter();
   const logout = useLogout();
   const { data, isLoading, isError, error } = useMe();
   const signingOut = useRef(false);
 
   const [collapsed, setCollapsed] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -92,59 +82,34 @@ export function AdminShell({ children }: { children: ReactNode }) {
       });
   }, [data, isError, error, logout, router]);
 
-  function toggleCollapsed() {
-    setCollapsed((prev) => {
-      const next = !prev;
-      writeCollapsed(next);
-      return next;
-    });
-  }
-
   const email = data?.user?.email;
   const displayName = data?.user ? displayNameFromMe(data.user) : undefined;
 
   return (
     <TooltipProvider delayDuration={200}>
       <ShellTitleProvider>
-      <div className="flex min-h-dvh bg-background">
-        <aside
-          className={cn(
-            "sticky top-0 hidden h-dvh shrink-0 border-r border-border transition-[width] duration-200 md:flex md:flex-col",
-            hydrated && collapsed ? "w-16" : "w-60",
-          )}
-        >
-          <AdminSidebarChrome
-            collapsed={hydrated ? collapsed : false}
-            onToggleCollapse={toggleCollapsed}
-          />
-        </aside>
-
-        <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-          <SheetContent side="left" className="w-72 p-0">
-            <SheetHeader className="sr-only">
-              <SheetTitle>{tc("appName")}</SheetTitle>
-              <SheetDescription>{t("openMenu")}</SheetDescription>
-            </SheetHeader>
-            <AdminSidebarChrome collapsed={false} onNavigate={() => setMobileOpen(false)} />
-          </SheetContent>
-        </Sheet>
-
-        <div className="flex min-w-0 flex-1 flex-col">
-          <AdminHeader
-            email={email}
-            displayName={displayName}
-            onOpenMobileNav={() => setMobileOpen(true)}
-          />
-          <div className="flex-1 overflow-auto soft-scrollbar">
+      <SidebarProvider
+        className="h-svh overflow-hidden"
+        open={hydrated ? !collapsed : true}
+        onOpenChange={(open) => {
+          setCollapsed(!open);
+          writeCollapsed(!open);
+        }}
+      >
+        <AdminSidebar email={email} displayName={displayName} />
+        <SidebarInset className="min-h-0 overflow-hidden">
+          <AdminHeader />
+          <div className="min-h-0 flex-1 overflow-auto soft-scrollbar">
             {isLoading ? (
               <p className="p-4 text-sm text-muted-foreground">{tc("loading")}</p>
             ) : (
               children
             )}
           </div>
-        </div>
-      </div>
+        </SidebarInset>
+      </SidebarProvider>
       </ShellTitleProvider>
+      <Toaster />
     </TooltipProvider>
   );
 }

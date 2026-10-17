@@ -20,7 +20,7 @@ export function UserDetailHeader() {
   const [suspendOpen, setSuspendOpen] = useState(false);
 
   return (
-    <div className="shrink-0 border-b border-border bg-card/60 px-4 py-4 md:px-6">
+    <div className="shrink-0 border-b border-border px-4 py-4 md:px-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0 space-y-2">
           <div className="flex flex-wrap items-center gap-2">

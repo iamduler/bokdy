@@ -55,6 +55,8 @@ type Querier interface {
 	CreateCustomer(ctx context.Context, arg CreateCustomerParams) error
 	CreateCustomerContact(ctx context.Context, arg CreateCustomerContactParams) error
 	CreateCustomerProfile(ctx context.Context, arg CreateCustomerProfileParams) error
+	CreateFile(ctx context.Context, arg CreateFileParams) error
+	CreateFileReference(ctx context.Context, arg CreateFileReferenceParams) error
 	CreateHoliday(ctx context.Context, arg CreateHolidayParams) error
 	CreateIdentity(ctx context.Context, arg CreateIdentityParams) error
 	CreateIdentityVerification(ctx context.Context, arg CreateIdentityVerificationParams) error
@@ -83,6 +85,7 @@ type Querier interface {
 	DeleteLocationAddresses(ctx context.Context, locationID uuid.UUID) error
 	DeleteMaintenanceBlock(ctx context.Context, arg DeleteMaintenanceBlockParams) error
 	DeleteMaintenanceBlocksByResource(ctx context.Context, resourceID uuid.UUID) error
+	DeleteOrganizationAddresses(ctx context.Context, organizationID uuid.UUID) error
 	DeleteProjectionsFrom(ctx context.Context, arg DeleteProjectionsFromParams) error
 	DeleteResourceBlock(ctx context.Context, arg DeleteResourceBlockParams) error
 	DeleteTimeSlotsFrom(ctx context.Context, arg DeleteTimeSlotsFromParams) error
@@ -112,6 +115,7 @@ type Querier interface {
 	FindCustomerByUserAndTenant(ctx context.Context, arg FindCustomerByUserAndTenantParams) (FindCustomerByUserAndTenantRow, error)
 	FindDefaultBusinessUnit(ctx context.Context, arg FindDefaultBusinessUnitParams) (FindDefaultBusinessUnitRow, error)
 	FindDefaultPriceList(ctx context.Context, tenantID uuid.UUID) (FindDefaultPriceListRow, error)
+	FindFileByID(ctx context.Context, id uuid.UUID) (FindFileByIDRow, error)
 	FindIdentityByPhone(ctx context.Context, phone *string) (FindIdentityByPhoneRow, error)
 	FindInProgressMaintenance(ctx context.Context, resourceID uuid.UUID) (FindInProgressMaintenanceRow, error)
 	FindInvitationByID(ctx context.Context, arg FindInvitationByIDParams) (OrganizationStaffInvitation, error)
@@ -138,6 +142,7 @@ type Querier interface {
 	FindStaffByID(ctx context.Context, arg FindStaffByIDParams) (FindStaffByIDRow, error)
 	FindStaffByOrgUser(ctx context.Context, arg FindStaffByOrgUserParams) (FindStaffByOrgUserRow, error)
 	FindTenantByID(ctx context.Context, id uuid.UUID) (FindTenantByIDRow, error)
+	FindTenantBySlug(ctx context.Context, slug string) (uuid.UUID, error)
 	FindUserByEmail(ctx context.Context, lower string) (FindUserByEmailRow, error)
 	FindUserByID(ctx context.Context, id uuid.UUID) (FindUserByIDRow, error)
 	GetAdminOwnerPrimaryStaff(ctx context.Context, id uuid.UUID) (GetAdminOwnerPrimaryStaffRow, error)
@@ -149,6 +154,7 @@ type Querier interface {
 	HasTenantRole(ctx context.Context, arg HasTenantRoleParams) (bool, error)
 	InsertBusinessHour(ctx context.Context, arg InsertBusinessHourParams) error
 	InsertCategoryPrice(ctx context.Context, arg InsertCategoryPriceParams) error
+	InsertOrganizationAddress(ctx context.Context, arg InsertOrganizationAddressParams) error
 	InsertTimeRule(ctx context.Context, arg InsertTimeRuleParams) error
 	InsertTimeSlot(ctx context.Context, arg InsertTimeSlotParams) error
 	IsActiveStaffMember(ctx context.Context, arg IsActiveStaffMemberParams) (bool, error)
@@ -175,9 +181,11 @@ type Querier interface {
 	ListExpiredPendingIntents(ctx context.Context, arg ListExpiredPendingIntentsParams) ([]PaymentPaymentIntent, error)
 	ListExpiredPendingReservations(ctx context.Context, arg ListExpiredPendingReservationsParams) ([]ReservationReservation, error)
 	ListFormerProvinces(ctx context.Context, countryID uuid.UUID) ([]ListFormerProvincesRow, error)
+	ListFormerWardsForCurrent(ctx context.Context, wardID uuid.UUID) ([]ListFormerWardsForCurrentRow, error)
 	ListHolidaysOverlapping(ctx context.Context, arg ListHolidaysOverlappingParams) ([]ListHolidaysOverlappingRow, error)
 	ListLoginHistoryByUser(ctx context.Context, arg ListLoginHistoryByUserParams) ([]ListLoginHistoryByUserRow, error)
 	ListMarketplaceCourts(ctx context.Context, locationID uuid.UUID) ([]ListMarketplaceCourtsRow, error)
+	ListOrganizationAddresses(ctx context.Context, organizationID uuid.UUID) ([]ListOrganizationAddressesRow, error)
 	ListOrganizationsAdmin(ctx context.Context, arg ListOrganizationsAdminParams) ([]ListOrganizationsAdminRow, error)
 	ListOrganizationsByUser(ctx context.Context, userID uuid.UUID) ([]ListOrganizationsByUserRow, error)
 	ListPriceVersionsByList(ctx context.Context, priceListID uuid.UUID) ([]PricingPriceVersion, error)
@@ -235,6 +243,7 @@ type Querier interface {
 	UpdatePrimaryIdentityPhone(ctx context.Context, arg UpdatePrimaryIdentityPhoneParams) error
 	UpdateStaffMember(ctx context.Context, arg UpdateStaffMemberParams) error
 	UpdateStaffStatus(ctx context.Context, arg UpdateStaffStatusParams) error
+	UpdateTenantSlug(ctx context.Context, arg UpdateTenantSlugParams) error
 	UpdateTenantStatus(ctx context.Context, arg UpdateTenantStatusParams) error
 	UpdateUserProfile(ctx context.Context, arg UpdateUserProfileParams) error
 	UpdateUserStatus(ctx context.Context, arg UpdateUserStatusParams) error

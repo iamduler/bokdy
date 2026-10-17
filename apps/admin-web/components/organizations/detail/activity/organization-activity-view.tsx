@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Tooltip, TooltipContent, TooltipTrigger } from "@bokdy/ui";
+import { EntityUnavailableButton } from "@/components/entity/unavailable";
 import { Download } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
@@ -44,17 +44,10 @@ export function OrganizationActivityView() {
                 </option>
               ))}
             </select>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="inline-flex">
-                  <Button type="button" variant="outline" size="sm" className="h-8 gap-1 text-xs" disabled>
-                    <Download className="h-3.5 w-3.5" />
-                    {t("export")}
-                  </Button>
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>{tu("unavailable")}</TooltipContent>
-            </Tooltip>
+            <EntityUnavailableButton reason={tu("unavailable")} className="gap-1">
+              <Download className="h-3.5 w-3.5" />
+              {t("export")}
+            </EntityUnavailableButton>
           </>
         }
       />

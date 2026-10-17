@@ -62,7 +62,11 @@ func (h *OrganizationHandler) AdminList(c *gin.Context) {
 	}
 	out := make([]adminOrgDTO, 0, len(items))
 	for i := range items {
-		out = append(out, toAdminOrgDTO(c, items[i]))
+		out = append(out, adminOrgDTO{
+			orgDTO:       toOrgDTO(c.Request.Context(), items[i].Organization),
+			TenantStatus: string(items[i].TenantStatus),
+			BranchCount:  items[i].BranchCount,
+		})
 	}
 	httpx.OK(c, out)
 }
@@ -77,7 +81,12 @@ func (h *OrganizationHandler) AdminGet(c *gin.Context) {
 		httpx.Error(c, err)
 		return
 	}
-	httpx.OK(c, toAdminOrgDTO(c, *item))
+	dto, err := h.toAdminOrgDTO(c, *item)
+	if err != nil {
+		httpx.Error(c, err)
+		return
+	}
+	httpx.OK(c, dto)
 }
 
 func (h *OrganizationHandler) AdminActivate(c *gin.Context) {
@@ -90,7 +99,12 @@ func (h *OrganizationHandler) AdminActivate(c *gin.Context) {
 		httpx.Error(c, err)
 		return
 	}
-	httpx.OK(c, toAdminOrgDTO(c, *item))
+	dto, err := h.toAdminOrgDTO(c, *item)
+	if err != nil {
+		httpx.Error(c, err)
+		return
+	}
+	httpx.OK(c, dto)
 }
 
 func (h *OrganizationHandler) AdminSuspend(c *gin.Context) {
@@ -107,7 +121,12 @@ func (h *OrganizationHandler) AdminSuspend(c *gin.Context) {
 		httpx.Error(c, err)
 		return
 	}
-	httpx.OK(c, toAdminOrgDTO(c, *item))
+	dto, err := h.toAdminOrgDTO(c, *item)
+	if err != nil {
+		httpx.Error(c, err)
+		return
+	}
+	httpx.OK(c, dto)
 }
 
 func (h *OrganizationHandler) AdminRestore(c *gin.Context) {
@@ -120,7 +139,12 @@ func (h *OrganizationHandler) AdminRestore(c *gin.Context) {
 		httpx.Error(c, err)
 		return
 	}
-	httpx.OK(c, toAdminOrgDTO(c, *item))
+	dto, err := h.toAdminOrgDTO(c, *item)
+	if err != nil {
+		httpx.Error(c, err)
+		return
+	}
+	httpx.OK(c, dto)
 }
 
 func adminOrgID(c *gin.Context) (uuid.UUID, bool) {
@@ -157,10 +181,14 @@ func parseAdminLimit(c *gin.Context) int {
 	return limit
 }
 
-func toAdminOrgDTO(c *gin.Context, row service.AdminOrganization) adminOrgDTO {
+func (h *OrganizationHandler) toAdminOrgDTO(c *gin.Context, row service.AdminOrganization) (adminOrgDTO, error) {
+	dto, err := h.present(c, row.Organization)
+	if err != nil {
+		return adminOrgDTO{}, err
+	}
 	return adminOrgDTO{
-		orgDTO:       toOrgDTO(c.Request.Context(), row.Organization),
+		orgDTO:       dto,
 		TenantStatus: string(row.TenantStatus),
 		BranchCount:  row.BranchCount,
-	}
+	}, nil
 }

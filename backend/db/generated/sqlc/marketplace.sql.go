@@ -182,6 +182,25 @@ WHERE l.deleted_at IS NULL
     OR lower(COALESCE(p.name_en, '')) LIKE '%' || lower($1::text) || '%'
     OR lower(COALESCE(w.name_vi, '')) LIKE '%' || lower($1::text) || '%'
     OR lower(COALESCE(w.name_en, '')) LIKE '%' || lower($1::text) || '%'
+    OR EXISTS (
+      SELECT 1
+      FROM organization.organization_addresses oa
+      LEFT JOIN reference.province hp ON hp.id = oa.province_id
+      LEFT JOIN reference.ward hw ON hw.id = oa.ward_id
+      LEFT JOIN reference.province_former hpf ON hpf.id = oa.province_former_id
+      LEFT JOIN reference.ward_former hwf ON hwf.id = oa.ward_former_id
+      WHERE oa.organization_id = o.id
+        AND (
+          lower(COALESCE(hp.name_vi, '')) LIKE '%' || lower($1::text) || '%'
+          OR lower(COALESCE(hp.name_en, '')) LIKE '%' || lower($1::text) || '%'
+          OR lower(COALESCE(hw.name_vi, '')) LIKE '%' || lower($1::text) || '%'
+          OR lower(COALESCE(hw.name_en, '')) LIKE '%' || lower($1::text) || '%'
+          OR lower(COALESCE(hpf.name_vi, '')) LIKE '%' || lower($1::text) || '%'
+          OR lower(COALESCE(hpf.name_en, '')) LIKE '%' || lower($1::text) || '%'
+          OR lower(COALESCE(hwf.name_vi, '')) LIKE '%' || lower($1::text) || '%'
+          OR lower(COALESCE(hwf.name_en, '')) LIKE '%' || lower($1::text) || '%'
+        )
+    )
   )
 ORDER BY l.created_at DESC
 LIMIT $2

@@ -1,5 +1,6 @@
 "use client";
 
+import { createPortal } from "react-dom";
 import {
   createContext,
   useCallback,
@@ -13,16 +14,22 @@ import {
 type ShellTitleContextValue = {
   title: string | null;
   setTitle: (title: string | null) => void;
+  actionSlot: HTMLElement | null;
+  setActionSlot: (node: HTMLElement | null) => void;
 };
 
 const ShellTitleContext = createContext<ShellTitleContextValue | null>(null);
 
 export function ShellTitleProvider({ children }: { children: ReactNode }) {
   const [title, setTitleState] = useState<string | null>(null);
+  const [actionSlot, setActionSlot] = useState<HTMLElement | null>(null);
   const setTitle = useCallback((next: string | null) => {
     setTitleState(next);
   }, []);
-  const value = useMemo(() => ({ title, setTitle }), [title, setTitle]);
+  const value = useMemo(
+    () => ({ title, setTitle, actionSlot, setActionSlot }),
+    [title, setTitle, actionSlot],
+  );
   return <ShellTitleContext.Provider value={value}>{children}</ShellTitleContext.Provider>;
 }
 
@@ -47,4 +54,11 @@ export function usePageShellTitle(title: string) {
       document.title = previous;
     };
   }, [title, setTitle]);
+}
+
+/** Render page actions into the fixed shell header. They leave with this component. */
+export function usePageShellActions(actions: ReactNode) {
+  const { actionSlot } = useShellTitle();
+  if (!actionSlot) return null;
+  return createPortal(actions, actionSlot);
 }

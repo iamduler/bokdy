@@ -41,7 +41,7 @@ export function UserDetailSubnav() {
   const tabs = TAB_CONFIG[audience];
 
   return (
-    <div className="shrink-0 border-b border-border bg-card/40 px-4 md:px-6">
+    <div className="shrink-0 border-b border-border px-4 md:px-6">
       <div className="flex items-center gap-2 py-2 text-sm text-muted-foreground">
         <Link href={`/users/${audience}`} className="hover:text-foreground">
           {tu(`audience.${audience}`)}

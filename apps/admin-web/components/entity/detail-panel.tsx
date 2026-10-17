@@ -1,10 +1,9 @@
+import { cn } from "@bokdy/ui";
 import type { ReactNode } from "react";
 
-import { cn } from "@bokdy/ui";
+import { EntitySectionHead } from "@/components/entity/section-head";
 
-import { DetailSectionHead } from "./detail-section-head";
-
-export function DetailPanel({
+export function EntityDetailPanel({
   title,
   children,
   className,
@@ -15,7 +14,7 @@ export function DetailPanel({
 }) {
   return (
     <div className={cn("rounded-md border border-border bg-card p-4", className)}>
-      {title ? <DetailSectionHead>{title}</DetailSectionHead> : null}
+      {title ? <EntitySectionHead>{title}</EntitySectionHead> : null}
       {children}
     </div>
   );

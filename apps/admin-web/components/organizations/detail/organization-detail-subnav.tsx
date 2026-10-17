@@ -1,9 +1,9 @@
 "use client";
 
-import { cn } from "@bokdy/ui";
 import { useTranslations } from "next-intl";
 
-import { Link, usePathname } from "@/i18n/navigation";
+import { EntityDetailSubnav } from "@/components/entity/detail-subnav";
+import { usePathname } from "@/i18n/navigation";
 
 import { useOrganizationDetail } from "./organization-detail-context";
 
@@ -51,57 +51,29 @@ export function OrganizationDetailSubnav() {
     actions: t("crumbActions"),
   };
 
+  const crumbs =
+    view === "overview"
+      ? [{ label: org.name }]
+      : [
+          { label: org.name, href: base },
+          { label: crumbLabel[view] ?? "" },
+        ];
+
   return (
-    <div className="flex h-[38px] shrink-0 items-center gap-1.5 border-b border-border bg-background px-5">
-      <Link
-        href="/organizations"
-        className={cn(
-          "text-xs font-medium text-muted-foreground transition-colors hover:text-foreground",
-          view === "overview" && pathname === "/organizations" && "font-bold text-primary",
-        )}
-      >
-        {t("organizations")}
-      </Link>
-      {view !== "overview" ? (
-        <>
-          <span className="text-xs text-muted-foreground/60">›</span>
-          <Link
-            href={base}
-            className="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
-          >
-            {org.name}
-          </Link>
-          <span className="text-xs text-muted-foreground/60">›</span>
-          <span className="text-xs font-semibold text-primary">{crumbLabel[view]}</span>
-        </>
-      ) : (
-        <>
-          <span className="text-xs text-muted-foreground/60">›</span>
-          <span className="truncate text-xs font-semibold text-primary">{org.name}</span>
-        </>
-      )}
-      <div className="flex-1" />
-      <div className="hidden items-center gap-1 sm:flex">
-        {QUICK_PILLS.map((pill) => {
-          const href = pill.id === "overview" ? base : `${base}/${pill.id}`;
-          const active = view === pill.id;
-          return (
-            <Link
-              key={pill.id}
-              href={href}
-              className={cn(
-                "rounded-md border px-2 py-0.5 text-[10.5px] font-semibold transition-colors",
-                active
-                  ? "border-primary/30 bg-primary/10 text-primary"
-                  : "border-border text-muted-foreground hover:text-foreground",
-              )}
-            >
-              {t(`pill.${pill.labelKey}`)}
-            </Link>
-          );
-        })}
-      </div>
-    </div>
+    <EntityDetailSubnav
+      root={{
+        href: "/organizations",
+        label: t("organizations"),
+        active: view === "overview" && pathname === "/organizations",
+      }}
+      crumbs={crumbs}
+      pills={QUICK_PILLS.map((pill) => ({
+        id: pill.id,
+        href: `${base}/${pill.id}`,
+        label: t(`pill.${pill.labelKey}`),
+        active: view === pill.id,
+      }))}
+    />
   );
 }
 

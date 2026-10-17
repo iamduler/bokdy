@@ -1,12 +1,12 @@
 import { cn } from "@bokdy/ui";
 
-type DetailHealthBarProps = {
+type EntityHealthBarProps = {
   score: number;
   size?: "sm" | "md";
   className?: string;
 };
 
-export function DetailHealthBar({ score, size = "md", className }: DetailHealthBarProps) {
+export function EntityHealthBar({ score, size = "md", className }: EntityHealthBarProps) {
   const colorClass =
     score >= 80
       ? "bg-emerald-500 text-emerald-600 dark:text-emerald-400"

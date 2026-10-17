@@ -61,8 +61,23 @@ func (o *Organization) IsOperable() bool {
 type OrganizationType string
 
 const (
-	OrganizationTypeClub OrganizationType = "club"
+	OrganizationTypeCompany    OrganizationType = "company"
+	OrganizationTypeClub       OrganizationType = "club"
+	OrganizationTypeSchool     OrganizationType = "school"
+	OrganizationTypeGovernment OrganizationType = "government"
+	OrganizationTypeIndividual OrganizationType = "individual"
+	OrganizationTypeOther      OrganizationType = "other"
 )
+
+func ParseOrganizationType(raw string) (OrganizationType, bool) {
+	switch OrganizationType(raw) {
+	case OrganizationTypeCompany, OrganizationTypeClub, OrganizationTypeSchool,
+		OrganizationTypeGovernment, OrganizationTypeIndividual, OrganizationTypeOther:
+		return OrganizationType(raw), true
+	default:
+		return "", false
+	}
+}
 
 type StaffStatus string
 
@@ -126,8 +141,14 @@ type Organization struct {
 	NameEn           string
 	NameVi           string
 	OrganizationType OrganizationType
+	LegalName        string
+	TaxCode          string
 	Phone            string
 	Email            string
+	Website          string
+	LogoFileID       *uuid.UUID
+	BannerFileID     *uuid.UUID
+	Slug             string
 	Status           OrganizationStatus
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
@@ -206,4 +227,17 @@ type BranchAddress struct {
 	AddressLine1     string
 	AddressLine2     string
 	UpdatedAt        time.Time
+}
+
+type OrganizationAddress struct {
+	ID               uuid.UUID
+	OrganizationID   uuid.UUID
+	DivisionScheme   AdminDivisionScheme
+	ProvinceFormerID *uuid.UUID
+	DistrictFormerID *uuid.UUID
+	WardFormerID     *uuid.UUID
+	ProvinceID       *uuid.UUID
+	WardID           *uuid.UUID
+	AddressLine1     string
+	AddressLine2     string
 }

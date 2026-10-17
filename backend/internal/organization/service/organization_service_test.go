@@ -12,8 +12,13 @@ func TestIsSeededRole(t *testing.T) {
 }
 
 func TestSlugify(t *testing.T) {
-	got := slugify("  Hello Club!! ")
-	if got != "hello-club" {
+	if got := slugify("  Hello Club!! "); got != "hello-club" {
+		t.Fatalf("got %q", got)
+	}
+	if got := slugify("Đà Nẵng"); got != "da-nang" {
+		t.Fatalf("got %q", got)
+	}
+	if got := slugify("đường Điện Biên"); got != "duong-dien-bien" {
 		t.Fatalf("got %q", got)
 	}
 }

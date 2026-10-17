@@ -35,6 +35,7 @@ type OrganizationService struct {
 	users   idrepo.UserRepository
 	mailer  mail.Mailer
 	outbox  events.Enqueuer
+	fileDir string
 }
 
 func NewOrganizationService(
@@ -53,21 +54,39 @@ func NewOrganizationService(
 	}
 }
 
+type HeadquartersInput struct {
+	ProvinceID   uuid.UUID
+	WardID       uuid.UUID
+	AddressLine1 string
+	AddressLine2 string
+}
+
 type CreateOrganizationInput struct {
-	Name   string
-	NameEn string
-	NameVi string
-	Code   string
-	Email  string
-	Phone  string
+	Name             string
+	NameEn           string
+	NameVi           string
+	LegalName        string
+	OrganizationType string
+	Slug             string
+	Code             string
+	TaxCode          string
+	Email            string
+	Phone            string
+	Website          string
+	Headquarters     *HeadquartersInput
 }
 
 type UpdateOrganizationInput struct {
-	NameEn *string
-	NameVi *string
-	Code   *string
-	Email  *string
-	Phone  *string
+	NameEn           *string
+	NameVi           *string
+	LegalName        *string
+	OrganizationType *string
+	Slug             *string
+	TaxCode          *string
+	Email            *string
+	Phone            *string
+	Website          *string
+	Headquarters     *HeadquartersInput
 }
 
 type InviteInput struct {
@@ -105,26 +124,41 @@ func (s *OrganizationService) Create(ctx context.Context, ownerID uuid.UUID, in 
 		}
 		nameVi = legacy
 	}
-	code := strings.TrimSpace(in.Code)
-	if code == "" {
-		code = slugify(i18n.FirstNonEmpty(nameVi, nameEn))
+	code := slugify(i18n.FirstNonEmpty(nameVi, nameEn))
+	rawSlug := strings.TrimSpace(in.Slug)
+	slug, err := s.resolveSlug(ctx, rawSlug, i18n.FirstNonEmpty(nameVi, nameEn), uuid.Nil, rawSlug == "")
+	if err != nil {
+		return nil, err
+	}
+	orgType := entity.OrganizationTypeClub
+	if raw := strings.TrimSpace(in.OrganizationType); raw != "" {
+		parsed, ok := entity.ParseOrganizationType(raw)
+		if !ok {
+			return nil, apperr.New(apperr.CodeValidation, "invalid organization type")
+		}
+		orgType = parsed
 	}
 	now := time.Now().UTC()
 	tenantID := id.MustNewUUID()
 	orgID := id.MustNewUUID()
 	localeID := i18n.LocaleVIID
 	tenant := &entity.Tenant{
-		ID: tenantID, PublicID: id.MustNewPublicID(), Code: code, NameEn: nameEn, NameVi: nameVi, Slug: code,
+		ID: tenantID, PublicID: id.MustNewPublicID(), Code: code, NameEn: nameEn, NameVi: nameVi, Slug: slug,
 		Status: entity.TenantTrial, LocaleID: &localeID, CreatedAt: now, UpdatedAt: now,
 	}
 	org := &entity.Organization{
 		ID: orgID, PublicID: id.MustNewPublicID(), TenantID: tenantID, Code: code, NameEn: nameEn, NameVi: nameVi,
-		OrganizationType: entity.OrganizationTypeClub, Email: strings.TrimSpace(in.Email), Phone: strings.TrimSpace(in.Phone),
-		Status: entity.OrganizationActive, CreatedAt: now, UpdatedAt: now,
+		LegalName: strings.TrimSpace(in.LegalName), OrganizationType: orgType, TaxCode: strings.TrimSpace(in.TaxCode),
+		Email: strings.TrimSpace(in.Email), Phone: strings.TrimSpace(in.Phone), Website: strings.TrimSpace(in.Website),
+		Slug: slug, Status: entity.OrganizationActive, CreatedAt: now, UpdatedAt: now,
 	}
 	bu := &entity.BusinessUnit{
 		ID: id.MustNewUUID(), OrganizationID: orgID, Code: entity.DefaultBUCode,
 		NameEn: nameEn, NameVi: nameVi, Status: entity.BusinessUnitActive, CreatedAt: now, UpdatedAt: now,
+	}
+	addrs, err := s.headquartersRows(ctx, orgID, in.Headquarters)
+	if err != nil {
+		return nil, err
 	}
 	ownerRole, err := s.roles.FindByCode(ctx, entity.RoleOrgOwner)
 	if err != nil || ownerRole == nil {
@@ -134,6 +168,9 @@ func (s *OrganizationService) Create(ctx context.Context, ownerID uuid.UUID, in 
 	var outboxIDs []uuid.UUID
 	err = persistence.WithinTx(ctx, s.pool, func(tx pgx.Tx) error {
 		if err := s.orgs.CreateTenantAndOrg(ctx, tx, tenant, org, bu); err != nil {
+			return err
+		}
+		if err := s.orgs.ReplaceAddresses(ctx, tx, orgID, addrs); err != nil {
 			return err
 		}
 		member := &entity.StaffMember{
@@ -224,12 +261,18 @@ func (s *OrganizationService) Update(ctx context.Context, orgID, requester uuid.
 	if org.NameEn == "" && org.NameVi == "" {
 		return nil, apperr.New(apperr.CodeValidation, "name is required")
 	}
-	if in.Code != nil {
-		code := strings.TrimSpace(*in.Code)
-		if code == "" {
-			return nil, apperr.New(apperr.CodeValidation, "code is required")
+	if in.LegalName != nil {
+		org.LegalName = strings.TrimSpace(*in.LegalName)
+	}
+	if in.OrganizationType != nil {
+		parsed, ok := entity.ParseOrganizationType(strings.TrimSpace(*in.OrganizationType))
+		if !ok {
+			return nil, apperr.New(apperr.CodeValidation, "invalid organization type")
 		}
-		org.Code = code
+		org.OrganizationType = parsed
+	}
+	if in.TaxCode != nil {
+		org.TaxCode = strings.TrimSpace(*in.TaxCode)
 	}
 	if in.Email != nil {
 		org.Email = strings.TrimSpace(*in.Email)
@@ -237,12 +280,37 @@ func (s *OrganizationService) Update(ctx context.Context, orgID, requester uuid.
 	if in.Phone != nil {
 		org.Phone = strings.TrimSpace(*in.Phone)
 	}
+	if in.Website != nil {
+		org.Website = strings.TrimSpace(*in.Website)
+	}
+	if in.Slug != nil {
+		rawSlug := strings.TrimSpace(*in.Slug)
+		slug, err := s.resolveSlug(ctx, rawSlug, i18n.FirstNonEmpty(org.NameVi, org.NameEn), org.TenantID, rawSlug == "")
+		if err != nil {
+			return nil, err
+		}
+		org.Slug = slug
+	}
+	addrs, err := s.headquartersRows(ctx, org.ID, in.Headquarters)
+	if err != nil {
+		return nil, err
+	}
 	now := time.Now().UTC()
 	org.UpdatedAt = now
 	var outboxID uuid.UUID
 	err = persistence.WithinTx(ctx, s.pool, func(tx pgx.Tx) error {
 		if err := s.orgs.Update(ctx, tx, org); err != nil {
 			return err
+		}
+		if in.Slug != nil {
+			if err := s.orgs.UpdateTenantSlug(ctx, tx, org.TenantID, org.Slug); err != nil {
+				return err
+			}
+		}
+		if in.Headquarters != nil {
+			if err := s.orgs.ReplaceAddresses(ctx, tx, org.ID, addrs); err != nil {
+				return err
+			}
 		}
 		oid, err := events.Append(ctx, tx, events.Event{
 			Type: "OrganizationUpdated", AggregateType: "Organization", AggregateID: org.ID,
@@ -978,15 +1046,32 @@ func isSeededRole(code string) bool {
 
 var nonAlpha = regexp.MustCompile(`[^a-z0-9]+`)
 
+var vnASCII = strings.NewReplacer(
+	"à", "a", "á", "a", "ả", "a", "ã", "a", "ạ", "a",
+	"ă", "a", "ằ", "a", "ắ", "a", "ẳ", "a", "ẵ", "a", "ặ", "a",
+	"â", "a", "ầ", "a", "ấ", "a", "ẩ", "a", "ẫ", "a", "ậ", "a",
+	"è", "e", "é", "e", "ẻ", "e", "ẽ", "e", "ẹ", "e",
+	"ê", "e", "ề", "e", "ế", "e", "ể", "e", "ễ", "e", "ệ", "e",
+	"ì", "i", "í", "i", "ỉ", "i", "ĩ", "i", "ị", "i",
+	"ò", "o", "ó", "o", "ỏ", "o", "õ", "o", "ọ", "o",
+	"ô", "o", "ồ", "o", "ố", "o", "ổ", "o", "ỗ", "o", "ộ", "o",
+	"ơ", "o", "ờ", "o", "ớ", "o", "ở", "o", "ỡ", "o", "ợ", "o",
+	"ù", "u", "ú", "u", "ủ", "u", "ũ", "u", "ụ", "u",
+	"ư", "u", "ừ", "u", "ứ", "u", "ử", "u", "ữ", "u", "ự", "u",
+	"ỳ", "y", "ý", "y", "ỷ", "y", "ỹ", "y", "ỵ", "y",
+	"đ", "d",
+)
+
 func slugify(s string) string {
 	s = strings.ToLower(strings.TrimSpace(s))
+	s = vnASCII.Replace(s)
 	s = nonAlpha.ReplaceAllString(s, "-")
 	s = strings.Trim(s, "-")
 	if s == "" {
 		s = "org-" + id.MustNewPublicID()[:8]
 	}
 	if len(s) > 100 {
-		s = s[:100]
+		s = strings.Trim(s[:100], "-")
 	}
 	return s
 }

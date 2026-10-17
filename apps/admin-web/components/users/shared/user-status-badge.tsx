@@ -1,8 +1,9 @@
 "use client";
 
-import { Badge, cn } from "@bokdy/ui";
+import { cn } from "@bokdy/ui";
 import { useTranslations } from "next-intl";
 
+import { EntityStatusBadge } from "@/components/entity/status-badge";
 import type { UserStatus } from "@/lib/api/admin-users";
 
 const STYLES: Record<UserStatus, string> = {
@@ -16,9 +17,5 @@ const STYLES: Record<UserStatus, string> = {
 export function UserStatusBadge({ status }: { status: string }) {
   const t = useTranslations("users.status");
   const key = status in STYLES ? (status as UserStatus) : "deleted";
-  return (
-    <Badge variant="outline" className={cn("font-semibold", STYLES[key])}>
-      {t(key)}
-    </Badge>
-  );
+  return <EntityStatusBadge variant="outline" className={cn("font-semibold", STYLES[key])} label={t(key)} />;
 }

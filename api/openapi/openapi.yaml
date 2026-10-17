@@ -474,6 +474,35 @@ paths:
           $ref: "#/components/responses/Error"
         "422":
           $ref: "#/components/responses/ValidationFailed"
+  /api/v1/organizations/slug-available:
+    get:
+      tags: [Organizations]
+      summary: Check whether an organization slug is available
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: slug
+          in: query
+          required: true
+          schema: { type: string }
+        - name: exclude_id
+          in: query
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Availability
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      available: { type: boolean }
+                      slug: { type: string }
+        "401":
+          $ref: "#/components/responses/Error"
   /api/v1/organizations/{id}:
     get:
       tags: [Organizations]
@@ -534,6 +563,58 @@ paths:
           $ref: "#/components/responses/Error"
         "422":
           $ref: "#/components/responses/ValidationFailed"
+  /api/v1/organizations/{id}/media:
+    post:
+      tags: [Organizations]
+      summary: Upload a cropped organization logo or banner
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [kind, file]
+              properties:
+                kind: { type: string, enum: [logo, banner] }
+                file: { type: string, format: binary }
+      responses:
+        "200":
+          description: Organization with the new file id
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Organization"
+        "401":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /api/v1/files/{id}:
+    get:
+      tags: [Organizations]
+      summary: Download a public stored file
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: File bytes
+          content:
+            image/jpeg: { schema: { type: string, format: binary } }
+            image/png: { schema: { type: string, format: binary } }
+            image/webp: { schema: { type: string, format: binary } }
+        "404":
+          $ref: "#/components/responses/Error"
   /api/v1/organizations/{id}/staff:
     get:
       tags: [Organizations]
@@ -3607,8 +3688,19 @@ components:
         name: { type: string, description: Resolved from Accept-Language }
         name_en: { type: string }
         name_vi: { type: string }
+        legal_name: { type: string }
+        organization_type:
+          type: string
+          enum: [company, club, school, government, individual, other]
+        slug: { type: string }
+        tax_code: { type: string }
         email: { type: string, format: email }
         phone: { type: string }
+        website: { type: string }
+        logo_file_id: { type: string, format: uuid }
+        banner_file_id: { type: string, format: uuid }
+        headquarters:
+          $ref: "#/components/schemas/OrganizationHeadquarters"
         status: { type: string, enum: [active, inactive, suspended, archived] }
         tenant_status: { type: string, enum: [trial, active, suspended, canceled], description: Present on admin organization reads }
     AdminOrganization:
@@ -3734,17 +3826,50 @@ components:
         name: { type: string, description: Alias for name_vi when name_vi is omitted }
         name_en: { type: string }
         name_vi: { type: string }
+        legal_name: { type: string }
+        organization_type:
+          type: string
+          enum: [company, club, school, government, individual, other]
+        slug: { type: string }
         code: { type: string }
+        tax_code: { type: string }
         email: { type: string, format: email }
         phone: { type: string }
+        website: { type: string }
+        headquarters:
+          $ref: "#/components/schemas/OrganizationHeadquarters"
     UpdateOrganizationRequest:
       type: object
       properties:
         name_en: { type: string }
         name_vi: { type: string }
-        code: { type: string }
+        legal_name: { type: string }
+        organization_type:
+          type: string
+          enum: [company, club, school, government, individual, other]
+        slug: { type: string }
+        tax_code: { type: string }
         email: { type: string, format: email }
         phone: { type: string }
+        website: { type: string }
+        headquarters:
+          $ref: "#/components/schemas/OrganizationHeadquarters"
+    OrganizationHeadquarters:
+      type: object
+      properties:
+        province_id: { type: string, format: uuid }
+        ward_id: { type: string, format: uuid }
+        address_line_1: { type: string }
+        address_line_2: { type: string }
+        former:
+          type: array
+          items:
+            type: object
+            required: [province_former_id, district_former_id, ward_former_id]
+            properties:
+              province_former_id: { type: string, format: uuid }
+              district_former_id: { type: string, format: uuid }
+              ward_former_id: { type: string, format: uuid }
     StaffMember:
       type: object
       required: [id, user_id, status, roles]

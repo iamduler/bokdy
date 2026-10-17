@@ -850,6 +850,51 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/organizations/slug-available": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Check whether an organization slug is available */
+        get: {
+            parameters: {
+                query: {
+                    slug: string;
+                    exclude_id?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Availability */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: {
+                                available?: boolean;
+                                slug?: string;
+                            };
+                        };
+                    };
+                };
+                401: components["responses"]["Error"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/organizations/{id}": {
         parameters: {
             query?: never;
@@ -936,6 +981,98 @@ export interface paths {
                 422: components["responses"]["ValidationFailed"];
             };
         };
+        trace?: never;
+    };
+    "/api/v1/organizations/{id}/media": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload a cropped organization logo or banner */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["parameters"]["OrganizationId"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "multipart/form-data": {
+                        /** @enum {string} */
+                        kind: "logo" | "banner";
+                        /** Format: binary */
+                        file: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Organization with the new file id */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["Organization"];
+                        };
+                    };
+                };
+                401: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/files/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download a public stored file */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description File bytes */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "image/jpeg": string;
+                        "image/png": string;
+                        "image/webp": string;
+                    };
+                };
+                404: components["responses"]["Error"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/organizations/{id}/staff": {
@@ -5711,9 +5848,20 @@ export interface components {
             name: string;
             name_en?: string;
             name_vi?: string;
+            legal_name?: string;
+            /** @enum {string} */
+            organization_type?: "company" | "club" | "school" | "government" | "individual" | "other";
+            slug?: string;
+            tax_code?: string;
             /** Format: email */
             email?: string;
             phone?: string;
+            website?: string;
+            /** Format: uuid */
+            logo_file_id?: string;
+            /** Format: uuid */
+            banner_file_id?: string;
+            headquarters?: components["schemas"]["OrganizationHeadquarters"];
             /** @enum {string} */
             status: "active" | "inactive" | "suspended" | "archived";
             /**
@@ -5852,18 +6000,47 @@ export interface components {
             name?: string;
             name_en?: string;
             name_vi?: string;
+            legal_name?: string;
+            /** @enum {string} */
+            organization_type?: "company" | "club" | "school" | "government" | "individual" | "other";
+            slug?: string;
             code?: string;
+            tax_code?: string;
             /** Format: email */
             email?: string;
             phone?: string;
+            website?: string;
+            headquarters?: components["schemas"]["OrganizationHeadquarters"];
         };
         UpdateOrganizationRequest: {
             name_en?: string;
             name_vi?: string;
-            code?: string;
+            legal_name?: string;
+            /** @enum {string} */
+            organization_type?: "company" | "club" | "school" | "government" | "individual" | "other";
+            slug?: string;
+            tax_code?: string;
             /** Format: email */
             email?: string;
             phone?: string;
+            website?: string;
+            headquarters?: components["schemas"]["OrganizationHeadquarters"];
+        };
+        OrganizationHeadquarters: {
+            /** Format: uuid */
+            province_id?: string;
+            /** Format: uuid */
+            ward_id?: string;
+            address_line_1?: string;
+            address_line_2?: string;
+            former?: {
+                /** Format: uuid */
+                province_former_id: string;
+                /** Format: uuid */
+                district_former_id: string;
+                /** Format: uuid */
+                ward_former_id: string;
+            }[];
         };
         StaffMember: {
             /** Format: uuid */

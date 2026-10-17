@@ -1,30 +1,16 @@
 "use client";
 
-import { Button, cn, Tooltip, TooltipContent, TooltipTrigger } from "@bokdy/ui";
+import { Button, cn } from "@bokdy/ui";
 import { LayoutGrid, Map, Wrench } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 
+import { EntityHealthBar } from "@/components/entity/health-bar";
+import { EntityUnavailableButton } from "@/components/entity/unavailable";
+
 import { OrganizationDetailScreenHeader } from "../organization-detail-screen-header";
 import { useOrganizationDetail } from "../organization-detail-context";
-import { DetailHealthBar } from "../shared/detail-health-bar";
 import { DETAIL_MOCK } from "../shared/detail-mock-data";
-
-function UnavailableButton({ label }: { label: string }) {
-  const t = useTranslations("organization");
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span className="inline-flex">
-          <Button type="button" variant="outline" size="sm" className="h-8 text-xs" disabled>
-            {label}
-          </Button>
-        </span>
-      </TooltipTrigger>
-      <TooltipContent>{t("unavailable")}</TooltipContent>
-    </Tooltip>
-  );
-}
 
 export function OrganizationBranchesView() {
   const t = useTranslations("organization.detailBranches");
@@ -61,7 +47,7 @@ export function OrganizationBranchesView() {
                 </Button>
               ))}
             </div>
-            <UnavailableButton label={t("addBranch")} />
+            <EntityUnavailableButton label={t("addBranch")} reason={tu("unavailable")} />
           </>
         }
       />
@@ -105,14 +91,14 @@ export function OrganizationBranchesView() {
                       {b.manager} · {t("courtsCount", { count: b.courts })}
                     </p>
                     <div className="mb-2.5 flex items-center justify-between">
-                      <DetailHealthBar score={b.occupancy} size="sm" />
+                      <EntityHealthBar score={b.occupancy} size="sm" />
                       <span className="text-[13px] font-bold text-emerald-600 dark:text-emerald-400">
                         {b.revenue}
                       </span>
                     </div>
                     <div className="flex gap-1.5">
-                      <UnavailableButton label={tu("view")} />
-                      <UnavailableButton label={t("ownerApp")} />
+                      <EntityUnavailableButton label={tu("view")} reason={tu("unavailable")} />
+                      <EntityUnavailableButton label={t("ownerApp")} reason={tu("unavailable")} />
                     </div>
                   </div>
                 </div>

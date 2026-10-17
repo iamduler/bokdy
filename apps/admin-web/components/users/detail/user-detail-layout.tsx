@@ -1,15 +1,14 @@
 "use client";
 
-import { Button } from "@bokdy/ui";
 import { useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
 import type { ReactNode } from "react";
 
+import { EntityDetailError, EntityDetailLoading } from "@/components/entity/detail-state";
 import { UserDetailProvider } from "@/components/users/detail/user-detail-context";
 import { UserDetailHeader } from "@/components/users/detail/user-detail-header";
 import { UserDetailSubnav } from "@/components/users/detail/user-detail-subnav";
 import { useAdminUserDetail } from "@/hooks/use-admin-users";
-import { Link } from "@/i18n/navigation";
 import { ApiError } from "@/lib/api/errors";
 import type { UserAudience } from "@/lib/api/admin-users";
 
@@ -30,27 +29,26 @@ export function UserDetailLayout({
   );
 
   if (isLoading) {
-    return <p className="p-4 text-sm text-muted-foreground md:p-6">{tc("loading")}</p>;
+    return (
+      <div className="page-canvas">
+        <EntityDetailLoading label={tc("loading")} />
+      </div>
+    );
   }
 
   if (isError) {
     const notFound = error instanceof ApiError && error.status === 404;
     return (
-      <div className="m-4 space-y-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4 md:m-6">
-        <p className="text-sm text-destructive">{notFound ? t("notFound") : t("detailLoadError")}</p>
-        <div className="flex flex-wrap gap-2">
-          {!notFound ? (
-            <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
-              {tc("retry")}
-            </Button>
-          ) : null}
-          <Link
-            href={`/users/${audience}`}
-            className="inline-flex h-9 items-center justify-center rounded-md border border-input bg-background px-3 text-sm font-medium hover:bg-accent"
-          >
-            ← {t("backToList")}
-          </Link>
-        </div>
+      <div className="page-canvas">
+      <EntityDetailError
+        message={notFound ? t("notFound") : t("detailLoadError")}
+        notFound={notFound}
+        retryLabel={tc("retry")}
+        onRetry={() => refetch()}
+        retryDisabled={isFetching}
+        backHref={`/users/${audience}`}
+        backLabel={t("backToList")}
+      />
       </div>
     );
   }
@@ -59,7 +57,7 @@ export function UserDetailLayout({
 
   return (
     <UserDetailProvider user={user} userId={id} audience={audience}>
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div className="page-canvas flex min-h-full flex-1 flex-col overflow-hidden">
         <UserDetailSubnav />
         <UserDetailHeader />
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">{children}</div>

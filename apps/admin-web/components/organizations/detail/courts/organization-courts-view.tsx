@@ -1,34 +1,21 @@
 "use client";
 
-import { Badge, Button, cn, Tooltip, TooltipContent, TooltipTrigger } from "@bokdy/ui";
+import { Badge, cn } from "@bokdy/ui";
 import { Home, Sun } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 
+import { EntityHealthBar } from "@/components/entity/health-bar";
+import { EntitySectionHead } from "@/components/entity/section-head";
+import { EntityUnavailableButton } from "@/components/entity/unavailable";
+
 import { OrganizationDetailScreenHeader } from "../organization-detail-screen-header";
 import { useOrganizationDetail } from "../organization-detail-context";
-import { DetailHealthBar } from "../shared/detail-health-bar";
-import { DetailSectionHead } from "../shared/detail-section-head";
 import { DETAIL_MOCK } from "../shared/detail-mock-data";
-
-function UnavailableButton({ label }: { label: string }) {
-  const t = useTranslations("organization");
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span className="inline-flex">
-          <Button type="button" variant="outline" size="sm" className="h-8 text-xs" disabled>
-            {label}
-          </Button>
-        </span>
-      </TooltipTrigger>
-      <TooltipContent>{t("unavailable")}</TooltipContent>
-    </Tooltip>
-  );
-}
 
 export function OrganizationCourtsView() {
   const t = useTranslations("organization.detailCourts");
+  const tu = useTranslations("organization");
   const { org } = useOrganizationDetail();
   const [filterSport, setFilterSport] = useState("");
 
@@ -56,7 +43,7 @@ export function OrganizationCourtsView() {
                 </option>
               ))}
             </select>
-            <UnavailableButton label={t("export")} />
+            <EntityUnavailableButton label={t("export")} reason={tu("unavailable")} />
           </>
         }
       />
@@ -102,7 +89,7 @@ export function OrganizationCourtsView() {
                     [t("fieldBranch"), c.branch],
                   ].map(([label, value]) => (
                     <div key={String(label)}>
-                      <DetailSectionHead>{label}</DetailSectionHead>
+                      <EntitySectionHead>{label}</EntitySectionHead>
                       <p className="flex items-center gap-1 text-xs font-semibold text-muted-foreground">
                         {label === t("fieldType") ? (
                           c.indoor ? (
@@ -116,10 +103,10 @@ export function OrganizationCourtsView() {
                     </div>
                   ))}
                 </div>
-                <DetailSectionHead>
+                <EntitySectionHead>
                   {t("usageMeta", { rate: c.bookingRate })}
-                </DetailSectionHead>
-                <DetailHealthBar score={c.occupancy} size="sm" />
+                </EntitySectionHead>
+                <EntityHealthBar score={c.occupancy} size="sm" />
               </div>
             );
           })}

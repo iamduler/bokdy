@@ -1,231 +1,138 @@
 "use client";
 
 import { BokdyMark } from "@bokdy/brand";
-import { Button, cn, Tooltip, TooltipContent, TooltipTrigger } from "@bokdy/ui";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarRail,
+  useSidebar,
+} from "@bokdy/ui";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useTranslations } from "next-intl";
-import type { ReactNode } from "react";
+import type { MouseEvent } from "react";
 
 import { AdminNavIconView } from "@/components/shell/admin-nav-icon";
+import { NotificationBell } from "@/components/shell/notification-bell";
+import { UserMenu } from "@/components/shell/user-menu";
 import { Link, usePathname } from "@/i18n/navigation";
 import {
-  ADMIN_NAV_GROUPS,
   isNavItemActive,
+  visibleAdminNavGroups,
   type AdminNavItem,
 } from "@/lib/admin-nav";
 
-function NavItemRow({
-  item,
-  collapsed,
-  onNavigate,
-}: {
-  item: AdminNavItem;
-  collapsed: boolean;
-  onNavigate?: () => void;
-}) {
+function NavItem({ item }: { item: AdminNavItem }) {
   const t = useTranslations("shell");
   const pathname = usePathname();
+  const { setOpenMobile } = useSidebar();
   const label = t(`nav.${item.labelKey}`);
-  const unavailable = t("unavailable");
-  const active =
-    item.status === "ready" && isNavItemActive(pathname, item.href);
-  const missing = item.status === "missing";
+  const active = isNavItemActive(pathname, item.href);
 
-  const className = cn(
-    "flex w-full items-center gap-2 rounded-md border border-transparent px-2.5 py-2 text-left text-sm transition-colors",
-    collapsed && "justify-center px-2",
-    active && "border-border bg-primary/10 font-semibold text-primary",
-    !active &&
-      !missing &&
-      "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
-    missing && "cursor-not-allowed text-muted-foreground/70",
-  );
-
-  const body = (
-    <>
-      <AdminNavIconView name={item.icon} className="h-4 w-4 shrink-0" />
-      {!collapsed ? (
-        <>
-          <span className="min-w-0 flex-1 truncate">{label}</span>
-          {missing ? (
-            <span className="shrink-0 rounded border border-dashed border-border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-              {unavailable}
-            </span>
-          ) : null}
-        </>
-      ) : null}
-    </>
-  );
-
-  const tooltipLabel = missing ? `${label} · ${unavailable}` : label;
-
-  const control =
-    missing || !item.href ? (
-      <button
-        type="button"
-        className={className}
-        disabled
-        aria-disabled="true"
-        title={tooltipLabel}
-      >
-        {body}
-      </button>
-    ) : (
-      <Link
-        href={item.href}
-        className={className}
-        onClick={onNavigate}
-        aria-current={active ? "page" : undefined}
-      >
-        {body}
-      </Link>
-    );
-
-  if (!collapsed) {
-    return control;
-  }
+  if (!item.href) return null;
 
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span className={cn("flex w-full", missing && "cursor-not-allowed")}>
-          {control}
-        </span>
-      </TooltipTrigger>
-      <TooltipContent side="right">{tooltipLabel}</TooltipContent>
-    </Tooltip>
+    <SidebarMenuItem>
+      <SidebarMenuButton tooltip={label} isActive={active} asChild>
+        <Link
+          href={item.href}
+          aria-current={active ? "page" : undefined}
+          onClick={() => setOpenMobile(false)}
+        >
+          <AdminNavIconView name={item.icon} />
+          <span>{label}</span>
+        </Link>
+      </SidebarMenuButton>
+    </SidebarMenuItem>
   );
 }
 
-export function AdminSidebarNav({
-  collapsed,
-  onNavigate,
+export function AdminSidebar({
+  email,
+  displayName,
 }: {
-  collapsed: boolean;
-  onNavigate?: () => void;
+  email?: string;
+  displayName?: string;
 }) {
-  const t = useTranslations("shell");
-
-  return (
-    <nav className="flex flex-1 flex-col gap-4 overflow-y-auto soft-scrollbar px-2 py-3">
-      {ADMIN_NAV_GROUPS.map((group) => (
-        <div key={group.id} className="space-y-1">
-          {!collapsed ? (
-            <p className="px-2.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              {t(`navGroups.${group.labelKey}`)}
-            </p>
-          ) : null}
-          <div className="flex flex-col gap-0.5">
-            {group.items.map((item) => (
-              <NavItemRow
-                key={item.id}
-                item={item}
-                collapsed={collapsed}
-                onNavigate={onNavigate}
-              />
-            ))}
-          </div>
-        </div>
-      ))}
-    </nav>
-  );
-}
-
-export function AdminSidebarBrand({ collapsed }: { collapsed: boolean }) {
   const tc = useTranslations("common");
   const t = useTranslations("shell");
+  const { state, toggleSidebar, isMobile } = useSidebar();
+  const collapsed = state === "collapsed";
+  const groups = visibleAdminNavGroups();
 
-  return (
-    <div
-      className={cn(
-        "flex h-14 shrink-0 items-center gap-2 border-b border-border px-3",
-        collapsed && "justify-center px-2",
-      )}
-    >
-      <BokdyMark
-        alt={tc("appName")}
-        className={cn("shrink-0 object-contain", collapsed ? "h-7 w-7" : "h-7 w-auto")}
-        width={collapsed ? 28 : 112}
-        height={28}
-      />
-      {!collapsed ? (
-        <div className="min-w-0">
-          <p className="truncate text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-            {t("brandSubtitle")}
-          </p>
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-export function AdminSidebarCollapseButton({
-  collapsed,
-  onToggle,
-}: {
-  collapsed: boolean;
-  onToggle: () => void;
-}) {
-  const t = useTranslations("shell");
-  const label = collapsed ? t("expandSidebar") : t("collapseSidebar");
-
-  const button = (
-    <Button
-      type="button"
-      variant="ghost"
-      size="sm"
-      className={cn(
-        "h-8 w-full justify-start gap-2 px-2.5 text-muted-foreground",
-        collapsed && "justify-center px-2",
-      )}
-      onClick={onToggle}
-      aria-label={label}
-    >
-      {collapsed ? (
-        <ChevronRight className="h-4 w-4" />
-      ) : (
-        <ChevronLeft className="h-4 w-4" />
-      )}
-      {!collapsed ? <span className="text-xs">{label}</span> : null}
-    </Button>
-  );
-
-  if (!collapsed) {
-    return <div className="border-t border-border p-2">{button}</div>;
+  function onEmptyDoubleClick(event: MouseEvent<HTMLDivElement>) {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    if (target.closest("a, button, input, textarea, select")) return;
+    toggleSidebar();
   }
 
   return (
-    <div className="border-t border-border p-2">
-      <Tooltip>
-        <TooltipTrigger asChild>{button}</TooltipTrigger>
-        <TooltipContent side="right">{label}</TooltipContent>
-      </Tooltip>
-    </div>
-  );
-}
-
-export function AdminSidebarChrome({
-  collapsed,
-  onToggleCollapse,
-  onNavigate,
-  footer,
-}: {
-  collapsed: boolean;
-  onToggleCollapse?: () => void;
-  onNavigate?: () => void;
-  footer?: ReactNode;
-}) {
-  return (
-    <div className="flex h-full flex-col bg-background">
-      <AdminSidebarBrand collapsed={collapsed} />
-      <AdminSidebarNav collapsed={collapsed} onNavigate={onNavigate} />
-      {footer}
-      {onToggleCollapse ? (
-        <AdminSidebarCollapseButton
-          collapsed={collapsed}
-          onToggle={onToggleCollapse}
-        />
-      ) : null}
-    </div>
+    <Sidebar
+      collapsible="icon"
+      onDoubleClick={isMobile ? undefined : onEmptyDoubleClick}
+    >
+      <button
+        type="button"
+        className="absolute top-1/2 -right-3 z-30 hidden size-5 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-background text-foreground shadow-sm md:inline-flex"
+        aria-label={collapsed ? t("expandSidebar") : t("collapseSidebar")}
+        onClick={toggleSidebar}
+      >
+        {collapsed ? (
+          <ChevronRight className="size-3" />
+        ) : (
+          <ChevronLeft className="size-3" />
+        )}
+      </button>
+      <SidebarHeader>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton size="lg" asChild>
+              <Link href="/organizations">
+                <BokdyMark
+                  alt={tc("appName")}
+                  className="size-7 shrink-0 object-contain"
+                  width={28}
+                  height={28}
+                />
+                <span className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
+                  <span className="truncate font-semibold">
+                    {t("brandSubtitle")}
+                  </span>
+                </span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarHeader>
+      <SidebarContent>
+        {groups.map((group) => (
+          <SidebarGroup key={group.id}>
+            <SidebarGroupLabel>
+              {t(`navGroups.${group.labelKey}`)}
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {group.items.map((item) => (
+                  <NavItem key={item.id} item={item} />
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
+      </SidebarContent>
+      <SidebarFooter>
+        <NotificationBell placement="sidebar" />
+        <UserMenu email={email} displayName={displayName} layout="sidebar" />
+      </SidebarFooter>
+      <SidebarRail />
+    </Sidebar>
   );
 }
