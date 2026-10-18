@@ -16,6 +16,8 @@ const formFields = z.object({
   ward_id: z.string().trim(),
   address_line_1: z.string().trim(),
   address_line_2: z.string().trim(),
+  status: z.string(),
+  suspend_reason: z.string(),
 });
 
 export type OrganizationFormValues = z.infer<typeof formFields>;
@@ -50,11 +52,17 @@ export function organizationFormSchema(messages: {
         message: messages.websiteInvalid,
       });
     }
-    const hasAddress = Boolean(value.province_id || value.ward_id || value.address_line_1 || value.address_line_2);
-    if (hasAddress && (!value.province_id || !value.ward_id)) {
+    if (!value.province_id) {
       ctx.addIssue({
         code: "custom",
-        path: [value.province_id ? "ward_id" : "province_id"],
+        path: ["province_id"],
+        message: messages.addressIncomplete,
+      });
+    }
+    if (!value.ward_id) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["ward_id"],
         message: messages.addressIncomplete,
       });
     }

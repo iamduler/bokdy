@@ -35,6 +35,7 @@ export function Toaster({ ...props }: ToasterProps) {
         error: <OctagonX className="size-4" />,
         loading: <Loader2 className="size-4 animate-spin" />,
       }}
+      richColors
       style={
         {
           "--normal-bg": "var(--popover)",

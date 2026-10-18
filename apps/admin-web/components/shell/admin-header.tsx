@@ -24,7 +24,7 @@ function useFallbackPageTitle(): string {
 
 export function AdminHeader() {
   const t = useTranslations("shell");
-  const { title: pageTitle, setActionSlot } = useShellTitle();
+  const { title: pageTitle, setLeadingSlot, setActionSlot } = useShellTitle();
   const fallbackTitle = useFallbackPageTitle();
   const title = pageTitle ?? fallbackTitle;
 
@@ -33,6 +33,7 @@ export function AdminHeader() {
       <div className="flex min-w-0 flex-1 items-center gap-2 px-4">
         <SidebarTrigger className="-ml-1 md:hidden" aria-label={t("openMenu")} />
         <Separator orientation="vertical" className="mr-2 h-4 md:hidden" />
+        <div ref={setLeadingSlot} className="flex items-center empty:hidden" />
         <h1 className="min-w-0 truncate text-sm font-semibold tracking-tight text-foreground md:text-base">
           {title}
         </h1>

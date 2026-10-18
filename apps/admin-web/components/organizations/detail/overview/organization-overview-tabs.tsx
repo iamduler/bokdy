@@ -14,14 +14,11 @@ const TABS = [
   { id: "team", href: "/team", labelKey: "team" },
   { id: "billing", href: "/billing", labelKey: "billing" },
   { id: "activity", href: "/activity", labelKey: "activity" },
+  { id: "actions", href: "/actions", labelKey: "actions" },
   { id: "audit", href: null, labelKey: "audit" },
 ] as const;
 
-export function OrganizationOverviewTabs({
-  activeTab = "overview",
-}: {
-  activeTab?: string;
-}) {
+export function OrganizationOverviewTabs() {
   const t = useTranslations("organization.detailTabs");
   const { orgId } = useOrganizationDetail();
   const pathname = usePathname();
@@ -34,8 +31,8 @@ export function OrganizationOverviewTabs({
           const href = tab.href !== null ? `${base}${tab.href}` : undefined;
           const isOverview = tab.id === "overview";
           const active = isOverview
-            ? activeTab === "overview" && (pathname === base || pathname.endsWith(base))
-            : activeTab === tab.id || pathname.includes(tab.href ?? "");
+            ? pathname === base || pathname.endsWith(base)
+            : pathname.includes(tab.href ?? "\0");
 
           if (tab.id === "audit") {
             return (

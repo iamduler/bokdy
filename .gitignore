@@ -36,3 +36,4 @@ coverage/
 .pnpm-store/
 
 Figma/
+backend/data/files/

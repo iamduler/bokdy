@@ -16,13 +16,6 @@ export type DetailView =
   | "activity"
   | "actions";
 
-const QUICK_PILLS: { id: DetailView; labelKey: string }[] = [
-  { id: "branches", labelKey: "branches" },
-  { id: "team", labelKey: "team" },
-  { id: "billing", labelKey: "billing" },
-  { id: "actions", labelKey: "actions" },
-];
-
 function resolveDetailView(pathname: string, orgId: string): DetailView {
   const base = `/organizations/${orgId}`;
   if (pathname === base || pathname.endsWith(base)) return "overview";
@@ -67,12 +60,6 @@ export function OrganizationDetailSubnav() {
         active: view === "overview" && pathname === "/organizations",
       }}
       crumbs={crumbs}
-      pills={QUICK_PILLS.map((pill) => ({
-        id: pill.id,
-        href: `${base}/${pill.id}`,
-        label: t(`pill.${pill.labelKey}`),
-        active: view === pill.id,
-      }))}
     />
   );
 }

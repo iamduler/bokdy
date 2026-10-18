@@ -92,7 +92,12 @@ export function FieldContent({ className, ...props }: React.ComponentProps<"div"
   );
 }
 
-export function FieldLabel({ className, ...props }: React.ComponentProps<typeof Label>) {
+export function FieldLabel({
+  className,
+  required,
+  children,
+  ...props
+}: React.ComponentProps<typeof Label> & { required?: boolean }) {
   return (
     <Label
       data-slot="field-label"
@@ -106,7 +111,16 @@ export function FieldLabel({ className, ...props }: React.ComponentProps<typeof 
         className,
       )}
       {...props}
-    />
+    >
+      <span className="inline-flex items-baseline gap-0.5">
+        {children}
+        {required ? (
+          <span className="text-destructive" aria-hidden="true">
+            *
+          </span>
+        ) : null}
+      </span>
+    </Label>
   );
 }
 

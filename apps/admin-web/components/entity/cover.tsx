@@ -1,6 +1,16 @@
 "use client";
 
-import { Button, cn, Dialog, DialogContent, DialogTitle } from "@bokdy/ui";
+import {
+  Button,
+  cn,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@bokdy/ui";
 import { Camera, Eye } from "lucide-react";
 import { useRef, useState } from "react";
 
@@ -9,17 +19,24 @@ type EntityCoverProps = {
   logoLabel: string;
   viewLabel: string;
   pickLabel: string;
+  viewAvatarLabel: string;
+  changeImageLabel: string;
   bannerPreview: string | null;
   logoPreview: string | null;
   onBanner: (file: File) => void;
   onLogo: (file: File) => void;
 };
 
+const logoClass =
+  "flex size-24 cursor-pointer items-center justify-center overflow-hidden rounded-full border border-primary bg-muted text-xs text-muted-foreground md:size-28";
+
 export function EntityCover({
   bannerLabel,
   logoLabel,
   viewLabel,
   pickLabel,
+  viewAvatarLabel,
+  changeImageLabel,
   bannerPreview,
   logoPreview,
   onBanner,
@@ -49,20 +66,11 @@ export function EntityCover({
         />
       </div>
       <div className="absolute -bottom-12 left-4 md:-bottom-14 md:left-6">
-        <span className="flex size-24 items-center justify-center overflow-hidden rounded-full border border-primary bg-muted text-xs text-muted-foreground md:size-28">
-          {logoPreview ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={logoPreview} alt="" className="h-full w-full object-cover" />
-          ) : (
-            logoLabel
-          )}
-        </span>
-        <MediaActions
-          className="absolute -right-1 -bottom-1"
-          preview={logoPreview}
+        <LogoControl
           label={logoLabel}
-          viewLabel={viewLabel}
-          pickLabel={pickLabel}
+          preview={logoPreview}
+          viewLabel={viewAvatarLabel}
+          changeLabel={changeImageLabel}
           onPick={onLogo}
           onView={() => logoPreview && setViewing({ src: logoPreview, label: logoLabel })}
         />
@@ -77,6 +85,77 @@ export function EntityCover({
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+function LogoControl({
+  label,
+  preview,
+  viewLabel,
+  changeLabel,
+  onPick,
+  onView,
+}: {
+  label: string;
+  preview: string | null;
+  viewLabel: string;
+  changeLabel: string;
+  onPick: (file: File) => void;
+  onView: () => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const fileInput = (
+    <input
+      ref={inputRef}
+      type="file"
+      accept="image/jpeg,image/png,image/webp"
+      className="sr-only"
+      onChange={(event) => {
+        const file = event.target.files?.[0];
+        event.target.value = "";
+        if (file) onPick(file);
+      }}
+    />
+  );
+  const face = preview ? (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={preview} alt="" className="h-full w-full object-cover" />
+  ) : (
+    label
+  );
+
+  if (!preview) {
+    return (
+      <>
+        <button type="button" className={logoClass} aria-label={changeLabel} onClick={() => inputRef.current?.click()}>
+          {face}
+        </button>
+        {fileInput}
+      </>
+    );
+  }
+
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button type="button" className={logoClass} aria-label={label}>
+            {face}
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+          <DropdownMenuItem onSelect={onView}>{viewLabel}</DropdownMenuItem>
+          <DropdownMenuItem
+            onSelect={() => {
+              window.setTimeout(() => inputRef.current?.click(), 0);
+            }}
+          >
+            {changeLabel}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      {fileInput}
+    </>
   );
 }
 

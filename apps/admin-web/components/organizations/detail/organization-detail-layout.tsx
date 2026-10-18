@@ -7,6 +7,7 @@ import type { ReactNode } from "react";
 import { EntityDetailError, EntityDetailLoading } from "@/components/entity/detail-state";
 import { OrganizationDetailProvider } from "@/components/organizations/detail/organization-detail-context";
 import { OrganizationDetailSubnav } from "@/components/organizations/detail/organization-detail-subnav";
+import { OrganizationOverviewTabs } from "@/components/organizations/detail/overview/organization-overview-tabs";
 import { useAdminOrganization } from "@/hooks/use-admin-organizations";
 import { ApiError } from "@/lib/api/errors";
 
@@ -50,6 +51,7 @@ export function OrganizationDetailLayout({ children }: { children: ReactNode }) 
     <OrganizationDetailProvider org={org} orgId={id}>
       <div className="page-canvas flex min-h-full flex-1 flex-col overflow-hidden">
         <OrganizationDetailSubnav />
+        <OrganizationOverviewTabs />
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">{children}</div>
       </div>
     </OrganizationDetailProvider>

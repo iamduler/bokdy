@@ -1,26 +1,23 @@
 "use client";
 
-import {
-  Field,
-  FieldDescription,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-  Input,
-  toast,
-} from "@bokdy/ui";
+import { toast } from "@bokdy/ui";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
-import { useEffect, useMemo, useRef, useState, type ComponentProps } from "react";
-import { useForm } from "react-hook-form";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { FormProvider, useForm } from "react-hook-form";
 
 import { EntityCover } from "@/components/entity/cover";
 import { EntityFormFrame } from "@/components/entity/form-frame";
-import { EntityFormSection, entityFormFieldsClass } from "@/components/entity/form-section";
+import {
+  EntityMetadataForm,
+  type EntityFormBlock,
+} from "@/components/entity/metadata-form";
 import { ImageCropDialog } from "@/components/media/image-crop-dialog";
-import { OrganizationStatusBadge } from "@/components/organizations/organization-status-badge";
-import { PopoverCommandSelect, type PopoverCommandOption } from "@/components/popover-command-select";
+import type { PopoverCommandOption } from "@/components/popover-command-select";
+import { useActivateOrganization } from "@/hooks/use-activate-organization";
 import { useCreateOrganization } from "@/hooks/use-create-organization";
+import { useRestoreOrganization } from "@/hooks/use-restore-organization";
+import { useSuspendOrganization } from "@/hooks/use-suspend-organization";
 import { useUpdateOrganization } from "@/hooks/use-update-organization";
 import { useProvinces, useWards } from "@/hooks/use-admin-units";
 import { useRouter } from "@/i18n/navigation";
@@ -29,14 +26,21 @@ import {
   uploadOrganizationMedia,
   type AdminOrganization,
   type OrganizationProfileInput,
+  type OrgStatus,
 } from "@/lib/api/admin";
 import { ApiError, errorMessageKey } from "@/lib/api/errors";
 import {
   ORGANIZATION_TYPES,
   organizationFormSchema,
   type OrganizationFormValues,
-  type OrganizationType,
 } from "@/lib/validation/organization-create";
+
+const ORG_STATUSES: OrgStatus[] = [
+  "active",
+  "inactive",
+  "suspended",
+  "archived",
+];
 
 const FORM_FIELDS = [
   "name_vi",
@@ -74,10 +78,17 @@ const emptyValues: OrganizationFormValues = {
   ward_id: "",
   address_line_1: "",
   address_line_2: "",
+  status: "inactive",
+  suspend_reason: "",
 };
 
-function valuesFromOrganization(organization: AdminOrganization): OrganizationFormValues {
-  const type = ORGANIZATION_TYPES.find((item) => item === organization.organization_type) ?? "club";
+function valuesFromOrganization(
+  organization: AdminOrganization,
+): OrganizationFormValues {
+  const type =
+    ORGANIZATION_TYPES.find(
+      (item) => item === organization.organization_type,
+    ) ?? "club";
   return {
     name_vi: organization.name_vi ?? "",
     name_en: organization.name_en ?? "",
@@ -92,12 +103,20 @@ function valuesFromOrganization(organization: AdminOrganization): OrganizationFo
     ward_id: organization.headquarters?.ward_id ?? "",
     address_line_1: organization.headquarters?.address_line_1 ?? "",
     address_line_2: organization.headquarters?.address_line_2 ?? "",
+    status: organization.status,
+    suspend_reason: "",
   };
 }
 
-function profileBody(values: OrganizationFormValues, mode: "create" | "edit"): OrganizationProfileInput {
+function profileBody(
+  values: OrganizationFormValues,
+  mode: "create" | "edit",
+): OrganizationProfileInput {
   const headquarters =
-    values.province_id || values.ward_id || values.address_line_1 || values.address_line_2
+    values.province_id ||
+    values.ward_id ||
+    values.address_line_1 ||
+    values.address_line_2
       ? {
           province_id: values.province_id || undefined,
           ward_id: values.ward_id || undefined,
@@ -105,7 +124,12 @@ function profileBody(values: OrganizationFormValues, mode: "create" | "edit"): O
           address_line_2: values.address_line_2,
         }
       : mode === "edit"
-        ? { province_id: "", ward_id: "", address_line_1: "", address_line_2: "" }
+        ? {
+            province_id: "",
+            ward_id: "",
+            address_line_1: "",
+            address_line_2: "",
+          }
         : undefined;
   return {
     name_vi: values.name_vi,
@@ -129,9 +153,16 @@ export function OrganizationForm(props: OrganizationFormProps) {
   const organization = isEdit ? props.organization : null;
   const create = useCreateOrganization();
   const update = useUpdateOrganization(organization?.id ?? "");
-  const pending = create.isPending || update.isPending;
+  const activate = useActivateOrganization();
+  const suspend = useSuspendOrganization();
+  const restore = useRestoreOrganization();
+  const pending =
+    create.isPending ||
+    update.isPending ||
+    activate.isPending ||
+    suspend.isPending ||
+    restore.isPending;
   const leaveConfirmed = useRef(false);
-  const statusNotified = useRef(false);
   const [logo, setLogo] = useState<Blob | null>(null);
   const [banner, setBanner] = useState<Blob | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -151,30 +182,37 @@ export function OrganizationForm(props: OrganizationFormProps) {
     [t],
   );
 
+  const form = useForm<OrganizationFormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: organization
+      ? valuesFromOrganization(organization)
+      : emptyValues,
+  });
   const {
-    register,
     handleSubmit,
     reset,
     setError,
     setValue,
     watch,
-    formState: { errors, isDirty },
-  } = useForm<OrganizationFormValues>({
-    resolver: zodResolver(schema),
-    defaultValues: organization ? valuesFromOrganization(organization) : emptyValues,
-  });
+    clearErrors,
+    formState,
+  } = form;
+  const { isDirty } = formState;
 
   const provinceId = watch("province_id");
-  const wardId = watch("ward_id");
-  const organizationType = watch("organization_type");
   const slug = watch("slug");
   const { data: provinces = [] } = useProvinces("current_v2");
-  const { data: wards = [] } = useWards({ scheme: "current_v2", provinceId: provinceId || undefined });
+  const { data: wards = [] } = useWards({
+    scheme: "current_v2",
+    provinceId: provinceId || undefined,
+  });
 
   const organizationId = organization?.id;
   useEffect(() => {
     if (!organization) return;
     reset(valuesFromOrganization(organization));
+    // Reset only when opening another organization, not on every refetch.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [organizationId, reset]);
 
   useEffect(() => {
@@ -192,27 +230,34 @@ export function OrganizationForm(props: OrganizationFormProps) {
   }, [isDirty, logo, banner]);
 
   useEffect(() => {
-    if (!organization || statusNotified.current) return;
-    if (organization.status !== "suspended" && organization.status !== "archived") return;
-    statusNotified.current = true;
-    toast.info(t("editStatusNotice"));
-  }, [organization, t]);
-
-  useEffect(() => {
     const trimmed = slug.trim();
-    if (!trimmed) {
+    const savedSlug = organization?.slug;
+    const unchanged = savedSlug !== undefined && trimmed === savedSlug;
+    if (!trimmed || unchanged) {
       setSlugTaken(false);
+      clearErrors("slug");
       return;
     }
     const timer = window.setTimeout(() => {
       void checkOrganizationSlug(trimmed, organizationId)
-        .then((result) => setSlugTaken(!result.available))
+        .then((result) => {
+          if (watch("slug").trim() !== trimmed) return;
+          const taken = !result.available;
+          setSlugTaken(taken);
+          if (taken) {
+            setError("slug", { type: "validate", message: t("slugTaken") });
+            return;
+          }
+          clearErrors("slug");
+        })
         .catch(() => setSlugTaken(false));
     }, 400);
     return () => window.clearTimeout(timer);
-  }, [slug, organizationId]);
+  }, [slug, organizationId, organization?.slug, setError, clearErrors, t, watch]);
 
-  const backHref = organization ? `/organizations/${organization.id}` : "/organizations";
+  const backHref = organization
+    ? `/organizations/${organization.id}`
+    : "/organizations";
   const dirty = isDirty || Boolean(logo || banner);
 
   function requestLeave() {
@@ -236,9 +281,14 @@ export function OrganizationForm(props: OrganizationFormProps) {
     }
     let mapped = false;
     for (const detail of apiErr.details) {
-      if (!FORM_FIELDS.includes(detail.field as (typeof FORM_FIELDS)[number])) continue;
+      if (!FORM_FIELDS.includes(detail.field as (typeof FORM_FIELDS)[number]))
+        continue;
       setError(detail.field as (typeof FORM_FIELDS)[number], {
-        message: te(errorMessageKey(new ApiError(detail.code, detail.message, apiErr.status))),
+        message: te(
+          errorMessageKey(
+            new ApiError(detail.code, detail.message, apiErr.status),
+          ),
+        ),
       });
       mapped = true;
     }
@@ -277,6 +327,23 @@ export function OrganizationForm(props: OrganizationFormProps) {
       setError("slug", { message: t("slugTaken") });
       return;
     }
+    const nextStatus = values.status as OrgStatus;
+    if (organization && nextStatus !== organization.status) {
+      const changingToSuspended =
+        organization.status === "active" && nextStatus === "suspended";
+      const allowed =
+        (organization.status === "inactive" && nextStatus === "active") ||
+        (organization.status === "suspended" && nextStatus === "active") ||
+        changingToSuspended;
+      if (!allowed) {
+        setError("status", { message: t("statusUnsupported") });
+        return;
+      }
+      if (changingToSuspended && !values.suspend_reason.trim()) {
+        setError("suspend_reason", { message: t("statusReasonRequired") });
+        return;
+      }
+    }
     try {
       const body = profileBody(values, props.mode);
       let saved: AdminOrganization;
@@ -286,7 +353,8 @@ export function OrganizationForm(props: OrganizationFormProps) {
         saved = await update.mutateAsync(body);
       }
       if (logo) saved = await uploadOrganizationMedia(saved.id, "logo", logo);
-      if (banner) saved = await uploadOrganizationMedia(saved.id, "banner", banner);
+      if (banner)
+        saved = await uploadOrganizationMedia(saved.id, "banner", banner);
       setLogo(null);
       setBanner(null);
       setLogoPreview(null);
@@ -296,6 +364,24 @@ export function OrganizationForm(props: OrganizationFormProps) {
         router.push(`/organizations/${saved.id}`);
         return;
       }
+      if (organization && nextStatus !== organization.status) {
+        if (organization.status === "inactive" && nextStatus === "active") {
+          saved = await activate.mutateAsync(saved.id);
+        } else if (
+          organization.status === "suspended" &&
+          nextStatus === "active"
+        ) {
+          saved = await restore.mutateAsync(saved.id);
+        } else if (
+          organization.status === "active" &&
+          nextStatus === "suspended"
+        ) {
+          saved = await suspend.mutateAsync({
+            id: saved.id,
+            reason: values.suspend_reason.trim(),
+          });
+        }
+      }
       reset(valuesFromOrganization(saved));
       toast.success(t("saveSuccess"));
     } catch (err) {
@@ -303,9 +389,16 @@ export function OrganizationForm(props: OrganizationFormProps) {
     }
   }
 
-  const typeOptions: PopoverCommandOption[] = ORGANIZATION_TYPES.map((value) => ({
+  const typeOptions: PopoverCommandOption[] = ORGANIZATION_TYPES.map(
+    (value) => ({
+      value,
+      label: t(`type.${value}`),
+      keywords: value,
+    }),
+  );
+  const statusOptions: PopoverCommandOption[] = ORG_STATUSES.map((value) => ({
     value,
-    label: t(`type.${value}`),
+    label: t(`status.${value}`),
     keywords: value,
   }));
   const provinceOptions = provinces.map((unit) => ({
@@ -318,187 +411,197 @@ export function OrganizationForm(props: OrganizationFormProps) {
     label: unit.name,
     keywords: `${unit.name_vi} ${unit.name_en} ${unit.code}`,
   }));
-  const storedLogo = organization?.logo_file_id ? `/api/go/files/${organization.logo_file_id}` : null;
-  const storedBanner = organization?.banner_file_id ? `/api/go/files/${organization.banner_file_id}` : null;
 
-  return (
-    <EntityFormFrame
-      cancelLabel={t("createCancel")}
-      submitLabel={isEdit ? t("save") : t("createSubmit")}
-      onCancel={requestLeave}
-      pending={pending}
-      submitDisabled={isEdit && !dirty}
-      onSubmit={handleSubmit(onSubmit)}
-      cover={
-        <EntityCover
-          bannerLabel={t("fieldBanner")}
-          logoLabel={t("fieldLogo")}
-          viewLabel={t("viewImage")}
-          pickLabel={t("pickImage")}
-          bannerPreview={bannerPreview ?? storedBanner}
-          logoPreview={logoPreview ?? storedLogo}
-          onBanner={(file) => openCrop("banner", file)}
-          onLogo={(file) => openCrop("logo", file)}
-        />
-      }
-    >
-      <EntityFormSection title={t("sectionIdentity")}>
-        <FieldGroup className={entityFormFieldsClass}>
-          <TextField
-            id="org-name-vi"
-            label={t("fieldNameVi")}
-            error={errors.name_vi?.message}
-            autoComplete="organization"
-            {...register("name_vi")}
-          />
-          <TextField id="org-name-en" label={t("fieldNameEn")} error={errors.name_en?.message} {...register("name_en")} />
-          <TextField id="org-legal-name" label={t("fieldLegalName")} error={errors.legal_name?.message} {...register("legal_name")} />
-          <Field data-invalid={Boolean(errors.organization_type) || undefined}>
-            <FieldLabel>{t("fieldType")}</FieldLabel>
-            <PopoverCommandSelect
-              value={organizationType}
-              onValueChange={(value) =>
-                setValue("organization_type", value as OrganizationType, { shouldDirty: true, shouldValidate: true })
-              }
-              options={typeOptions}
-              aria-label={t("fieldType")}
-              className="w-full justify-between border border-input bg-background"
-            />
-            <FieldError>{errors.organization_type?.message}</FieldError>
-          </Field>
-          <TextField
-            id="org-slug"
-            label={t("fieldSlug")}
-            description={t("fieldSlugHint")}
-            error={errors.slug?.message || (slugTaken ? t("slugTaken") : undefined)}
-            {...register("slug")}
-          />
-        </FieldGroup>
-      </EntityFormSection>
-
-      <EntityFormSection title={t("sectionContact")}>
-        <FieldGroup className={entityFormFieldsClass}>
-          <TextField
-            id="org-email"
-            label={t("fieldEmail")}
-            type="email"
-            autoComplete="email"
-            error={errors.email?.message}
-            {...register("email")}
-          />
-          <TextField
-            id="org-phone"
-            label={t("fieldPhone")}
-            type="tel"
-            autoComplete="tel"
-            error={errors.phone?.message}
-            {...register("phone")}
-          />
-          <TextField
-            id="org-website"
-            label={t("fieldWebsite")}
-            type="url"
-            placeholder="https://"
-            error={errors.website?.message}
-            {...register("website")}
-          />
-          <TextField id="org-tax" label={t("fieldTaxCode")} error={errors.tax_code?.message} {...register("tax_code")} />
-        </FieldGroup>
-      </EntityFormSection>
-
-      {organization ? (
-        <EntityFormSection title={t("fieldOrgStatus")}>
-          <OrganizationStatusBadge kind="org" status={organization.status} />
-          <FieldDescription>{t("statusReadonly")}</FieldDescription>
-        </EntityFormSection>
-      ) : null}
-
-      <EntityFormSection title={t("sectionAddress")}>
-        <p className="text-sm text-muted-foreground">{t("addressHint")}</p>
-        <FieldGroup className={entityFormFieldsClass}>
-          <Field data-invalid={Boolean(errors.province_id) || undefined}>
-            <FieldLabel>{t("fieldProvince")}</FieldLabel>
-            <PopoverCommandSelect
-              value={provinceId}
-              onValueChange={(value) => {
-                setValue("province_id", value, { shouldDirty: true, shouldValidate: true });
-                setValue("ward_id", "", { shouldDirty: true });
-              }}
-              options={provinceOptions}
-              searchable
-              placeholder={t("fieldProvince")}
-              aria-label={t("fieldProvince")}
-              className="w-full justify-between border border-input bg-background"
-            />
-            <FieldError>{errors.province_id?.message}</FieldError>
-          </Field>
-          <Field data-invalid={Boolean(errors.ward_id) || undefined}>
-            <FieldLabel>{t("fieldWard")}</FieldLabel>
-            <PopoverCommandSelect
-              value={wardId}
-              onValueChange={(value) => setValue("ward_id", value, { shouldDirty: true, shouldValidate: true })}
-              options={wardOptions}
-              searchable
-              disabled={!provinceId}
-              placeholder={t("fieldWard")}
-              aria-label={t("fieldWard")}
-              className="w-full justify-between border border-input bg-background"
-            />
-            <FieldError>{errors.ward_id?.message}</FieldError>
-          </Field>
-          <TextField
-            id="org-address-1"
-            label={t("fieldAddress1")}
-            error={errors.address_line_1?.message}
-            {...register("address_line_1")}
-          />
-          <TextField
-            id="org-address-2"
-            label={t("fieldAddress2")}
-            error={errors.address_line_2?.message}
-            {...register("address_line_2")}
-          />
-        </FieldGroup>
-      </EntityFormSection>
-
-      <ImageCropDialog
-        open={cropTarget !== null}
-        title={cropTarget === "banner" ? t("fieldBanner") : t("fieldLogo")}
-        imageSrc={cropSrc}
-        aspect={cropTarget === "banner" ? 3 : 1}
-        outputWidth={cropTarget === "banner" ? 1200 : 512}
-        outputHeight={cropTarget === "banner" ? 400 : 512}
-        zoomLabel={t("cropZoom")}
-        cancelLabel={t("cropCancel")}
-        applyLabel={t("cropApply")}
-        onOpenChange={(open) => {
-          if (!open) {
-            setCropTarget(null);
-            setCropSrc((current) => {
-              if (current) URL.revokeObjectURL(current);
-              return null;
-            });
-          }
-        }}
-        onCropped={storeCrop}
-      />
-    </EntityFormFrame>
+  const blocks = useMemo<EntityFormBlock<OrganizationFormValues>[]>(
+    () => [
+      {
+        id: "identity",
+        title: t("sectionIdentity"),
+        fields: [
+          {
+            kind: "text",
+            name: "name_vi",
+            label: t("fieldNameVi"),
+            required: true,
+            autoComplete: "organization",
+          },
+          {
+            kind: "text",
+            name: "name_en",
+            label: t("fieldNameEn"),
+            required: true,
+          },
+          { kind: "text", name: "legal_name", label: t("fieldLegalName") },
+          {
+            kind: "select",
+            name: "organization_type",
+            label: t("fieldType"),
+            required: true,
+            options: typeOptions,
+          },
+          {
+            kind: "text",
+            name: "slug",
+            label: t("fieldSlug"),
+            description: t("fieldSlugHint"),
+            error: slugTaken ? t("slugTaken") : undefined,
+          },
+          {
+            kind: "select",
+            name: "status",
+            label: t("fieldOrgStatus"),
+            options: statusOptions,
+            visible: () => Boolean(organization),
+            onValueChange: () => {
+              clearErrors(["status", "suspend_reason"]);
+            },
+          },
+          {
+            kind: "text",
+            name: "suspend_reason",
+            label: t("suspendReason"),
+            required: true,
+            visible: (values) =>
+              Boolean(
+                organization &&
+                values.status === "suspended" &&
+                organization.status !== "suspended",
+              ),
+          },
+        ],
+      },
+      {
+        id: "contact",
+        title: t("sectionContact"),
+        fields: [
+          {
+            kind: "text",
+            name: "email",
+            label: t("fieldEmail"),
+            inputType: "email",
+            autoComplete: "email",
+          },
+          {
+            kind: "text",
+            name: "phone",
+            label: t("fieldPhone"),
+            inputType: "tel",
+            autoComplete: "tel",
+          },
+          {
+            kind: "text",
+            name: "website",
+            label: t("fieldWebsite"),
+            inputType: "url",
+            placeholder: "https://",
+          },
+          { kind: "text", name: "tax_code", label: t("fieldTaxCode") },
+        ],
+      },
+      {
+        id: "address",
+        title: t("sectionAddress"),
+        description: t("addressHint"),
+        fields: [
+          {
+            kind: "select",
+            name: "province_id",
+            label: t("fieldProvince"),
+            required: true,
+            options: provinceOptions,
+            searchable: true,
+            placeholder: t("fieldProvince"),
+            onValueChange: () => {
+              setValue("ward_id", "", { shouldDirty: true });
+            },
+          },
+          {
+            kind: "select",
+            name: "ward_id",
+            label: t("fieldWard"),
+            required: true,
+            options: wardOptions,
+            searchable: true,
+            placeholder: t("fieldWard"),
+            disabled: (values) => !values.province_id,
+          },
+          {
+            kind: "text",
+            name: "address_line_1",
+            label: t("fieldAddress1"),
+            span: 2,
+          },
+          // { kind: "text", name: "address_line_2", label: t("fieldAddress2") },
+        ],
+      },
+    ],
+    [
+      t,
+      typeOptions,
+      statusOptions,
+      provinceOptions,
+      wardOptions,
+      slugTaken,
+      organization,
+      clearErrors,
+      setValue,
+    ],
   );
-}
 
-function TextField({
-  id,
-  label,
-  error,
-  description,
-  ...props
-}: ComponentProps<typeof Input> & { id: string; label: string; error?: string; description?: string }) {
+  const storedLogo = organization?.logo_file_id
+    ? `/api/go/files/${organization.logo_file_id}`
+    : null;
+  const storedBanner = organization?.banner_file_id
+    ? `/api/go/files/${organization.banner_file_id}`
+    : null;
+
   return (
-    <Field data-invalid={Boolean(error) || undefined}>
-      <FieldLabel htmlFor={id}>{label}</FieldLabel>
-      <Input id={id} aria-invalid={Boolean(error) || undefined} {...props} />
-      {description ? <FieldDescription>{description}</FieldDescription> : null}
-      <FieldError>{error}</FieldError>
-    </Field>
+    <FormProvider {...form}>
+      <EntityFormFrame
+        cancelLabel={t("createCancel")}
+        submitLabel={isEdit ? t("save") : t("createSubmit")}
+        onCancel={requestLeave}
+        pending={pending}
+        submitDisabled={isEdit && !dirty}
+        onSubmit={handleSubmit(onSubmit)}
+        cover={
+          <EntityCover
+            bannerLabel={t("fieldBanner")}
+            logoLabel={t("fieldLogo")}
+            viewLabel={t("viewImage")}
+            pickLabel={t("pickImage")}
+            viewAvatarLabel={t("viewAvatar")}
+            changeImageLabel={t("changeImage")}
+            bannerPreview={bannerPreview ?? storedBanner}
+            logoPreview={logoPreview ?? storedLogo}
+            onBanner={(file) => openCrop("banner", file)}
+            onLogo={(file) => openCrop("logo", file)}
+          />
+        }
+      >
+        <EntityMetadataForm blocks={blocks} />
+        <ImageCropDialog
+          open={cropTarget !== null}
+          title={cropTarget === "banner" ? t("fieldBanner") : t("fieldLogo")}
+          imageSrc={cropSrc}
+          aspect={cropTarget === "banner" ? 3 : 1}
+          outputWidth={cropTarget === "banner" ? 1200 : 512}
+          outputHeight={cropTarget === "banner" ? 400 : 512}
+          zoomLabel={t("cropZoom")}
+          cancelLabel={t("cropCancel")}
+          applyLabel={t("cropApply")}
+          onOpenChange={(open) => {
+            if (!open) {
+              setCropTarget(null);
+              setCropSrc((current) => {
+                if (current) URL.revokeObjectURL(current);
+                return null;
+              });
+            }
+          }}
+          onCropped={storeCrop}
+        />
+      </EntityFormFrame>
+    </FormProvider>
   );
 }
