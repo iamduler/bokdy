@@ -1,15 +1,30 @@
 "use client";
 
 import { Button, Label } from "@bokdy/ui";
+import {
+  Building2,
+  PauseCircle,
+  Plus,
+  PowerOff,
+  ShieldCheck,
+} from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 
 import {
   DataListLayout,
   type DataListStatItem,
+  type DataListStatusTab,
 } from "@/components/data-list";
 import { EntityUnavailable } from "@/components/entity/unavailable";
+import type { OrganizationDirectoryStats } from "@/components/organizations/organization-directory-stats";
 import {
   PopoverCommandSelect,
   type PopoverCommandOption,
@@ -18,13 +33,25 @@ import { useProvinces } from "@/hooks/use-admin-units";
 import { useRouter } from "@/i18n/navigation";
 import type { OrgStatus } from "@/lib/api/admin";
 
-const ORG_STATUSES: OrgStatus[] = ["active", "inactive", "suspended", "archived"];
+const ORG_STATUSES: OrgStatus[] = [
+  "active",
+  "inactive",
+  "suspended",
+  "archived",
+];
+
+const STATUS_DOT: Record<OrgStatus, string> = {
+  active: "bg-emerald-500",
+  inactive: "bg-amber-500",
+  suspended: "bg-rose-500",
+  archived: "bg-violet-500",
+};
 
 type OrganizationDirectoryToolbarProps = {
   q: string;
   status: OrgStatus | "";
   provinceId: string;
-  stats: DataListStatItem[];
+  directoryStats: OrganizationDirectoryStats;
   statsLoading?: boolean;
   onOpenCreate: () => void;
   children: ReactNode;
@@ -34,7 +61,7 @@ export function OrganizationDirectoryToolbar({
   q,
   status,
   provinceId,
-  stats,
+  directoryStats,
   statsLoading,
   onOpenCreate,
   children,
@@ -72,17 +99,6 @@ export function OrganizationDirectoryToolbar({
     return () => window.clearTimeout(timer);
   }, [search, q, replaceParams]);
 
-  const statusOptions = useMemo(
-    () => [
-      { value: "", label: t("allStatuses") },
-      ...ORG_STATUSES.map((item) => ({
-        value: item,
-        label: t(`status.${item}`),
-      })),
-    ],
-    [t],
-  );
-
   const provinceOptions = useMemo<PopoverCommandOption[]>(
     () => [
       {
@@ -110,6 +126,70 @@ export function OrganizationDirectoryToolbar({
     [t],
   );
 
+  const stats = useMemo<DataListStatItem[]>(
+    () => [
+      {
+        key: "total",
+        label: t("directoryKpis.total"),
+        value: directoryStats.total,
+        secondary: t("directoryKpis.branchSecondary", {
+          count: directoryStats.branchTotal,
+        }),
+        icon: <Building2 className="size-4" aria-hidden />,
+        iconTone: "bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300",
+      },
+      {
+        key: "active",
+        label: t("directoryKpis.active"),
+        value: directoryStats.active,
+        icon: <ShieldCheck className="size-4" aria-hidden />,
+        iconTone:
+          "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
+      },
+      {
+        key: "inactive",
+        label: t("directoryKpis.inactive"),
+        value: directoryStats.inactive,
+        icon: <PowerOff className="size-4" aria-hidden />,
+        iconTone:
+          "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
+      },
+      {
+        key: "suspended",
+        label: t("directoryKpis.suspended"),
+        value: directoryStats.suspended,
+        icon: <PauseCircle className="size-4" aria-hidden />,
+        iconTone:
+          "bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300",
+      },
+    ],
+    [directoryStats, t],
+  );
+
+  const statusTabs = useMemo<DataListStatusTab[]>(
+    () => [
+      {
+        value: "",
+        label: t("allStatuses"),
+        count: directoryStats.total,
+      },
+      ...ORG_STATUSES.map((item) => ({
+        value: item,
+        label: t(`status.${item}`),
+        dotClass: STATUS_DOT[item],
+        count:
+          item === "active"
+            ? directoryStats.active
+            : item === "inactive"
+              ? directoryStats.inactive
+              : item === "suspended"
+                ? directoryStats.suspended
+                : undefined,
+      })),
+    ],
+    [directoryStats, t],
+  );
+
   const hasAdvancedFilters = Boolean(provinceId);
 
   function clearAdvanced() {
@@ -127,26 +207,30 @@ export function OrganizationDirectoryToolbar({
 
   return (
     <DataListLayout
+      title={t("title")}
       stats={stats}
       statsLoading={statsLoading}
-      advancedFilterCount={provinceId ? 1 : 0}
       primaryAction={
-        <Button type="button" variant="default" size="sm" onClick={onOpenCreate}>
-          + {t("create")}
+        <Button
+          type="button"
+          size="sm"
+          className="soft-cta-shadow h-10 gap-1.5 rounded-full px-4"
+          onClick={onOpenCreate}
+        >
+          <Plus className="size-4" aria-hidden />
+          {t("create")}
         </Button>
       }
+      statusTabs={statusTabs}
+      statusValue={status}
+      onStatusChange={(value) => replaceParams({ status: value || undefined })}
+      statusAriaLabel={t("statusFilter")}
       searchValue={search}
       onSearchChange={setSearch}
       searchPlaceholder={t("directoryFilters.searchPlaceholder")}
-      quickFilter={{
-        ariaLabel: t("statusFilter"),
-        value: status,
-        placeholder: t("directoryFilters.statusPlaceholder"),
-        options: statusOptions,
-        onChange: (value) => replaceParams({ status: value || undefined }),
-      }}
       advancedLabel={td("advancedFilters")}
       hasAdvancedFilters={hasAdvancedFilters}
+      advancedFilterCount={provinceId ? 1 : 0}
       onClearFilters={hasAdvancedFilters ? clearAdvanced : undefined}
       clearLabel={t("directoryFilters.clear")}
       advancedContent={
@@ -175,7 +259,10 @@ export function OrganizationDirectoryToolbar({
             <Label className="text-xs text-muted-foreground">
               {t("directoryFilters.plan")}
             </Label>
-            <EntityUnavailable reason={t("directoryFilters.planUnavailable")} className="w-full">
+            <EntityUnavailable
+              reason={t("directoryFilters.planUnavailable")}
+              className="w-full"
+            >
               <PopoverCommandSelect
                 value=""
                 onValueChange={() => undefined}
@@ -193,7 +280,7 @@ export function OrganizationDirectoryToolbar({
               type="button"
               variant="ghost"
               size="sm"
-              className="w-full"
+              className="w-full rounded-full"
               onClick={clearAll}
             >
               {t("directoryFilters.clear")}

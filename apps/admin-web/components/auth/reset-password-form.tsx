@@ -15,7 +15,10 @@ import {
 import { Link } from "@/i18n/navigation";
 import { useResetPassword } from "@/hooks/use-auth";
 import { ApiError, errorMessageKey } from "@/lib/api/errors";
-import { resetPasswordSchema, type ResetPasswordFormValues } from "@/lib/validation/auth";
+import {
+  resetPasswordSchema,
+  type ResetPasswordFormValues,
+} from "@/lib/validation/auth";
 
 export function ResetPasswordForm() {
   const t = useTranslations("auth");
@@ -48,11 +51,19 @@ export function ResetPasswordForm() {
   async function onSubmit(values: ResetPasswordFormValues) {
     setError(null);
     try {
-      await resetPassword.mutateAsync({ token, new_password: values.newPassword });
+      await resetPassword.mutateAsync({
+        token,
+        new_password: values.newPassword,
+      });
       setSuccess(true);
     } catch (err) {
-      const apiErr = err instanceof ApiError ? err : new ApiError("INTERNAL", "", 500);
-      setError(apiErr.status === 401 ? t("resetTokenInvalid") : te(errorMessageKey(apiErr)));
+      const apiErr =
+        err instanceof ApiError ? err : new ApiError("INTERNAL", "", 500);
+      setError(
+        apiErr.status === 401
+          ? t("resetTokenInvalid")
+          : te(errorMessageKey(apiErr)),
+      );
     }
   }
 
@@ -64,10 +75,16 @@ export function ResetPasswordForm() {
           description={t("resetTokenMissing")}
         />
         <div className="space-y-3">
-          <Link href="/forgot-password" className="block text-sm font-medium text-shell-text hover:underline">
+          <Link
+            href="/forgot-password"
+            className="block text-sm font-medium text-shell-text"
+          >
             {t("forgotPasswordLink")}
           </Link>
-          <Link href="/login" className="block text-sm text-shell-text-muted hover:text-shell-text hover:underline">
+          <Link
+            href="/login"
+            className="block text-sm text-shell-text-muted hover:text-shell-text"
+          >
             {t("backToLogin")}
           </Link>
         </div>
@@ -82,7 +99,7 @@ export function ResetPasswordForm() {
           title={t("resetPasswordTitle")}
           description={t("resetPasswordSuccess")}
         />
-        <Link href="/login" className="text-sm font-medium text-shell-text hover:underline">
+        <Link href="/login" className="text-sm font-medium text-shell-text">
           {t("backToLogin")}
         </Link>
       </div>
@@ -91,7 +108,10 @@ export function ResetPasswordForm() {
 
   return (
     <div className="space-y-8 text-shell-text">
-      <AdminAuthHeading title={t("resetPasswordTitle")} description={t("resetPasswordHint")} />
+      <AdminAuthHeading
+        title={t("resetPasswordTitle")}
+        description={t("resetPasswordHint")}
+      />
       <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
         <AuthPasswordField
           label={t("newPassword")}
@@ -119,7 +139,10 @@ export function ResetPasswordForm() {
           {t("submitResetPassword")}
         </AuthActionButton>
         <p className="text-sm">
-          <Link href="/login" className="text-shell-text-muted hover:text-shell-text hover:underline">
+          <Link
+            href="/login"
+            className="text-shell-text-muted hover:text-shell-text"
+          >
             {t("backToLogin")}
           </Link>
         </p>

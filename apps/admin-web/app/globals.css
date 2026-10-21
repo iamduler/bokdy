@@ -9,7 +9,7 @@ body {
   min-height: 100dvh;
 }
 
-/* Action color is sky. Body text stays neutral. */
+/* Action color is sky. Body text stays neutral. Soft UI chrome uses shell canvas. */
 :root {
   --bokdy-primary: #0ea5e9;
   --bokdy-primary-foreground: #ffffff;
@@ -19,6 +19,7 @@ body {
   --sidebar-accent: rgba(14, 165, 233, 0.12);
   --sidebar-accent-foreground: #0369a1;
   --sidebar-ring: #0ea5e9;
+  /* Soft shadow tokens live in @bokdy/ui tokens.css (.shell--admin). */
 }
 
 .dark {
@@ -45,25 +46,61 @@ body {
   }
 }
 
+/* Soft UI icon rail — circular sky active / hover */
+.soft-icon-rail .sidebar-menu-button {
+  border-radius: 9999px !important;
+}
+
 .sidebar-menu-button:hover,
 .sidebar-menu-button:active,
 .sidebar-menu-button[data-state="open"],
-.sidebar-menu-button[data-state="open"]:hover {
+.sidebar-menu-button[data-state="open"]:hover,
+.sidebar-menu-button[data-active="true"] {
   background: var(--bokdy-primary);
   color: var(--bokdy-primary-foreground);
+  border-radius: 9999px;
 }
 
 .page-canvas {
-  background-color: #f3f3f3;
+  background-color: var(--shell-bg, #f3efe8);
   min-height: 100%;
 }
 
 .dark .page-canvas {
-  background-color: #27272a;
+  background-color: var(--shell-bg, #070d1c);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not(.light) .page-canvas {
-    background-color: #27272a;
+    background-color: var(--shell-bg, #070d1c);
+  }
+}
+
+/* Soft UI floating icon rail — content-height pill, not full viewport */
+.soft-icon-rail [data-slot="sidebar-inner"],
+.soft-icon-rail > div {
+  background: transparent !important;
+  border: none !important;
+}
+
+@media (min-width: 768px) {
+  /* Fixed wrapper: hug content under the viewport header */
+  .soft-icon-rail {
+    top: calc(4rem + 0.75rem) !important;
+    bottom: auto !important;
+    height: auto !important;
+    inset-block-end: auto !important;
+    padding: 0 0 0 0.75rem !important;
+    align-items: flex-start !important;
+  }
+
+  .soft-icon-rail [data-sidebar="sidebar"] {
+    height: auto !important;
+    width: 100%;
+    border-radius: 1.75rem;
+    box-shadow: var(--soft-shadow-rail);
+    background: var(--shell-card, #ffffff) !important;
+    border: none !important;
+    overflow: visible;
   }
 }

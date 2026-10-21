@@ -948,7 +948,7 @@ paths:
     post:
       tags: [Branches]
       summary: Create branch
-      description: Owner only. Initial status `inactive`. Creates empty location_settings (no scheduling rows).
+      description: Owner or system admin. Initial status `inactive`. Creates empty location_settings (no scheduling rows).
       security:
         - bearerAuth: []
       parameters:

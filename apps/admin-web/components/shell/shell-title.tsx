@@ -44,7 +44,7 @@ export function useShellTitle() {
   return ctx;
 }
 
-/** Set the shell header title (and document title) for the current page. */
+/** Set document title for the current page (Soft UI directories own in-page H1). */
 export function usePageShellTitle(title: string) {
   const { setTitle } = useShellTitle();
 
@@ -59,14 +59,14 @@ export function usePageShellTitle(title: string) {
   }, [title, setTitle]);
 }
 
-/** Render page actions into the fixed shell header. They leave with this component. */
+/** Render page actions into the Soft UI top chrome (e.g. + New). */
 export function usePageShellActions(actions: ReactNode) {
   const { actionSlot } = useShellTitle();
   if (!actionSlot) return null;
   return createPortal(actions, actionSlot);
 }
 
-/** Render a leading control, such as a back link, into the fixed shell header. */
+/** Render a leading control, such as a back link, into the top chrome. */
 export function usePageShellLeading(leading: ReactNode) {
   const { leadingSlot } = useShellTitle();
   if (!leadingSlot) return null;

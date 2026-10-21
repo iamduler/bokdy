@@ -1,10 +1,19 @@
 "use client";
 
-import { Badge, Button, Tooltip, TooltipContent, TooltipTrigger, cn } from "@bokdy/ui";
+import { Button, Tooltip, TooltipContent, TooltipTrigger, cn } from "@bokdy/ui";
 import type { ReactNode } from "react";
 
+/** Soft UI muted chip (Vessa channel-style). */
 export function EntityUnavailableBadge({ label }: { label: string }) {
-  return <Badge variant="outline">{label}</Badge>;
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground",
+      )}
+    >
+      {label}
+    </span>
+  );
 }
 
 export function EntityUnavailable({

@@ -70,6 +70,13 @@ type UpdateBranchInput struct {
 	Addresses *[]BranchAddressInput
 }
 
+func (s *BranchService) requireReader(ctx context.Context, orgID, actor uuid.UUID) error {
+	if requestctx.IsSystemAdmin(ctx) {
+		return nil
+	}
+	return s.orgSvc.RequireMembership(ctx, orgID, actor)
+}
+
 func (s *BranchService) requireOrgHeader(ctx context.Context) (uuid.UUID, error) {
 	orgID, ok := requestctx.OrganizationID(ctx)
 	if !ok {
@@ -83,7 +90,7 @@ func (s *BranchService) Create(ctx context.Context, actor uuid.UUID, in CreateBr
 	if err != nil {
 		return nil, err
 	}
-	if err := s.orgSvc.RequireOwner(ctx, orgID, actor); err != nil {
+	if err := s.orgSvc.RequireOwnerOrAdmin(ctx, orgID, actor); err != nil {
 		return nil, err
 	}
 	nameEn := strings.TrimSpace(in.NameEn)
@@ -162,7 +169,7 @@ func (s *BranchService) List(ctx context.Context, actor uuid.UUID) ([]entity.Bra
 	if err != nil {
 		return nil, err
 	}
-	if err := s.orgSvc.RequireMembership(ctx, orgID, actor); err != nil {
+	if err := s.requireReader(ctx, orgID, actor); err != nil {
 		return nil, err
 	}
 	branches, err := s.branches.ListByOrg(ctx, orgID)
@@ -177,7 +184,7 @@ func (s *BranchService) Get(ctx context.Context, branchID, actor uuid.UUID) (*en
 	if err != nil {
 		return nil, err
 	}
-	if err := s.orgSvc.RequireMembership(ctx, orgID, actor); err != nil {
+	if err := s.requireReader(ctx, orgID, actor); err != nil {
 		return nil, err
 	}
 	branch, err := s.branches.FindByID(ctx, orgID, branchID)
@@ -195,7 +202,7 @@ func (s *BranchService) Update(ctx context.Context, branchID, actor uuid.UUID, i
 	if err != nil {
 		return nil, err
 	}
-	if err := s.orgSvc.RequireOwner(ctx, orgID, actor); err != nil {
+	if err := s.orgSvc.RequireOwnerOrAdmin(ctx, orgID, actor); err != nil {
 		return nil, err
 	}
 	org, err := s.orgs.FindByID(ctx, orgID)
@@ -339,7 +346,7 @@ func (s *BranchService) transition(
 	if err != nil {
 		return err
 	}
-	if err := s.orgSvc.RequireOwner(ctx, orgID, actor); err != nil {
+	if err := s.orgSvc.RequireOwnerOrAdmin(ctx, orgID, actor); err != nil {
 		return err
 	}
 	org, err := s.orgs.FindByID(ctx, orgID)

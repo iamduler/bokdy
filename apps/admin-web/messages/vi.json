@@ -85,6 +85,15 @@
     "notificationsUnavailable": "Thông báo chưa có — chưa có API.",
     "userMenu": "Menu tài khoản",
     "menuBack": "Quay lại",
+    "greetingMorning": "Chào buổi sáng",
+    "greetingAfternoon": "Chào buổi chiều",
+    "greetingEvening": "Chào buổi tối",
+    "themeToggle": "Đổi giao diện",
+    "help": "Trợ giúp",
+    "helpUnavailable": "Trung tâm trợ giúp chưa có — chưa có tài liệu.",
+    "newAction": "Tạo mới",
+    "newActionUnavailable": "Không có thao tác tạo mới trên trang này.",
+    "audienceSegment": "Danh mục người dùng",
     "navGroups": {
       "platform": "Nền tảng",
       "users": "Người dùng",
@@ -185,7 +194,8 @@
       "total": "Tổng tổ chức",
       "active": "Đang hoạt động",
       "inactive": "Chưa kích hoạt",
-      "suspended": "Tạm khóa"
+      "suspended": "Tạm khóa",
+      "branchSecondary": "{count, plural, one {# chi nhánh} other {# chi nhánh}}"
     },
     "directoryFilters": {
       "searchPlaceholder": "Tìm tổ chức, mã số, email…",
@@ -218,6 +228,7 @@
       "health": "Health",
       "risk": "Rủi ro",
       "status": "Trạng thái",
+      "tenantStatus": "Tenant",
       "actions": ""
     },
     "ownerUnavailable": "Chủ sở hữu chưa có",
@@ -578,6 +589,31 @@
       "active": "Hoạt động",
       "suspended": "Tạm ngưng",
       "canceled": "Đã hủy"
+    },
+    "branch": {
+      "createTitle": "Chi nhánh mới",
+      "fullView": "Xem đầy đủ",
+      "editTitle": "Sửa chi nhánh",
+      "editProfile": "Sửa chi nhánh",
+      "backToList": "Danh sách chi nhánh",
+      "empty": "Chưa có chi nhánh.",
+      "emptyValue": "-",
+      "loadError": "Không tải được chi nhánh.",
+      "notFound": "Không tìm thấy chi nhánh.",
+      "contact": "Liên hệ",
+      "address": "Địa chỉ",
+      "fieldTimezone": "Múi giờ",
+      "fieldStatus": "Trạng thái",
+      "statusUnsupported": "Không thể đổi sang trạng thái này.",
+      "addressIncomplete": "Chọn cả tỉnh/thành và phường/xã, hoặc để trống địa chỉ.",
+      "createSuccess": "Đã tạo chi nhánh.",
+      "saveSuccess": "Đã lưu chi nhánh.",
+      "status": {
+        "active": "Đang mở",
+        "inactive": "Đã đóng",
+        "maintenance": "Bảo trì",
+        "archived": "Lưu trữ"
+      }
     }
   },
   "users": {
@@ -633,6 +669,8 @@
       "filterSearch": "Tìm…",
       "filterEmpty": "Không có kết quả",
       "resultCount": "{count} kết quả",
+      "clear": "Xóa",
+      "noAdvanced": "Không có bộ lọc nâng cao cho đối tượng này.",
       "statusOption": {
         "active": "Hoạt động",
         "suspended": "Tạm ngưng",

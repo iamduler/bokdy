@@ -85,6 +85,15 @@
     "notificationsUnavailable": "Notifications are unavailable — no API yet.",
     "userMenu": "Account menu",
     "menuBack": "Back",
+    "greetingMorning": "Good morning",
+    "greetingAfternoon": "Good afternoon",
+    "greetingEvening": "Good evening",
+    "themeToggle": "Toggle theme",
+    "help": "Help",
+    "helpUnavailable": "Help center is unavailable — no docs yet.",
+    "newAction": "New",
+    "newActionUnavailable": "Create action is unavailable on this page.",
+    "audienceSegment": "User directories",
     "navGroups": {
       "platform": "Platform",
       "users": "Users",
@@ -185,7 +194,8 @@
       "total": "Total organizations",
       "active": "Active",
       "inactive": "Inactive",
-      "suspended": "Suspended"
+      "suspended": "Suspended",
+      "branchSecondary": "{count, plural, one {# branch} other {# branches}}"
     },
     "directoryFilters": {
       "searchPlaceholder": "Search organizations, code, email…",
@@ -218,6 +228,7 @@
       "health": "Health",
       "risk": "Risk",
       "status": "Status",
+      "tenantStatus": "Tenant",
       "actions": ""
     },
     "ownerUnavailable": "Owner unavailable",
@@ -578,6 +589,31 @@
       "active": "Active",
       "suspended": "Suspended",
       "canceled": "Canceled"
+    },
+    "branch": {
+      "createTitle": "New branch",
+      "fullView": "Full view",
+      "editTitle": "Edit branch",
+      "editProfile": "Edit branch",
+      "backToList": "Branch list",
+      "empty": "No branches yet.",
+      "emptyValue": "-",
+      "loadError": "Could not load the branch.",
+      "notFound": "Branch not found.",
+      "contact": "Contact",
+      "address": "Address",
+      "fieldTimezone": "Timezone",
+      "fieldStatus": "Status",
+      "statusUnsupported": "This status change is not allowed.",
+      "addressIncomplete": "Choose both a province and a ward, or leave the address empty.",
+      "createSuccess": "Branch created.",
+      "saveSuccess": "Branch saved.",
+      "status": {
+        "active": "Open",
+        "inactive": "Closed",
+        "maintenance": "Maintenance",
+        "archived": "Archived"
+      }
     }
   },
   "users": {
@@ -633,6 +669,8 @@
       "filterSearch": "Search…",
       "filterEmpty": "No matches",
       "resultCount": "{count} results",
+      "clear": "Clear",
+      "noAdvanced": "No extra filters for this audience.",
       "statusOption": {
         "active": "Active",
         "suspended": "Suspended",

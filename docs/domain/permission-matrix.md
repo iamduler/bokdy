@@ -56,10 +56,10 @@ Phase column is the earliest phase that may expose the action as an HTTP API.
 | Create custom role | UC-ROLE-001 | - | - | - | P | - | post-mvp |
 | Update custom role | UC-ROLE-002 | - | - | - | P | - | post-mvp |
 | Delete custom role | UC-ROLE-003 | - | - | - | P | - | post-mvp |
-| Create branch | UC-BRANCH-001 | - | - | - | Y | - | mvp |
-| Update branch | UC-BRANCH-002 | - | - | - | Y | - | mvp |
-| Open branch | UC-BRANCH-003 | - | - | - | Y | - | mvp |
-| Close branch | UC-BRANCH-004 | - | - | - | Y | - | mvp |
+| Create branch | UC-BRANCH-001 | - | - | - | Y | Y | mvp |
+| Update branch | UC-BRANCH-002 | - | - | - | Y | Y | mvp |
+| Open branch | UC-BRANCH-003 | - | - | - | Y | Y | mvp |
+| Close branch | UC-BRANCH-004 | - | - | - | Y | Y | mvp |
 | Archive branch | UC-BRANCH-005 | - | - | - | Y | - | mvp |
 | Create court type | UC-COURT-TYPE-001 | - | - | - | Y | - | mvp |
 | Update court type | UC-COURT-TYPE-002 | - | - | - | Y | - | mvp |

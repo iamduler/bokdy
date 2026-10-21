@@ -157,7 +157,7 @@ export function goProxyHeaders(req: { headers: Headers }): Record<string, string
   headers.traceparent = traceparent;
   if (incomingTS) headers.tracestate = incomingTS;
   if (traceId) headers["X-Trace-ID"] = traceId;
-  for (const name of ["X-Request-ID", "X-Correlation-ID"] as const) {
+  for (const name of ["X-Request-ID", "X-Correlation-ID", "X-Organization-ID"] as const) {
     const value = req.headers.get(name);
     if (value) headers[name] = value;
   }
@@ -187,7 +187,7 @@ export async function proxyToGo(path: string, init: RequestInit = {}): Promise<R
   if (tokens?.accessToken) {
     headers.set("Authorization", `Bearer ${tokens.accessToken}`);
   }
-  if (tokens?.organizationId) {
+  if (!headers.has("X-Organization-ID") && tokens?.organizationId) {
     headers.set("X-Organization-ID", tokens.organizationId);
   }
   const url = `${goBaseUrl().replace(/\/$/, "")}/${path.replace(/^\//, "")}`;

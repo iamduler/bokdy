@@ -1,31 +1,23 @@
 "use client";
 
-import {
-  Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@bokdy/ui";
-import { Eye } from "lucide-react";
-import { useTranslations } from "next-intl";
-
-import { UserStatusBadge } from "@/components/users/shared/user-status-badge";
-import { UserUnavailableBadge } from "@/components/users/shared/user-unavailable-badge";
-import { Link, useRouter } from "@/i18n/navigation";
+import { Card, CardContent } from "@bokdy/ui";
 import type {
-  AdminOwnerUser,
-  AdminPlayerUser,
-  AdminSystemUser,
-  UserAudience,
-} from "@/lib/api/admin-users";
+  PaginationState,
+  RowSelectionState,
+  SortingState,
+} from "@tanstack/react-table";
+import { useTranslations } from "next-intl";
+import { useMemo, useState } from "react";
 
-type UserRow = AdminPlayerUser | AdminOwnerUser | AdminSystemUser;
+import { DATA_LIST_PAGE_SIZE, DataTable } from "@/components/data-list";
+import {
+  displayName,
+  useUserColumns,
+  type UserRow,
+} from "@/components/users/shared/user-columns";
+import { UserStatusBadge } from "@/components/users/shared/user-status-badge";
+import { Link } from "@/i18n/navigation";
+import type { UserAudience } from "@/lib/api/admin-users";
 
 type UserListProps = {
   audience: UserAudience;
@@ -36,21 +28,6 @@ type UserListProps = {
   isFetching: boolean;
   onRetry: () => void;
 };
-
-function displayName(user: UserRow) {
-  return user.display_name || user.full_name || user.email || user.public_id;
-}
-
-function formatLastLogin(at?: string | null) {
-  if (!at) return "—";
-  try {
-    return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(
-      new Date(at),
-    );
-  } catch {
-    return at;
-  }
-}
 
 export function UserList({
   audience,
@@ -63,135 +40,91 @@ export function UserList({
 }: UserListProps) {
   const t = useTranslations("users");
   const tc = useTranslations("common");
-  const router = useRouter();
+  const td = useTranslations("dataList");
+  const columns = useUserColumns(audience);
   const base = `/users/${audience}`;
 
-  if (isLoading) {
-    return <p className="px-4 py-6 text-sm text-muted-foreground md:px-6">{tc("loading")}</p>;
-  }
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: DATA_LIST_PAGE_SIZE,
+  });
 
-  if (isError) {
-    return (
-      <div className="mx-4 my-4 space-y-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4 md:mx-6">
-        <p className="text-sm text-destructive">{t("loadError")}</p>
-        <Button variant="outline" size="sm" onClick={onRetry} disabled={isFetching}>
-          {tc("retry")}
-        </Button>
-      </div>
-    );
-  }
+  const sortedForMobile = useMemo(() => {
+    const sort = sorting[0];
+    if (!sort) return users;
+    const dir = sort.desc ? -1 : 1;
+    return [...users].sort((a, b) => {
+      if (sort.id === "user") {
+        return displayName(a).localeCompare(displayName(b)) * dir;
+      }
+      if (sort.id === "status") {
+        return a.status.localeCompare(b.status) * dir;
+      }
+      if (sort.id === "last_login") {
+        return (
+          ((a.last_login_at ?? "").localeCompare(b.last_login_at ?? "") || 0) *
+          dir
+        );
+      }
+      return 0;
+    });
+  }, [users, sorting]);
 
-  if (users.length === 0) {
-    return (
-      <p className="px-4 py-6 text-sm text-muted-foreground md:px-6">
-        {hasFilters ? t("emptyFilter") : t("emptyNone")}
-      </p>
-    );
-  }
+  const pageUsers = useMemo(() => {
+    const start = pagination.pageIndex * pagination.pageSize;
+    return sortedForMobile.slice(start, start + pagination.pageSize);
+  }, [sortedForMobile, pagination]);
 
   return (
-    <div className="flex-1 overflow-auto soft-scrollbar px-4 pb-6 md:px-6">
-      <Table>
-        <TableHeader className="sticky top-0 z-10 bg-background">
-          <TableRow>
-            <TableHead className="text-[10.5px] font-bold uppercase tracking-wider">
-              {t("columns.user")}
-            </TableHead>
-            {audience === "owners" ? (
-              <>
-                <TableHead className="text-[10.5px] font-bold uppercase tracking-wider">
-                  {t("columns.staffRole")}
-                </TableHead>
-                <TableHead className="text-[10.5px] font-bold uppercase tracking-wider">
-                  {t("columns.organization")}
-                </TableHead>
-              </>
-            ) : null}
-            <TableHead className="text-[10.5px] font-bold uppercase tracking-wider">
-              {t("columns.status")}
-            </TableHead>
-            {audience === "players" ? (
-              <TableHead className="text-[10.5px] font-bold uppercase tracking-wider">
-                {t("columns.emailVerified")}
-              </TableHead>
-            ) : null}
-            <TableHead className="text-[10.5px] font-bold uppercase tracking-wider">
-              {t("columns.lastLogin")}
-            </TableHead>
-            <TableHead className="text-[10.5px] font-bold uppercase tracking-wider">
-              {t("columns.mfa")}
-            </TableHead>
-            {audience === "players" ? (
-              <TableHead className="text-[10.5px] font-bold uppercase tracking-wider">
-                {t("columns.risk")}
-              </TableHead>
-            ) : null}
-            <TableHead className="w-16 text-[10.5px] font-bold uppercase tracking-wider">
-              {t("columns.actions")}
-            </TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {users.map((user) => {
-            const owner = audience === "owners" ? (user as AdminOwnerUser) : null;
-            return (
-              <TableRow
-                key={user.id}
-                className="cursor-pointer"
-                onClick={() => router.push(`${base}/${user.id}`)}
-              >
-                <TableCell>
-                  <div>
-                    <p className="font-semibold">{displayName(user)}</p>
-                    <p className="font-mono text-xs text-muted-foreground">{user.email}</p>
-                  </div>
-                </TableCell>
-                {audience === "owners" && owner ? (
-                  <>
-                    <TableCell className="text-sm">{owner.staff_role ?? "—"}</TableCell>
-                    <TableCell className="text-sm">
-                      {owner.primary_organization?.name ?? "—"}
-                    </TableCell>
-                  </>
-                ) : null}
-                <TableCell>
-                  <UserStatusBadge status={user.status} />
-                </TableCell>
-                {audience === "players" ? (
-                  <TableCell className="text-sm">
-                    {user.email_verified_at ? t("verified") : t("unverified")}
-                  </TableCell>
-                ) : null}
-                <TableCell className="text-sm text-muted-foreground">
-                  {formatLastLogin(user.last_login_at)}
-                </TableCell>
-                <TableCell>
-                  <UserUnavailableBadge />
-                </TableCell>
-                {audience === "players" ? (
-                  <TableCell>
-                    <UserUnavailableBadge />
-                  </TableCell>
-                ) : null}
-                <TableCell onClick={(e) => e.stopPropagation()}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Link
-                        href={`${base}/${user.id}`}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-input hover:bg-primary hover:text-primary-foreground"
-                        aria-label={t("viewDetail")}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Link>
-                    </TooltipTrigger>
-                    <TooltipContent>{t("viewDetail")}</TooltipContent>
-                  </Tooltip>
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
+    <div className="flex min-h-0 flex-1 flex-col">
+      <DataTable
+        columns={columns}
+        data={users}
+        getRowId={(row) => row.id}
+        sorting={sorting}
+        onSortingChange={setSorting}
+        rowSelection={rowSelection}
+        onRowSelectionChange={setRowSelection}
+        pagination={pagination}
+        onPaginationChange={setPagination}
+        pageSize={DATA_LIST_PAGE_SIZE}
+        paginationLabels={{
+          previous: td("previousPage"),
+          next: td("nextPage"),
+          summary: (params) => td("pageSummary", params),
+        }}
+        isLoading={isLoading}
+        isError={isError}
+        errorMessage={t("loadError")}
+        onRetry={onRetry}
+        retryLabel={isFetching ? tc("loading") : tc("retry")}
+        emptyTitle={hasFilters ? t("emptyFilter") : t("emptyNone")}
+        mobileList={
+          <div className="space-y-3 p-4">
+            {pageUsers.map((user) => (
+              <UserCard key={user.id} user={user} href={`${base}/${user.id}`} />
+            ))}
+          </div>
+        }
+      />
     </div>
+  );
+}
+
+function UserCard({ user, href }: { user: UserRow; href: string }) {
+  return (
+    <Link href={href} className="block">
+      <Card className="soft-elevated border-border/40 shadow-none">
+        <CardContent className="space-y-3 p-4">
+          <div className="min-w-0">
+            <p className="font-semibold text-foreground">{displayName(user)}</p>
+            <p className="text-xs text-muted-foreground">{user.email}</p>
+          </div>
+          <UserStatusBadge status={user.status} />
+        </CardContent>
+      </Card>
+    </Link>
   );
 }

@@ -1,8 +1,7 @@
 export { DataListStats, type DataListStatItem } from "./data-list-stats";
 export {
   DataListLayout,
-  type DataListQuickFilter,
-  type DataListQuickFilterOption,
+  type DataListStatusTab,
 } from "./data-list-layout";
 export { DataListEmpty, DataTableSkeleton } from "./data-list-empty";
 export {

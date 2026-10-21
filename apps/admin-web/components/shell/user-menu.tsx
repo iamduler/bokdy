@@ -84,10 +84,12 @@ export function UserMenu({
   email,
   displayName,
   layout = "header",
+  greeting,
 }: {
   email?: string;
   displayName?: string;
-  layout?: "header" | "sidebar";
+  layout?: "header" | "sidebar" | "header-greeting";
+  greeting?: string;
 }) {
   const t = useTranslations("shell");
   const tc = useTranslations("common");
@@ -160,24 +162,52 @@ export function UserMenu({
           variant="ghost"
           size="sm"
           className={cn(
-            "h-8 gap-2 px-1.5",
+            "group gap-2 px-1.5",
             layout === "sidebar"
               ? "h-12 w-full justify-start px-2 hover:bg-primary hover:text-primary-foreground data-[state=open]:bg-primary data-[state=open]:text-primary-foreground group-data-[collapsible=icon]:size-8 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
-              : "hover:bg-muted hover:text-foreground data-[state=open]:bg-muted data-[state=open]:text-foreground",
+              : layout === "header-greeting"
+                ? "h-auto rounded-full py-1 pl-1 pr-2.5 hover:bg-muted data-[state=open]:bg-muted"
+                : "h-8 hover:bg-muted hover:text-foreground data-[state=open]:bg-muted data-[state=open]:text-foreground",
           )}
           aria-label={t("userMenu")}
         >
-          <Avatar className="h-7 w-7">
-            <AvatarFallback className="text-[10px]">{initials}</AvatarFallback>
-          </Avatar>
-          <span
+          <Avatar
             className={cn(
-              "max-w-40 truncate text-xs font-medium",
-              layout === "sidebar" ? "group-data-[collapsible=icon]:hidden" : "hidden sm:inline",
+              layout === "header-greeting" ? "h-9 w-9" : "h-7 w-7",
+              layout === "header-greeting" &&
+                "ring-2 ring-transparent transition-shadow group-hover:ring-border group-data-[state=open]:ring-border",
             )}
           >
-            {label}
-          </span>
+            <AvatarFallback
+              className={cn(
+                "font-semibold",
+                layout === "header-greeting"
+                  ? "bg-muted text-xs text-foreground"
+                  : "bg-primary/15 text-[10px] text-primary",
+              )}
+            >
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+          {layout === "header-greeting" ? (
+            <span className="hidden min-w-0 flex-col items-start text-left leading-tight sm:flex">
+              {greeting ? (
+                <span className="text-[10px] text-muted-foreground">{greeting}</span>
+              ) : null}
+              <span className="max-w-36 truncate text-xs font-semibold text-foreground">
+                {label}
+              </span>
+            </span>
+          ) : (
+            <span
+              className={cn(
+                "max-w-40 truncate text-xs font-medium",
+                layout === "sidebar" ? "group-data-[collapsible=icon]:hidden" : "hidden sm:inline",
+              )}
+            >
+              {label}
+            </span>
+          )}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent

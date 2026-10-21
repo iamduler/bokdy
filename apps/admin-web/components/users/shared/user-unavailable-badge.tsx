@@ -2,11 +2,10 @@
 
 import { useTranslations } from "next-intl";
 
+import { EntityUnavailableBadge } from "@/components/entity/unavailable";
+
+/** Users directory unavailable cell — shared Soft muted chip. */
 export function UserUnavailableBadge() {
   const t = useTranslations("users");
-  return (
-    <span className="inline-flex rounded border border-dashed border-border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-      {t("unavailable")}
-    </span>
-  );
+  return <EntityUnavailableBadge label={t("unavailable")} />;
 }

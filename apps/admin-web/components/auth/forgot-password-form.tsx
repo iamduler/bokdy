@@ -14,7 +14,10 @@ import {
 import { Link } from "@/i18n/navigation";
 import { useForgotPassword } from "@/hooks/use-auth";
 import { ApiError, errorMessageKey } from "@/lib/api/errors";
-import { forgotPasswordSchema, type ForgotPasswordFormValues } from "@/lib/validation/auth";
+import {
+  forgotPasswordSchema,
+  type ForgotPasswordFormValues,
+} from "@/lib/validation/auth";
 
 export function ForgotPasswordForm() {
   const t = useTranslations("auth");
@@ -24,7 +27,11 @@ export function ForgotPasswordForm() {
   const [sent, setSent] = useState(false);
 
   const schema = useMemo(
-    () => forgotPasswordSchema({ required: te("REQUIRED"), emailInvalid: te("EMAIL_INVALID") }),
+    () =>
+      forgotPasswordSchema({
+        required: te("REQUIRED"),
+        emailInvalid: te("EMAIL_INVALID"),
+      }),
     [te],
   );
 
@@ -43,7 +50,8 @@ export function ForgotPasswordForm() {
       await forgotPassword.mutateAsync(values);
       setSent(true);
     } catch (err) {
-      const apiErr = err instanceof ApiError ? err : new ApiError("INTERNAL", "", 500);
+      const apiErr =
+        err instanceof ApiError ? err : new ApiError("INTERNAL", "", 500);
       setError(te(errorMessageKey(apiErr)));
     }
   }
@@ -58,7 +66,7 @@ export function ForgotPasswordForm() {
       {sent ? (
         <div className="space-y-4">
           <AuthAlert tone="success">{t("forgotPasswordSent")}</AuthAlert>
-          <Link href="/login" className="text-sm font-medium text-shell-text hover:underline">
+          <Link href="/login" className="text-sm font-medium text-shell-text">
             {t("backToLogin")}
           </Link>
         </div>
@@ -82,7 +90,10 @@ export function ForgotPasswordForm() {
             {t("submitForgotPassword")}
           </AuthActionButton>
           <p className="text-sm">
-            <Link href="/login" className="text-shell-text-muted hover:text-shell-text hover:underline">
+            <Link
+              href="/login"
+              className="text-shell-text-muted hover:text-shell-text"
+            >
               {t("backToLogin")}
             </Link>
           </p>

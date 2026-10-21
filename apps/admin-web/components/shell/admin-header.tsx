@@ -1,45 +1,105 @@
 "use client";
 
-import { Separator, SidebarTrigger } from "@bokdy/ui";
+/**
+ * Hallmark · theme: bokdy-custom · design-system: design.md · Soft UI top chrome
+ */
+
+import { BokdyMark } from "@bokdy/brand";
+import { SidebarTrigger } from "@bokdy/ui";
 import { useTranslations } from "next-intl";
+import { useEffect, useState } from "react";
 
+import { AudienceSegment } from "@/components/shell/audience-segment";
+import { NotificationBell } from "@/components/shell/notification-bell";
+import { QuickSearchButton } from "@/components/shell/quick-search-button";
 import { useShellTitle } from "@/components/shell/shell-title";
-import { usePathname } from "@/i18n/navigation";
-import { ADMIN_NAV_GROUPS, isNavItemActive } from "@/lib/admin-nav";
+import { UserMenu } from "@/components/shell/user-menu";
+import { Link } from "@/i18n/navigation";
 
-function useFallbackPageTitle(): string {
-  const t = useTranslations("shell");
-  const pathname = usePathname();
-
-  for (const group of ADMIN_NAV_GROUPS) {
-    for (const item of group.items) {
-      if (item.status === "ready" && isNavItemActive(pathname, item.href)) {
-        return t(`pageTitles.${item.labelKey}`);
-      }
-    }
-  }
-
-  return t("pageTitles.fallback");
+function useGreetingKey():
+  | "greetingMorning"
+  | "greetingAfternoon"
+  | "greetingEvening" {
+  const [key, setKey] = useState<
+    "greetingMorning" | "greetingAfternoon" | "greetingEvening"
+  >("greetingMorning");
+  useEffect(() => {
+    const hour = new Date().getHours();
+    setKey(
+      hour < 12
+        ? "greetingMorning"
+        : hour < 18
+          ? "greetingAfternoon"
+          : "greetingEvening",
+    );
+  }, []);
+  return key;
 }
 
-export function AdminHeader() {
+export function AdminHeader({
+  email,
+  displayName,
+}: {
+  email?: string;
+  displayName?: string;
+}) {
   const t = useTranslations("shell");
-  const { title: pageTitle, setLeadingSlot, setActionSlot } = useShellTitle();
-  const fallbackTitle = useFallbackPageTitle();
-  const title = pageTitle ?? fallbackTitle;
+  const tc = useTranslations("common");
+  const { setLeadingSlot, setActionSlot } = useShellTitle();
+  const greetingKey = useGreetingKey();
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-2 border-b border-border bg-background transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-      <div className="flex min-w-0 flex-1 items-center gap-2 px-4">
-        <SidebarTrigger className="-ml-1 md:hidden" aria-label={t("openMenu")} />
-        <Separator orientation="vertical" className="mr-2 h-4 md:hidden" />
-        <div ref={setLeadingSlot} className="flex items-center empty:hidden" />
-        <h1 className="min-w-0 truncate text-sm font-semibold tracking-tight text-foreground md:text-base">
-          {title}
-        </h1>
-      </div>
-      <div className="flex items-center gap-2 px-4">
-        <div ref={setActionSlot} className="flex items-center gap-2" />
+    <header className="sticky top-0 z-40 w-full shrink-0 bg-shell-bg">
+      <div className="soft-chrome-bar mx-4 my-2 flex h-14 items-center gap-3 border-0 px-4 md:h-16 md:px-4">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          <SidebarTrigger className="md:hidden" aria-label={t("openMenu")} />
+
+          <Link
+            href="/organizations"
+            className="flex min-w-0 items-center gap-2.5"
+            aria-label={tc("appName")}
+          >
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-white ring-1 ring-black/5 md:size-10 dark:bg-white dark:ring-black/10">
+              <BokdyMark
+                alt={tc("appName")}
+                className="size-6 object-contain md:size-7"
+                width={28}
+                height={28}
+              />
+            </span>
+            <span className="hidden min-w-0 flex-col leading-tight sm:flex">
+              <span className="truncate text-sm font-semibold text-foreground">
+                {tc("appName")}
+              </span>
+              <span className="truncate text-[11px] text-muted-foreground">
+                {t("brandSubtitle")}
+              </span>
+            </span>
+          </Link>
+
+          <AudienceSegment className="ml-1" />
+
+          <div
+            ref={setLeadingSlot}
+            className="flex items-center empty:hidden"
+          />
+        </div>
+
+        <div className="flex shrink-0 items-center gap-1.5 md:gap-2">
+          <QuickSearchButton />
+          <NotificationBell placement="header" />
+          {/* Detail pages may still portal leading/actions; directories no longer mount + New here */}
+          <div
+            ref={setActionSlot}
+            className="flex items-center gap-2 empty:hidden"
+          />
+          <UserMenu
+            email={email}
+            displayName={displayName}
+            layout="header-greeting"
+            greeting={t(greetingKey)}
+          />
+        </div>
       </div>
     </header>
   );

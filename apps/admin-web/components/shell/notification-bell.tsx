@@ -19,9 +19,9 @@ export function NotificationBell({ placement = "header" }: { placement?: "header
         ) : (
           <Button
             type="button"
-            variant="outline"
+            variant="ghost"
             size="sm"
-            className="relative h-8 w-8 px-0"
+            className="relative size-9 rounded-full bg-muted/50 px-0 text-muted-foreground hover:bg-muted hover:text-foreground"
             aria-label={t("notifications")}
           >
             <Bell className="h-4 w-4" />

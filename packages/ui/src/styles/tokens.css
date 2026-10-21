@@ -109,18 +109,23 @@
 /* Audience shell palette — set by .shell--{admin|owner|player}, not inline in TSX.
    Admin follows html light/dark (same pattern as --bokdy-*); owner/player stay light-locked for now. */
 .shell--admin {
-  --shell-bg: #f8fafc;
+  /* Soft UI warm canvas — primary fill stays sky, never terracotta */
+  --shell-bg: #f3efe8;
   --shell-surface: #ffffff;
   --shell-card: #ffffff;
   --shell-auth-atmosphere: #e0f2fe;
   --shell-border: rgba(15, 23, 42, 0.08);
   --shell-border-strong: rgba(15, 23, 42, 0.14);
   --shell-text: #0f172a;
-  --shell-text-muted: #475569;
+  --shell-text-muted: #64748b;
   --shell-accent: #0ea5e9;
   --shell-accent-soft: rgba(14, 165, 233, 0.12);
   --shell-accent-secondary: #ec4899;
   --shell-accent-secondary-soft: rgba(236, 72, 153, 0.12);
+  --soft-shadow: 0 8px 28px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(15, 23, 42, 0.04);
+  --soft-shadow-rail: 0 12px 40px rgba(15, 23, 42, 0.1), 0 3px 8px rgba(15, 23, 42, 0.05);
+  --soft-shadow-bar: 0 4px 16px rgba(15, 23, 42, 0.06);
+  --soft-shadow-cta: 0 8px 20px rgba(14, 165, 233, 0.35);
 }
 
 .dark .shell--admin {
@@ -136,6 +141,10 @@
   --shell-accent-soft: rgba(14, 165, 233, 0.16);
   --shell-accent-secondary: #ec4899;
   --shell-accent-secondary-soft: rgba(236, 72, 153, 0.16);
+  --soft-shadow: 0 4px 24px rgba(0, 0, 0, 0.35), 0 1px 3px rgba(0, 0, 0, 0.25);
+  --soft-shadow-rail: 0 8px 32px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.3);
+  --soft-shadow-bar: 0 4px 16px rgba(0, 0, 0, 0.35);
+  --soft-shadow-cta: 0 8px 20px rgba(14, 165, 233, 0.45);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -152,6 +161,10 @@
     --shell-accent-soft: rgba(14, 165, 233, 0.16);
     --shell-accent-secondary: #ec4899;
     --shell-accent-secondary-soft: rgba(236, 72, 153, 0.16);
+    --soft-shadow: 0 4px 24px rgba(0, 0, 0, 0.35), 0 1px 3px rgba(0, 0, 0, 0.25);
+    --soft-shadow-rail: 0 8px 32px rgba(0, 0, 0, 0.4), 0 2px 6px rgba(0, 0, 0, 0.3);
+    --soft-shadow-bar: 0 4px 16px rgba(0, 0, 0, 0.35);
+    --soft-shadow-cta: 0 8px 20px rgba(14, 165, 233, 0.45);
   }
 }
 
@@ -767,7 +780,7 @@
   }
 }
 
-/* Thin, low-contrast scrollbars for overflow containers */
+/* Thin, low-contrast scrollbars — only paint when content overflows */
 .soft-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: color-mix(in srgb, var(--bokdy-muted-foreground) 35%, transparent) transparent;
@@ -776,6 +789,7 @@
 .soft-scrollbar::-webkit-scrollbar {
   width: 6px;
   height: 6px;
+  background: transparent;
 }
 
 .soft-scrollbar::-webkit-scrollbar-track {
@@ -783,8 +797,13 @@
 }
 
 .soft-scrollbar::-webkit-scrollbar-thumb {
-  background-color: color-mix(in srgb, var(--bokdy-muted-foreground) 35%, transparent);
+  background-color: transparent;
   border-radius: 9999px;
+}
+
+.soft-scrollbar:hover::-webkit-scrollbar-thumb,
+.soft-scrollbar:focus-within::-webkit-scrollbar-thumb {
+  background-color: color-mix(in srgb, var(--bokdy-muted-foreground) 35%, transparent);
 }
 
 .soft-scrollbar::-webkit-scrollbar-thumb:hover {
@@ -793,4 +812,29 @@
 
 .soft-scrollbar::-webkit-scrollbar-corner {
   background: transparent;
+}
+
+/* Soft UI elevated surface — directories, KPI cards, table card, icon rail */
+.soft-elevated {
+  background: var(--shell-card, var(--bokdy-card));
+  box-shadow: var(--soft-shadow, 0 8px 28px rgba(15, 23, 42, 0.08));
+  border-radius: 1.5rem;
+}
+
+.soft-elevated-rail {
+  background: var(--shell-card, var(--bokdy-card));
+  box-shadow: var(--soft-shadow-rail, 0 12px 40px rgba(15, 23, 42, 0.1));
+  border-radius: 1.75rem;
+}
+
+/* Floating Soft UI top chrome bar (inset under sticky header) */
+.soft-chrome-bar {
+  background: var(--shell-card, var(--bokdy-card));
+  box-shadow: var(--soft-shadow-bar, 0 4px 16px rgba(15, 23, 42, 0.06));
+  border-radius: 1rem;
+}
+
+/* Primary Soft UI CTA lift */
+.soft-cta-shadow {
+  box-shadow: var(--soft-shadow-cta, 0 8px 20px rgba(14, 165, 233, 0.35));
 }

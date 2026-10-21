@@ -89,7 +89,7 @@ export function LoginForm() {
           labelExtra={
             <Link
               href="/forgot-password"
-              className="cursor-pointer text-xs font-medium text-shell-accent underline-offset-4 transition-colors duration-200 hover:underline"
+              className="cursor-pointer text-xs font-medium text-shell-accent underline-offset-4 transition-colors duration-200"
             >
               {t("forgotPasswordLink")}
             </Link>

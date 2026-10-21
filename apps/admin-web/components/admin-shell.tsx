@@ -1,12 +1,12 @@
 "use client";
 
 /**
- * Hallmark · theme: bokdy-custom · design-system: design.md · designed-as-app
+ * Hallmark · theme: bokdy-custom · design-system: design.md · Soft UI shell
  */
 
-import { SidebarInset, SidebarProvider, Toaster, TooltipProvider } from "@bokdy/ui";
+import { SidebarInset, SidebarProvider, Toaster, TooltipProvider, cn } from "@bokdy/ui";
 import { useTranslations } from "next-intl";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 
 import { AdminHeader } from "@/components/shell/admin-header";
 import { AdminSidebar } from "@/components/shell/admin-sidebar";
@@ -16,15 +16,6 @@ import { useMe } from "@/hooks/use-me";
 import { useRouter } from "@/i18n/navigation";
 import { ADMIN_SIDEBAR_COLLAPSE_KEY } from "@/lib/admin-nav";
 import { ApiError } from "@/lib/api/errors";
-
-function readCollapsed(): boolean {
-  if (typeof window === "undefined") return false;
-  try {
-    return window.localStorage.getItem(ADMIN_SIDEBAR_COLLAPSE_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
 
 function writeCollapsed(value: boolean) {
   try {
@@ -55,14 +46,6 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const { data, isLoading, isError, error } = useMe();
   const signingOut = useRef(false);
 
-  const [collapsed, setCollapsed] = useState(false);
-  const [hydrated, setHydrated] = useState(false);
-
-  useEffect(() => {
-    setCollapsed(readCollapsed());
-    setHydrated(true);
-  }, []);
-
   useEffect(() => {
     if (signingOut.current) return;
 
@@ -85,29 +68,39 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const email = data?.user?.email;
   const displayName = data?.user ? displayNameFromMe(data.user) : undefined;
 
+  // Soft UI: always icon rail on desktop. Persist key stays for future.
+  useEffect(() => {
+    writeCollapsed(true);
+  }, []);
+
   return (
     <TooltipProvider delayDuration={200}>
       <ShellTitleProvider>
-      <SidebarProvider
-        className="h-svh overflow-hidden"
-        open={hydrated ? !collapsed : true}
-        onOpenChange={(open) => {
-          setCollapsed(!open);
-          writeCollapsed(!open);
-        }}
-      >
-        <AdminSidebar email={email} displayName={displayName} />
-        <SidebarInset className="min-h-0 overflow-hidden">
-          <AdminHeader />
-          <div className="min-h-0 flex-1 overflow-auto soft-scrollbar">
-            {isLoading ? (
-              <p className="p-4 text-sm text-muted-foreground">{tc("loading")}</p>
-            ) : (
-              children
-            )}
+        {/* Provider must wrap header (SidebarTrigger) and still keep header full-width above the rail */}
+        <SidebarProvider
+          className={cn(
+            "shell--admin flex h-svh min-h-0 w-full flex-col overflow-hidden bg-shell-bg",
+          )}
+          open={false}
+          onOpenChange={() => {
+            writeCollapsed(true);
+          }}
+        >
+          <AdminHeader email={email} displayName={displayName} />
+
+          <div className="flex min-h-0 flex-1 overflow-hidden">
+            <AdminSidebar />
+            <SidebarInset className="min-h-0 overflow-hidden bg-transparent">
+              <div className="page-canvas min-h-0 flex-1 overflow-auto soft-scrollbar bg-transparent">
+                {isLoading ? (
+                  <p className="p-4 text-sm text-muted-foreground">{tc("loading")}</p>
+                ) : (
+                  children
+                )}
+              </div>
+            </SidebarInset>
           </div>
-        </SidebarInset>
-      </SidebarProvider>
+        </SidebarProvider>
       </ShellTitleProvider>
       <Toaster />
     </TooltipProvider>

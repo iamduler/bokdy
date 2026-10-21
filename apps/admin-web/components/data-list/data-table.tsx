@@ -96,7 +96,7 @@ type DataTableProps<TData> = {
 
 /**
  * Reusable TanStack table: selection, sort, optional column resize, skeleton/empty.
- * Header text is sentence case (no uppercase tracking).
+ * Soft UI: uppercase muted headers, generous row padding.
  */
 export function DataTable<TData>({
   columns,
@@ -172,14 +172,18 @@ export function DataTable<TData>({
 
       <div
         className={cn(
-          "min-h-0 flex-1 overflow-auto soft-scrollbar",
+          "min-h-0 flex-1 overflow-x-hidden overflow-y-auto soft-scrollbar",
           mobileList && "hidden md:block",
         )}
       >
-        <Table className="table-fixed">
-          <TableHeader className="sticky top-0 z-10 bg-background">
+        {/* Parent scrolls Y only — no nested Table overflow, no idle H-scrollbar. */}
+        <Table
+          className="table-fixed"
+          containerClassName="overflow-visible"
+        >
+          <TableHeader className="sticky top-0 z-10 bg-card">
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id} className="hover:bg-transparent">
+              <TableRow key={headerGroup.id} className="border-border/50 hover:bg-transparent">
                 {headerGroup.headers.map((header) => {
                   const canSort = header.column.getCanSort();
                   const sorted = header.column.getIsSorted();
@@ -187,12 +191,12 @@ export function DataTable<TData>({
                     <TableHead
                       key={header.id}
                       style={{ width: header.getSize() }}
-                      className="group relative"
+                      className="group relative h-11 px-4 text-[10.5px] font-semibold tracking-wider text-muted-foreground uppercase"
                     >
                       {header.isPlaceholder ? null : canSort ? (
                         <button
                           type="button"
-                          className="inline-flex max-w-full cursor-pointer items-center gap-1 truncate text-left select-none hover:text-foreground"
+                          className="inline-flex max-w-full cursor-pointer items-center gap-1 truncate text-left uppercase select-none hover:text-foreground"
                           onClick={header.column.getToggleSortingHandler()}
                         >
                           {flexRender(
@@ -242,14 +246,16 @@ export function DataTable<TData>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() ? "selected" : undefined}
+                  className="border-border/40 hover:bg-muted/30"
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell
                       key={cell.id}
                       style={{ width: cell.column.getSize() }}
-                      className={
-                        cell.column.id === "actions" ? undefined : "truncate"
-                      }
+                      className={cn(
+                        "px-4 py-3.5",
+                        cell.column.id === "actions" ? undefined : "truncate",
+                      )}
                     >
                       {flexRender(
                         cell.column.columnDef.cell,
@@ -352,14 +358,14 @@ export function DataTableRowActions({
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <ButtonGroup onClick={(event) => event.stopPropagation()}>
+    <ButtonGroup onClick={(event) => event.stopPropagation()} className="rounded-full">
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
             asChild
             variant="outline"
             size="icon-sm"
-            className="rounded-r-none"
+            className="rounded-l-full rounded-r-none"
             aria-label={viewLabel}
           >
             <Link href={viewHref}>
@@ -380,7 +386,7 @@ export function DataTableRowActions({
               aria-label={editLabel}
               className={cn(
                 "rounded-l-none border-l-0",
-                hasMore ? "rounded-r-none" : "rounded-r-md",
+                hasMore ? "rounded-r-none" : "rounded-r-full",
               )}
             >
               <Link href={editHref}>
@@ -397,7 +403,7 @@ export function DataTableRowActions({
                 aria-label={editLabel}
                 className={cn(
                   "rounded-l-none border-l-0",
-                  hasMore ? "rounded-r-none" : "rounded-r-md",
+                  hasMore ? "rounded-r-none" : "rounded-r-full",
                 )}
               >
                 <Pencil />
@@ -424,7 +430,7 @@ export function DataTableRowActions({
               variant="outline"
               size="icon-sm"
               aria-label={moreLabel}
-              className="rounded-l-none border-l-0"
+              className="rounded-l-none rounded-r-full border-l-0"
               onPointerDown={(event) => event.preventDefault()}
               onClick={() => setMenuOpen((current) => !current)}
             >

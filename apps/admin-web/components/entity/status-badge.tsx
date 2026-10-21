@@ -1,16 +1,19 @@
-import { Badge, cn } from "@bokdy/ui";
-import type { ComponentProps } from "react";
+import {
+  SoftStatusChip,
+  type SoftStatusToneKey,
+} from "@/components/entity/soft-status-chip";
 
 type EntityStatusBadgeProps = {
   label: string;
+  tone?: SoftStatusToneKey;
   className?: string;
-  variant?: ComponentProps<typeof Badge>["variant"];
 };
 
-export function EntityStatusBadge({ label, className, variant }: EntityStatusBadgeProps) {
-  return (
-    <Badge variant={variant} className={cn(className)}>
-      {label}
-    </Badge>
-  );
+/** Soft status chip for entity surfaces (branches, etc.). */
+export function EntityStatusBadge({
+  label,
+  tone = "muted",
+  className,
+}: EntityStatusBadgeProps) {
+  return <SoftStatusChip label={label} tone={tone} className={className} />;
 }

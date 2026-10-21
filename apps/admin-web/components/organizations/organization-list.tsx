@@ -89,7 +89,12 @@ export function OrganizationList({
         emptyTitle={hasFilters ? t("emptyFilter") : t("emptyNone")}
         emptyAction={
           !hasFilters ? (
-            <Button type="button" size="sm" onClick={onOpenCreate}>
+            <Button
+              type="button"
+              size="sm"
+              className="soft-cta-shadow rounded-full"
+              onClick={onOpenCreate}
+            >
               + {t("create")}
             </Button>
           ) : null
@@ -111,7 +116,7 @@ function OrganizationCard({ org }: { org: AdminOrganization }) {
 
   return (
     <Link href={`/organizations/${org.id}`} className="block">
-      <Card>
+      <Card className="soft-elevated border-border/40 shadow-none">
         <CardContent className="space-y-3 p-4">
           <div className="flex items-start gap-3">
             <EntityAvatar name={org.name} size="sm" />

@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useMemo } from "react";
+import { Suspense } from "react";
 
 import { deriveOrganizationDirectoryStats } from "@/components/organizations/organization-directory-stats";
 import { OrganizationDirectoryToolbar } from "@/components/organizations/organization-directory-toolbar";
@@ -26,7 +26,6 @@ function parseStatus(raw: string | null): OrgStatus | "" {
 
 function OrganizationsPageContent() {
   const ts = useTranslations("shell");
-  const t = useTranslations("organization");
   usePageShellTitle(ts("pageTitles.organizations"));
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -47,37 +46,7 @@ function OrganizationsPageContent() {
   const { data, isLoading, isError, refetch, isFetching } =
     useAdminOrganizations(params);
   const orgs = data ?? [];
-  const stats = deriveOrganizationDirectoryStats(data);
-
-  const statItems = useMemo(
-    () => [
-      {
-        key: "total",
-        label: t("directoryKpis.total"),
-        value: stats.total,
-        tone: "text-sky-600 dark:text-sky-400",
-      },
-      {
-        key: "active",
-        label: t("directoryKpis.active"),
-        value: stats.active,
-        tone: "text-emerald-600 dark:text-emerald-400",
-      },
-      {
-        key: "inactive",
-        label: t("directoryKpis.inactive"),
-        value: stats.inactive,
-        tone: "text-amber-600 dark:text-amber-400",
-      },
-      {
-        key: "suspended",
-        label: t("directoryKpis.suspended"),
-        value: stats.suspended,
-        tone: "text-destructive",
-      },
-    ],
-    [stats, t],
-  );
+  const directoryStats = deriveOrganizationDirectoryStats(data);
 
   return (
     <div className="flex min-h-full flex-col overflow-hidden">
@@ -85,7 +54,7 @@ function OrganizationsPageContent() {
         q={q}
         status={status}
         provinceId={provinceId}
-        stats={statItems}
+        directoryStats={directoryStats}
         statsLoading={isLoading}
         onOpenCreate={openCreate}
       >
