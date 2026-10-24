@@ -838,3 +838,22 @@
 .soft-cta-shadow {
   box-shadow: var(--soft-shadow-cta, 0 8px 20px rgba(14, 165, 233, 0.35));
 }
+
+/* Soft UI directory / title-row action buttons */
+.soft-btn-primary {
+  box-shadow: var(--soft-shadow-cta, 0 8px 20px rgba(14, 165, 233, 0.35));
+}
+
+.soft-btn-secondary {
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+}
+
+.dark .soft-btn-secondary {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) .soft-btn-secondary {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  }
+}

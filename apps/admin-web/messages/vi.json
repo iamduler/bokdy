@@ -419,12 +419,14 @@
       "grid": "Lưới",
       "map": "Bản đồ",
       "addBranch": "Thêm chi nhánh",
+      "emptyHint": "Tạo chi nhánh đầu tiên cho tổ chức này để bắt đầu quản lý sân và đặt chỗ.",
       "occupancy": "{value}% lấp đầy",
       "maintenance": "Bảo trì",
       "courtsCount": "{count} sân",
       "ownerApp": "Owner App",
       "mapPlaceholder": "Bản đồ chi nhánh — dữ liệu preview"
     },
+
     "detailCourts": {
       "title": "Sân thể thao — {name}",
       "subtitle": "{total} sân · {urgent} cần bảo trì gấp",

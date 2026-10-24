@@ -33,7 +33,12 @@ export function EntityDetailError({
       <p className="text-sm text-destructive">{message}</p>
       <div className="flex flex-wrap gap-2">
         {!notFound ? (
-          <Button variant="outline" size="sm" onClick={onRetry} disabled={retryDisabled}>
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={onRetry}
+            disabled={retryDisabled}
+          >
             {retryLabel}
           </Button>
         ) : null}

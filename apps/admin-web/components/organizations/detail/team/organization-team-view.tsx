@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@bokdy/ui";
-import { Plus } from "lucide-react";
+import { Plus, Users } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { EntitySectionHead } from "@/components/entity/section-head";
@@ -126,7 +126,12 @@ export function OrganizationTeamView() {
         </div>
 
         <div className="overflow-y-auto soft-scrollbar border-border p-4 lg:border-l">
-          <EntitySectionHead>{t("roleDistribution")}</EntitySectionHead>
+          <EntitySectionHead
+            icon={<Users className="size-4" aria-hidden />}
+            tone="sky"
+          >
+            {t("roleDistribution")}
+          </EntitySectionHead>
           {DETAIL_MOCK.roleDistribution.map((r, i) => (
             <div key={r.roleKey} className="mb-3">
               <div className="mb-1 flex justify-between text-xs">

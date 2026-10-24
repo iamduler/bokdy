@@ -3,6 +3,11 @@
 import { cn } from "@bokdy/ui";
 import type { ReactNode } from "react";
 
+import {
+  SoftIconChip,
+  type SoftIconToneKey,
+} from "@/components/entity/soft-icon-chip";
+
 export type DataListStatItem = {
   key: string;
   label: string;
@@ -11,8 +16,12 @@ export type DataListStatItem = {
   secondary?: string;
   /** Soft UI icon chip. */
   icon?: ReactNode;
-  /** Icon chip background/text tone classes. */
-  iconTone?: string;
+  /** Soft pastel tone for the icon chip. */
+  iconTone?: SoftIconToneKey;
+  /** Icon glyph color (CSS) — overrides tone. */
+  iconColor?: string;
+  /** Icon chip fill (CSS) — overrides tone. */
+  iconBackground?: string;
   /** Value text tone. */
   tone?: string;
   /** Secondary line tone (e.g. urgency). */
@@ -28,7 +37,11 @@ type DataListStatsProps = {
 };
 
 /** Soft UI KPI card row — shared by every directory module. */
-export function DataListStats({ items, isLoading, className }: DataListStatsProps) {
+export function DataListStats({
+  items,
+  isLoading,
+  className,
+}: DataListStatsProps) {
   return (
     <div
       className={cn(
@@ -39,32 +52,32 @@ export function DataListStats({ items, isLoading, className }: DataListStatsProp
       {items.map((item) => (
         <div
           key={item.key}
-          className="soft-elevated flex min-w-0 items-start gap-3 border-0 p-4 md:p-5"
+          className="soft-elevated flex min-w-0 flex-col gap-2 border-0 px-5 py-4"
         >
-          {item.icon ? (
-            <span
-              className={cn(
-                "flex size-11 shrink-0 items-center justify-center rounded-2xl",
-                item.iconTone ?? "bg-primary/10 text-primary",
-              )}
-            >
-              {item.icon}
-            </span>
-          ) : null}
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-[11px] font-medium text-muted-foreground">
+          <div className="flex min-w-0 items-center gap-2.5">
+            {item.icon ? (
+              <SoftIconChip
+                icon={item.icon}
+                tone={item.iconTone}
+                color={item.iconColor}
+                backgroundColor={item.iconBackground}
+              />
+            ) : null}
+            <p className="truncate text-sm font-medium text-muted-foreground">
               {item.label}
             </p>
+          </div>
+          <div className="min-w-0">
             <p
               className={cn(
-                "mt-0.5 text-2xl font-semibold tracking-tight tabular-nums md:text-[1.75rem]",
+                "text-2xl font-bold tracking-tight tabular-nums md:text-[1.75rem]",
                 item.tone ?? "text-foreground",
               )}
             >
               {isLoading ? "—" : item.value}
             </p>
             {item.secondary || item.badge ? (
-              <div className="mt-1 flex flex-wrap items-center gap-1.5">
+              <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                 {item.secondary ? (
                   <p
                     className={cn(

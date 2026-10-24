@@ -12,6 +12,7 @@ import {
 } from "react-hook-form";
 
 import { EntityFormSection, entityFormFieldsClass } from "@/components/entity/form-section";
+import type { SoftIconToneKey } from "@/components/entity/soft-icon-chip";
 import {
   PopoverCommandSelect,
   type PopoverCommandOption,
@@ -53,6 +54,8 @@ export type EntityFormBlock<T extends FieldValues> = {
   id: string;
   title?: string;
   description?: string;
+  icon?: ReactNode;
+  tone?: SoftIconToneKey;
   fields: EntityFormField<T>[];
 };
 
@@ -84,7 +87,12 @@ export function EntityMetadataForm<T extends FieldValues>({
         const fields = block.fields.filter((field) => field.visible?.(values) !== false);
         if (fields.length === 0 && !block.description) return null;
         return (
-          <EntityFormSection key={block.id} title={block.title}>
+          <EntityFormSection
+            key={block.id}
+            title={block.title}
+            icon={block.icon}
+            tone={block.tone}
+          >
             {block.description ? (
               <p className="text-sm text-muted-foreground">{block.description}</p>
             ) : null}

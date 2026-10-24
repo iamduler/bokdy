@@ -419,12 +419,14 @@
       "grid": "Grid",
       "map": "Map",
       "addBranch": "Add branch",
+      "emptyHint": "Create the first branch for this organization to start managing courts and bookings.",
       "occupancy": "{value}% occupancy",
       "maintenance": "Maintenance",
       "courtsCount": "{count} courts",
       "ownerApp": "Owner app",
       "mapPlaceholder": "Branch map — preview data"
     },
+
     "detailCourts": {
       "title": "Courts — {name}",
       "subtitle": "{total} courts · {urgent} urgent maintenance",

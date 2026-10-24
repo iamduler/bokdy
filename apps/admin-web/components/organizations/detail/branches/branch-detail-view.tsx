@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@bokdy/ui";
-import { Pencil } from "lucide-react";
+import { Mail, MapPin, Pencil } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 
@@ -48,12 +48,20 @@ export function BranchDetailView({ organizationId, branch }: { organizationId: s
         }
       />
       <div className="grid min-h-0 flex-1 grid-cols-1 content-start gap-3.5 overflow-y-auto soft-scrollbar p-5 md:px-6 lg:grid-cols-2">
-        <EntityDetailPanel title={tb("contact")}>
+        <EntityDetailPanel
+          title={tb("contact")}
+          icon={<Mail className="size-4" aria-hidden />}
+          tone="sky"
+        >
           <ProfileRow label={t("fieldEmail")} value={branch.email || empty} />
           <ProfileRow label={t("fieldPhone")} value={branch.phone || empty} />
           <ProfileRow label={tb("fieldTimezone")} value={branch.timezone || empty} />
         </EntityDetailPanel>
-        <EntityDetailPanel title={tb("address")}>
+        <EntityDetailPanel
+          title={tb("address")}
+          icon={<MapPin className="size-4" aria-hidden />}
+          tone="amber"
+        >
           <ProfileRow label={t("fieldProvince")} value={provinceName || empty} />
           <ProfileRow label={t("fieldWard")} value={wardName || empty} />
           <ProfileRow label={t("fieldAddress1")} value={address?.address_line_1 || empty} />

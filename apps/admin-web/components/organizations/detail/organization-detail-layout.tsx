@@ -1,5 +1,9 @@
 "use client";
 
+/**
+ * Hallmark · theme: bokdy-custom · design-system: design.md · Soft UI org detail
+ */
+
 import { useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
 import type { ReactNode } from "react";
@@ -16,7 +20,8 @@ export function OrganizationDetailLayout({ children }: { children: ReactNode }) 
   const tc = useTranslations("common");
   const params = useParams();
   const id = typeof params.id === "string" ? params.id : "";
-  const { data: org, isLoading, isError, error, refetch, isFetching } = useAdminOrganization(id);
+  const { data: org, isLoading, isError, error, refetch, isFetching } =
+    useAdminOrganization(id);
 
   if (isLoading) {
     return (
@@ -30,15 +35,15 @@ export function OrganizationDetailLayout({ children }: { children: ReactNode }) 
     const notFound = error instanceof ApiError && error.status === 404;
     return (
       <div className="page-canvas">
-      <EntityDetailError
-        message={notFound ? t("notFound") : t("detailLoadError")}
-        notFound={notFound}
-        retryLabel={tc("retry")}
-        onRetry={() => refetch()}
-        retryDisabled={isFetching}
-        backHref="/organizations"
-        backLabel={t("backToList")}
-      />
+        <EntityDetailError
+          message={notFound ? t("notFound") : t("detailLoadError")}
+          notFound={notFound}
+          retryLabel={tc("retry")}
+          onRetry={() => refetch()}
+          retryDisabled={isFetching}
+          backHref="/organizations"
+          backLabel={t("backToList")}
+        />
       </div>
     );
   }
@@ -52,7 +57,9 @@ export function OrganizationDetailLayout({ children }: { children: ReactNode }) 
       <div className="page-canvas flex min-h-full flex-1 flex-col overflow-hidden">
         <OrganizationDetailSubnav />
         <OrganizationOverviewTabs />
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">{children}</div>
+        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden md:gap-5">
+          {children}
+        </div>
       </div>
     </OrganizationDetailProvider>
   );

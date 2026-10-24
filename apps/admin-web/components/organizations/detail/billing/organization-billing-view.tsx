@@ -1,7 +1,7 @@
 "use client";
 
 import { Badge, cn } from "@bokdy/ui";
-import { ArrowUp, FileText } from "lucide-react";
+import { ArrowUp, CreditCard, FileText, Gauge } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { EntityDetailPanel } from "@/components/entity/detail-panel";
@@ -34,11 +34,17 @@ export function OrganizationBillingView() {
 
       <div className="flex flex-1 flex-col gap-4 overflow-y-auto soft-scrollbar p-4 md:px-6 md:pb-6">
         <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-2">
-          <div className="rounded-md border border-violet-500/30 bg-linear-to-br from-card to-violet-500/5 p-5">
-            <div className="mb-3.5 flex justify-between">
-              <div>
-                <EntitySectionHead>{t("currentPlan")}</EntitySectionHead>
-                <p className="text-2xl font-semibold text-violet-600 dark:text-violet-400">
+          <div className="soft-elevated rounded-2xl border-0 bg-linear-to-br from-card to-sky-500/5 p-5">
+            <div className="mb-3.5 flex justify-between gap-3">
+              <div className="min-w-0">
+                <EntitySectionHead
+                  icon={<CreditCard className="size-4" aria-hidden />}
+                  tone="sky"
+                  className="mb-2"
+                >
+                  {t("currentPlan")}
+                </EntitySectionHead>
+                <p className="text-2xl font-semibold text-sky-600 dark:text-sky-400">
                   {t(`plan.${DETAIL_MOCK.plan}`)}
                 </p>
               </div>
@@ -55,7 +61,9 @@ export function OrganizationBillingView() {
                 [t("method"), "VISA ****4242"],
               ].map(([k, v]) => (
                 <div key={String(k)}>
-                  <EntitySectionHead>{k}</EntitySectionHead>
+                  <p className="mb-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    {k}
+                  </p>
                   <p
                     className={cn(
                       "text-xs font-semibold",
@@ -69,7 +77,11 @@ export function OrganizationBillingView() {
             </div>
           </div>
 
-          <EntityDetailPanel title={t("usage")}>
+          <EntityDetailPanel
+            title={t("usage")}
+            icon={<Gauge className="size-4" aria-hidden />}
+            tone="emerald"
+          >
             {DETAIL_MOCK.billingUsage.map((u) => (
               <div key={u.labelKey} className="mb-3 last:mb-0">
                 <div className="mb-1 flex justify-between text-xs">
@@ -89,7 +101,11 @@ export function OrganizationBillingView() {
           </EntityDetailPanel>
         </div>
 
-        <EntityDetailPanel title={t("history")}>
+        <EntityDetailPanel
+          title={t("history")}
+          icon={<FileText className="size-4" aria-hidden />}
+          tone="amber"
+        >
           {DETAIL_MOCK.billingHistory.map((h) => (
             <div
               key={h.labelKey}

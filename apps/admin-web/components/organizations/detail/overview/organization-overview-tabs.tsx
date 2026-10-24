@@ -1,9 +1,13 @@
 "use client";
 
-import { cn } from "@bokdy/ui";
 import { useTranslations } from "next-intl";
+import { useMemo } from "react";
 
-import { Link, usePathname } from "@/i18n/navigation";
+import {
+  EntityDetailTabs,
+  type EntityDetailTabItem,
+} from "@/components/entity/detail-tabs";
+import { usePathname } from "@/i18n/navigation";
 
 import { useOrganizationDetail } from "../organization-detail-context";
 
@@ -24,45 +28,24 @@ export function OrganizationOverviewTabs() {
   const pathname = usePathname();
   const base = `/organizations/${orgId}`;
 
-  return (
-    <div className="shrink-0 overflow-x-auto soft-scrollbar border-b border-border px-6">
-      <div className="flex">
-        {TABS.map((tab) => {
-          const href = tab.href !== null ? `${base}${tab.href}` : undefined;
-          const isOverview = tab.id === "overview";
-          const active = isOverview
-            ? pathname === base || pathname.endsWith(base)
-            : pathname.includes(tab.href ?? "\0");
+  const tabs = useMemo<EntityDetailTabItem[]>(
+    () =>
+      TABS.map((tab) => {
+        const isOverview = tab.id === "overview";
+        const active = isOverview
+          ? pathname === base || pathname.endsWith(base)
+          : Boolean(tab.href && pathname.includes(tab.href));
 
-          if (tab.id === "audit") {
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                disabled
-                className="whitespace-nowrap border-b-2 border-transparent px-3.5 py-2 text-sm font-medium text-muted-foreground/50"
-              >
-                {t(tab.labelKey)}
-              </button>
-            );
-          }
-
-          return (
-            <Link
-              key={tab.id}
-              href={href!}
-              className={cn(
-                "whitespace-nowrap border-b-2 px-3.5 py-2 text-sm transition-colors",
-                active
-                  ? "border-primary font-bold text-primary"
-                  : "border-transparent font-medium text-muted-foreground hover:text-foreground",
-              )}
-            >
-              {t(tab.labelKey)}
-            </Link>
-          );
-        })}
-      </div>
-    </div>
+        return {
+          id: tab.id,
+          label: t(tab.labelKey),
+          href: tab.href !== null ? `${base}${tab.href}` : undefined,
+          active,
+          disabled: tab.href === null,
+        };
+      }),
+    [base, pathname, t],
   );
+
+  return <EntityDetailTabs tabs={tabs} ariaLabel={t("overview")} />;
 }

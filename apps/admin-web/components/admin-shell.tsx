@@ -79,7 +79,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
         {/* Provider must wrap header (SidebarTrigger) and still keep header full-width above the rail */}
         <SidebarProvider
           className={cn(
-            "shell--admin flex h-svh min-h-0 w-full flex-col overflow-hidden bg-shell-bg",
+            "shell--admin flex h-svh min-h-0 w-full flex-col overflow-hidden",
           )}
           open={false}
           onOpenChange={() => {

@@ -20,6 +20,7 @@ import {
 
 import {
   DataListLayout,
+  softDirectoryPrimaryBtn,
   type DataListStatItem,
   type DataListStatusTab,
 } from "@/components/data-list";
@@ -136,31 +137,28 @@ export function OrganizationDirectoryToolbar({
           count: directoryStats.branchTotal,
         }),
         icon: <Building2 className="size-4" aria-hidden />,
-        iconTone: "bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300",
+        iconTone: "sky",
       },
       {
         key: "active",
         label: t("directoryKpis.active"),
         value: directoryStats.active,
         icon: <ShieldCheck className="size-4" aria-hidden />,
-        iconTone:
-          "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
+        iconTone: "emerald",
       },
       {
         key: "inactive",
         label: t("directoryKpis.inactive"),
         value: directoryStats.inactive,
         icon: <PowerOff className="size-4" aria-hidden />,
-        iconTone:
-          "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
+        iconTone: "amber",
       },
       {
         key: "suspended",
         label: t("directoryKpis.suspended"),
         value: directoryStats.suspended,
         icon: <PauseCircle className="size-4" aria-hidden />,
-        iconTone:
-          "bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300",
+        iconTone: "rose",
       },
     ],
     [directoryStats, t],
@@ -213,8 +211,8 @@ export function OrganizationDirectoryToolbar({
       primaryAction={
         <Button
           type="button"
-          size="sm"
-          className="soft-cta-shadow h-10 gap-1.5 rounded-full px-4"
+          size="lg"
+          className={softDirectoryPrimaryBtn}
           onClick={onOpenCreate}
         >
           <Plus className="size-4" aria-hidden />

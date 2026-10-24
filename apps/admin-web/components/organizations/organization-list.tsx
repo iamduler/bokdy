@@ -5,7 +5,11 @@ import type { PaginationState, RowSelectionState, SortingState } from "@tanstack
 import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 
-import { DATA_LIST_PAGE_SIZE, DataTable } from "@/components/data-list";
+import {
+  DATA_LIST_PAGE_SIZE,
+  DataTable,
+  softDirectoryPrimaryBtn,
+} from "@/components/data-list";
 import { EntityAvatar } from "@/components/entity/avatar";
 import { EntityUnavailableBadge } from "@/components/entity/unavailable";
 import { useOrganizationColumns } from "@/components/organizations/organization-columns";
@@ -92,7 +96,7 @@ export function OrganizationList({
             <Button
               type="button"
               size="sm"
-              className="soft-cta-shadow rounded-full"
+              className={softDirectoryPrimaryBtn}
               onClick={onOpenCreate}
             >
               + {t("create")}

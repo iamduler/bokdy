@@ -1,11 +1,13 @@
 "use client";
 
-import { Badge, Button } from "@bokdy/ui";
+import { Button } from "@bokdy/ui";
 import { Pencil } from "lucide-react";
 import { useTranslations } from "next-intl";
 
+import { softDirectoryPrimaryBtn } from "@/components/data-list";
 import { EntityAvatar } from "@/components/entity/avatar";
 import { EntityIdentityHeader } from "@/components/entity/identity-header";
+import { SoftStatusChip } from "@/components/entity/soft-status-chip";
 import { OrganizationStatusBadge } from "@/components/organizations/organization-status-badge";
 import { useProvinces, useWards } from "@/hooks/use-admin-units";
 import { Link } from "@/i18n/navigation";
@@ -36,7 +38,9 @@ export function OrganizationOverviewHeader() {
   const provinceName = provinces.find((unit) => unit.id === provinceId)?.name;
   const wardName = wards.find((unit) => unit.id === wardId)?.name;
   const place = [wardName, provinceName].filter(Boolean).join(", ");
-  const orgType = ORGANIZATION_TYPES.has(org.organization_type as OrganizationType)
+  const orgType = ORGANIZATION_TYPES.has(
+    org.organization_type as OrganizationType,
+  )
     ? (org.organization_type as OrganizationType)
     : null;
 
@@ -50,7 +54,7 @@ export function OrganizationOverviewHeader() {
           <img
             src={`/api/go/files/${org.logo_file_id}`}
             alt=""
-            className="size-14 shrink-0 rounded-full border border-border object-cover"
+            className="size-14 shrink-0 rounded-full object-cover ring-1 ring-black/5"
           />
         ) : (
           <EntityAvatar name={org.name} size="lg" />
@@ -61,21 +65,19 @@ export function OrganizationOverviewHeader() {
         <>
           <OrganizationStatusBadge kind="org" status={org.status} />
           {orgType ? (
-            <Badge variant="secondary" className="text-[11px] font-bold">
-              {t(`type.${orgType}`)}
-            </Badge>
+            <SoftStatusChip label={t(`type.${orgType}`)} tone="muted" />
           ) : null}
         </>
       }
       meta={
-        <p className="truncate text-xs text-muted-foreground">
+        <p className="truncate text-sm text-muted-foreground">
           {[org.slug, place].filter(Boolean).join(" · ")}
         </p>
       }
       actions={
-        <Button asChild size="sm" className="h-8 gap-1.5 text-xs">
+        <Button asChild size="lg" className={softDirectoryPrimaryBtn}>
           <Link href={`/organizations/${orgId}/edit`}>
-            <Pencil className="h-3.5 w-3.5" />
+            <Pencil className="size-4" aria-hidden />
             {t("detailOverview.editProfile")}
           </Link>
         </Button>

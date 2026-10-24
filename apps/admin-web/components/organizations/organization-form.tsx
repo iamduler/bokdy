@@ -2,6 +2,7 @@
 
 import { toast } from "@bokdy/ui";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Building2, Mail, MapPin } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
@@ -417,6 +418,8 @@ export function OrganizationForm(props: OrganizationFormProps) {
       {
         id: "identity",
         title: t("sectionIdentity"),
+        icon: <Building2 className="size-4" aria-hidden />,
+        tone: "sky",
         fields: [
           {
             kind: "text",
@@ -473,6 +476,8 @@ export function OrganizationForm(props: OrganizationFormProps) {
       {
         id: "contact",
         title: t("sectionContact"),
+        icon: <Mail className="size-4" aria-hidden />,
+        tone: "emerald",
         fields: [
           {
             kind: "text",
@@ -502,6 +507,8 @@ export function OrganizationForm(props: OrganizationFormProps) {
         id: "address",
         title: t("sectionAddress"),
         description: t("addressHint"),
+        icon: <MapPin className="size-4" aria-hidden />,
+        tone: "amber",
         fields: [
           {
             kind: "select",

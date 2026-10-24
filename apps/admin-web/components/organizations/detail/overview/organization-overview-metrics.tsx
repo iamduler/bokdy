@@ -3,6 +3,8 @@
 import { MapPin } from "lucide-react";
 import { useTranslations } from "next-intl";
 
+import { DataListStats } from "@/components/data-list";
+
 import { useOrganizationDetail } from "../organization-detail-context";
 
 export function OrganizationOverviewMetrics() {
@@ -10,14 +12,19 @@ export function OrganizationOverviewMetrics() {
   const { org } = useOrganizationDetail();
 
   return (
-    <div className="shrink-0 px-6 pb-1">
-      <div className="inline-flex min-w-[108px] flex-col gap-0.5 rounded-md border border-border bg-card px-2.5 py-2">
-        <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-          <MapPin className="h-3 w-3 text-primary" aria-hidden />
-          {t("branches")}
-        </div>
-        <p className="text-base font-bold text-primary">{org.branch_count ?? 0}</p>
-      </div>
+    <div className="shrink-0 px-5 pb-1 md:px-6">
+      <DataListStats
+        className="grid-cols-1 sm:max-w-xs md:grid-cols-1"
+        items={[
+          {
+            key: "branches",
+            label: t("branches"),
+            value: org.branch_count ?? 0,
+            icon: <MapPin className="size-4" aria-hidden />,
+            iconTone: "sky",
+          },
+        ]}
+      />
     </div>
   );
 }

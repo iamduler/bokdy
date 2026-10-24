@@ -2,6 +2,7 @@
 
 import { toast } from "@bokdy/ui";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Mail, MapPin, Store } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef } from "react";
 import { FormProvider, useForm } from "react-hook-form";
@@ -232,6 +233,8 @@ export function BranchForm(props: BranchFormProps) {
       {
         id: "identity",
         title: t("sectionIdentity"),
+        icon: <Store className="size-4" aria-hidden />,
+        tone: "sky",
         fields: [
           { kind: "text", name: "name_vi", label: t("fieldNameVi"), required: true },
           { kind: "text", name: "name_en", label: t("fieldNameEn"), required: true },
@@ -249,6 +252,8 @@ export function BranchForm(props: BranchFormProps) {
       {
         id: "contact",
         title: t("sectionContact"),
+        icon: <Mail className="size-4" aria-hidden />,
+        tone: "emerald",
         fields: [
           { kind: "text", name: "email", label: t("fieldEmail"), inputType: "email", autoComplete: "email" },
           { kind: "text", name: "phone", label: t("fieldPhone"), inputType: "tel", autoComplete: "tel" },
@@ -263,6 +268,8 @@ export function BranchForm(props: BranchFormProps) {
       {
         id: "address",
         title: tb("address"),
+        icon: <MapPin className="size-4" aria-hidden />,
+        tone: "amber",
         fields: [
           {
             kind: "select",

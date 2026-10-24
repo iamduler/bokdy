@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 
 import { EntityDetailScreenHeader } from "@/components/entity/detail-screen-header";
@@ -19,12 +20,13 @@ export function OrganizationDetailScreenHeader({
   actions,
   className,
 }: OrganizationDetailScreenHeaderProps) {
+  const tShell = useTranslations("shell");
   const { orgId } = useOrganizationDetail();
 
   return (
     <EntityDetailScreenHeader
       backHref={`/organizations/${orgId}`}
-      backLabel={title}
+      backLabel={tShell("menuBack")}
       title={title}
       subtitle={subtitle}
       actions={actions}

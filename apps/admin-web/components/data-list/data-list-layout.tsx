@@ -107,7 +107,7 @@ export function DataListLayout({
             {title}
           </h1>
         </div>
-        <div className="flex shrink-0 flex-wrap items-center gap-2">
+        <div className="flex shrink-0 flex-wrap items-center gap-3">
           {actions}
           {secondaryAction}
           {primaryAction}
@@ -119,51 +119,53 @@ export function DataListLayout({
       <div className="soft-elevated flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border-0">
         <div className="flex shrink-0 flex-col gap-3 border-b border-border/40 px-4 py-3.5 md:flex-row md:items-center md:justify-between md:px-6 md:py-4">
           <div
-            className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto soft-scrollbar"
+            className="min-w-0 flex-1 overflow-x-auto soft-scrollbar"
             role="tablist"
             aria-label={statusAriaLabel}
           >
-            {statusTabs.map((tab) => {
-              const active = statusValue === tab.value;
-              return (
-                <button
-                  key={tab.value || "__all"}
-                  type="button"
-                  role="tab"
-                  aria-selected={active}
-                  onClick={() => onStatusChange(tab.value)}
-                  className={cn(
-                    "inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors",
-                    active
-                      ? "bg-foreground text-background shadow-sm"
-                      : "text-muted-foreground hover:bg-muted/70 hover:text-foreground",
-                  )}
-                >
-                  {tab.dotClass && !active ? (
-                    <span
-                      className={cn(
-                        "size-1.5 shrink-0 rounded-full",
-                        tab.dotClass,
-                      )}
-                      aria-hidden
-                    />
-                  ) : null}
-                  <span>{tab.label}</span>
-                  {typeof tab.count === "number" ? (
-                    <span
-                      className={cn(
-                        "tabular-nums",
-                        active
-                          ? "text-background/70"
-                          : "text-muted-foreground/80",
-                      )}
-                    >
-                      {tab.count}
-                    </span>
-                  ) : null}
-                </button>
-              );
-            })}
+            <div className="inline-flex w-max max-w-full items-center rounded-full border border-border/60 bg-card p-1 shadow-sm">
+              {statusTabs.map((tab) => {
+                const active = statusValue === tab.value;
+                return (
+                  <button
+                    key={tab.value || "__all"}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    onClick={() => onStatusChange(tab.value)}
+                    className={cn(
+                      "inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors",
+                      active
+                        ? "bg-sky-500 text-white shadow-sm"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    {tab.dotClass && !active ? (
+                      <span
+                        className={cn(
+                          "size-1.5 shrink-0 rounded-full",
+                          tab.dotClass,
+                        )}
+                        aria-hidden
+                      />
+                    ) : null}
+                    <span>{tab.label}</span>
+                    {typeof tab.count === "number" ? (
+                      <span
+                        className={cn(
+                          "inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-semibold tabular-nums",
+                          active
+                            ? "bg-white/20 text-white"
+                            : "bg-muted text-muted-foreground",
+                        )}
+                      >
+                        {tab.count}
+                      </span>
+                    ) : null}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           <div className="flex shrink-0 items-center gap-2">

@@ -61,19 +61,81 @@ body {
   border-radius: 9999px;
 }
 
+/*
+ * Soft UI page atmosphere — warm canvas + sky / pink washes
+ * (color-mix pattern; pink kept lighter than sky per design.md)
+ */
+.shell--admin {
+  background-color: var(--shell-bg, #f3efe8);
+  background-image:
+    radial-gradient(
+      ellipse 90% 65% at 0% -5%,
+      color-mix(in srgb, var(--shell-accent) 28%, transparent),
+      transparent 58%
+    ),
+    radial-gradient(
+      ellipse 75% 55% at 100% 0%,
+      color-mix(in srgb, var(--shell-accent-secondary) 16%, transparent),
+      transparent 52%
+    ),
+    radial-gradient(
+      ellipse 55% 45% at 70% 100%,
+      color-mix(in srgb, var(--shell-accent) 12%, transparent),
+      transparent 55%
+    );
+  background-attachment: fixed;
+}
+
+.dark .shell--admin {
+  background-color: var(--shell-bg, #070d1c);
+  background-image:
+    radial-gradient(
+      ellipse 90% 65% at 0% -5%,
+      color-mix(in srgb, var(--shell-accent) 18%, transparent),
+      transparent 58%
+    ),
+    radial-gradient(
+      ellipse 75% 55% at 100% 0%,
+      color-mix(in srgb, var(--shell-accent-secondary) 10%, transparent),
+      transparent 52%
+    ),
+    radial-gradient(
+      ellipse 55% 45% at 70% 100%,
+      color-mix(in srgb, var(--shell-accent) 8%, transparent),
+      transparent 55%
+    );
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) .shell--admin {
+    background-color: var(--shell-bg, #070d1c);
+    background-image:
+      radial-gradient(
+        ellipse 90% 65% at 0% -5%,
+        color-mix(in srgb, var(--shell-accent) 18%, transparent),
+        transparent 58%
+      ),
+      radial-gradient(
+        ellipse 75% 55% at 100% 0%,
+        color-mix(in srgb, var(--shell-accent-secondary) 10%, transparent),
+        transparent 52%
+      ),
+      radial-gradient(
+        ellipse 55% 45% at 70% 100%,
+        color-mix(in srgb, var(--shell-accent) 8%, transparent),
+        transparent 55%
+      );
+  }
+}
+
 .page-canvas {
   background-color: var(--shell-bg, #f3efe8);
   min-height: 100%;
 }
 
-.dark .page-canvas {
-  background-color: var(--shell-bg, #070d1c);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not(.light) .page-canvas {
-    background-color: var(--shell-bg, #070d1c);
-  }
+/* Inside shell, canvas is clear so fixed sky/pink washes show through */
+.shell--admin .page-canvas {
+  background-color: transparent;
 }
 
 /* Soft UI floating icon rail — content-height pill, not full viewport */

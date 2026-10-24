@@ -49,8 +49,8 @@ export function AdminHeader({
   const greetingKey = useGreetingKey();
 
   return (
-    <header className="sticky top-0 z-40 w-full shrink-0 bg-shell-bg">
-      <div className="soft-chrome-bar mx-4 my-2 flex h-14 items-center gap-3 border-0 px-4 md:h-16 md:px-4">
+    <header className="sticky top-0 z-40 w-full shrink-0 bg-transparent">
+      <div className="soft-chrome-bar relative mx-4 my-2 flex h-14 items-center gap-3 border-0 px-4 md:h-16 md:px-4">
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <SidebarTrigger className="md:hidden" aria-label={t("openMenu")} />
 
@@ -85,14 +85,17 @@ export function AdminHeader({
           />
         </div>
 
-        <div className="flex shrink-0 items-center gap-1.5 md:gap-2">
-          <QuickSearchButton />
-          <NotificationBell placement="header" />
-          {/* Detail pages may still portal leading/actions; directories no longer mount + New here */}
+        {/* Viewport-centered portal for page actions (e.g. form save) */}
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
           <div
             ref={setActionSlot}
-            className="flex items-center gap-2 empty:hidden"
+            className="pointer-events-auto flex items-center gap-2 empty:hidden"
           />
+        </div>
+
+        <div className="relative z-10 flex shrink-0 items-center gap-1.5 md:gap-2">
+          <QuickSearchButton />
+          <NotificationBell placement="header" />
           <UserMenu
             email={email}
             displayName={displayName}
