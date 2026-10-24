@@ -35,7 +35,6 @@ type FormState = {
   provinceId: string;
   wardId: string;
   line1: string;
-  line2: string;
 };
 
 function toValue(s: FormState): BranchAddressValue {
@@ -43,7 +42,6 @@ function toValue(s: FormState): BranchAddressValue {
     division_scheme: s.scheme,
     country_id: VN_COUNTRY_ID,
     address_line_1: s.line1 || undefined,
-    address_line_2: s.line2 || undefined,
   };
   if (s.scheme === "former_v3") {
     return {
@@ -69,7 +67,6 @@ function initialState(value?: BranchAddressValue): FormState {
     provinceId: value?.province_id ?? "",
     wardId: value?.ward_id ?? "",
     line1: value?.address_line_1 ?? "",
-    line2: value?.address_line_2 ?? "",
   };
 }
 
@@ -114,7 +111,6 @@ export function BranchAddressFields({ value, onChange, className }: BranchAddres
               provinceId: "",
               wardId: "",
               line1: form.line1,
-              line2: form.line2,
             });
           }}
           className="h-9 w-full rounded-md border border-border bg-background px-2.5 text-sm"
@@ -178,14 +174,6 @@ export function BranchAddressFields({ value, onChange, className }: BranchAddres
           id={`${schemeId}-line1`}
           value={form.line1}
           onChange={(e) => update({ ...form, line1: e.target.value })}
-        />
-      </div>
-      <div className="space-y-1.5">
-        <Label htmlFor={`${schemeId}-line2`}>{t("line2")}</Label>
-        <Input
-          id={`${schemeId}-line2`}
-          value={form.line2}
-          onChange={(e) => update({ ...form, line2: e.target.value })}
         />
       </div>
     </div>

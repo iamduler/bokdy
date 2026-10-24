@@ -30,6 +30,7 @@ import {
   type OrgStatus,
 } from "@/lib/api/admin";
 import { ApiError, errorMessageKey } from "@/lib/api/errors";
+import { toVietnameseASCII } from "@/lib/text/vietnamese-ascii";
 import {
   ORGANIZATION_TYPES,
   organizationFormSchema,
@@ -56,7 +57,6 @@ const FORM_FIELDS = [
   "province_id",
   "ward_id",
   "address_line_1",
-  "address_line_2",
 ] as const;
 
 type OrganizationFormProps =
@@ -78,7 +78,6 @@ const emptyValues: OrganizationFormValues = {
   province_id: "",
   ward_id: "",
   address_line_1: "",
-  address_line_2: "",
   status: "inactive",
   suspend_reason: "",
 };
@@ -103,7 +102,6 @@ function valuesFromOrganization(
     province_id: organization.headquarters?.province_id ?? "",
     ward_id: organization.headquarters?.ward_id ?? "",
     address_line_1: organization.headquarters?.address_line_1 ?? "",
-    address_line_2: organization.headquarters?.address_line_2 ?? "",
     status: organization.status,
     suspend_reason: "",
   };
@@ -114,27 +112,23 @@ function profileBody(
   mode: "create" | "edit",
 ): OrganizationProfileInput {
   const headquarters =
-    values.province_id ||
-    values.ward_id ||
-    values.address_line_1 ||
-    values.address_line_2
+    values.province_id || values.ward_id || values.address_line_1
       ? {
           province_id: values.province_id || undefined,
           ward_id: values.ward_id || undefined,
           address_line_1: values.address_line_1,
-          address_line_2: values.address_line_2,
         }
       : mode === "edit"
         ? {
             province_id: "",
             ward_id: "",
             address_line_1: "",
-            address_line_2: "",
           }
         : undefined;
+  const nameVi = values.name_vi.trim();
   return {
-    name_vi: values.name_vi,
-    name_en: values.name_en,
+    name_vi: nameVi,
+    name_en: toVietnameseASCII(nameVi || values.name_en),
     legal_name: values.legal_name,
     organization_type: values.organization_type,
     slug: values.slug,
@@ -427,12 +421,12 @@ export function OrganizationForm(props: OrganizationFormProps) {
             label: t("fieldNameVi"),
             required: true,
             autoComplete: "organization",
-          },
-          {
-            kind: "text",
-            name: "name_en",
-            label: t("fieldNameEn"),
-            required: true,
+            onValueChange: (value) => {
+              setValue("name_en", toVietnameseASCII(value), {
+                shouldDirty: true,
+                shouldValidate: true,
+              });
+            },
           },
           { kind: "text", name: "legal_name", label: t("fieldLegalName") },
           {
@@ -538,7 +532,6 @@ export function OrganizationForm(props: OrganizationFormProps) {
             label: t("fieldAddress1"),
             span: 2,
           },
-          // { kind: "text", name: "address_line_2", label: t("fieldAddress2") },
         ],
       },
     ],

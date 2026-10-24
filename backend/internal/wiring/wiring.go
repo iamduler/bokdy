@@ -64,10 +64,11 @@ func RegisterRoutes(api *gin.RouterGroup, app *server.Application) {
 	staffRepo := orgpg.NewStaffRepo(app.DB.Pool)
 	inviteRepo := orgpg.NewInvitationRepo(app.DB.Pool)
 	branchRepo := orgpg.NewBranchRepo(app.DB.Pool)
+	sportRepo := catalogpg.NewSportRepo(app.DB.Pool)
 	orgSvc := orgservice.NewOrganizationService(
 		app.DB.Pool, orgRepo, staffRepo, inviteRepo, roleRepo, userRepo, app.Mailer, outbox,
 	)
-	branchSvc := orgservice.NewBranchService(app.DB.Pool, orgRepo, branchRepo, orgSvc, outbox)
+	branchSvc := orgservice.NewBranchService(app.DB.Pool, orgRepo, branchRepo, sportRepo, orgSvc, outbox)
 	customerRepo := crmpg.NewCustomerRepo(app.DB.Pool)
 	customerSvc := crmservice.NewCustomerService(app.DB.Pool, customerRepo, orgRepo, orgSvc, outbox)
 	orgHandler := orghandler.NewOrganizationHandler(orgSvc)
@@ -84,7 +85,7 @@ func RegisterRoutes(api *gin.RouterGroup, app *server.Application) {
 	courtTypeRepo := catalogpg.NewCourtTypeRepo(app.DB.Pool)
 	courtRepo := catalogpg.NewCourtRepo(app.DB.Pool)
 	catalogSvc := catalogservice.NewCatalogService(
-		app.DB.Pool, courtTypeRepo, courtRepo, orgRepo, branchRepo, orgSvc, outbox, syncEnqueuer,
+		app.DB.Pool, courtTypeRepo, courtRepo, sportRepo, orgRepo, branchRepo, orgSvc, outbox, syncEnqueuer,
 	)
 	catalogHandler := cataloghandler.NewCatalogHandler(catalogSvc)
 

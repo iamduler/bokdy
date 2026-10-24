@@ -82,7 +82,17 @@ type courtDTO struct {
 	IsBookable  bool   `json:"is_bookable"`
 }
 
+type sportDTO struct {
+	ID     string `json:"id"`
+	Code   string `json:"code"`
+	Name   string `json:"name"`
+	NameEn string `json:"name_en"`
+	NameVi string `json:"name_vi"`
+	Icon   string `json:"icon,omitempty"`
+}
+
 func (h *CatalogHandler) RegisterRoutes(rg *gin.RouterGroup, jwt gin.HandlerFunc) {
+	rg.GET("/sports", jwt, h.ListSports)
 	types := rg.Group("/court-types", jwt, middleware.OptionalOrganization())
 	{
 		types.POST("", h.CreateCourtType)
@@ -102,6 +112,30 @@ func (h *CatalogHandler) RegisterRoutes(rg *gin.RouterGroup, jwt gin.HandlerFunc
 		courts.POST("/:id/maintenance", h.ScheduleMaintenance)
 		courts.POST("/:id/maintenance/complete", h.CompleteMaintenance)
 		courts.POST("/:id/archive", h.ArchiveCourt)
+	}
+}
+
+func (h *CatalogHandler) ListSports(c *gin.Context) {
+	if _, ok := userID(c); !ok {
+		return
+	}
+	items, err := h.catalog.ListSports(c.Request.Context())
+	if err != nil {
+		httpx.Error(c, err)
+		return
+	}
+	out := make([]sportDTO, 0, len(items))
+	for i := range items {
+		out = append(out, toSportDTO(c.Request.Context(), &items[i]))
+	}
+	httpx.OK(c, out)
+}
+
+func toSportDTO(ctx context.Context, sport *entity.Sport) sportDTO {
+	return sportDTO{
+		ID: sport.ID.String(), Code: sport.Code,
+		Name: i18n.DisplayName(i18n.FromContext(ctx), sport.NameEn, sport.NameVi),
+		NameEn: sport.NameEn, NameVi: sport.NameVi, Icon: sport.Icon,
 	}
 }
 

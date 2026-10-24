@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
 
 import { EntityDetailError, EntityDetailLoading } from "@/components/entity/detail-state";
-import { BranchDetailView } from "@/components/organizations/detail/branches/branch-detail-view";
+import { BranchDetailView } from "@/components/branches/branch-detail-view";
 import { usePageShellTitle } from "@/components/shell/shell-title";
 import { useBranch } from "@/hooks/use-branches";
 import { ApiError } from "@/lib/api/errors";

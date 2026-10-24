@@ -1,20 +1,19 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useEffect } from "react";
 import { useParams } from "next/navigation";
 
-import { BranchForm } from "@/components/organizations/detail/branches/branch-form";
-import { usePageShellTitle } from "@/components/shell/shell-title";
+import { useRouter } from "@/i18n/navigation";
 
+/** Branch create is sheet-only — redirect away from full-page form. */
 export default function NewBranchPage() {
-  const tb = useTranslations("organization.branch");
-  usePageShellTitle(tb("createTitle"));
+  const router = useRouter();
   const params = useParams();
   const organizationId = typeof params.id === "string" ? params.id : "";
 
-  return (
-    <div className="page-canvas min-h-0 flex-1 overflow-auto">
-      <BranchForm mode="create" organizationId={organizationId} />
-    </div>
-  );
+  useEffect(() => {
+    router.replace(`/organizations/${organizationId}/branches`);
+  }, [organizationId, router]);
+
+  return null;
 }

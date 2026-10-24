@@ -20,6 +20,7 @@ tags:
   - name: Organizations
   - name: Branches
   - name: Customers
+  - name: Sports
   - name: CourtTypes
   - name: Courts
   - name: Schedule
@@ -980,6 +981,40 @@ paths:
           $ref: "#/components/responses/Error"
         "422":
           $ref: "#/components/responses/ValidationFailed"
+  /api/v1/branches/slug-available:
+    get:
+      tags: [Branches]
+      summary: Check whether a branch slug is available within the organization
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XOrganizationId"
+        - name: slug
+          in: query
+          required: true
+          schema: { type: string }
+        - name: exclude_id
+          in: query
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Availability
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      available: { type: boolean }
+                      slug: { type: string }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
   /api/v1/branches/{id}:
     get:
       tags: [Branches]
@@ -1043,11 +1078,48 @@ paths:
           $ref: "#/components/responses/Error"
         "422":
           $ref: "#/components/responses/ValidationFailed"
+  /api/v1/branches/{id}/media:
+    post:
+      tags: [Branches]
+      summary: Upload a cropped branch avatar (logo) or banner
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/BranchId"
+        - $ref: "#/components/parameters/XOrganizationId"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [kind, file]
+              properties:
+                kind: { type: string, enum: [logo, banner] }
+                file: { type: string, format: binary }
+      responses:
+        "200":
+          description: Branch with the new file id
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/Branch"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
   /api/v1/branches/{id}/open:
     post:
       tags: [Branches]
       summary: Open branch
-      description: "inactive -> active"
+      description: "inactive|maintenance -> active"
       security:
         - bearerAuth: []
       parameters:
@@ -1068,7 +1140,7 @@ paths:
     post:
       tags: [Branches]
       summary: Close branch
-      description: "active -> inactive"
+      description: "active|maintenance -> inactive"
       security:
         - bearerAuth: []
       parameters:
@@ -1077,6 +1149,27 @@ paths:
       responses:
         "204":
           description: Closed
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+  /api/v1/branches/{id}/maintenance:
+    post:
+      tags: [Branches]
+      summary: Put branch into maintenance
+      description: "active|inactive -> maintenance"
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/BranchId"
+        - $ref: "#/components/parameters/XOrganizationId"
+      responses:
+        "204":
+          description: Maintenance started
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -1352,6 +1445,29 @@ paths:
         "403":
           $ref: "#/components/responses/Error"
         "404":
+          $ref: "#/components/responses/Error"
+  /api/v1/sports:
+    get:
+      tags: [Sports]
+      summary: List sports catalog
+      description: Authenticated. Platform catalog of offered sports (Phase 1 seed).
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/AcceptLanguage"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Sport"
+        "401":
           $ref: "#/components/responses/Error"
   /api/v1/court-types:
     get:
@@ -3933,6 +4049,8 @@ components:
         ward_id: { type: string, format: uuid }
         address_line_1: { type: string }
         address_line_2: { type: string }
+        latitude: { type: number, minimum: -90, maximum: 90 }
+        longitude: { type: number, minimum: -180, maximum: 180 }
     AdminDivisionScheme:
       type: string
       enum: [former_v3, current_v2]
@@ -3953,44 +4071,91 @@ components:
         public_id: { type: string, minLength: 26, maxLength: 26 }
         organization_id: { type: string, format: uuid }
         code: { type: string }
+        slug: { type: string }
         name: { type: string, description: Resolved from Accept-Language }
         name_en: { type: string }
         name_vi: { type: string }
         phone: { type: string }
         email: { type: string, format: email }
         timezone: { type: string }
+        logo_file_id: { type: string, format: uuid, description: Avatar image file id }
+        banner_file_id: { type: string, format: uuid }
         status: { type: string, enum: [active, inactive, maintenance, archived] }
+        court_count: { type: integer, minimum: 0, description: Non-deleted courts at this branch }
         addresses:
           type: array
           items:
             $ref: "#/components/schemas/BranchAddress"
+        sport_ids:
+          type: array
+          items: { type: string, format: uuid }
     CreateBranchRequest:
       type: object
-      description: At least one of name_en or name_vi is required. Initial status is inactive.
+      description: >
+        At least one of name_en or name_vi is required. Initial status is inactive.
+        Server assigns code (BRN00001…) and timezone Asia/Ho_Chi_Minh; client code/timezone are ignored.
+        Blank slug is generated from name (unique within organization).
+        A current_v2 address with province_id, ward_id, address_line_1, latitude, and longitude is required.
       properties:
         name_en: { type: string }
         name_vi: { type: string }
-        code: { type: string }
+        code:
+          type: string
+          description: Ignored on create — server generates BRN + 5-digit sequence.
+          deprecated: true
+        slug:
+          type: string
+          description: Optional. Blank → server slugify(name) with numeric suffix on conflict.
         phone: { type: string }
         email: { type: string, format: email }
-        timezone: { type: string }
+        timezone:
+          type: string
+          description: Ignored on create — always Asia/Ho_Chi_Minh (UTC+7).
+          deprecated: true
         addresses:
           type: array
           items:
             $ref: "#/components/schemas/BranchAddress"
+        sport_ids:
+          type: array
+          items: { type: string, format: uuid }
     UpdateBranchRequest:
       type: object
+      description: code and timezone are immutable and ignored if sent.
       properties:
         name_en: { type: string }
         name_vi: { type: string }
-        code: { type: string }
+        code:
+          type: string
+          description: Immutable — ignored on update.
+          deprecated: true
+        slug:
+          type: string
+          description: Optional. Blank → regenerate from name; must be unique within organization.
         phone: { type: string }
         email: { type: string, format: email }
-        timezone: { type: string }
+        timezone:
+          type: string
+          description: Immutable — ignored on update.
+          deprecated: true
         addresses:
           type: array
           items:
             $ref: "#/components/schemas/BranchAddress"
+        sport_ids:
+          type: array
+          description: When present, replaces the full set of offered sports.
+          items: { type: string, format: uuid }
+    Sport:
+      type: object
+      required: [id, code, name, name_en, name_vi]
+      properties:
+        id: { type: string, format: uuid }
+        code: { type: string }
+        name: { type: string, description: Resolved from Accept-Language }
+        name_en: { type: string }
+        name_vi: { type: string }
+        icon: { type: string }
     CustomerContact:
       type: object
       required: [type, value, is_primary, is_verified]

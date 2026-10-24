@@ -5,6 +5,7 @@ import (
 	"strings"
 	"unicode"
 
+	"bokdy/internal/catalog/entity"
 	catalogerrors "bokdy/internal/catalog/errors"
 	"bokdy/internal/catalog/repository"
 	orgentity "bokdy/internal/organization/entity"
@@ -31,6 +32,7 @@ type CatalogService struct {
 	pool     *pgxpool.Pool
 	types    repository.CourtTypeRepository
 	courts   repository.CourtRepository
+	sports   repository.SportRepository
 	orgs     orgrepository.OrganizationRepository
 	branches orgrepository.BranchRepository
 	orgSvc   *orgservice.OrganizationService
@@ -47,6 +49,7 @@ func NewCatalogService(
 	pool *pgxpool.Pool,
 	types repository.CourtTypeRepository,
 	courts repository.CourtRepository,
+	sports repository.SportRepository,
 	orgs orgrepository.OrganizationRepository,
 	branches orgrepository.BranchRepository,
 	orgSvc *orgservice.OrganizationService,
@@ -54,8 +57,16 @@ func NewCatalogService(
 	avail CourtAvailabilitySync,
 ) *CatalogService {
 	return &CatalogService{
-		pool: pool, types: types, courts: courts, orgs: orgs, branches: branches, orgSvc: orgSvc, outbox: outbox, avail: avail,
+		pool: pool, types: types, courts: courts, sports: sports, orgs: orgs, branches: branches, orgSvc: orgSvc, outbox: outbox, avail: avail,
 	}
+}
+
+func (s *CatalogService) ListSports(ctx context.Context) ([]entity.Sport, error) {
+	items, err := s.sports.List(ctx)
+	if err != nil {
+		return nil, apperr.Wrap(err, apperr.CodeInternal, "list sports")
+	}
+	return items, nil
 }
 
 func (s *CatalogService) enqueueAvailability(ctx context.Context, courtID uuid.UUID) {

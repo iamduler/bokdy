@@ -4,7 +4,7 @@ import createNextIntlPlugin from "next-intl/plugin";
 const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["@bokdy/ui"],
+  transpilePackages: ["@bokdy/ui", "@bokdy/icons"],
 };
 
 export default withNextIntl(nextConfig);

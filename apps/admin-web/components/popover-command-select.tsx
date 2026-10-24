@@ -16,6 +16,8 @@ import {
 import { Check, ChevronDown } from "lucide-react";
 import * as React from "react";
 
+import { commandSearchFilter } from "@/lib/text/vietnamese-ascii";
+
 export type PopoverCommandOption = {
   value: string;
   label: string;
@@ -112,7 +114,10 @@ export function PopoverCommandSelect({
             : "w-[var(--radix-popover-trigger-width)] min-w-[10rem]",
         )}
       >
-        <Command className={isNav ? "bg-popover" : undefined}>
+        <Command
+          className={isNav ? "bg-popover" : undefined}
+          filter={commandSearchFilter}
+        >
           {searchable ? <CommandInput placeholder={searchPlaceholder} /> : null}
           <CommandList>
             <CommandEmpty>{emptyText ?? "—"}</CommandEmpty>
@@ -122,7 +127,7 @@ export function PopoverCommandSelect({
                 return (
                   <CommandItem
                     key={option.value}
-                    value={option.keywords}
+                    value={`${option.label} ${option.keywords}`}
                     onSelect={() => {
                       onValueChange(option.value);
                       setOpen(false);

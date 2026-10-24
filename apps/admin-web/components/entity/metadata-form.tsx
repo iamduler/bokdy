@@ -13,12 +13,14 @@ import {
 
 import { EntityFormSection, entityFormFieldsClass } from "@/components/entity/form-section";
 import type { SoftIconToneKey } from "@/components/entity/soft-icon-chip";
+import { PopoverCommandMultiSelect } from "@/components/popover-command-multi-select";
 import {
   PopoverCommandSelect,
   type PopoverCommandOption,
 } from "@/components/popover-command-select";
 
 const selectClass = "w-full justify-between border border-input bg-background";
+const multiSelectClass = "w-full bg-background";
 
 type FieldBase<T extends FieldValues> = {
   name: FieldPath<T>;
@@ -38,6 +40,9 @@ export type EntityTextField<T extends FieldValues> = FieldBase<T> & {
   inputType?: "text" | "email" | "tel" | "url";
   placeholder?: string;
   autoComplete?: string;
+  /** Normalize value on change (e.g. Vietnamese → ASCII). */
+  transform?: (value: string) => string;
+  onValueChange?: (value: string, form: UseFormReturn<T>) => void;
 };
 
 export type EntitySelectField<T extends FieldValues> = FieldBase<T> & {
@@ -48,7 +53,18 @@ export type EntitySelectField<T extends FieldValues> = FieldBase<T> & {
   onValueChange?: (value: string, form: UseFormReturn<T>) => void;
 };
 
-export type EntityFormField<T extends FieldValues> = EntityTextField<T> | EntitySelectField<T>;
+export type EntityMultiSelectField<T extends FieldValues> = FieldBase<T> & {
+  kind: "multi-select";
+  options: PopoverCommandOption[];
+  searchable?: boolean;
+  placeholder?: string;
+  onValueChange?: (value: string[], form: UseFormReturn<T>) => void;
+};
+
+export type EntityFormField<T extends FieldValues> =
+  | EntityTextField<T>
+  | EntitySelectField<T>
+  | EntityMultiSelectField<T>;
 
 export type EntityFormBlock<T extends FieldValues> = {
   id: string;
@@ -141,7 +157,30 @@ function MetadataField<T extends FieldValues>({
         }}
       />
     );
+  } else if (field.kind === "multi-select") {
+    const selected = Array.isArray(values[field.name])
+      ? (values[field.name] as string[])
+      : [];
+    control = (
+      <PopoverCommandMultiSelect
+        value={selected}
+        disabled={disabled}
+        searchable={field.searchable}
+        placeholder={field.placeholder}
+        aria-label={field.label}
+        options={field.options}
+        className={multiSelectClass}
+        onValueChange={(value) => {
+          form.setValue(field.name, value as PathValue<T, FieldPath<T>>, {
+            shouldDirty: true,
+            shouldValidate: true,
+          });
+          field.onValueChange?.(value, form);
+        }}
+      />
+    );
   } else {
+    const { onChange: registerOnChange, ...registerRest } = form.register(field.name);
     control = (
       <Input
         id={id}
@@ -151,7 +190,16 @@ function MetadataField<T extends FieldValues>({
         disabled={disabled}
         aria-invalid={Boolean(error) || undefined}
         aria-required={field.required}
-        {...form.register(field.name)}
+        {...registerRest}
+        onChange={(event) => {
+          const raw = event.target.value;
+          const next = field.transform ? field.transform(raw) : raw;
+          if (field.transform && next !== raw) {
+            event.target.value = next;
+          }
+          void registerOnChange(event);
+          field.onValueChange?.(next, form);
+        }}
       />
     );
   }

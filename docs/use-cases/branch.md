@@ -21,12 +21,15 @@ Validations
 
 - Branch limit not exceeded.
 - Branch name is unique within the organization.
+- Branch slug is unique within the organization (blank slug is generated from name).
+- Sport IDs, when provided, must exist in the sports catalog.
 
 Flow
 
-1. Create branch.
-2. Initialize operating hours.
-3. Initialize default settings.
+1. Create branch (optional slug, optional sports).
+2. Optionally upload avatar (logo) and/or banner via media endpoint after create.
+3. Initialize operating hours.
+4. Initialize default settings.
 
 Events
 
@@ -52,10 +55,13 @@ Preconditions
 Validations
 
 - User has permission.
+- Branch slug is unique within the organization when changed.
+- Sport IDs, when provided, must exist in the sports catalog.
 
 Flow
 
-1. Update branch information.
+1. Update branch information (profile, slug, sports).
+2. Optionally upload or replace avatar (logo) and/or banner via media endpoint.
 
 Events
 

@@ -1649,7 +1649,7 @@ export interface paths {
         put?: never;
         /**
          * Create branch
-         * @description Owner only. Initial status `inactive`. Creates empty location_settings (no scheduling rows).
+         * @description Owner or system admin. Initial status `inactive`. Creates empty location_settings (no scheduling rows).
          */
         post: {
             parameters: {
@@ -1687,6 +1687,56 @@ export interface paths {
                 422: components["responses"]["ValidationFailed"];
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/branches/slug-available": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Check whether a branch slug is available within the organization */
+        get: {
+            parameters: {
+                query: {
+                    slug: string;
+                    exclude_id?: string;
+                };
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Availability */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: {
+                                available?: boolean;
+                                slug?: string;
+                            };
+                        };
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1780,6 +1830,62 @@ export interface paths {
         };
         trace?: never;
     };
+    "/api/v1/branches/{id}/media": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload a cropped branch avatar (logo) or banner */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                };
+                path: {
+                    id: components["parameters"]["BranchId"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "multipart/form-data": {
+                        /** @enum {string} */
+                        kind: "logo" | "banner";
+                        /** Format: binary */
+                        file: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Branch with the new file id */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["Branch"];
+                        };
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/branches/{id}/open": {
         parameters: {
             query?: never;
@@ -1791,7 +1897,7 @@ export interface paths {
         put?: never;
         /**
          * Open branch
-         * @description inactive -> active
+         * @description inactive|maintenance -> active
          */
         post: {
             parameters: {
@@ -1837,7 +1943,7 @@ export interface paths {
         put?: never;
         /**
          * Close branch
-         * @description active -> inactive
+         * @description active|maintenance -> inactive
          */
         post: {
             parameters: {
@@ -1854,6 +1960,52 @@ export interface paths {
             requestBody?: never;
             responses: {
                 /** @description Closed */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/branches/{id}/maintenance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Put branch into maintenance
+         * @description active|inactive -> maintenance
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                };
+                path: {
+                    id: components["parameters"]["BranchId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Maintenance started */
                 204: {
                     headers: {
                         [name: string]: unknown;
@@ -2278,6 +2430,51 @@ export interface paths {
                 404: components["responses"]["Error"];
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List sports catalog
+         * @description Authenticated. Platform catalog of offered sports (Phase 1 seed).
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: {
+                    /** @description BCP-47. First supported tag (vi, en) wins. Missing or unknown → vi. */
+                    "Accept-Language"?: components["parameters"]["AcceptLanguage"];
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["Sport"][];
+                        };
+                    };
+                };
+                401: components["responses"]["Error"];
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -6111,6 +6308,8 @@ export interface components {
             ward_id?: string;
             address_line_1?: string;
             address_line_2?: string;
+            latitude?: number;
+            longitude?: number;
         };
         /** @enum {string} */
         AdminDivisionScheme: "former_v3" | "current_v2";
@@ -6130,6 +6329,7 @@ export interface components {
             /** Format: uuid */
             organization_id: string;
             code: string;
+            slug?: string;
             /** @description Resolved from Accept-Language */
             name: string;
             name_en?: string;
@@ -6138,30 +6338,74 @@ export interface components {
             /** Format: email */
             email?: string;
             timezone?: string;
+            /**
+             * Format: uuid
+             * @description Avatar image file id
+             */
+            logo_file_id?: string;
+            /** Format: uuid */
+            banner_file_id?: string;
             /** @enum {string} */
             status: "active" | "inactive" | "maintenance" | "archived";
+            /** @description Non-deleted courts at this branch */
+            court_count?: number;
             addresses?: components["schemas"]["BranchAddress"][];
+            sport_ids?: string[];
         };
-        /** @description At least one of name_en or name_vi is required. Initial status is inactive. */
+        /** @description At least one of name_en or name_vi is required. Initial status is inactive. Server assigns code (BRN00001…) and timezone Asia/Ho_Chi_Minh; client code/timezone are ignored. Blank slug is generated from name (unique within organization). A current_v2 address with province_id, ward_id, address_line_1, latitude, and longitude is required. */
         CreateBranchRequest: {
             name_en?: string;
             name_vi?: string;
+            /**
+             * @deprecated
+             * @description Ignored on create — server generates BRN + 5-digit sequence.
+             */
             code?: string;
+            /** @description Optional. Blank → server slugify(name) with numeric suffix on conflict. */
+            slug?: string;
             phone?: string;
             /** Format: email */
             email?: string;
+            /**
+             * @deprecated
+             * @description Ignored on create — always Asia/Ho_Chi_Minh (UTC+7).
+             */
             timezone?: string;
             addresses?: components["schemas"]["BranchAddress"][];
+            sport_ids?: string[];
         };
+        /** @description code and timezone are immutable and ignored if sent. */
         UpdateBranchRequest: {
             name_en?: string;
             name_vi?: string;
+            /**
+             * @deprecated
+             * @description Immutable — ignored on update.
+             */
             code?: string;
+            /** @description Optional. Blank → regenerate from name; must be unique within organization. */
+            slug?: string;
             phone?: string;
             /** Format: email */
             email?: string;
+            /**
+             * @deprecated
+             * @description Immutable — ignored on update.
+             */
             timezone?: string;
             addresses?: components["schemas"]["BranchAddress"][];
+            /** @description When present, replaces the full set of offered sports. */
+            sport_ids?: string[];
+        };
+        Sport: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            /** @description Resolved from Accept-Language */
+            name: string;
+            name_en: string;
+            name_vi: string;
+            icon?: string;
         };
         CustomerContact: {
             /** @enum {string} */

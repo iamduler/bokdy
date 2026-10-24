@@ -14,6 +14,7 @@ var (
 	ErrBranchNotFound        = apperr.New(apperr.CodeNotFound, "branch not found")
 	ErrBranchCodeTaken       = apperr.New(apperr.CodeConflict, "branch code already exists")
 	ErrBranchNameTaken       = apperr.New(apperr.CodeConflict, "branch name already exists")
+	ErrInvalidSportIDs       = apperr.New(apperr.CodeValidation, "one or more sport ids are invalid")
 	ErrInvalidBranchStatus   = apperr.New(apperr.CodeValidation, "invalid branch status transition")
 	ErrInvalidStaffStatus    = apperr.New(apperr.CodeValidation, "invalid staff status transition")
 	ErrInvitationNotPending  = apperr.New(apperr.CodeValidation, "invitation is not pending")

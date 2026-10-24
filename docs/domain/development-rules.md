@@ -469,6 +469,10 @@ Public HTTP APIs return RFC3339 UTC (`Z`). The frontend converts for display usi
 
 Branch timezone is only for venue business clocks (opening hours, slots). Do not convert identity or audit timestamps on the API.
 
+New branches default to `Asia/Ho_Chi_Minh` (UTC+7). Entity forms must not expose timezone editors until product allows change.
+
+Business `code` values use `{PREFIX}{5-digit}` (e.g. `BRN00001`). Prefixes live in `backend/internal/platform/entitycode` (FE mirror: `apps/admin-web/lib/entity-code-prefixes.ts`). Server generates codes on create; clients must not invent them.
+
 ---
 
 # Money

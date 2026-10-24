@@ -20,6 +20,9 @@ importers:
       '@bokdy/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@bokdy/icons':
+        specifier: workspace:*
+        version: link:../../packages/icons
       '@bokdy/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -236,6 +239,28 @@ importers:
         version: 5.9.3
 
   packages/config: {}
+
+  packages/icons:
+    dependencies:
+      react:
+        specifier: ^19
+        version: 19.2.4
+      react-dom:
+        specifier: ^19
+        version: 19.2.4(react@19.2.4)
+    devDependencies:
+      '@bokdy/config':
+        specifier: workspace:*
+        version: link:../config
+      '@types/react':
+        specifier: ^19
+        version: 19.2.18
+      '@types/react-dom':
+        specifier: ^19
+        version: 19.2.4(@types/react@19.2.18)
+      typescript:
+        specifier: ^5
+        version: 5.9.3
 
   packages/sdk:
     devDependencies:

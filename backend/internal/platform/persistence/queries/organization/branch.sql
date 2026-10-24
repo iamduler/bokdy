@@ -1,7 +1,7 @@
 -- name: CreateLocation :exec
 INSERT INTO organization.locations
-    (id, public_id, business_unit_id, organization_id, code, name_en, name_vi, phone, email, timezone, status, created_at, updated_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13);
+    (id, public_id, business_unit_id, organization_id, code, slug, name_en, name_vi, phone, email, timezone, status, created_at, updated_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14);
 
 -- name: CreateLocationAddress :exec
 INSERT INTO organization.location_addresses
@@ -24,9 +24,9 @@ INSERT INTO organization.location_settings (id, location_id, updated_at)
 VALUES ($1, $2, now());
 
 -- name: FindBranchByID :one
-SELECT l.id, l.public_id, l.business_unit_id, l.organization_id, l.code,
+SELECT l.id, l.public_id, l.business_unit_id, l.organization_id, l.code, l.slug,
        COALESCE(l.name_en, '') AS name_en, COALESCE(l.name_vi, '') AS name_vi, COALESCE(l.phone, '') AS phone, COALESCE(l.email, '') AS email,
-       COALESCE(l.timezone, '') AS timezone, l.status, l.created_at, l.updated_at, l.deleted_at,
+       COALESCE(l.timezone, '') AS timezone, l.logo_file_id, l.banner_file_id, l.status, l.created_at, l.updated_at, l.deleted_at,
        ac.id AS current_address_id, ac.country_id AS current_country_id,
        ac.province_id AS current_province_id, ac.ward_id AS current_ward_id,
        COALESCE(ac.address_line_1, '') AS current_address_line_1, COALESCE(ac.address_line_2, '') AS current_address_line_2,
@@ -41,9 +41,9 @@ LEFT JOIN organization.location_addresses af ON af.location_id = l.id AND af.div
 WHERE l.organization_id = $1 AND l.id = $2 AND l.deleted_at IS NULL;
 
 -- name: ListBranchesByOrg :many
-SELECT l.id, l.public_id, l.business_unit_id, l.organization_id, l.code,
+SELECT l.id, l.public_id, l.business_unit_id, l.organization_id, l.code, l.slug,
        COALESCE(l.name_en, '') AS name_en, COALESCE(l.name_vi, '') AS name_vi, COALESCE(l.phone, '') AS phone, COALESCE(l.email, '') AS email,
-       COALESCE(l.timezone, '') AS timezone, l.status, l.created_at, l.updated_at, l.deleted_at,
+       COALESCE(l.timezone, '') AS timezone, l.logo_file_id, l.banner_file_id, l.status, l.created_at, l.updated_at, l.deleted_at,
        ac.id AS current_address_id, ac.country_id AS current_country_id,
        ac.province_id AS current_province_id, ac.ward_id AS current_ward_id,
        COALESCE(ac.address_line_1, '') AS current_address_line_1, COALESCE(ac.address_line_2, '') AS current_address_line_2,
@@ -60,7 +60,12 @@ ORDER BY l.created_at ASC;
 
 -- name: UpdateLocation :exec
 UPDATE organization.locations
-SET code = $3, name_en = $4, name_vi = $5, phone = $6, email = $7, timezone = $8, updated_at = now()
+SET code = $3, slug = $4, name_en = $5, name_vi = $6, phone = $7, email = $8, timezone = $9, updated_at = now()
+WHERE organization_id = $1 AND id = $2 AND deleted_at IS NULL;
+
+-- name: UpdateLocationMedia :exec
+UPDATE organization.locations
+SET logo_file_id = $3, banner_file_id = $4, updated_at = now()
 WHERE organization_id = $1 AND id = $2 AND deleted_at IS NULL;
 
 -- name: UpdateLocationStatus :exec
@@ -74,6 +79,19 @@ SELECT EXISTS(
       AND (sqlc.narg(exclude_id)::uuid IS NULL OR id <> sqlc.narg(exclude_id))
 ) AS exists;
 
+-- name: MaxBranchCodeSeq :one
+-- Returns the highest numeric suffix for codes matching PREFIX + digits within a business unit.
+SELECT COALESCE(MAX(
+    CASE
+        WHEN code ~ ('^' || sqlc.arg(prefix)::text || '[0-9]+$')
+        THEN SUBSTRING(code FROM LENGTH(sqlc.arg(prefix)::text) + 1)::int
+        ELSE NULL
+    END
+), 0)::int AS max_seq
+FROM organization.locations
+WHERE business_unit_id = sqlc.arg(business_unit_id)
+  AND deleted_at IS NULL;
+
 -- name: BranchNameExists :one
 SELECT EXISTS(
     SELECT 1 FROM organization.locations
@@ -85,3 +103,37 @@ SELECT EXISTS(
         OR (sqlc.arg(name_vi)::text <> '' AND lower(COALESCE(name_vi, '')) = lower(sqlc.arg(name_vi)::text))
       )
 ) AS exists;
+
+-- name: BranchSlugExists :one
+SELECT EXISTS(
+    SELECT 1 FROM organization.locations
+    WHERE organization_id = sqlc.arg(organization_id)
+      AND slug = sqlc.arg(slug)
+      AND deleted_at IS NULL
+      AND (sqlc.narg(exclude_id)::uuid IS NULL OR id <> sqlc.narg(exclude_id))
+) AS exists;
+
+-- name: DeleteLocationSports :exec
+DELETE FROM organization.location_sports WHERE location_id = $1;
+
+-- name: CreateLocationSport :exec
+INSERT INTO organization.location_sports (id, location_id, sport_id, created_at)
+VALUES ($1, $2, $3, $4);
+
+-- name: ListLocationSportIDs :many
+SELECT sport_id FROM organization.location_sports
+WHERE location_id = $1
+ORDER BY created_at ASC;
+
+-- name: ListLocationSportIDsByLocations :many
+SELECT location_id, sport_id FROM organization.location_sports
+WHERE location_id = ANY(sqlc.arg(location_ids)::uuid[])
+ORDER BY location_id, created_at ASC;
+
+-- name: CountCourtsByLocationIDs :many
+SELECT location_id, COUNT(*)::int AS court_count
+FROM catalog.resources
+WHERE location_id = ANY(sqlc.arg(location_ids)::uuid[])
+  AND resource_type = 'court'
+  AND deleted_at IS NULL
+GROUP BY location_id;

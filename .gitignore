@@ -1,6 +1,11 @@
 # Local secrets — do not commit.
 .env
 backend/.env
+.npmrc
+
+# Local Font Awesome Pro web dump (do not commit ~149MB)
+/vendor/fontawesome-pro/
+
 
 # Build artifacts
 backend/bin/

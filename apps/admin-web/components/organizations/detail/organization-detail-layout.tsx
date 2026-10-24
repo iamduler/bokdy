@@ -13,13 +13,17 @@ import { OrganizationDetailProvider } from "@/components/organizations/detail/or
 import { OrganizationDetailSubnav } from "@/components/organizations/detail/organization-detail-subnav";
 import { OrganizationOverviewTabs } from "@/components/organizations/detail/overview/organization-overview-tabs";
 import { useAdminOrganization } from "@/hooks/use-admin-organizations";
+import { usePathname } from "@/i18n/navigation";
 import { ApiError } from "@/lib/api/errors";
 
 export function OrganizationDetailLayout({ children }: { children: ReactNode }) {
   const t = useTranslations("organization");
   const tc = useTranslations("common");
   const params = useParams();
+  const pathname = usePathname();
   const id = typeof params.id === "string" ? params.id : "";
+  const leaf = pathname.split("/").filter(Boolean).at(-1);
+  const isFormRoute = leaf === "new" || leaf === "edit";
   const { data: org, isLoading, isError, error, refetch, isFetching } =
     useAdminOrganization(id);
 
@@ -55,8 +59,12 @@ export function OrganizationDetailLayout({ children }: { children: ReactNode }) 
   return (
     <OrganizationDetailProvider org={org} orgId={id}>
       <div className="page-canvas flex min-h-full flex-1 flex-col overflow-hidden">
-        <OrganizationDetailSubnav />
-        <OrganizationOverviewTabs />
+        {isFormRoute ? null : (
+          <>
+            <OrganizationDetailSubnav />
+            <OrganizationOverviewTabs />
+          </>
+        )}
         <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden md:gap-5">
           {children}
         </div>

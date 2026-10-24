@@ -66,10 +66,67 @@ func (q *Queries) BranchNameExists(ctx context.Context, arg BranchNameExistsPara
 	return exists, err
 }
 
+const branchSlugExists = `-- name: BranchSlugExists :one
+SELECT EXISTS(
+    SELECT 1 FROM organization.locations
+    WHERE organization_id = $1
+      AND slug = $2
+      AND deleted_at IS NULL
+      AND ($3::uuid IS NULL OR id <> $3)
+) AS exists
+`
+
+type BranchSlugExistsParams struct {
+	OrganizationID uuid.UUID  `json:"organization_id"`
+	Slug           string     `json:"slug"`
+	ExcludeID      *uuid.UUID `json:"exclude_id"`
+}
+
+func (q *Queries) BranchSlugExists(ctx context.Context, arg BranchSlugExistsParams) (bool, error) {
+	row := q.db.QueryRow(ctx, branchSlugExists, arg.OrganizationID, arg.Slug, arg.ExcludeID)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
+const countCourtsByLocationIDs = `-- name: CountCourtsByLocationIDs :many
+SELECT location_id, COUNT(*)::int AS court_count
+FROM catalog.resources
+WHERE location_id = ANY($1::uuid[])
+  AND resource_type = 'court'
+  AND deleted_at IS NULL
+GROUP BY location_id
+`
+
+type CountCourtsByLocationIDsRow struct {
+	LocationID uuid.UUID `json:"location_id"`
+	CourtCount int32     `json:"court_count"`
+}
+
+func (q *Queries) CountCourtsByLocationIDs(ctx context.Context, locationIds []uuid.UUID) ([]CountCourtsByLocationIDsRow, error) {
+	rows, err := q.db.Query(ctx, countCourtsByLocationIDs, locationIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []CountCourtsByLocationIDsRow{}
+	for rows.Next() {
+		var i CountCourtsByLocationIDsRow
+		if err := rows.Scan(&i.LocationID, &i.CourtCount); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const createLocation = `-- name: CreateLocation :exec
 INSERT INTO organization.locations
-    (id, public_id, business_unit_id, organization_id, code, name_en, name_vi, phone, email, timezone, status, created_at, updated_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+    (id, public_id, business_unit_id, organization_id, code, slug, name_en, name_vi, phone, email, timezone, status, created_at, updated_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
 `
 
 type CreateLocationParams struct {
@@ -78,6 +135,7 @@ type CreateLocationParams struct {
 	BusinessUnitID uuid.UUID                  `json:"business_unit_id"`
 	OrganizationID uuid.UUID                  `json:"organization_id"`
 	Code           string                     `json:"code"`
+	Slug           string                     `json:"slug"`
 	NameEn         *string                    `json:"name_en"`
 	NameVi         *string                    `json:"name_vi"`
 	Phone          *string                    `json:"phone"`
@@ -95,6 +153,7 @@ func (q *Queries) CreateLocation(ctx context.Context, arg CreateLocationParams) 
 		arg.BusinessUnitID,
 		arg.OrganizationID,
 		arg.Code,
+		arg.Slug,
 		arg.NameEn,
 		arg.NameVi,
 		arg.Phone,
@@ -164,6 +223,28 @@ func (q *Queries) CreateLocationSettings(ctx context.Context, arg CreateLocation
 	return err
 }
 
+const createLocationSport = `-- name: CreateLocationSport :exec
+INSERT INTO organization.location_sports (id, location_id, sport_id, created_at)
+VALUES ($1, $2, $3, $4)
+`
+
+type CreateLocationSportParams struct {
+	ID         uuid.UUID `json:"id"`
+	LocationID uuid.UUID `json:"location_id"`
+	SportID    uuid.UUID `json:"sport_id"`
+	CreatedAt  time.Time `json:"created_at"`
+}
+
+func (q *Queries) CreateLocationSport(ctx context.Context, arg CreateLocationSportParams) error {
+	_, err := q.db.Exec(ctx, createLocationSport,
+		arg.ID,
+		arg.LocationID,
+		arg.SportID,
+		arg.CreatedAt,
+	)
+	return err
+}
+
 const deleteLocationAddresses = `-- name: DeleteLocationAddresses :exec
 DELETE FROM organization.location_addresses WHERE location_id = $1
 `
@@ -173,10 +254,19 @@ func (q *Queries) DeleteLocationAddresses(ctx context.Context, locationID uuid.U
 	return err
 }
 
+const deleteLocationSports = `-- name: DeleteLocationSports :exec
+DELETE FROM organization.location_sports WHERE location_id = $1
+`
+
+func (q *Queries) DeleteLocationSports(ctx context.Context, locationID uuid.UUID) error {
+	_, err := q.db.Exec(ctx, deleteLocationSports, locationID)
+	return err
+}
+
 const findBranchByID = `-- name: FindBranchByID :one
-SELECT l.id, l.public_id, l.business_unit_id, l.organization_id, l.code,
+SELECT l.id, l.public_id, l.business_unit_id, l.organization_id, l.code, l.slug,
        COALESCE(l.name_en, '') AS name_en, COALESCE(l.name_vi, '') AS name_vi, COALESCE(l.phone, '') AS phone, COALESCE(l.email, '') AS email,
-       COALESCE(l.timezone, '') AS timezone, l.status, l.created_at, l.updated_at, l.deleted_at,
+       COALESCE(l.timezone, '') AS timezone, l.logo_file_id, l.banner_file_id, l.status, l.created_at, l.updated_at, l.deleted_at,
        ac.id AS current_address_id, ac.country_id AS current_country_id,
        ac.province_id AS current_province_id, ac.ward_id AS current_ward_id,
        COALESCE(ac.address_line_1, '') AS current_address_line_1, COALESCE(ac.address_line_2, '') AS current_address_line_2,
@@ -202,11 +292,14 @@ type FindBranchByIDRow struct {
 	BusinessUnitID          uuid.UUID                  `json:"business_unit_id"`
 	OrganizationID          uuid.UUID                  `json:"organization_id"`
 	Code                    string                     `json:"code"`
+	Slug                    string                     `json:"slug"`
 	NameEn                  string                     `json:"name_en"`
 	NameVi                  string                     `json:"name_vi"`
 	Phone                   string                     `json:"phone"`
 	Email                   string                     `json:"email"`
 	Timezone                string                     `json:"timezone"`
+	LogoFileID              *uuid.UUID                 `json:"logo_file_id"`
+	BannerFileID            *uuid.UUID                 `json:"banner_file_id"`
 	Status                  OrganizationLocationStatus `json:"status"`
 	CreatedAt               time.Time                  `json:"created_at"`
 	UpdatedAt               time.Time                  `json:"updated_at"`
@@ -241,11 +334,14 @@ func (q *Queries) FindBranchByID(ctx context.Context, arg FindBranchByIDParams) 
 		&i.BusinessUnitID,
 		&i.OrganizationID,
 		&i.Code,
+		&i.Slug,
 		&i.NameEn,
 		&i.NameVi,
 		&i.Phone,
 		&i.Email,
 		&i.Timezone,
+		&i.LogoFileID,
+		&i.BannerFileID,
 		&i.Status,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -274,9 +370,9 @@ func (q *Queries) FindBranchByID(ctx context.Context, arg FindBranchByIDParams) 
 }
 
 const listBranchesByOrg = `-- name: ListBranchesByOrg :many
-SELECT l.id, l.public_id, l.business_unit_id, l.organization_id, l.code,
+SELECT l.id, l.public_id, l.business_unit_id, l.organization_id, l.code, l.slug,
        COALESCE(l.name_en, '') AS name_en, COALESCE(l.name_vi, '') AS name_vi, COALESCE(l.phone, '') AS phone, COALESCE(l.email, '') AS email,
-       COALESCE(l.timezone, '') AS timezone, l.status, l.created_at, l.updated_at, l.deleted_at,
+       COALESCE(l.timezone, '') AS timezone, l.logo_file_id, l.banner_file_id, l.status, l.created_at, l.updated_at, l.deleted_at,
        ac.id AS current_address_id, ac.country_id AS current_country_id,
        ac.province_id AS current_province_id, ac.ward_id AS current_ward_id,
        COALESCE(ac.address_line_1, '') AS current_address_line_1, COALESCE(ac.address_line_2, '') AS current_address_line_2,
@@ -298,11 +394,14 @@ type ListBranchesByOrgRow struct {
 	BusinessUnitID          uuid.UUID                  `json:"business_unit_id"`
 	OrganizationID          uuid.UUID                  `json:"organization_id"`
 	Code                    string                     `json:"code"`
+	Slug                    string                     `json:"slug"`
 	NameEn                  string                     `json:"name_en"`
 	NameVi                  string                     `json:"name_vi"`
 	Phone                   string                     `json:"phone"`
 	Email                   string                     `json:"email"`
 	Timezone                string                     `json:"timezone"`
+	LogoFileID              *uuid.UUID                 `json:"logo_file_id"`
+	BannerFileID            *uuid.UUID                 `json:"banner_file_id"`
 	Status                  OrganizationLocationStatus `json:"status"`
 	CreatedAt               time.Time                  `json:"created_at"`
 	UpdatedAt               time.Time                  `json:"updated_at"`
@@ -343,11 +442,14 @@ func (q *Queries) ListBranchesByOrg(ctx context.Context, organizationID uuid.UUI
 			&i.BusinessUnitID,
 			&i.OrganizationID,
 			&i.Code,
+			&i.Slug,
 			&i.NameEn,
 			&i.NameVi,
 			&i.Phone,
 			&i.Email,
 			&i.Timezone,
+			&i.LogoFileID,
+			&i.BannerFileID,
 			&i.Status,
 			&i.CreatedAt,
 			&i.UpdatedAt,
@@ -382,9 +484,92 @@ func (q *Queries) ListBranchesByOrg(ctx context.Context, organizationID uuid.UUI
 	return items, nil
 }
 
+const listLocationSportIDs = `-- name: ListLocationSportIDs :many
+SELECT sport_id FROM organization.location_sports
+WHERE location_id = $1
+ORDER BY created_at ASC
+`
+
+func (q *Queries) ListLocationSportIDs(ctx context.Context, locationID uuid.UUID) ([]uuid.UUID, error) {
+	rows, err := q.db.Query(ctx, listLocationSportIDs, locationID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []uuid.UUID{}
+	for rows.Next() {
+		var sport_id uuid.UUID
+		if err := rows.Scan(&sport_id); err != nil {
+			return nil, err
+		}
+		items = append(items, sport_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listLocationSportIDsByLocations = `-- name: ListLocationSportIDsByLocations :many
+SELECT location_id, sport_id FROM organization.location_sports
+WHERE location_id = ANY($1::uuid[])
+ORDER BY location_id, created_at ASC
+`
+
+type ListLocationSportIDsByLocationsRow struct {
+	LocationID uuid.UUID `json:"location_id"`
+	SportID    uuid.UUID `json:"sport_id"`
+}
+
+func (q *Queries) ListLocationSportIDsByLocations(ctx context.Context, locationIds []uuid.UUID) ([]ListLocationSportIDsByLocationsRow, error) {
+	rows, err := q.db.Query(ctx, listLocationSportIDsByLocations, locationIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListLocationSportIDsByLocationsRow{}
+	for rows.Next() {
+		var i ListLocationSportIDsByLocationsRow
+		if err := rows.Scan(&i.LocationID, &i.SportID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const maxBranchCodeSeq = `-- name: MaxBranchCodeSeq :one
+SELECT COALESCE(MAX(
+    CASE
+        WHEN code ~ ('^' || $1::text || '[0-9]+$')
+        THEN SUBSTRING(code FROM LENGTH($1::text) + 1)::int
+        ELSE NULL
+    END
+), 0)::int AS max_seq
+FROM organization.locations
+WHERE business_unit_id = $2
+  AND deleted_at IS NULL
+`
+
+type MaxBranchCodeSeqParams struct {
+	Prefix         string    `json:"prefix"`
+	BusinessUnitID uuid.UUID `json:"business_unit_id"`
+}
+
+// Returns the highest numeric suffix for codes matching PREFIX + digits within a business unit.
+func (q *Queries) MaxBranchCodeSeq(ctx context.Context, arg MaxBranchCodeSeqParams) (int32, error) {
+	row := q.db.QueryRow(ctx, maxBranchCodeSeq, arg.Prefix, arg.BusinessUnitID)
+	var max_seq int32
+	err := row.Scan(&max_seq)
+	return max_seq, err
+}
+
 const updateLocation = `-- name: UpdateLocation :exec
 UPDATE organization.locations
-SET code = $3, name_en = $4, name_vi = $5, phone = $6, email = $7, timezone = $8, updated_at = now()
+SET code = $3, slug = $4, name_en = $5, name_vi = $6, phone = $7, email = $8, timezone = $9, updated_at = now()
 WHERE organization_id = $1 AND id = $2 AND deleted_at IS NULL
 `
 
@@ -392,6 +577,7 @@ type UpdateLocationParams struct {
 	OrganizationID uuid.UUID `json:"organization_id"`
 	ID             uuid.UUID `json:"id"`
 	Code           string    `json:"code"`
+	Slug           string    `json:"slug"`
 	NameEn         *string   `json:"name_en"`
 	NameVi         *string   `json:"name_vi"`
 	Phone          *string   `json:"phone"`
@@ -404,6 +590,7 @@ func (q *Queries) UpdateLocation(ctx context.Context, arg UpdateLocationParams) 
 		arg.OrganizationID,
 		arg.ID,
 		arg.Code,
+		arg.Slug,
 		arg.NameEn,
 		arg.NameVi,
 		arg.Phone,
@@ -450,6 +637,29 @@ func (q *Queries) UpdateLocationAddress(ctx context.Context, arg UpdateLocationA
 		arg.AddressLine2,
 		arg.Latitude,
 		arg.Longitude,
+	)
+	return err
+}
+
+const updateLocationMedia = `-- name: UpdateLocationMedia :exec
+UPDATE organization.locations
+SET logo_file_id = $3, banner_file_id = $4, updated_at = now()
+WHERE organization_id = $1 AND id = $2 AND deleted_at IS NULL
+`
+
+type UpdateLocationMediaParams struct {
+	OrganizationID uuid.UUID  `json:"organization_id"`
+	ID             uuid.UUID  `json:"id"`
+	LogoFileID     *uuid.UUID `json:"logo_file_id"`
+	BannerFileID   *uuid.UUID `json:"banner_file_id"`
+}
+
+func (q *Queries) UpdateLocationMedia(ctx context.Context, arg UpdateLocationMediaParams) error {
+	_, err := q.db.Exec(ctx, updateLocationMedia,
+		arg.OrganizationID,
+		arg.ID,
+		arg.LogoFileID,
+		arg.BannerFileID,
 	)
 	return err
 }

@@ -4,10 +4,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { adminOrganizationKeys } from "@/hooks/use-admin-organizations";
 import {
+  archiveBranch,
   closeBranch,
   createBranch,
   getBranch,
   listBranches,
+  maintenanceBranch,
   openBranch,
   updateBranch,
   type BranchProfileInput,
@@ -75,6 +77,22 @@ export function useCloseBranch(organizationId: string, id: string) {
   const invalidate = useInvalidateBranches(organizationId);
   return useMutation({
     mutationFn: () => closeBranch(organizationId, id),
+    onSuccess: () => invalidate(id),
+  });
+}
+
+export function useMaintenanceBranch(organizationId: string, id: string) {
+  const invalidate = useInvalidateBranches(organizationId);
+  return useMutation({
+    mutationFn: () => maintenanceBranch(organizationId, id),
+    onSuccess: () => invalidate(id),
+  });
+}
+
+export function useArchiveBranch(organizationId: string, id: string) {
+  const invalidate = useInvalidateBranches(organizationId);
+  return useMutation({
+    mutationFn: () => archiveBranch(organizationId, id),
     onSuccess: () => invalidate(id),
   });
 }

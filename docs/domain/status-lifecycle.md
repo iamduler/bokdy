@@ -410,15 +410,14 @@ archived
 
 W2 maps Branch to `organization.locations`.
 
-API verbs use open/close/archive; stored statuses:
+API verbs use open/close/maintenance/archive; stored statuses:
 
 | API | Status |
 |-----|--------|
 | open | `active` |
 | close | `inactive` |
+| maintenance | `maintenance` |
 | archive | `archived` |
-
-`maintenance` is reserved for Court (W4), not Branch open/close.
 
 ## Lifecycle
 
@@ -433,7 +432,14 @@ active
 
 inactive
 
-↓ archive (from active or inactive)
+↓ maintenance (from active or inactive)
+
+maintenance
+
+↓ open → active
+↓ close → inactive
+
+↓ archive (from any non-archived)
 
 archived
 ```
@@ -444,14 +450,15 @@ archived
 |--------|-------------|
 | inactive | Closed; default on create |
 | active | Open for operations |
-| maintenance | Reserved (not used by Branch APIs in W2) |
+| maintenance | Temporary venue renovation / unavailability |
 | archived | Terminal; excluded from list |
 
 ## Rules
 
 - Create starts as `inactive`.
-- Open only from `inactive`.
-- Close only from `active`.
+- Open from `inactive` or `maintenance`.
+- Close from `active` or `maintenance`.
+- Maintenance from `active` or `inactive`.
 - Archive from any non-archived status.
 - W2 does not enforce “no active bookings” on archive (Booking not implemented yet).
 - W2 initializes empty `location_settings` only (no `scheduling.*` rows).

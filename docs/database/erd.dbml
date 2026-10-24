@@ -1086,6 +1086,7 @@ TableGroup "Organization" {
   organization.locations
   organization.location_addresses
   organization.location_settings
+  organization.location_sports
 
   organization.staff_members
   organization.staff_profiles
@@ -1315,6 +1316,8 @@ Table organization.locations {
 
   code varchar(100) [not null]
 
+  slug varchar(150) [not null]
+
   name_en varchar(255)
 
   name_vi varchar(255)
@@ -1324,6 +1327,10 @@ Table organization.locations {
   email varchar(255)
 
   timezone varchar(100)
+
+  logo_file_id uuid
+
+  banner_file_id uuid
 
   status location_status [not null]
 
@@ -1338,9 +1345,28 @@ Table organization.locations {
     organization_id
     status
     (business_unit_id, code) [unique]
+    (organization_id, slug) [unique]
   }
 
-  Note: 'Partial unique (business_unit_id, code) WHERE deleted_at IS NULL. Business name: Branch.'
+  Note: 'Partial unique (business_unit_id, code) and (organization_id, slug) WHERE deleted_at IS NULL. Business name: Branch. logo_file_id = Avatar; banner_file_id = Banner.'
+}
+
+Table organization.location_sports {
+  id uuid [pk]
+
+  location_id uuid [not null]
+
+  sport_id uuid [not null]
+
+  created_at timestamptz [not null]
+
+  indexes {
+    location_id
+    sport_id
+    (location_id, sport_id) [unique]
+  }
+
+  Note: 'Branch offered sports. M:N between locations (Branch) and catalog.sports.'
 }
 
 Table organization.location_addresses {
@@ -6649,6 +6675,10 @@ Ref: reference.countries.id > reference.country_translations.country_id
 Ref: reference.locales.id > reference.country_translations.locale_id
 Ref: reference.countries.id > organization.location_addresses.country_id
 Ref: organization.locations.id > organization.location_settings.location_id
+Ref: organization.locations.id > organization.location_sports.location_id
+Ref: catalog.sports.id > organization.location_sports.sport_id
+Ref: platform.files.id > organization.locations.logo_file_id
+Ref: platform.files.id > organization.locations.banner_file_id
 
 Ref: organization.organizations.id > organization.staff_members.organization_id
 Ref: identity.users.id > organization.staff_members.user_id

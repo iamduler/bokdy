@@ -2022,6 +2022,16 @@ type CatalogResourceMaintenance struct {
 	UpdatedAt         time.Time                `json:"updated_at"`
 }
 
+type CatalogSport struct {
+	ID        uuid.UUID `json:"id"`
+	Code      string    `json:"code"`
+	NameEn    string    `json:"name_en"`
+	NameVi    string    `json:"name_vi"`
+	Icon      *string   `json:"icon"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
 type CrmCustomer struct {
 	ID               uuid.UUID         `json:"id"`
 	PublicID         string            `json:"public_id"`
@@ -2314,6 +2324,9 @@ type OrganizationLocation struct {
 	CreatedAt      time.Time                  `json:"created_at"`
 	UpdatedAt      time.Time                  `json:"updated_at"`
 	DeletedAt      *time.Time                 `json:"deleted_at"`
+	Slug           string                     `json:"slug"`
+	LogoFileID     *uuid.UUID                 `json:"logo_file_id"`
+	BannerFileID   *uuid.UUID                 `json:"banner_file_id"`
 }
 
 type OrganizationLocationAddress struct {
@@ -2341,6 +2354,13 @@ type OrganizationLocationSetting struct {
 	CalendarSettings     []byte    `json:"calendar_settings"`
 	NotificationSettings []byte    `json:"notification_settings"`
 	UpdatedAt            time.Time `json:"updated_at"`
+}
+
+type OrganizationLocationSport struct {
+	ID         uuid.UUID `json:"id"`
+	LocationID uuid.UUID `json:"location_id"`
+	SportID    uuid.UUID `json:"sport_id"`
+	CreatedAt  time.Time `json:"created_at"`
 }
 
 type OrganizationOrganization struct {

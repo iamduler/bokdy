@@ -65,20 +65,17 @@ export function BranchDetailView({ organizationId, branch }: { organizationId: s
           <ProfileRow label={t("fieldProvince")} value={provinceName || empty} />
           <ProfileRow label={t("fieldWard")} value={wardName || empty} />
           <ProfileRow label={t("fieldAddress1")} value={address?.address_line_1 || empty} />
-          <ProfileRow label={t("fieldAddress2")} value={address?.address_line_2 || empty} />
         </EntityDetailPanel>
       </div>
-      {editing ? (
-        <BranchFormSheet
-          open
-          mode="edit"
-          organizationId={organizationId}
-          branch={branch}
-          onOpenChange={(open) => {
-            if (!open) setEditing(false);
-          }}
-        />
-      ) : null}
+      <BranchFormSheet
+        open={editing}
+        mode="edit"
+        organizationId={organizationId}
+        branch={branch}
+        onOpenChange={(open) => {
+          if (!open) setEditing(false);
+        }}
+      />
     </div>
   );
 }

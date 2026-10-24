@@ -118,6 +118,8 @@ const (
 	RoleOrgOwner  = "org_owner"
 	RoleOrgStaff  = "org_staff"
 	DefaultBUCode = "default"
+	// DefaultBranchTimezone is UTC+7 — not editable on entity forms.
+	DefaultBranchTimezone = "Asia/Ho_Chi_Minh"
 )
 
 type Tenant struct {
@@ -195,16 +197,21 @@ type Branch struct {
 	BusinessUnitID uuid.UUID
 	OrganizationID uuid.UUID
 	Code           string
+	Slug           string
 	NameEn         string
 	NameVi         string
 	Phone          string
 	Email          string
 	Timezone       string
+	LogoFileID     *uuid.UUID
+	BannerFileID   *uuid.UUID
 	Status         LocationStatus
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
 	DeletedAt      *time.Time
 	Addresses      []BranchAddress
+	SportIDs       []uuid.UUID
+	CourtCount     int
 }
 
 type AdminDivisionScheme string
@@ -226,6 +233,8 @@ type BranchAddress struct {
 	WardID           *uuid.UUID
 	AddressLine1     string
 	AddressLine2     string
+	Latitude         *float64
+	Longitude        *float64
 	UpdatedAt        time.Time
 }
 

@@ -15,7 +15,6 @@ const formFields = z.object({
   province_id: z.string().trim(),
   ward_id: z.string().trim(),
   address_line_1: z.string().trim(),
-  address_line_2: z.string().trim(),
   status: z.string(),
   suspend_reason: z.string(),
 });
@@ -31,7 +30,7 @@ export function organizationFormSchema(messages: {
   addressIncomplete: string;
 }) {
   return formFields.superRefine((value, ctx) => {
-    if (!value.name_vi && !value.name_en) {
+    if (!value.name_vi.trim()) {
       ctx.addIssue({
         code: "custom",
         path: ["name_vi"],

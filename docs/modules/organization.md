@@ -183,7 +183,11 @@ POST /branches
 
 GET /branches
 
+GET /branches/slug-available
+
 PATCH /branches/{id}
+
+Branch fields include slug (unique per organization) and offered sports (`location_sports` → `catalog.sports`).
 
 Courts
 
