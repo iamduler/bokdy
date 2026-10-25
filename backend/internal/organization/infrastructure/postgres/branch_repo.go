@@ -33,6 +33,8 @@ func (r *BranchRepo) Create(ctx context.Context, tx pgx.Tx, branch *entity.Branc
 		ID: branch.ID, PublicID: branch.PublicID, BusinessUnitID: branch.BusinessUnitID, OrganizationID: branch.OrganizationID,
 		Code: branch.Code, Slug: branch.Slug, NameEn: nullStr(branch.NameEn), NameVi: nullStr(branch.NameVi),
 		Phone: nullStr(branch.Phone), Email: nullStr(branch.Email), Timezone: nullStr(branch.Timezone),
+		Website: nullStr(branch.Website), FacebookUrl: nullStr(branch.FacebookURL), GoogleMapsUrl: nullStr(branch.GoogleMapsURL),
+		FoundedYear: toInt32Ptr(branch.FoundedYear),
 		Status: dbsqlc.OrganizationLocationStatus(branch.Status), CreatedAt: branch.CreatedAt, UpdatedAt: branch.UpdatedAt,
 	}); err != nil {
 		return err
@@ -98,6 +100,8 @@ func (r *BranchRepo) Update(ctx context.Context, tx pgx.Tx, branch *entity.Branc
 		OrganizationID: branch.OrganizationID, ID: branch.ID, Code: branch.Code, Slug: branch.Slug,
 		NameEn: nullStr(branch.NameEn), NameVi: nullStr(branch.NameVi), Phone: nullStr(branch.Phone),
 		Email: nullStr(branch.Email), Timezone: nullStr(branch.Timezone),
+		Website: nullStr(branch.Website), FacebookUrl: nullStr(branch.FacebookURL), GoogleMapsUrl: nullStr(branch.GoogleMapsURL),
+		FoundedYear: toInt32Ptr(branch.FoundedYear),
 	}); err != nil {
 		return err
 	}
@@ -249,7 +253,9 @@ func toBranchFromFind(row dbsqlc.FindBranchByIDRow) *entity.Branch {
 	b := &entity.Branch{
 		ID: row.ID, PublicID: row.PublicID, BusinessUnitID: row.BusinessUnitID, OrganizationID: row.OrganizationID,
 		Code: row.Code, Slug: row.Slug, NameEn: row.NameEn, NameVi: row.NameVi, Phone: row.Phone, Email: row.Email,
-		Timezone: row.Timezone, LogoFileID: row.LogoFileID, BannerFileID: row.BannerFileID,
+		Timezone: row.Timezone, Website: row.Website, FacebookURL: row.FacebookUrl, GoogleMapsURL: row.GoogleMapsUrl,
+		FoundedYear: fromInt32Ptr(row.FoundedYear),
+		LogoFileID: row.LogoFileID, BannerFileID: row.BannerFileID,
 		Status: entity.LocationStatus(row.Status), CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
 		DeletedAt: row.DeletedAt, SportIDs: []uuid.UUID{},
 	}
@@ -264,7 +270,9 @@ func toBranchFromList(row dbsqlc.ListBranchesByOrgRow) *entity.Branch {
 	b := &entity.Branch{
 		ID: row.ID, PublicID: row.PublicID, BusinessUnitID: row.BusinessUnitID, OrganizationID: row.OrganizationID,
 		Code: row.Code, Slug: row.Slug, NameEn: row.NameEn, NameVi: row.NameVi, Phone: row.Phone, Email: row.Email,
-		Timezone: row.Timezone, LogoFileID: row.LogoFileID, BannerFileID: row.BannerFileID,
+		Timezone: row.Timezone, Website: row.Website, FacebookURL: row.FacebookUrl, GoogleMapsURL: row.GoogleMapsUrl,
+		FoundedYear: fromInt32Ptr(row.FoundedYear),
+		LogoFileID: row.LogoFileID, BannerFileID: row.BannerFileID,
 		Status: entity.LocationStatus(row.Status), CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
 		DeletedAt: row.DeletedAt, SportIDs: []uuid.UUID{},
 	}

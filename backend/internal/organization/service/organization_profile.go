@@ -200,21 +200,15 @@ func (s *OrganizationService) headquartersRows(ctx context.Context, orgID uuid.U
 	}
 	province := in.ProvinceID
 	ward := in.WardID
+	line1, line2 := normalizeAddressLines(in.AddressLine1, in.AddressLine2)
 	rows := []entity.OrganizationAddress{{
 		ID: id.MustNewUUID(), OrganizationID: orgID, DivisionScheme: entity.AdminDivisionCurrentV2,
 		ProvinceID: &province, WardID: &ward,
-		AddressLine1: strings.TrimSpace(in.AddressLine1), AddressLine2: strings.TrimSpace(in.AddressLine2),
+		AddressLine1: line1, AddressLine2: line2,
 	}}
-	former, err := s.orgs.ListFormerWards(ctx, ward)
+	former, err := expandOrgFormerFromCurrent(ctx, s.orgs, orgID, ward, line1, line2)
 	if err != nil {
-		return nil, apperr.Wrap(err, apperr.CodeInternal, "map former wards")
+		return nil, err
 	}
-	for _, row := range former {
-		row.ID = id.MustNewUUID()
-		row.OrganizationID = orgID
-		row.AddressLine1 = rows[0].AddressLine1
-		row.AddressLine2 = rows[0].AddressLine2
-		rows = append(rows, row)
-	}
-	return rows, nil
+	return append(rows, former...), nil
 }

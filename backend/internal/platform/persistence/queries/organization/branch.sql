@@ -1,7 +1,8 @@
 -- name: CreateLocation :exec
 INSERT INTO organization.locations
-    (id, public_id, business_unit_id, organization_id, code, slug, name_en, name_vi, phone, email, timezone, status, created_at, updated_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14);
+    (id, public_id, business_unit_id, organization_id, code, slug, name_en, name_vi, phone, email, timezone,
+     website, facebook_url, google_maps_url, founded_year, status, created_at, updated_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18);
 
 -- name: CreateLocationAddress :exec
 INSERT INTO organization.location_addresses
@@ -26,7 +27,10 @@ VALUES ($1, $2, now());
 -- name: FindBranchByID :one
 SELECT l.id, l.public_id, l.business_unit_id, l.organization_id, l.code, l.slug,
        COALESCE(l.name_en, '') AS name_en, COALESCE(l.name_vi, '') AS name_vi, COALESCE(l.phone, '') AS phone, COALESCE(l.email, '') AS email,
-       COALESCE(l.timezone, '') AS timezone, l.logo_file_id, l.banner_file_id, l.status, l.created_at, l.updated_at, l.deleted_at,
+       COALESCE(l.timezone, '') AS timezone,
+       COALESCE(l.website, '') AS website, COALESCE(l.facebook_url, '') AS facebook_url,
+       COALESCE(l.google_maps_url, '') AS google_maps_url, l.founded_year,
+       l.logo_file_id, l.banner_file_id, l.status, l.created_at, l.updated_at, l.deleted_at,
        ac.id AS current_address_id, ac.country_id AS current_country_id,
        ac.province_id AS current_province_id, ac.ward_id AS current_ward_id,
        COALESCE(ac.address_line_1, '') AS current_address_line_1, COALESCE(ac.address_line_2, '') AS current_address_line_2,
@@ -43,7 +47,10 @@ WHERE l.organization_id = $1 AND l.id = $2 AND l.deleted_at IS NULL;
 -- name: ListBranchesByOrg :many
 SELECT l.id, l.public_id, l.business_unit_id, l.organization_id, l.code, l.slug,
        COALESCE(l.name_en, '') AS name_en, COALESCE(l.name_vi, '') AS name_vi, COALESCE(l.phone, '') AS phone, COALESCE(l.email, '') AS email,
-       COALESCE(l.timezone, '') AS timezone, l.logo_file_id, l.banner_file_id, l.status, l.created_at, l.updated_at, l.deleted_at,
+       COALESCE(l.timezone, '') AS timezone,
+       COALESCE(l.website, '') AS website, COALESCE(l.facebook_url, '') AS facebook_url,
+       COALESCE(l.google_maps_url, '') AS google_maps_url, l.founded_year,
+       l.logo_file_id, l.banner_file_id, l.status, l.created_at, l.updated_at, l.deleted_at,
        ac.id AS current_address_id, ac.country_id AS current_country_id,
        ac.province_id AS current_province_id, ac.ward_id AS current_ward_id,
        COALESCE(ac.address_line_1, '') AS current_address_line_1, COALESCE(ac.address_line_2, '') AS current_address_line_2,
@@ -60,7 +67,8 @@ ORDER BY l.created_at ASC;
 
 -- name: UpdateLocation :exec
 UPDATE organization.locations
-SET code = $3, slug = $4, name_en = $5, name_vi = $6, phone = $7, email = $8, timezone = $9, updated_at = now()
+SET code = $3, slug = $4, name_en = $5, name_vi = $6, phone = $7, email = $8, timezone = $9,
+    website = $10, facebook_url = $11, google_maps_url = $12, founded_year = $13, updated_at = now()
 WHERE organization_id = $1 AND id = $2 AND deleted_at IS NULL;
 
 -- name: UpdateLocationMedia :exec

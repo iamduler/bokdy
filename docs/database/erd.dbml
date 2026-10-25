@@ -1332,6 +1332,14 @@ Table organization.locations {
 
   banner_file_id uuid
 
+  website varchar(255)
+
+  facebook_url varchar(512)
+
+  google_maps_url varchar(512)
+
+  founded_year int
+
   status location_status [not null]
 
   created_at timestamptz [not null]
@@ -1348,7 +1356,7 @@ Table organization.locations {
     (organization_id, slug) [unique]
   }
 
-  Note: 'Partial unique (business_unit_id, code) and (organization_id, slug) WHERE deleted_at IS NULL. Business name: Branch. logo_file_id = Avatar; banner_file_id = Banner.'
+  Note: 'Partial unique (business_unit_id, code) and (organization_id, slug) WHERE deleted_at IS NULL. Business name: Branch. logo_file_id = Avatar; banner_file_id = Banner. founded_year CHECK 1800–2100 when set.'
 }
 
 Table organization.location_sports {
@@ -5888,7 +5896,7 @@ Table reference.ward_former_successors {
     (ward_former_id, ward_id) [unique]
   }
 
-  Note: 'Optional merger mapping ward_former → ward for cross-era search. Seed when mapping file is provided.'
+  Note: 'Merger mapping ward_former → ward (former→current) for cross-era search and address expand. Seeded from backend/data/ward_mappings.sql via gen_ward_successors.py (migration 00027). Org HQ stores all matching former wards; branch stores one representative (prefer former.code = current.code, else lowest former code).'
 }
 
 //////////////////////////////////////////////////////////////

@@ -1,17 +1,33 @@
 "use client";
 
-import { toast } from "@bokdy/ui";
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+  toast,
+} from "@bokdy/ui";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Mail, MapPin, Store } from "lucide-react";
+import { Link2, Mail, MapPin, Store } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 
 import { EntityCover } from "@/components/entity/cover";
 import { EntityFormFrame } from "@/components/entity/form-frame";
-import { EntityMetadataForm, type EntityFormBlock } from "@/components/entity/metadata-form";
+import { EntityFormSection } from "@/components/entity/form-section";
+import {
+  EntityMetadataForm,
+  type EntityFormBlock,
+} from "@/components/entity/metadata-form";
+import { AddressAutocomplete } from "@/components/maps/address-autocomplete";
+import { MapPicker } from "@/components/maps/map-picker";
 import { ImageCropDialog } from "@/components/media/image-crop-dialog";
-import type { PopoverCommandOption } from "@/components/popover-command-select";
+import {
+  PopoverCommandSelect,
+  type PopoverCommandOption,
+} from "@/components/popover-command-select";
 import {
   useArchiveBranch,
   useCloseBranch,
@@ -32,11 +48,17 @@ import {
   type BranchStatus,
 } from "@/lib/api/branches";
 import { ApiError, errorMessageKey } from "@/lib/api/errors";
+import {
+  reverseGeocode,
+  type MapsPlaceDetail,
+  type MapsReverseResult,
+} from "@/lib/api/maps";
 import { DEFAULT_BRANCH_TIMEZONE } from "@/lib/entity-code-prefixes";
 import { toVietnameseASCII } from "@/lib/text/vietnamese-ascii";
 import {
   branchFormSchema,
-  googleMapsUrl,
+  dateInputFromIso,
+  todayDateInput,
   type BranchFormValues,
 } from "@/lib/validation/branch-form";
 
@@ -51,6 +73,10 @@ const FORM_FIELDS = [
   "sport_ids",
   "phone",
   "email",
+  "website",
+  "facebook_url",
+  "google_maps_url",
+  "founded_year",
   "province_id",
   "ward_id",
   "address_line_1",
@@ -72,6 +98,11 @@ const emptyValues: BranchFormValues = {
   sport_ids: [],
   phone: "",
   email: "",
+  website: "",
+  facebook_url: "",
+  google_maps_url: "",
+  founded_year: "",
+  joined_at: todayDateInput(),
   province_id: "",
   ward_id: "",
   address_line_1: "",
@@ -89,6 +120,12 @@ function valuesFromBranch(branch: Branch): BranchFormValues {
     sport_ids: branch.sport_ids ?? [],
     phone: branch.phone ?? "",
     email: branch.email ?? "",
+    website: branch.website ?? "",
+    facebook_url: branch.facebook_url ?? "",
+    google_maps_url: branch.google_maps_url ?? "",
+    founded_year:
+      branch.founded_year != null ? String(branch.founded_year) : "",
+    joined_at: dateInputFromIso(branch.created_at),
     province_id: address?.province_id ?? "",
     ward_id: address?.ward_id ?? "",
     address_line_1: address?.address_line_1 ?? "",
@@ -98,14 +135,23 @@ function valuesFromBranch(branch: Branch): BranchFormValues {
   };
 }
 
-function profileBody(values: BranchFormValues, mode: "create" | "edit"): BranchProfileInput {
+function profileBody(
+  values: BranchFormValues,
+  mode: "create" | "edit",
+): BranchProfileInput {
   const nameVi = values.name_vi.trim();
+  const yearRaw = values.founded_year.trim();
+  const foundedYear = yearRaw ? Number(yearRaw) : null;
   const body: BranchProfileInput = {
     name_vi: nameVi,
     name_en: toVietnameseASCII(nameVi || values.name_en),
     slug: values.slug.trim(),
     phone: values.phone,
     email: values.email,
+    website: values.website.trim(),
+    facebook_url: values.facebook_url.trim(),
+    google_maps_url: values.google_maps_url.trim(),
+    founded_year: foundedYear,
     sport_ids: values.sport_ids,
     addresses: [
       {
@@ -161,20 +207,34 @@ export function BranchForm(props: BranchFormProps) {
       branchFormSchema({
         nameRequired: t("nameRequired"),
         emailInvalid: t("emailInvalid"),
+        websiteInvalid: t("websiteInvalid"),
         addressRequired: tb("addressRequired"),
         coordsInvalid: tb("coordsInvalid"),
+        foundedYearInvalid: tb("foundedYearInvalid"),
       }),
     [t, tb],
   );
 
   const form = useForm<BranchFormValues>({
     resolver: zodResolver(schema),
+    mode: "onBlur",
+    reValidateMode: "onChange",
     defaultValues: branch ? valuesFromBranch(branch) : emptyValues,
   });
-  const { handleSubmit, reset, setError, setValue, watch, clearErrors, formState } = form;
+  const {
+    handleSubmit,
+    register,
+    reset,
+    setError,
+    setValue,
+    watch,
+    clearErrors,
+    formState,
+  } = form;
   const { isDirty } = formState;
   const provinceId = watch("province_id");
   const slug = watch("slug");
+  const addressLine1 = watch("address_line_1");
   const latitude = watch("latitude");
   const longitude = watch("longitude");
   const latNum = Number(latitude);
@@ -184,6 +244,75 @@ export function BranchForm(props: BranchFormProps) {
     Boolean(longitude) &&
     !Number.isNaN(latNum) &&
     !Number.isNaN(lngNum);
+  const focusLat = mapsReady ? latNum : undefined;
+  const focusLng = mapsReady ? lngNum : undefined;
+
+  function applyAdminMatch(place: MapsReverseResult) {
+    if (place.province_id) {
+      setValue("province_id", place.province_id, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    }
+    // Set ward after province so useWards can fetch options for the new parent.
+    if (place.ward_id) {
+      setValue("ward_id", place.ward_id, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    } else if (place.province_id) {
+      setValue("ward_id", "", { shouldDirty: true, shouldValidate: true });
+    }
+  }
+
+  async function applyPlace(place: MapsPlaceDetail) {
+    const line = place.address_line || place.display;
+    if (line) {
+      setValue("address_line_1", line, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    }
+    setValue("latitude", String(place.latitude), {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    setValue("longitude", String(place.longitude), {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    try {
+      const reverse = await reverseGeocode(place.latitude, place.longitude);
+      applyAdminMatch(reverse);
+    } catch {
+      // Keep address/coords even if admin match fails.
+    }
+  }
+
+  async function onMapPick(lat: number, lng: number) {
+    setValue("latitude", String(lat), {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    setValue("longitude", String(lng), {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    try {
+      const place = await reverseGeocode(lat, lng);
+      const line = place.address_line || place.display;
+      if (line) {
+        setValue("address_line_1", line, {
+          shouldDirty: true,
+          shouldValidate: true,
+        });
+      }
+      applyAdminMatch(place);
+    } catch {
+      // Keep coordinates even if reverse geocode fails.
+    }
+  }
+
   const { data: provinces = [] } = useProvinces("current_v2");
   const { data: wards = [] } = useWards({
     scheme: "current_v2",
@@ -227,7 +356,16 @@ export function BranchForm(props: BranchFormProps) {
         .catch(() => setSlugTaken(false));
     }, 400);
     return () => window.clearTimeout(timer);
-  }, [slug, organizationId, branchId, branch?.slug, setError, clearErrors, t, watch]);
+  }, [
+    slug,
+    organizationId,
+    branchId,
+    branch?.slug,
+    setError,
+    clearErrors,
+    t,
+    watch,
+  ]);
 
   const listHref = `/organizations/${organizationId}/branches`;
   const backHref = branch ? `${listHref}/${branch.id}` : listHref;
@@ -286,9 +424,14 @@ export function BranchForm(props: BranchFormProps) {
     }
     let mapped = false;
     for (const detail of apiErr.details) {
-      if (!FORM_FIELDS.includes(detail.field as (typeof FORM_FIELDS)[number])) continue;
+      if (!FORM_FIELDS.includes(detail.field as (typeof FORM_FIELDS)[number]))
+        continue;
       setError(detail.field as (typeof FORM_FIELDS)[number], {
-        message: te(errorMessageKey(new ApiError(detail.code, detail.message, apiErr.status))),
+        message: te(
+          errorMessageKey(
+            new ApiError(detail.code, detail.message, apiErr.status),
+          ),
+        ),
       });
       mapped = true;
     }
@@ -322,7 +465,12 @@ export function BranchForm(props: BranchFormProps) {
         saved = await uploadBranchMedia(organizationId, saved.id, "logo", logo);
       }
       if (banner) {
-        saved = await uploadBranchMedia(organizationId, saved.id, "banner", banner);
+        saved = await uploadBranchMedia(
+          organizationId,
+          saved.id,
+          "banner",
+          banner,
+        );
       }
       setLogo(null);
       setBanner(null);
@@ -334,7 +482,9 @@ export function BranchForm(props: BranchFormProps) {
         else router.push(listHref);
         return;
       }
-      if (branch && nextStatus !== branch.status) {
+      // Compare against server status after PATCH/media — props.branch can be stale
+      // (sheet keeps the list snapshot), which wrongly re-called /open on an active branch.
+      if (nextStatus !== saved.status) {
         if (nextStatus === "active") await open.mutateAsync();
         else if (nextStatus === "inactive") await close.mutateAsync();
         else if (nextStatus === "maintenance") await maintenance.mutateAsync();
@@ -368,8 +518,8 @@ export function BranchForm(props: BranchFormProps) {
   }));
   const sportOptions = sports.map((sport) => {
     const label = locale.startsWith("vi")
-      ? (sport.name_vi || sport.name || sport.name_en)
-      : (sport.name_en || sport.name || sport.name_vi);
+      ? sport.name_vi || sport.name || sport.name_en
+      : sport.name_en || sport.name || sport.name_vi;
     return {
       value: sport.id,
       label,
@@ -433,54 +583,53 @@ export function BranchForm(props: BranchFormProps) {
         icon: <Mail className="size-4" aria-hidden />,
         tone: "emerald",
         fields: [
-          { kind: "text", name: "email", label: t("fieldEmail"), inputType: "email", autoComplete: "email" },
-          { kind: "text", name: "phone", label: t("fieldPhone"), inputType: "tel", autoComplete: "tel" },
+          {
+            kind: "text",
+            name: "email",
+            label: t("fieldEmail"),
+            inputType: "email",
+            autoComplete: "email",
+          },
+          {
+            kind: "text",
+            name: "phone",
+            label: t("fieldPhone"),
+            inputType: "tel",
+            autoComplete: "tel",
+          },
         ],
       },
       {
-        id: "address",
-        title: tb("address"),
-        icon: <MapPin className="size-4" aria-hidden />,
-        tone: "amber",
+        id: "links",
+        title: tb("links"),
+        icon: <Link2 className="size-4" aria-hidden />,
+        tone: "rose",
         fields: [
           {
-            kind: "select",
-            name: "province_id",
-            label: t("fieldProvince"),
-            options: provinceOptions,
-            searchable: true,
-            placeholder: t("fieldProvince"),
-            required: true,
-            onValueChange: () => setValue("ward_id", "", { shouldDirty: true }),
-          },
-          {
-            kind: "select",
-            name: "ward_id",
-            label: t("fieldWard"),
-            options: wardOptions,
-            searchable: true,
-            placeholder: t("fieldWard"),
-            required: true,
-            disabled: (values) => !values.province_id,
+            kind: "text",
+            name: "website",
+            label: tb("fieldWebsite"),
+            inputType: "url",
+            autoComplete: "url",
           },
           {
             kind: "text",
-            name: "address_line_1",
-            label: t("fieldAddress1"),
-            span: 2,
-            required: true,
+            name: "facebook_url",
+            label: tb("fieldFacebook"),
+            inputType: "url",
           },
           {
             kind: "text",
-            name: "latitude",
-            label: tb("fieldLatitude"),
-            required: true,
+            name: "google_maps_url",
+            label: tb("fieldGoogleMaps"),
+            inputType: "url",
           },
           {
             kind: "text",
-            name: "longitude",
-            label: tb("fieldLongitude"),
-            required: true,
+            name: "founded_year",
+            label: tb("fieldFoundedYear"),
+            inputType: "text",
+            placeholder: tb("fieldFoundedYearPlaceholder"),
           },
         ],
       },
@@ -491,22 +640,33 @@ export function BranchForm(props: BranchFormProps) {
       branch?.status,
       statusOptions,
       sportOptions,
-      provinceOptions,
-      wardOptions,
       slugTaken,
       clearErrors,
-      setValue,
     ],
   );
 
-  const storedLogo = branch?.logo_file_id ? `/api/go/files/${branch.logo_file_id}` : null;
+  const provinceIdValue = provinceId;
+  const wardIdValue = watch("ward_id");
+  const provinceError = formState.errors.province_id?.message;
+  const wardError = formState.errors.ward_id?.message;
+  const addressError = formState.errors.address_line_1?.message;
+  const latError = formState.errors.latitude?.message;
+  const lngError = formState.errors.longitude?.message;
+
+  const storedLogo = branch?.logo_file_id
+    ? `/api/go/files/${branch.logo_file_id}`
+    : null;
   const storedBanner = branch?.banner_file_id
     ? `/api/go/files/${branch.banner_file_id}`
     : null;
 
   return (
     <FormProvider {...form}>
-      <div className={layout === "sheet" ? "flex min-h-0 flex-1 flex-col" : undefined}>
+      <div
+        className={
+          layout === "sheet" ? "flex min-h-0 flex-1 flex-col" : undefined
+        }
+      >
         <EntityFormFrame
           cancelLabel={t("createCancel")}
           submitLabel={props.mode === "edit" ? t("save") : t("createSubmit")}
@@ -531,24 +691,110 @@ export function BranchForm(props: BranchFormProps) {
           }
         >
           <EntityMetadataForm blocks={blocks} />
-          <div className="mt-3 px-1">
-            {mapsReady ? (
-              <a
-                href={googleMapsUrl(latNum, lngNum)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-sky-700 hover:underline dark:text-sky-300"
+          <EntityFormSection
+            title={tb("address")}
+            icon={<MapPin className="size-4" aria-hidden />}
+            tone="amber"
+          >
+            <FieldGroup className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Field data-invalid={Boolean(provinceError) || undefined}>
+                <FieldLabel required>{t("fieldProvince")}</FieldLabel>
+                <PopoverCommandSelect
+                  value={provinceIdValue}
+                  options={provinceOptions}
+                  searchable
+                  placeholder={t("fieldProvince")}
+                  aria-label={t("fieldProvince")}
+                  className="w-full justify-between border border-input bg-background"
+                  onValueChange={(value) => {
+                    setValue("province_id", value, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    });
+                    setValue("ward_id", "", { shouldDirty: true });
+                  }}
+                />
+                <FieldError>{provinceError}</FieldError>
+              </Field>
+              <Field data-invalid={Boolean(wardError) || undefined}>
+                <FieldLabel required>{t("fieldWard")}</FieldLabel>
+                <PopoverCommandSelect
+                  value={wardIdValue}
+                  options={wardOptions}
+                  searchable
+                  placeholder={t("fieldWard")}
+                  aria-label={t("fieldWard")}
+                  disabled={!provinceIdValue}
+                  className="w-full justify-between border border-input bg-background"
+                  onValueChange={(value) =>
+                    setValue("ward_id", value, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
+                />
+                <FieldError>{wardError}</FieldError>
+              </Field>
+              <Field
+                data-invalid={Boolean(addressError) || undefined}
+                className="sm:col-span-2"
               >
-                <MapPin className="size-3.5" aria-hidden />
-                {tb("openInMaps")}
-              </a>
-            ) : (
-              <p className="text-xs text-muted-foreground">{tb("mapsHint")}</p>
-            )}
-          </div>
+                <FieldLabel htmlFor="field-address_line_1" required>
+                  {tb("fieldAddressSearch")}
+                </FieldLabel>
+                <AddressAutocomplete
+                  id="field-address_line_1"
+                  value={addressLine1}
+                  onValueChange={(value) =>
+                    setValue("address_line_1", value, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
+                  onPlaceSelect={(place) => void applyPlace(place)}
+                  focusLat={focusLat}
+                  focusLng={focusLng}
+                  placeholder={tb("fieldAddressSearchPlaceholder")}
+                  minCharsLabel={tb("addressSearchHint")}
+                  emptyLabel={tb("addressSearchEmpty")}
+                  required
+                  aria-invalid={Boolean(addressError) || undefined}
+                />
+                <FieldError>{addressError}</FieldError>
+              </Field>
+              <Field className="sm:col-span-2">
+                <MapPicker
+                  latitude={mapsReady ? latNum : undefined}
+                  longitude={mapsReady ? lngNum : undefined}
+                  onPick={(lat, lng) => void onMapPick(lat, lng)}
+                  unavailableLabel={tb("mapUnavailable")}
+                />
+                <FieldDescription>{tb("mapPickHint")}</FieldDescription>
+              </Field>
+              <input type="hidden" {...register("latitude")} />
+              <input type="hidden" {...register("longitude")} />
+              <input type="hidden" {...register("joined_at")} />
+              <Field data-invalid={Boolean(latError) || undefined}>
+                <FieldLabel required>{tb("fieldLatitude")}</FieldLabel>
+                <p className="text-sm tabular-nums text-foreground">
+                  {mapsReady ? latNum.toFixed(6) : tb("coordsEmpty")}
+                </p>
+                <FieldError>{latError}</FieldError>
+              </Field>
+              <Field data-invalid={Boolean(lngError) || undefined}>
+                <FieldLabel required>{tb("fieldLongitude")}</FieldLabel>
+                <p className="text-sm tabular-nums text-foreground">
+                  {mapsReady ? lngNum.toFixed(6) : tb("coordsEmpty")}
+                </p>
+                <FieldError>{lngError}</FieldError>
+              </Field>
+            </FieldGroup>
+          </EntityFormSection>
           <ImageCropDialog
             open={cropTarget !== null}
-            title={cropTarget === "banner" ? t("fieldBanner") : tb("fieldAvatar")}
+            title={
+              cropTarget === "banner" ? t("fieldBanner") : tb("fieldAvatar")
+            }
             imageSrc={cropSrc}
             aspect={cropTarget === "banner" ? 3 : 1}
             outputWidth={cropTarget === "banner" ? 1200 : 512}

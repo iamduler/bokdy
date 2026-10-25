@@ -186,6 +186,8 @@ type Querier interface {
 	ListExpiredPendingIntents(ctx context.Context, arg ListExpiredPendingIntentsParams) ([]PaymentPaymentIntent, error)
 	ListExpiredPendingReservations(ctx context.Context, arg ListExpiredPendingReservationsParams) ([]ReservationReservation, error)
 	ListFormerProvinces(ctx context.Context, countryID uuid.UUID) ([]ListFormerProvincesRow, error)
+	// Ordered so the first row is the branch representative:
+	// prefer former ward whose code equals the current ward code, else lowest former code.
 	ListFormerWardsForCurrent(ctx context.Context, wardID uuid.UUID) ([]ListFormerWardsForCurrentRow, error)
 	ListHolidaysOverlapping(ctx context.Context, arg ListHolidaysOverlappingParams) ([]ListHolidaysOverlappingRow, error)
 	ListLocationSportIDs(ctx context.Context, locationID uuid.UUID) ([]uuid.UUID, error)

@@ -203,6 +203,10 @@ type Branch struct {
 	Phone          string
 	Email          string
 	Timezone       string
+	Website        string
+	FacebookURL    string
+	GoogleMapsURL  string
+	FoundedYear    *int
 	LogoFileID     *uuid.UUID
 	BannerFileID   *uuid.UUID
 	Status         LocationStatus

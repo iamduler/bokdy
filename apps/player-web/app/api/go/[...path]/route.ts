@@ -15,10 +15,15 @@ async function handle(req: NextRequest, ctx: { params: Promise<{ path: string[] 
     body,
     headers,
   });
+  const responseHeaders = goClientResponseHeaders(res, headers["X-Trace-ID"]);
+  // Fetch forbids a body on these statuses (Go often returns 204 for mutations).
+  if (res.status === 204 || res.status === 205 || res.status === 304) {
+    return new NextResponse(null, { status: res.status, headers: responseHeaders });
+  }
   const text = await res.text();
   return new NextResponse(text, {
     status: res.status,
-    headers: goClientResponseHeaders(res, headers["X-Trace-ID"]),
+    headers: responseHeaders,
   });
 }
 

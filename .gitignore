@@ -28,6 +28,8 @@ node_modules/
 **/dist/
 *.tsbuildinfo
 next-env.d.ts
+# Copied by apps/admin-web/scripts/copy-maplibre-worker.mjs (Turbopack workaround)
+apps/admin-web/public/maplibre-gl-worker.mjs
 
 # Logs
 **/logs/

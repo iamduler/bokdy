@@ -16,13 +16,14 @@ import {
   type SoftStatusToneKey,
 } from "@/components/entity/soft-status-chip";
 import { Link } from "@/i18n/navigation";
+import { useMapsConfig } from "@/hooks/use-maps";
 import {
   currentBranchAddress,
   type Branch,
   type BranchStatus,
 } from "@/lib/api/branches";
 import type { Sport } from "@/lib/api/sports";
-import { googleMapsUrl } from "@/lib/validation/branch-form";
+import { mapsViewUrl } from "@/lib/maps/view-url";
 
 const BRANCH_STATUS_TONE: Record<BranchStatus, SoftStatusToneKey> = {
   active: "emerald",
@@ -52,13 +53,18 @@ export function BranchCard({ branch, orgId, sports, onEdit }: BranchCardProps) {
   const t = useTranslations("organization.detailBranches");
   const tb = useTranslations("organization.branch");
   const locale = useLocale();
+  const { data: mapsConfig } = useMapsConfig();
   const address = currentBranchAddress(branch);
   const addressLine = address?.address_line_1?.trim() || "";
   const lat = address?.latitude;
   const lng = address?.longitude;
   const mapsHref =
-    lat != null && lng != null && !Number.isNaN(lat) && !Number.isNaN(lng)
-      ? googleMapsUrl(lat, lng)
+    mapsConfig?.view_url_template &&
+    lat != null &&
+    lng != null &&
+    !Number.isNaN(lat) &&
+    !Number.isNaN(lng)
+      ? mapsViewUrl(mapsConfig.view_url_template, lat, lng)
       : null;
   const bannerSrc = branch.banner_file_id
     ? `/api/go/files/${branch.banner_file_id}`

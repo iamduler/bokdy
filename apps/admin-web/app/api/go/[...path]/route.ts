@@ -21,6 +21,10 @@ async function handle(req: NextRequest, ctx: { params: Promise<{ path: string[] 
     headers,
   });
   const responseHeaders = goClientResponseHeaders(res, headers["X-Trace-ID"]);
+  // Fetch forbids a body on these statuses (Go often returns 204 for open/close/etc.).
+  if (res.status === 204 || res.status === 205 || res.status === 304) {
+    return new NextResponse(null, { status: res.status, headers: responseHeaders });
+  }
   const responseType = res.headers.get("content-type") ?? "";
   if (responseType.startsWith("image/") || responseType.startsWith("application/octet-stream")) {
     return new NextResponse(await res.arrayBuffer(), {

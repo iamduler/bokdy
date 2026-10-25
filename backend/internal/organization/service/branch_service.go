@@ -62,27 +62,37 @@ type BranchAddressInput struct {
 }
 
 type CreateBranchInput struct {
-	NameEn    string
-	NameVi    string
-	Code      string
-	Slug      string
-	Phone     string
-	Email     string
-	Timezone  string
-	Addresses []BranchAddressInput
-	SportIDs  []uuid.UUID
+	NameEn        string
+	NameVi        string
+	Code          string
+	Slug          string
+	Phone         string
+	Email         string
+	Timezone      string
+	Website       string
+	FacebookURL   string
+	GoogleMapsURL string
+	FoundedYear   *int
+	Addresses     []BranchAddressInput
+	SportIDs      []uuid.UUID
 }
 
 type UpdateBranchInput struct {
-	NameEn    *string
-	NameVi    *string
-	Code      *string
-	Slug      *string
-	Phone     *string
-	Email     *string
-	Timezone  *string
-	Addresses *[]BranchAddressInput
-	SportIDs  *[]uuid.UUID
+	NameEn        *string
+	NameVi        *string
+	Code          *string
+	Slug          *string
+	Phone         *string
+	Email         *string
+	Timezone      *string
+	Website       *string
+	FacebookURL   *string
+	GoogleMapsURL *string
+	// FoundedYear sets the year when non-nil. When Website is also set and FoundedYear is nil, clears the year
+	// (admin form always sends the profile-link block together).
+	FoundedYear   *int
+	Addresses     *[]BranchAddressInput
+	SportIDs      *[]uuid.UUID
 }
 
 func (s *BranchService) requireReader(ctx context.Context, orgID, actor uuid.UUID) error {
@@ -153,14 +163,24 @@ func (s *BranchService) Create(ctx context.Context, actor uuid.UUID, in CreateBr
 	if err != nil {
 		return nil, err
 	}
+	foundedYear, err := validateFoundedYear(in.FoundedYear)
+	if err != nil {
+		return nil, err
+	}
 	now := time.Now().UTC()
 	branch := &entity.Branch{
 		ID: id.MustNewUUID(), PublicID: id.MustNewPublicID(), BusinessUnitID: bu.ID, OrganizationID: orgID,
 		Code: code, Slug: slug, NameEn: nameEn, NameVi: nameVi, Phone: strings.TrimSpace(in.Phone), Email: strings.TrimSpace(in.Email),
+		Website: strings.TrimSpace(in.Website), FacebookURL: strings.TrimSpace(in.FacebookURL),
+		GoogleMapsURL: strings.TrimSpace(in.GoogleMapsURL), FoundedYear: foundedYear,
 		Timezone: entity.DefaultBranchTimezone, Status: entity.LocationInactive, CreatedAt: now, UpdatedAt: now,
 		SportIDs: sportIDs,
 	}
 	addrs, err := requireBranchAddresses(in.Addresses)
+	if err != nil {
+		return nil, err
+	}
+	addrs, err = expandBranchFormerFromCurrent(ctx, s.orgs, addrs)
 	if err != nil {
 		return nil, err
 	}
@@ -301,8 +321,32 @@ func (s *BranchService) Update(ctx context.Context, branchID, actor uuid.UUID, i
 	if in.Email != nil {
 		branch.Email = strings.TrimSpace(*in.Email)
 	}
+	if in.Website != nil {
+		branch.Website = strings.TrimSpace(*in.Website)
+		foundedYear, err := validateFoundedYear(in.FoundedYear)
+		if err != nil {
+			return nil, err
+		}
+		branch.FoundedYear = foundedYear
+	} else if in.FoundedYear != nil {
+		foundedYear, err := validateFoundedYear(in.FoundedYear)
+		if err != nil {
+			return nil, err
+		}
+		branch.FoundedYear = foundedYear
+	}
+	if in.FacebookURL != nil {
+		branch.FacebookURL = strings.TrimSpace(*in.FacebookURL)
+	}
+	if in.GoogleMapsURL != nil {
+		branch.GoogleMapsURL = strings.TrimSpace(*in.GoogleMapsURL)
+	}
 	if in.Addresses != nil {
 		addrs, err := requireBranchAddresses(*in.Addresses)
+		if err != nil {
+			return nil, err
+		}
+		addrs, err = expandBranchFormerFromCurrent(ctx, s.orgs, addrs)
 		if err != nil {
 			return nil, err
 		}
@@ -692,4 +736,15 @@ func toBranchAddresses(inputs []BranchAddressInput) ([]entity.BranchAddress, err
 		return nil, apperr.New(apperr.CodeValidation, "current_v2 address is required")
 	}
 	return out, nil
+}
+
+func validateFoundedYear(y *int) (*int, error) {
+	if y == nil {
+		return nil, nil
+	}
+	if *y < 1800 || *y > 2100 {
+		return nil, apperr.New(apperr.CodeValidation, "founded_year out of range")
+	}
+	v := *y
+	return &v, nil
 }

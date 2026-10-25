@@ -26,6 +26,7 @@ tags:
   - name: Schedule
   - name: Marketplace
   - name: Reference
+  - name: Maps
   - name: Pricing
   - name: Reservations
   - name: Bookings
@@ -204,6 +205,206 @@ paths:
           $ref: "#/components/responses/Error"
         "422":
           $ref: "#/components/responses/ValidationFailed"
+  /api/v1/maps/autocomplete:
+    get:
+      tags: [Maps]
+      summary: Address autocomplete (Vietmap)
+      description: >
+        Authenticated. Proxies Vietmap Autocomplete v4. Service API key stays on the server.
+        Pass optional lat/lng as focus bias.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema: { type: string, minLength: 2 }
+        - name: lat
+          in: query
+          schema: { type: number }
+        - name: lng
+          in: query
+          schema: { type: number }
+      responses:
+        "200":
+          description: Suggestions
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/MapsPlaceSuggestion"
+        "401":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /api/v1/maps/search:
+    get:
+      tags: [Maps]
+      summary: Address search (Vietmap)
+      description: Authenticated. Proxies Vietmap Search v4. Service API key stays on the server.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema: { type: string, minLength: 2 }
+        - name: lat
+          in: query
+          schema: { type: number }
+        - name: lng
+          in: query
+          schema: { type: number }
+      responses:
+        "200":
+          description: Suggestions
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/MapsPlaceSuggestion"
+        "401":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /api/v1/maps/places:
+    get:
+      tags: [Maps]
+      summary: Resolve place by ref_id
+      description: Authenticated. Proxies Vietmap Place v4 for coordinates and address line.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: ref_id
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Place detail
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: "#/components/schemas/MapsPlaceDetail"
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /api/v1/maps/reverse:
+    get:
+      tags: [Maps]
+      summary: Reverse geocode with admin unit match
+      description: >
+        Authenticated. Proxies Vietmap Reverse v4, then best-effort matches
+        current_v2 province/ward UUIDs from boundary labels. Unmatched IDs are null.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: lat
+          in: query
+          required: true
+          schema: { type: number }
+        - name: lng
+          in: query
+          required: true
+          schema: { type: number }
+      responses:
+        "200":
+          description: Nearest address plus optional admin UUIDs
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: "#/components/schemas/MapsReverseResult"
+        "401":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /api/v1/maps/route:
+    get:
+      tags: [Maps]
+      summary: Route between two points
+      description: Authenticated. Proxies Vietmap Route v4. Service API key stays on the server.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: from_lat
+          in: query
+          required: true
+          schema: { type: number }
+        - name: from_lng
+          in: query
+          required: true
+          schema: { type: number }
+        - name: to_lat
+          in: query
+          required: true
+          schema: { type: number }
+        - name: to_lng
+          in: query
+          required: true
+          schema: { type: number }
+        - name: vehicle
+          in: query
+          schema: { type: string, enum: [car, motorcycle], default: car }
+      responses:
+        "200":
+          description: Route geometry and metrics
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: "#/components/schemas/MapsRouteResult"
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /api/v1/maps/config:
+    get:
+      tags: [Maps]
+      summary: Map tile/style config for clients
+      description: >
+        Authenticated. Returns MapLibre style URL and domain-restricted map key.
+        Never returns VIETMAP_API_KEY.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Client map config
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: "#/components/schemas/MapsClientConfig"
+        "401":
+          $ref: "#/components/responses/Error"
   /api/v1/auth/register:
     post:
       tags: [Auth]
@@ -4065,7 +4266,7 @@ components:
         name_vi: { type: string }
     Branch:
       type: object
-      required: [id, public_id, organization_id, code, name, status]
+      required: [id, public_id, organization_id, code, name, status, created_at]
       properties:
         id: { type: string, format: uuid }
         public_id: { type: string, minLength: 26, maxLength: 26 }
@@ -4078,10 +4279,15 @@ components:
         phone: { type: string }
         email: { type: string, format: email }
         timezone: { type: string }
+        website: { type: string }
+        facebook_url: { type: string }
+        google_maps_url: { type: string }
+        founded_year: { type: integer, minimum: 1800, maximum: 2100 }
         logo_file_id: { type: string, format: uuid, description: Avatar image file id }
         banner_file_id: { type: string, format: uuid }
         status: { type: string, enum: [active, inactive, maintenance, archived] }
         court_count: { type: integer, minimum: 0, description: Non-deleted courts at this branch }
+        created_at: { type: string, format: date-time, description: UTC }
         addresses:
           type: array
           items:
@@ -4112,6 +4318,10 @@ components:
           type: string
           description: Ignored on create — always Asia/Ho_Chi_Minh (UTC+7).
           deprecated: true
+        website: { type: string }
+        facebook_url: { type: string }
+        google_maps_url: { type: string }
+        founded_year: { type: integer, minimum: 1800, maximum: 2100, nullable: true }
         addresses:
           type: array
           items:
@@ -4138,6 +4348,10 @@ components:
           type: string
           description: Immutable — ignored on update.
           deprecated: true
+        website: { type: string }
+        facebook_url: { type: string }
+        google_maps_url: { type: string }
+        founded_year: { type: integer, minimum: 1800, maximum: 2100, nullable: true }
         addresses:
           type: array
           items:
@@ -4156,6 +4370,82 @@ components:
         name_en: { type: string }
         name_vi: { type: string }
         icon: { type: string }
+    MapsClientConfig:
+      type: object
+      required: [style_url, map_key, raster_tile_url, raster_tile_size, view_url_template]
+      properties:
+        style_url: { type: string, description: Vector style.json URL (optional for MapPicker; may require vendor SDK for MLT) }
+        map_key: { type: string, description: Domain-restricted tile/style key (not the server geocoding key) }
+        raster_tile_url:
+          type: string
+          description: >
+            XYZ raster tile template with {z}/{x}/{y} placeholders. Preferred for MapLibre MapPicker
+            (Vietmap vlc-* vector tiles are MLT and not compatible with stock MapLibre).
+          example: "https://maps.vietmap.vn/tm/{z}/{x}/{y}@2x.png"
+        raster_tile_size:
+          type: integer
+          enum: [256, 512]
+          description: Pixel size of each raster tile (512 for @2x)
+        view_url_template:
+          type: string
+          description: >
+            External map deep-link template with {lat} and {lng} placeholders.
+            Provider-specific; clients must not hardcode a vendor URL.
+          example: "https://maps.vietmap.vn/#17/{lat}/{lng}"
+    MapsPlaceSuggestion:
+      type: object
+      required: [ref_id, display]
+      properties:
+        ref_id: { type: string }
+        display: { type: string }
+        name: { type: string }
+        address: { type: string }
+    MapsPlaceDetail:
+      type: object
+      required: [ref_id, display, latitude, longitude]
+      properties:
+        ref_id: { type: string }
+        display: { type: string }
+        name: { type: string }
+        address: { type: string }
+        address_line: { type: string, description: Street/house line suitable for Branch address_line_1 }
+        latitude: { type: number, format: double }
+        longitude: { type: number, format: double }
+    MapsReverseResult:
+      allOf:
+        - $ref: "#/components/schemas/MapsPlaceDetail"
+        - type: object
+          properties:
+            province_id:
+              type: string
+              format: uuid
+              nullable: true
+              description: Matched current_v2 province UUID, or null when unmatched
+            ward_id:
+              type: string
+              format: uuid
+              nullable: true
+              description: Matched current_v2 ward UUID, or null when unmatched
+    MapsRouteResult:
+      type: object
+      required: [distance_m, time_ms, coordinates, bbox]
+      properties:
+        distance_m: { type: number, format: double }
+        time_ms: { type: number, format: double }
+        coordinates:
+          type: array
+          items:
+            type: object
+            required: [lat, lng]
+            properties:
+              lat: { type: number, format: double }
+              lng: { type: number, format: double }
+        bbox:
+          type: array
+          minItems: 4
+          maxItems: 4
+          items: { type: number, format: double }
+          description: minLng, minLat, maxLng, maxLat
     CustomerContact:
       type: object
       required: [type, value, is_primary, is_verified]

@@ -85,7 +85,10 @@ dev:
 gen_admin_seed:
 	python3 $(BACKEND_DIR)/data/gen_admin_seed.py
 
-.PHONY: server worker migrate_up migrate_down migrate_status migrate_create install_tools gen_admin_seed
+gen_ward_successors:
+	python3 $(BACKEND_DIR)/data/gen_ward_successors.py
+
+.PHONY: server worker migrate_up migrate_down migrate_status migrate_create install_tools gen_admin_seed gen_ward_successors
 .PHONY: db_create db_setup seed sqlc_schema sqlc test vet check build noapp stop_noapp dev
 .PHONY: admin-web owner-web player-web brand-sync-public
 

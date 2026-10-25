@@ -19,3 +19,19 @@ func nullUUID(id *uuid.UUID) *uuid.UUID {
 func uuidPtr(id uuid.UUID) *uuid.UUID {
 	return &id
 }
+
+func toInt32Ptr(v *int) *int32 {
+	if v == nil {
+		return nil
+	}
+	n := int32(*v)
+	return &n
+}
+
+func fromInt32Ptr(v *int32) *int {
+	if v == nil {
+		return nil
+	}
+	n := int(*v)
+	return &n
+}

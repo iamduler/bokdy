@@ -125,8 +125,9 @@ func (q *Queries) CountCourtsByLocationIDs(ctx context.Context, locationIds []uu
 
 const createLocation = `-- name: CreateLocation :exec
 INSERT INTO organization.locations
-    (id, public_id, business_unit_id, organization_id, code, slug, name_en, name_vi, phone, email, timezone, status, created_at, updated_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+    (id, public_id, business_unit_id, organization_id, code, slug, name_en, name_vi, phone, email, timezone,
+     website, facebook_url, google_maps_url, founded_year, status, created_at, updated_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
 `
 
 type CreateLocationParams struct {
@@ -141,6 +142,10 @@ type CreateLocationParams struct {
 	Phone          *string                    `json:"phone"`
 	Email          *string                    `json:"email"`
 	Timezone       *string                    `json:"timezone"`
+	Website        *string                    `json:"website"`
+	FacebookUrl    *string                    `json:"facebook_url"`
+	GoogleMapsUrl  *string                    `json:"google_maps_url"`
+	FoundedYear    *int32                     `json:"founded_year"`
 	Status         OrganizationLocationStatus `json:"status"`
 	CreatedAt      time.Time                  `json:"created_at"`
 	UpdatedAt      time.Time                  `json:"updated_at"`
@@ -159,6 +164,10 @@ func (q *Queries) CreateLocation(ctx context.Context, arg CreateLocationParams) 
 		arg.Phone,
 		arg.Email,
 		arg.Timezone,
+		arg.Website,
+		arg.FacebookUrl,
+		arg.GoogleMapsUrl,
+		arg.FoundedYear,
 		arg.Status,
 		arg.CreatedAt,
 		arg.UpdatedAt,
@@ -266,7 +275,10 @@ func (q *Queries) DeleteLocationSports(ctx context.Context, locationID uuid.UUID
 const findBranchByID = `-- name: FindBranchByID :one
 SELECT l.id, l.public_id, l.business_unit_id, l.organization_id, l.code, l.slug,
        COALESCE(l.name_en, '') AS name_en, COALESCE(l.name_vi, '') AS name_vi, COALESCE(l.phone, '') AS phone, COALESCE(l.email, '') AS email,
-       COALESCE(l.timezone, '') AS timezone, l.logo_file_id, l.banner_file_id, l.status, l.created_at, l.updated_at, l.deleted_at,
+       COALESCE(l.timezone, '') AS timezone,
+       COALESCE(l.website, '') AS website, COALESCE(l.facebook_url, '') AS facebook_url,
+       COALESCE(l.google_maps_url, '') AS google_maps_url, l.founded_year,
+       l.logo_file_id, l.banner_file_id, l.status, l.created_at, l.updated_at, l.deleted_at,
        ac.id AS current_address_id, ac.country_id AS current_country_id,
        ac.province_id AS current_province_id, ac.ward_id AS current_ward_id,
        COALESCE(ac.address_line_1, '') AS current_address_line_1, COALESCE(ac.address_line_2, '') AS current_address_line_2,
@@ -298,6 +310,10 @@ type FindBranchByIDRow struct {
 	Phone                   string                     `json:"phone"`
 	Email                   string                     `json:"email"`
 	Timezone                string                     `json:"timezone"`
+	Website                 string                     `json:"website"`
+	FacebookUrl             string                     `json:"facebook_url"`
+	GoogleMapsUrl           string                     `json:"google_maps_url"`
+	FoundedYear             *int32                     `json:"founded_year"`
 	LogoFileID              *uuid.UUID                 `json:"logo_file_id"`
 	BannerFileID            *uuid.UUID                 `json:"banner_file_id"`
 	Status                  OrganizationLocationStatus `json:"status"`
@@ -340,6 +356,10 @@ func (q *Queries) FindBranchByID(ctx context.Context, arg FindBranchByIDParams) 
 		&i.Phone,
 		&i.Email,
 		&i.Timezone,
+		&i.Website,
+		&i.FacebookUrl,
+		&i.GoogleMapsUrl,
+		&i.FoundedYear,
 		&i.LogoFileID,
 		&i.BannerFileID,
 		&i.Status,
@@ -372,7 +392,10 @@ func (q *Queries) FindBranchByID(ctx context.Context, arg FindBranchByIDParams) 
 const listBranchesByOrg = `-- name: ListBranchesByOrg :many
 SELECT l.id, l.public_id, l.business_unit_id, l.organization_id, l.code, l.slug,
        COALESCE(l.name_en, '') AS name_en, COALESCE(l.name_vi, '') AS name_vi, COALESCE(l.phone, '') AS phone, COALESCE(l.email, '') AS email,
-       COALESCE(l.timezone, '') AS timezone, l.logo_file_id, l.banner_file_id, l.status, l.created_at, l.updated_at, l.deleted_at,
+       COALESCE(l.timezone, '') AS timezone,
+       COALESCE(l.website, '') AS website, COALESCE(l.facebook_url, '') AS facebook_url,
+       COALESCE(l.google_maps_url, '') AS google_maps_url, l.founded_year,
+       l.logo_file_id, l.banner_file_id, l.status, l.created_at, l.updated_at, l.deleted_at,
        ac.id AS current_address_id, ac.country_id AS current_country_id,
        ac.province_id AS current_province_id, ac.ward_id AS current_ward_id,
        COALESCE(ac.address_line_1, '') AS current_address_line_1, COALESCE(ac.address_line_2, '') AS current_address_line_2,
@@ -400,6 +423,10 @@ type ListBranchesByOrgRow struct {
 	Phone                   string                     `json:"phone"`
 	Email                   string                     `json:"email"`
 	Timezone                string                     `json:"timezone"`
+	Website                 string                     `json:"website"`
+	FacebookUrl             string                     `json:"facebook_url"`
+	GoogleMapsUrl           string                     `json:"google_maps_url"`
+	FoundedYear             *int32                     `json:"founded_year"`
 	LogoFileID              *uuid.UUID                 `json:"logo_file_id"`
 	BannerFileID            *uuid.UUID                 `json:"banner_file_id"`
 	Status                  OrganizationLocationStatus `json:"status"`
@@ -448,6 +475,10 @@ func (q *Queries) ListBranchesByOrg(ctx context.Context, organizationID uuid.UUI
 			&i.Phone,
 			&i.Email,
 			&i.Timezone,
+			&i.Website,
+			&i.FacebookUrl,
+			&i.GoogleMapsUrl,
+			&i.FoundedYear,
 			&i.LogoFileID,
 			&i.BannerFileID,
 			&i.Status,
@@ -569,7 +600,8 @@ func (q *Queries) MaxBranchCodeSeq(ctx context.Context, arg MaxBranchCodeSeqPara
 
 const updateLocation = `-- name: UpdateLocation :exec
 UPDATE organization.locations
-SET code = $3, slug = $4, name_en = $5, name_vi = $6, phone = $7, email = $8, timezone = $9, updated_at = now()
+SET code = $3, slug = $4, name_en = $5, name_vi = $6, phone = $7, email = $8, timezone = $9,
+    website = $10, facebook_url = $11, google_maps_url = $12, founded_year = $13, updated_at = now()
 WHERE organization_id = $1 AND id = $2 AND deleted_at IS NULL
 `
 
@@ -583,6 +615,10 @@ type UpdateLocationParams struct {
 	Phone          *string   `json:"phone"`
 	Email          *string   `json:"email"`
 	Timezone       *string   `json:"timezone"`
+	Website        *string   `json:"website"`
+	FacebookUrl    *string   `json:"facebook_url"`
+	GoogleMapsUrl  *string   `json:"google_maps_url"`
+	FoundedYear    *int32    `json:"founded_year"`
 }
 
 func (q *Queries) UpdateLocation(ctx context.Context, arg UpdateLocationParams) error {
@@ -596,6 +632,10 @@ func (q *Queries) UpdateLocation(ctx context.Context, arg UpdateLocationParams) 
 		arg.Phone,
 		arg.Email,
 		arg.Timezone,
+		arg.Website,
+		arg.FacebookUrl,
+		arg.GoogleMapsUrl,
+		arg.FoundedYear,
 	)
 	return err
 }

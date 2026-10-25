@@ -3,6 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "node ./scripts/copy-maplibre-worker.mjs",
+    "prebuild": "node ./scripts/copy-maplibre-worker.mjs",
     "dev": "next dev --port 3002",
     "build": "next build",
     "start": "next start --port 3002",
@@ -16,7 +18,9 @@
     "@hookform/resolvers": "^5.9.1",
     "@tanstack/react-query": "^5.101.0",
     "@tanstack/react-table": "^8.21.3",
+    "@vietmap/vietmap-gl-js": "^6.0.1",
     "lucide-react": "^1.28.0",
+    "maplibre-gl": "^6.15.0",
     "next": "16.2.9",
     "next-intl": "^4.13.1",
     "react": "19.2.4",

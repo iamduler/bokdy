@@ -21,6 +21,9 @@ import (
 	paymentpg "bokdy/internal/payment/infrastructure/postgres"
 	paymentservice "bokdy/internal/payment/service"
 	"bokdy/internal/platform/events"
+	mapshandler "bokdy/internal/platform/maps/handler"
+	vietmap "bokdy/internal/platform/maps/infrastructure/vietmap"
+	mapsservice "bokdy/internal/platform/maps/service"
 	"bokdy/internal/platform/middleware"
 	refhandler "bokdy/internal/platform/reference/handler"
 	refpg "bokdy/internal/platform/reference/infrastructure/postgres"
@@ -96,6 +99,14 @@ func RegisterRoutes(api *gin.RouterGroup, app *server.Application) {
 		refservice.NewLocaleService(localeRepo),
 		refservice.NewAdminUnitService(adminUnitRepo),
 	).RegisterRoutes(api)
+
+	mapsSvc := mapsservice.NewMapsService(
+		vietmap.NewClient(app.Config.Vietmap.APIKey),
+		mapsservice.MapsConfig{MapKey: app.Config.Vietmap.MapKey},
+		mapsservice.NewAdminUnitMatcher(adminUnitRepo),
+	)
+	mapshandler.NewMapsHandler(mapsSvc).RegisterRoutes(api, jwt)
+
 	authHandler.RegisterRoutes(api, jwt)
 	orgHandler.RegisterRoutes(api, jwt)
 	branchHandler.RegisterRoutes(api, jwt)

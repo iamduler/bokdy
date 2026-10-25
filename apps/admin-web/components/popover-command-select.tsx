@@ -59,14 +59,22 @@ export function PopoverCommandSelect({
   searchable = false,
   variant = "default",
 }: PopoverCommandSelectProps) {
+  const triggerRef = React.useRef<HTMLButtonElement>(null);
   const [open, setOpen] = React.useState(false);
+  const [portalContainer, setPortalContainer] = React.useState<HTMLElement | null>(null);
   const selected = options.find((option) => option.value === value);
   const isNav = variant === "nav";
 
+  React.useEffect(() => {
+    if (!open) return;
+    setPortalContainer(triggerRef.current?.closest('[role="dialog"]') ?? null);
+  }, [open]);
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={setOpen} modal>
       <PopoverTrigger asChild>
         <Button
+          ref={triggerRef}
           type="button"
           variant={isNav ? "outline" : "ghost"}
           size={isNav ? "sm" : "default"}
@@ -106,12 +114,14 @@ export function PopoverCommandSelect({
         </Button>
       </PopoverTrigger>
       <PopoverContent
+        container={portalContainer}
         align={align}
+        onWheel={(event) => event.stopPropagation()}
         className={cn(
-          "p-0 shadow-lg",
+          "z-60 p-0 shadow-lg",
           isNav
-            ? "w-auto min-w-[var(--radix-popover-trigger-width)] max-w-[14rem] overflow-hidden rounded-xl border-border bg-popover"
-            : "w-[var(--radix-popover-trigger-width)] min-w-[10rem]",
+            ? "w-auto min-w-(--radix-popover-trigger-width) max-w-56 overflow-hidden rounded-xl border-border bg-popover"
+            : "w-(--radix-popover-trigger-width) min-w-40",
         )}
       >
         <Command
@@ -119,7 +129,7 @@ export function PopoverCommandSelect({
           filter={commandSearchFilter}
         >
           {searchable ? <CommandInput placeholder={searchPlaceholder} /> : null}
-          <CommandList>
+          <CommandList className="overscroll-contain">
             <CommandEmpty>{emptyText ?? "—"}</CommandEmpty>
             <CommandGroup className={isNav ? "p-1" : undefined}>
               {options.map((option) => {

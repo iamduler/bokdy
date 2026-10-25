@@ -33,7 +33,9 @@ type OrganizationRepository interface {
 	FindDefaultBusinessUnit(ctx context.Context, orgID uuid.UUID) (*entity.BusinessUnit, error)
 	ReplaceAddresses(ctx context.Context, tx pgx.Tx, orgID uuid.UUID, rows []entity.OrganizationAddress) error
 	ListAddresses(ctx context.Context, orgID uuid.UUID) ([]entity.OrganizationAddress, error)
-	ListFormerWards(ctx context.Context, wardID uuid.UUID) ([]entity.OrganizationAddress, error)
+	// ListFormerWards returns former wards that map to the given current ward_id,
+	// ordered for PickRepresentativeFormer (code-equal first, else by former code).
+	ListFormerWards(ctx context.Context, wardID uuid.UUID) ([]FormerWardRef, error)
 	TenantIDBySlug(ctx context.Context, slug string) (*uuid.UUID, error)
 	UpdateTenantSlug(ctx context.Context, tx pgx.Tx, tenantID uuid.UUID, slug string) error
 	InsertFile(ctx context.Context, tx pgx.Tx, in StoredFile) error
@@ -51,6 +53,15 @@ type StoredFile struct {
 	Filename  string
 	Extension string
 	CreatedBy uuid.UUID
+}
+
+// FormerWardRef is a former_v3 triple resolved from ward_former_successors for a current ward.
+type FormerWardRef struct {
+	ProvinceFormerID uuid.UUID
+	DistrictFormerID uuid.UUID
+	WardFormerID     uuid.UUID
+	WardFormerCode   string
+	WardCode         string
 }
 
 type AdminOrganization struct {

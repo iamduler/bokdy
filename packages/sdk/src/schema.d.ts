@@ -305,6 +305,284 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/maps/autocomplete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Address autocomplete (Vietmap)
+         * @description Authenticated. Proxies Vietmap Autocomplete v4. Service API key stays on the server. Pass optional lat/lng as focus bias.
+         */
+        get: {
+            parameters: {
+                query: {
+                    q: string;
+                    lat?: number;
+                    lng?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Suggestions */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["MapsPlaceSuggestion"][];
+                        };
+                    };
+                };
+                401: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/maps/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Address search (Vietmap)
+         * @description Authenticated. Proxies Vietmap Search v4. Service API key stays on the server.
+         */
+        get: {
+            parameters: {
+                query: {
+                    q: string;
+                    lat?: number;
+                    lng?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Suggestions */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["MapsPlaceSuggestion"][];
+                        };
+                    };
+                };
+                401: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/maps/places": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Resolve place by ref_id
+         * @description Authenticated. Proxies Vietmap Place v4 for coordinates and address line.
+         */
+        get: {
+            parameters: {
+                query: {
+                    ref_id: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Place detail */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["MapsPlaceDetail"];
+                        };
+                    };
+                };
+                401: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/maps/reverse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Reverse geocode with admin unit match
+         * @description Authenticated. Proxies Vietmap Reverse v4, then best-effort matches current_v2 province/ward UUIDs from boundary labels. Unmatched IDs are null.
+         */
+        get: {
+            parameters: {
+                query: {
+                    lat: number;
+                    lng: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Nearest address plus optional admin UUIDs */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["MapsReverseResult"];
+                        };
+                    };
+                };
+                401: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/maps/route": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Route between two points
+         * @description Authenticated. Proxies Vietmap Route v4. Service API key stays on the server.
+         */
+        get: {
+            parameters: {
+                query: {
+                    from_lat: number;
+                    from_lng: number;
+                    to_lat: number;
+                    to_lng: number;
+                    vehicle?: "car" | "motorcycle";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Route geometry and metrics */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["MapsRouteResult"];
+                        };
+                    };
+                };
+                401: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/maps/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Map tile/style config for clients
+         * @description Authenticated. Returns MapLibre style URL and domain-restricted map key. Never returns VIETMAP_API_KEY.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Client map config */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["MapsClientConfig"];
+                        };
+                    };
+                };
+                401: components["responses"]["Error"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/register": {
         parameters: {
             query?: never;
@@ -6338,6 +6616,10 @@ export interface components {
             /** Format: email */
             email?: string;
             timezone?: string;
+            website?: string;
+            facebook_url?: string;
+            google_maps_url?: string;
+            founded_year?: number;
             /**
              * Format: uuid
              * @description Avatar image file id
@@ -6349,6 +6631,11 @@ export interface components {
             status: "active" | "inactive" | "maintenance" | "archived";
             /** @description Non-deleted courts at this branch */
             court_count?: number;
+            /**
+             * Format: date-time
+             * @description UTC
+             */
+            created_at: string;
             addresses?: components["schemas"]["BranchAddress"][];
             sport_ids?: string[];
         };
@@ -6371,6 +6658,10 @@ export interface components {
              * @description Ignored on create — always Asia/Ho_Chi_Minh (UTC+7).
              */
             timezone?: string;
+            website?: string;
+            facebook_url?: string;
+            google_maps_url?: string;
+            founded_year?: number | null;
             addresses?: components["schemas"]["BranchAddress"][];
             sport_ids?: string[];
         };
@@ -6393,6 +6684,10 @@ export interface components {
              * @description Immutable — ignored on update.
              */
             timezone?: string;
+            website?: string;
+            facebook_url?: string;
+            google_maps_url?: string;
+            founded_year?: number | null;
             addresses?: components["schemas"]["BranchAddress"][];
             /** @description When present, replaces the full set of offered sports. */
             sport_ids?: string[];
@@ -6406,6 +6701,71 @@ export interface components {
             name_en: string;
             name_vi: string;
             icon?: string;
+        };
+        MapsClientConfig: {
+            /** @description Vector style.json URL (optional for MapPicker; may require vendor SDK for MLT) */
+            style_url: string;
+            /** @description Domain-restricted tile/style key (not the server geocoding key) */
+            map_key: string;
+            /**
+             * @description XYZ raster tile template with {z}/{x}/{y} placeholders. Preferred for MapLibre MapPicker (Vietmap vlc-* vector tiles are MLT and not compatible with stock MapLibre).
+             * @example https://maps.vietmap.vn/tm/{z}/{x}/{y}@2x.png
+             */
+            raster_tile_url: string;
+            /**
+             * @description Pixel size of each raster tile (512 for @2x)
+             * @enum {integer}
+             */
+            raster_tile_size: 256 | 512;
+            /**
+             * @description External map deep-link template with {lat} and {lng} placeholders. Provider-specific; clients must not hardcode a vendor URL.
+             * @example https://maps.vietmap.vn/#17/{lat}/{lng}
+             */
+            view_url_template: string;
+        };
+        MapsPlaceSuggestion: {
+            ref_id: string;
+            display: string;
+            name?: string;
+            address?: string;
+        };
+        MapsPlaceDetail: {
+            ref_id: string;
+            display: string;
+            name?: string;
+            address?: string;
+            /** @description Street/house line suitable for Branch address_line_1 */
+            address_line?: string;
+            /** Format: double */
+            latitude: number;
+            /** Format: double */
+            longitude: number;
+        };
+        MapsReverseResult: components["schemas"]["MapsPlaceDetail"] & {
+            /**
+             * Format: uuid
+             * @description Matched current_v2 province UUID, or null when unmatched
+             */
+            province_id?: string | null;
+            /**
+             * Format: uuid
+             * @description Matched current_v2 ward UUID, or null when unmatched
+             */
+            ward_id?: string | null;
+        };
+        MapsRouteResult: {
+            /** Format: double */
+            distance_m: number;
+            /** Format: double */
+            time_ms: number;
+            coordinates: {
+                /** Format: double */
+                lat: number;
+                /** Format: double */
+                lng: number;
+            }[];
+            /** @description minLng, minLat, maxLng, maxLat */
+            bbox: number[];
         };
         CustomerContact: {
             /** @enum {string} */

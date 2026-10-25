@@ -2327,6 +2327,10 @@ type OrganizationLocation struct {
 	Slug           string                     `json:"slug"`
 	LogoFileID     *uuid.UUID                 `json:"logo_file_id"`
 	BannerFileID   *uuid.UUID                 `json:"banner_file_id"`
+	Website        *string                    `json:"website"`
+	FacebookUrl    *string                    `json:"facebook_url"`
+	GoogleMapsUrl  *string                    `json:"google_maps_url"`
+	FoundedYear    *int32                     `json:"founded_year"`
 }
 
 type OrganizationLocationAddress struct {

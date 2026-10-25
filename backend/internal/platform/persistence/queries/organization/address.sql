@@ -15,8 +15,13 @@ WHERE organization_id = $1
 ORDER BY division_scheme, ward_former_id NULLS FIRST;
 
 -- name: ListFormerWardsForCurrent :many
-SELECT wf.id AS ward_former_id, wf.district_former_id, df.province_former_id
+-- Ordered so the first row is the branch representative:
+-- prefer former ward whose code equals the current ward code, else lowest former code.
+SELECT wf.id AS ward_former_id, wf.district_former_id, df.province_former_id,
+       wf.code AS ward_former_code, w.code AS ward_code
 FROM reference.ward_former_successors s
 JOIN reference.ward_former wf ON wf.id = s.ward_former_id
 JOIN reference.district_former df ON df.id = wf.district_former_id
-WHERE s.ward_id = $1;
+JOIN reference.ward w ON w.id = s.ward_id
+WHERE s.ward_id = $1
+ORDER BY (wf.code = w.code) DESC, wf.code ASC;

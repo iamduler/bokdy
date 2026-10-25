@@ -57,19 +57,26 @@ func (q *Queries) InsertOrganizationAddress(ctx context.Context, arg InsertOrgan
 }
 
 const listFormerWardsForCurrent = `-- name: ListFormerWardsForCurrent :many
-SELECT wf.id AS ward_former_id, wf.district_former_id, df.province_former_id
+SELECT wf.id AS ward_former_id, wf.district_former_id, df.province_former_id,
+       wf.code AS ward_former_code, w.code AS ward_code
 FROM reference.ward_former_successors s
 JOIN reference.ward_former wf ON wf.id = s.ward_former_id
 JOIN reference.district_former df ON df.id = wf.district_former_id
+JOIN reference.ward w ON w.id = s.ward_id
 WHERE s.ward_id = $1
+ORDER BY (wf.code = w.code) DESC, wf.code ASC
 `
 
 type ListFormerWardsForCurrentRow struct {
 	WardFormerID     uuid.UUID `json:"ward_former_id"`
 	DistrictFormerID uuid.UUID `json:"district_former_id"`
 	ProvinceFormerID uuid.UUID `json:"province_former_id"`
+	WardFormerCode   string    `json:"ward_former_code"`
+	WardCode         string    `json:"ward_code"`
 }
 
+// Ordered so the first row is the branch representative:
+// prefer former ward whose code equals the current ward code, else lowest former code.
 func (q *Queries) ListFormerWardsForCurrent(ctx context.Context, wardID uuid.UUID) ([]ListFormerWardsForCurrentRow, error) {
 	rows, err := q.db.Query(ctx, listFormerWardsForCurrent, wardID)
 	if err != nil {
@@ -79,7 +86,13 @@ func (q *Queries) ListFormerWardsForCurrent(ctx context.Context, wardID uuid.UUI
 	items := []ListFormerWardsForCurrentRow{}
 	for rows.Next() {
 		var i ListFormerWardsForCurrentRow
-		if err := rows.Scan(&i.WardFormerID, &i.DistrictFormerID, &i.ProvinceFormerID); err != nil {
+		if err := rows.Scan(
+			&i.WardFormerID,
+			&i.DistrictFormerID,
+			&i.ProvinceFormerID,
+			&i.WardFormerCode,
+			&i.WardCode,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

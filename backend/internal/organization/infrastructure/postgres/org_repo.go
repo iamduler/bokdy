@@ -250,19 +250,19 @@ func (r *OrgRepo) ListAddresses(ctx context.Context, orgID uuid.UUID) ([]entity.
 	return out, nil
 }
 
-func (r *OrgRepo) ListFormerWards(ctx context.Context, wardID uuid.UUID) ([]entity.OrganizationAddress, error) {
+func (r *OrgRepo) ListFormerWards(ctx context.Context, wardID uuid.UUID) ([]repository.FormerWardRef, error) {
 	rows, err := r.q.ListFormerWardsForCurrent(ctx, wardID)
 	if err != nil {
 		return nil, err
 	}
-	out := make([]entity.OrganizationAddress, 0, len(rows))
+	out := make([]repository.FormerWardRef, 0, len(rows))
 	for _, row := range rows {
-		province := row.ProvinceFormerID
-		district := row.DistrictFormerID
-		ward := row.WardFormerID
-		out = append(out, entity.OrganizationAddress{
-			DivisionScheme: entity.AdminDivisionFormerV3,
-			ProvinceFormerID: &province, DistrictFormerID: &district, WardFormerID: &ward,
+		out = append(out, repository.FormerWardRef{
+			ProvinceFormerID: row.ProvinceFormerID,
+			DistrictFormerID: row.DistrictFormerID,
+			WardFormerID:     row.WardFormerID,
+			WardFormerCode:   row.WardFormerCode,
+			WardCode:         row.WardCode,
 		})
 	}
 	return out, nil

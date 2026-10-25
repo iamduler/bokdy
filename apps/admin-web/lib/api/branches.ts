@@ -14,6 +14,10 @@ export type BranchProfileInput = {
   phone?: string;
   email?: string;
   timezone?: string;
+  website?: string;
+  facebook_url?: string;
+  google_maps_url?: string;
+  founded_year?: number | null;
   addresses?: BranchAddress[];
   sport_ids?: string[];
 };

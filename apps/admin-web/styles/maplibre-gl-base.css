@@ -1,0 +1,3 @@
+/* GL CSS must sit in layer(base) so Tailwind utilities win.
+ * Loaded statically — Turbopack cannot resolve dynamic CSS imports. */
+@import "maplibre-gl/dist/maplibre-gl.css" layer(base);

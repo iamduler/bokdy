@@ -1,5 +1,7 @@
 import type { Metadata, ReactNode } from "next";
 import { bokdyIconsMetadata } from "@bokdy/brand";
+
+import "@/lib/maps/engine-css";
 import "./globals.css";
 
 export const metadata: Metadata = {

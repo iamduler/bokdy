@@ -124,6 +124,14 @@ type OTelConfig struct {
 	Endpoint    string
 }
 
+// VietmapConfig holds Vietmap API credentials (wave 1).
+// Style / raster / view URLs are code defaults in maps.Service — not env.
+// Clients only receive tile/style material via GET /maps/config.
+type VietmapConfig struct {
+	APIKey string // service key — never expose to browsers
+	MapKey string // tile/style key (domain-restricted); safe via /maps/config
+}
+
 // Config aggregates every platform configuration section.
 type Config struct {
 	App               AppConfig
@@ -135,6 +143,7 @@ type Config struct {
 	Docs              DocsConfig
 	Bootstrap         BootstrapAdminConfig
 	OTel              OTelConfig
+	Vietmap           VietmapConfig
 	PlayerWebURL      string
 	OwnerWebURL       string
 	AdminWebURL       string
@@ -216,6 +225,10 @@ func Load() *Config {
 		OTel: OTelConfig{
 			ServiceName: env.GetEnv("OTEL_SERVICE_NAME", ""),
 			Endpoint:    env.GetEnv("OTEL_EXPORTER_OTLP_ENDPOINT", ""),
+		},
+		Vietmap: VietmapConfig{
+			APIKey: env.GetEnv("VIETMAP_API_KEY", ""),
+			MapKey: env.GetEnv("VIETMAP_MAP_KEY", ""),
 		},
 	}
 }
