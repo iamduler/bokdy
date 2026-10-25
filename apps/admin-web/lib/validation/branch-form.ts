@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+export const SHORT_INTRO_MAX_LENGTH = 200;
+
 const formFields = z.object({
   name_vi: z.string().trim(),
   name_en: z.string().trim(),
@@ -11,6 +13,11 @@ const formFields = z.object({
   facebook_url: z.string().trim(),
   google_maps_url: z.string().trim(),
   founded_year: z.string().trim(),
+  short_intro_en: z.string().trim(),
+  short_intro_vi: z.string().trim(),
+  /** HTML from RichTextEditor; sanitized again on the server. */
+  description_en: z.string(),
+  description_vi: z.string(),
   /** Hidden; create defaults to today, edit uses branch.created_at. Not submitted. */
   joined_at: z.string().trim(),
   province_id: z.string().trim(),
@@ -41,6 +48,7 @@ export function branchFormSchema(messages: {
   addressRequired: string;
   coordsInvalid: string;
   foundedYearInvalid: string;
+  shortIntroTooLong: string;
 }) {
   return formFields.superRefine((value, ctx) => {
     if (!value.name_vi.trim()) {
@@ -60,6 +68,15 @@ export function branchFormSchema(messages: {
     optionalUrlIssue(value.website, "website", messages.websiteInvalid, ctx);
     optionalUrlIssue(value.facebook_url, "facebook_url", messages.websiteInvalid, ctx);
     optionalUrlIssue(value.google_maps_url, "google_maps_url", messages.websiteInvalid, ctx);
+    for (const path of ["short_intro_en", "short_intro_vi"] as const) {
+      if ([...value[path]].length > SHORT_INTRO_MAX_LENGTH) {
+        ctx.addIssue({
+          code: "custom",
+          path: [path],
+          message: messages.shortIntroTooLong,
+        });
+      }
+    }
     if (value.founded_year) {
       const year = Number(value.founded_year);
       if (!Number.isInteger(year) || year < 1800 || year > 2100) {

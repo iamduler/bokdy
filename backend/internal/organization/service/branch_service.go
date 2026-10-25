@@ -62,19 +62,23 @@ type BranchAddressInput struct {
 }
 
 type CreateBranchInput struct {
-	NameEn        string
-	NameVi        string
-	Code          string
-	Slug          string
-	Phone         string
-	Email         string
-	Timezone      string
-	Website       string
-	FacebookURL   string
-	GoogleMapsURL string
-	FoundedYear   *int
-	Addresses     []BranchAddressInput
-	SportIDs      []uuid.UUID
+	NameEn         string
+	NameVi         string
+	Code           string
+	Slug           string
+	Phone          string
+	Email          string
+	Timezone       string
+	Website        string
+	FacebookURL    string
+	GoogleMapsURL  string
+	FoundedYear    *int
+	ShortIntroEn   string
+	ShortIntroVi   string
+	DescriptionEn  string
+	DescriptionVi  string
+	Addresses      []BranchAddressInput
+	SportIDs       []uuid.UUID
 }
 
 type UpdateBranchInput struct {
@@ -90,9 +94,13 @@ type UpdateBranchInput struct {
 	GoogleMapsURL *string
 	// FoundedYear sets the year when non-nil. When Website is also set and FoundedYear is nil, clears the year
 	// (admin form always sends the profile-link block together).
-	FoundedYear   *int
-	Addresses     *[]BranchAddressInput
-	SportIDs      *[]uuid.UUID
+	FoundedYear    *int
+	ShortIntroEn   *string
+	ShortIntroVi   *string
+	DescriptionEn  *string
+	DescriptionVi  *string
+	Addresses      *[]BranchAddressInput
+	SportIDs       *[]uuid.UUID
 }
 
 func (s *BranchService) requireReader(ctx context.Context, orgID, actor uuid.UUID) error {
@@ -173,6 +181,8 @@ func (s *BranchService) Create(ctx context.Context, actor uuid.UUID, in CreateBr
 		Code: code, Slug: slug, NameEn: nameEn, NameVi: nameVi, Phone: strings.TrimSpace(in.Phone), Email: strings.TrimSpace(in.Email),
 		Website: strings.TrimSpace(in.Website), FacebookURL: strings.TrimSpace(in.FacebookURL),
 		GoogleMapsURL: strings.TrimSpace(in.GoogleMapsURL), FoundedYear: foundedYear,
+		ShortIntroEn: sanitizeShortIntro(in.ShortIntroEn), ShortIntroVi: sanitizeShortIntro(in.ShortIntroVi),
+		DescriptionEn: sanitizeDescriptionHTML(in.DescriptionEn), DescriptionVi: sanitizeDescriptionHTML(in.DescriptionVi),
 		Timezone: entity.DefaultBranchTimezone, Status: entity.LocationInactive, CreatedAt: now, UpdatedAt: now,
 		SportIDs: sportIDs,
 	}
@@ -228,14 +238,21 @@ func (s *BranchService) List(ctx context.Context, actor uuid.UUID) ([]entity.Bra
 }
 
 func (s *BranchService) Get(ctx context.Context, branchID, actor uuid.UUID) (*entity.Branch, error) {
-	orgID, err := s.requireOrgHeader(ctx)
-	if err != nil {
-		return nil, err
+	orgID, hasOrg := requestctx.OrganizationID(ctx)
+	var branch *entity.Branch
+	var err error
+	if hasOrg {
+		if err := s.requireReader(ctx, orgID, actor); err != nil {
+			return nil, err
+		}
+		branch, err = s.branches.FindByID(ctx, orgID, branchID)
+	} else {
+		// Top-level /branches/:id — system admin may load without X-Organization-ID.
+		if !requestctx.IsSystemAdmin(ctx) {
+			return nil, orgerrors.ErrOrgHeaderRequired
+		}
+		branch, err = s.branches.FindByLocationID(ctx, branchID)
 	}
-	if err := s.requireReader(ctx, orgID, actor); err != nil {
-		return nil, err
-	}
-	branch, err := s.branches.FindByID(ctx, orgID, branchID)
 	if err != nil {
 		return nil, apperr.Wrap(err, apperr.CodeInternal, "get branch")
 	}
@@ -340,6 +357,18 @@ func (s *BranchService) Update(ctx context.Context, branchID, actor uuid.UUID, i
 	}
 	if in.GoogleMapsURL != nil {
 		branch.GoogleMapsURL = strings.TrimSpace(*in.GoogleMapsURL)
+	}
+	if in.ShortIntroEn != nil {
+		branch.ShortIntroEn = sanitizeShortIntro(*in.ShortIntroEn)
+	}
+	if in.ShortIntroVi != nil {
+		branch.ShortIntroVi = sanitizeShortIntro(*in.ShortIntroVi)
+	}
+	if in.DescriptionEn != nil {
+		branch.DescriptionEn = sanitizeDescriptionHTML(*in.DescriptionEn)
+	}
+	if in.DescriptionVi != nil {
+		branch.DescriptionVi = sanitizeDescriptionHTML(*in.DescriptionVi)
 	}
 	if in.Addresses != nil {
 		addrs, err := requireBranchAddresses(*in.Addresses)

@@ -7,6 +7,7 @@ export {
 } from "./ui/button-group";
 export { Input } from "./ui/input";
 export { InputGroup, InputGroupAddon, InputGroupInput } from "./ui/input-group";
+export { Textarea } from "./ui/textarea";
 export { Label } from "./ui/label";
 export {
   Card,
@@ -97,6 +98,10 @@ export {
   FieldTitle,
   FieldSeparator,
 } from "./ui/field";
+export { RichTextEditor } from "./ui/rich-text-editor";
+export type { RichTextEditorLabels, RichTextEditorProps } from "./ui/rich-text-editor";
+export { RichTextView, richTextProseClass } from "./ui/rich-text-view";
+export type { RichTextViewProps } from "./ui/rich-text-view";
 export { Toaster, toast } from "./ui/sonner";
 export {
   Sidebar,

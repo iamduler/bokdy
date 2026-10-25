@@ -49,6 +49,23 @@ type CourtType struct {
 	DeletedAt           *time.Time
 }
 
+type CourtEnvironment string
+
+const (
+	CourtEnvironmentIndoor      CourtEnvironment = "indoor"
+	CourtEnvironmentOutdoor     CourtEnvironment = "outdoor"
+	CourtEnvironmentUnspecified CourtEnvironment = "unspecified"
+)
+
+func ParseCourtEnvironment(raw string) CourtEnvironment {
+	switch CourtEnvironment(raw) {
+	case CourtEnvironmentIndoor, CourtEnvironmentOutdoor:
+		return CourtEnvironment(raw)
+	default:
+		return CourtEnvironmentUnspecified
+	}
+}
+
 type Court struct {
 	ID           uuid.UUID
 	PublicID     string
@@ -61,6 +78,7 @@ type Court struct {
 	ResourceType ResourceType
 	Status       ResourceStatus
 	IsBookable   bool
+	Environment  CourtEnvironment
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 	DeletedAt    *time.Time

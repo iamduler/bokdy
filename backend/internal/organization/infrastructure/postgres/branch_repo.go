@@ -35,6 +35,8 @@ func (r *BranchRepo) Create(ctx context.Context, tx pgx.Tx, branch *entity.Branc
 		Phone: nullStr(branch.Phone), Email: nullStr(branch.Email), Timezone: nullStr(branch.Timezone),
 		Website: nullStr(branch.Website), FacebookUrl: nullStr(branch.FacebookURL), GoogleMapsUrl: nullStr(branch.GoogleMapsURL),
 		FoundedYear: toInt32Ptr(branch.FoundedYear),
+		ShortIntroEn: nullStr(branch.ShortIntroEn), ShortIntroVi: nullStr(branch.ShortIntroVi),
+		DescriptionEn: nullStr(branch.DescriptionEn), DescriptionVi: nullStr(branch.DescriptionVi),
 		Status: dbsqlc.OrganizationLocationStatus(branch.Status), CreatedAt: branch.CreatedAt, UpdatedAt: branch.UpdatedAt,
 	}); err != nil {
 		return err
@@ -61,6 +63,23 @@ func (r *BranchRepo) FindByID(ctx context.Context, orgID, branchID uuid.UUID) (*
 		return nil, err
 	}
 	branch := toBranchFromFind(row)
+	sportIDs, err := r.ListSportIDs(ctx, branch.ID)
+	if err != nil {
+		return nil, err
+	}
+	branch.SportIDs = sportIDs
+	return branch, nil
+}
+
+func (r *BranchRepo) FindByLocationID(ctx context.Context, branchID uuid.UUID) (*entity.Branch, error) {
+	row, err := r.q.FindBranchByLocationID(ctx, branchID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	branch := toBranchFromLocationID(row)
 	sportIDs, err := r.ListSportIDs(ctx, branch.ID)
 	if err != nil {
 		return nil, err
@@ -102,6 +121,8 @@ func (r *BranchRepo) Update(ctx context.Context, tx pgx.Tx, branch *entity.Branc
 		Email: nullStr(branch.Email), Timezone: nullStr(branch.Timezone),
 		Website: nullStr(branch.Website), FacebookUrl: nullStr(branch.FacebookURL), GoogleMapsUrl: nullStr(branch.GoogleMapsURL),
 		FoundedYear: toInt32Ptr(branch.FoundedYear),
+		ShortIntroEn: nullStr(branch.ShortIntroEn), ShortIntroVi: nullStr(branch.ShortIntroVi),
+		DescriptionEn: nullStr(branch.DescriptionEn), DescriptionVi: nullStr(branch.DescriptionVi),
 	}); err != nil {
 		return err
 	}
@@ -231,6 +252,141 @@ func (r *BranchRepo) CountCourtsByLocations(ctx context.Context, locationIDs []u
 	return out, nil
 }
 
+func (r *BranchRepo) ListGallery(ctx context.Context, locationID uuid.UUID) ([]entity.LocationMedia, error) {
+	rows, err := r.q.ListLocationMedia(ctx, locationID)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]entity.LocationMedia, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, entity.LocationMedia{
+			ID: row.ID, LocationID: row.LocationID, FileID: row.FileID,
+			CaptionEn: row.CaptionEn, CaptionVi: row.CaptionVi,
+			SortOrder: int(row.SortOrder), IsCover: row.IsCover, CreatedAt: row.CreatedAt,
+		})
+	}
+	return out, nil
+}
+
+func (r *BranchRepo) FindGalleryItem(ctx context.Context, locationID, mediaID uuid.UUID) (*entity.LocationMedia, error) {
+	row, err := r.q.FindLocationMediaByID(ctx, dbsqlc.FindLocationMediaByIDParams{
+		LocationID: locationID, ID: mediaID,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &entity.LocationMedia{
+		ID: row.ID, LocationID: row.LocationID, FileID: row.FileID,
+		CaptionEn: row.CaptionEn, CaptionVi: row.CaptionVi,
+		SortOrder: int(row.SortOrder), IsCover: row.IsCover, CreatedAt: row.CreatedAt,
+	}, nil
+}
+
+func (r *BranchRepo) CreateGalleryItem(ctx context.Context, tx pgx.Tx, item *entity.LocationMedia) error {
+	return r.q.WithTx(tx).CreateLocationMedia(ctx, dbsqlc.CreateLocationMediaParams{
+		ID: item.ID, LocationID: item.LocationID, FileID: item.FileID,
+		CaptionEn: nullStr(item.CaptionEn), CaptionVi: nullStr(item.CaptionVi),
+		SortOrder: int32(item.SortOrder), IsCover: item.IsCover, CreatedAt: item.CreatedAt,
+	})
+}
+
+func (r *BranchRepo) UpdateGalleryItem(ctx context.Context, tx pgx.Tx, item *entity.LocationMedia) error {
+	return r.q.WithTx(tx).UpdateLocationGalleryItem(ctx, dbsqlc.UpdateLocationGalleryItemParams{
+		LocationID: item.LocationID, ID: item.ID,
+		CaptionEn: nullStr(item.CaptionEn), CaptionVi: nullStr(item.CaptionVi),
+		SortOrder: int32(item.SortOrder), IsCover: item.IsCover,
+	})
+}
+
+func (r *BranchRepo) DeleteGalleryItem(ctx context.Context, tx pgx.Tx, locationID, mediaID uuid.UUID) error {
+	return r.q.WithTx(tx).DeleteLocationMedia(ctx, dbsqlc.DeleteLocationMediaParams{
+		LocationID: locationID, ID: mediaID,
+	})
+}
+
+func (r *BranchRepo) MaxGallerySortOrder(ctx context.Context, locationID uuid.UUID) (int, error) {
+	v, err := r.q.MaxLocationMediaSortOrder(ctx, locationID)
+	if err != nil {
+		return 0, err
+	}
+	return int(v), nil
+}
+
+func (r *BranchRepo) ClearGalleryCover(ctx context.Context, tx pgx.Tx, locationID uuid.UUID) error {
+	return r.q.WithTx(tx).ClearLocationMediaCover(ctx, locationID)
+}
+
+func (r *BranchRepo) ListActiveAmenities(ctx context.Context) ([]entity.Amenity, error) {
+	rows, err := r.q.ListActiveAmenities(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]entity.Amenity, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, entity.Amenity{
+			ID: row.ID, Code: row.Code, NameEn: row.NameEn, NameVi: row.NameVi,
+			Icon: row.Icon, IsActive: row.IsActive, CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
+		})
+	}
+	return out, nil
+}
+
+func (r *BranchRepo) ListAmenitiesByIDs(ctx context.Context, ids []uuid.UUID) ([]entity.Amenity, error) {
+	if len(ids) == 0 {
+		return []entity.Amenity{}, nil
+	}
+	rows, err := r.q.ListAmenitiesByIDs(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]entity.Amenity, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, entity.Amenity{
+			ID: row.ID, Code: row.Code, NameEn: row.NameEn, NameVi: row.NameVi,
+			Icon: row.Icon, IsActive: row.IsActive, CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
+		})
+	}
+	return out, nil
+}
+
+func (r *BranchRepo) ListAmenityIDs(ctx context.Context, locationID uuid.UUID) ([]uuid.UUID, error) {
+	rows, err := r.q.ListLocationAmenityIDs(ctx, locationID)
+	if err != nil {
+		return nil, err
+	}
+	if rows == nil {
+		return []uuid.UUID{}, nil
+	}
+	return rows, nil
+}
+
+func (r *BranchRepo) ReplaceAmenities(ctx context.Context, tx pgx.Tx, locationID uuid.UUID, amenityIDs []uuid.UUID) error {
+	q := r.q.WithTx(tx)
+	if err := q.DeleteLocationAmenities(ctx, locationID); err != nil {
+		return err
+	}
+	now := time.Now().UTC()
+	seen := make(map[uuid.UUID]struct{}, len(amenityIDs))
+	for _, amenityID := range amenityIDs {
+		if amenityID == uuid.Nil {
+			continue
+		}
+		if _, ok := seen[amenityID]; ok {
+			continue
+		}
+		seen[amenityID] = struct{}{}
+		if err := q.CreateLocationAmenity(ctx, dbsqlc.CreateLocationAmenityParams{
+			LocationID: locationID, AmenityID: amenityID, CreatedAt: now,
+		}); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func toCreateAddressParams(locationID uuid.UUID, addr entity.BranchAddress) dbsqlc.CreateLocationAddressParams {
 	return dbsqlc.CreateLocationAddressParams{
 		ID:               id.MustNewUUID(),
@@ -255,6 +411,8 @@ func toBranchFromFind(row dbsqlc.FindBranchByIDRow) *entity.Branch {
 		Code: row.Code, Slug: row.Slug, NameEn: row.NameEn, NameVi: row.NameVi, Phone: row.Phone, Email: row.Email,
 		Timezone: row.Timezone, Website: row.Website, FacebookURL: row.FacebookUrl, GoogleMapsURL: row.GoogleMapsUrl,
 		FoundedYear: fromInt32Ptr(row.FoundedYear),
+		ShortIntroEn: row.ShortIntroEn, ShortIntroVi: row.ShortIntroVi,
+		DescriptionEn: row.DescriptionEn, DescriptionVi: row.DescriptionVi,
 		LogoFileID: row.LogoFileID, BannerFileID: row.BannerFileID,
 		Status: entity.LocationStatus(row.Status), CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
 		DeletedAt: row.DeletedAt, SportIDs: []uuid.UUID{},
@@ -266,12 +424,36 @@ func toBranchFromFind(row dbsqlc.FindBranchByIDRow) *entity.Branch {
 	return b
 }
 
+func toBranchFromLocationID(row dbsqlc.FindBranchByLocationIDRow) *entity.Branch {
+	return toBranchFromFind(dbsqlc.FindBranchByIDRow{
+		ID: row.ID, PublicID: row.PublicID, BusinessUnitID: row.BusinessUnitID, OrganizationID: row.OrganizationID,
+		Code: row.Code, Slug: row.Slug, NameEn: row.NameEn, NameVi: row.NameVi, Phone: row.Phone, Email: row.Email,
+		Timezone: row.Timezone, Website: row.Website, FacebookUrl: row.FacebookUrl, GoogleMapsUrl: row.GoogleMapsUrl,
+		FoundedYear: row.FoundedYear, ShortIntroEn: row.ShortIntroEn, ShortIntroVi: row.ShortIntroVi,
+		DescriptionEn: row.DescriptionEn, DescriptionVi: row.DescriptionVi,
+		LogoFileID: row.LogoFileID, BannerFileID: row.BannerFileID, Status: row.Status,
+		CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt, DeletedAt: row.DeletedAt,
+		CurrentAddressID: row.CurrentAddressID, CurrentCountryID: row.CurrentCountryID,
+		CurrentProvinceID: row.CurrentProvinceID, CurrentWardID: row.CurrentWardID,
+		CurrentAddressLine1: row.CurrentAddressLine1, CurrentAddressLine2: row.CurrentAddressLine2,
+		CurrentLatitude: row.CurrentLatitude, CurrentLongitude: row.CurrentLongitude,
+		CurrentAddressUpdatedAt: row.CurrentAddressUpdatedAt,
+		FormerAddressID: row.FormerAddressID, FormerCountryID: row.FormerCountryID,
+		ProvinceFormerID: row.ProvinceFormerID, DistrictFormerID: row.DistrictFormerID, WardFormerID: row.WardFormerID,
+		FormerAddressLine1: row.FormerAddressLine1, FormerAddressLine2: row.FormerAddressLine2,
+		FormerLatitude: row.FormerLatitude, FormerLongitude: row.FormerLongitude,
+		FormerAddressUpdatedAt: row.FormerAddressUpdatedAt,
+	})
+}
+
 func toBranchFromList(row dbsqlc.ListBranchesByOrgRow) *entity.Branch {
 	b := &entity.Branch{
 		ID: row.ID, PublicID: row.PublicID, BusinessUnitID: row.BusinessUnitID, OrganizationID: row.OrganizationID,
 		Code: row.Code, Slug: row.Slug, NameEn: row.NameEn, NameVi: row.NameVi, Phone: row.Phone, Email: row.Email,
 		Timezone: row.Timezone, Website: row.Website, FacebookURL: row.FacebookUrl, GoogleMapsURL: row.GoogleMapsUrl,
 		FoundedYear: fromInt32Ptr(row.FoundedYear),
+		ShortIntroEn: row.ShortIntroEn, ShortIntroVi: row.ShortIntroVi,
+		DescriptionEn: row.DescriptionEn, DescriptionVi: row.DescriptionVi,
 		LogoFileID: row.LogoFileID, BannerFileID: row.BannerFileID,
 		Status: entity.LocationStatus(row.Status), CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
 		DeletedAt: row.DeletedAt, SportIDs: []uuid.UUID{},

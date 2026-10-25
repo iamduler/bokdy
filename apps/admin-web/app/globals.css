@@ -146,9 +146,12 @@ body {
 }
 
 @media (min-width: 768px) {
-  /* Fixed wrapper: hug content under the viewport header */
+  /*
+   * Fixed icon rail sits under the Soft chrome bar.
+   * Header chrome: my-2 (0.5rem×2) + md:h-16 (4rem) ≈ 5rem; keep a small gap.
+   */
   .soft-icon-rail {
-    top: calc(4rem + 0.75rem) !important;
+    top: calc(5rem + 0.75rem) !important;
     bottom: auto !important;
     height: auto !important;
     inset-block-end: auto !important;

@@ -255,8 +255,8 @@
     "createCancel": "Cancel",
     "createSuccess": "Organization created.",
     "fieldName": "Name",
-    "fieldNameVi": "Name (Vietnamese)",
-    "fieldNameEn": "Name (English)",
+    "fieldNameVi": "Name (VN)",
+    "fieldNameEn": "Name (EN)",
     "fieldCode": "Code",
     "fieldEmail": "Email",
     "fieldPhone": "Phone",
@@ -427,7 +427,6 @@
       "ownerApp": "Owner app",
       "mapPlaceholder": "Branch map — preview data"
     },
-
     "detailCourts": {
       "title": "Courts — {name}",
       "subtitle": "{total} courts · {urgent} urgent maintenance",
@@ -607,8 +606,14 @@
       "notFound": "Branch not found.",
       "contact": "Contact",
       "links": "Links & founding",
+      "map": "Map",
       "address": "Address",
+      "addressCurrent": "Address (current)",
+      "addressFormer": "Address (former)",
+      "courtCount": "Courts",
+      "fieldCreated": "Joined",
       "fieldTimezone": "Timezone",
+      "fieldDistrict": "District",
       "fieldStatus": "Status",
       "fieldAvatar": "Avatar",
       "fieldSports": "Sports",
@@ -641,6 +646,151 @@
         "inactive": "Closed",
         "maintenance": "Maintenance",
         "archived": "Archived"
+      },
+      "sectionIntro": "Introduction",
+      "fieldShortIntroVi": "Short intro (VN)",
+      "fieldShortIntroEn": "Short intro (EN)",
+      "fieldShortIntroCount": "{count}/{max}",
+      "shortIntroTooLong": "Short intro must be 200 characters or fewer.",
+      "fieldDescription": "About",
+      "fieldDescriptionVi": "Description (VN)",
+      "fieldDescriptionEn": "Description (EN)",
+      "fieldDescriptionPlaceholder": "Describe this branch…",
+      "richText": {
+        "bold": "Bold",
+        "italic": "Italic",
+        "strike": "Strikethrough",
+        "heading2": "Heading 2",
+        "heading3": "Heading 3",
+        "bulletList": "Bullet list",
+        "orderedList": "Numbered list",
+        "blockquote": "Quote",
+        "undo": "Undo",
+        "redo": "Redo"
+      }
+    },
+    "branchDetail": {
+      "subnavRoot": "Branches",
+      "navTitle": "Branch information",
+      "tabs": {
+        "ariaLabel": "Branch sections",
+        "overview": "Overview",
+        "pricing": "Pricing",
+        "images": "Images",
+        "courts": "Courts",
+        "schedule": "Schedule",
+        "amenities": "Amenities"
+      },
+      "hero": {
+        "branchTypeLabel": "Sports branch",
+        "changeCover": "Change cover",
+        "changeAvatar": "Change avatar",
+        "coverUpdated": "Cover photo updated.",
+        "avatarUpdated": "Avatar updated.",
+        "mediaUploadError": "Could not upload image.",
+        "openToday": "Open today: {range}",
+        "closedToday": "Closed today",
+        "courtCount": "Courts",
+        "sportCount": "Sports"
+      },
+      "weekdays": {
+        "0": "Sunday",
+        "1": "Monday",
+        "2": "Tuesday",
+        "3": "Wednesday",
+        "4": "Thursday",
+        "5": "Friday",
+        "6": "Saturday"
+      },
+      "weekdaysShort": {
+        "0": "Sun",
+        "1": "Mon",
+        "2": "Tue",
+        "3": "Wed",
+        "4": "Thu",
+        "5": "Fri",
+        "6": "Sat"
+      },
+      "courts": {
+        "title": "Courts",
+        "empty": "No courts at this branch yet.",
+        "loadError": "Could not load courts.",
+        "emptyValue": "-",
+        "colName": "Court",
+        "colType": "Court type",
+        "colEnvironment": "Environment",
+        "colStatus": "Status",
+        "environment": {
+          "indoor": "Indoor",
+          "outdoor": "Outdoor",
+          "unspecified": "Not specified"
+        },
+        "status": {
+          "active": "Open",
+          "inactive": "Closed",
+          "maintenance": "Maintenance",
+          "archived": "Archived"
+        }
+      },
+      "schedule": {
+        "title": "Weekly opening hours",
+        "edit": "Edit hours",
+        "save": "Save",
+        "cancel": "Cancel",
+        "saved": "Opening hours saved.",
+        "loadError": "Could not load opening hours.",
+        "closed": "Closed",
+        "opensAt": "Opens",
+        "closesAt": "Closes",
+        "timeRequired": "Enter a time (HH:MM).",
+        "rangeInvalid": "Closing time must be after opening time."
+      },
+      "pricing": {
+        "ratesTitle": "Hourly rates",
+        "rulesTitle": "Time-based rules",
+        "editCta": "Edit pricing",
+        "editHint": "Pricing is managed at the organization level. Editing is coming later.",
+        "loadError": "Could not load pricing.",
+        "noActive": "No active price version for this organization.",
+        "noCourtsHint": "This branch has no courts yet, so all organization rates are shown.",
+        "emptyRates": "No rates apply to this branch's court types.",
+        "emptyRules": "No time-based rules.",
+        "emptyValue": "-",
+        "versionMeta": "Version {version} · effective {date}",
+        "perHour": "{amount} / hour",
+        "adjustment": {
+          "surcharge": "Surcharge {value}",
+          "discount": "Discount {value}"
+        }
+      },
+      "images": {
+        "title": "Gallery",
+        "upload": "Upload images",
+        "uploading": "Uploading…",
+        "empty": "No images yet.",
+        "emptyHint": "Upload JPG, PNG, or WebP photos of the venue.",
+        "loadError": "Could not load the gallery.",
+        "actionError": "Something went wrong. Please try again.",
+        "invalidType": "Only JPG, PNG, or WebP images are supported.",
+        "uploaded": "Image uploaded.",
+        "cover": "Cover",
+        "setCover": "Set as cover",
+        "coverSet": "Cover image updated.",
+        "delete": "Delete",
+        "deleteTitle": "Delete image",
+        "deleteConfirm": "This image will be removed from the gallery.",
+        "deleted": "Image deleted.",
+        "cancel": "Cancel"
+      },
+      "amenities": {
+        "title": "Amenities",
+        "label": "Available amenities",
+        "placeholder": "Select amenities",
+        "emptyCatalog": "No amenities found",
+        "hint": "Choose everything this branch offers to players.",
+        "save": "Save",
+        "saved": "Amenities saved.",
+        "loadError": "Could not load amenities."
       }
     }
   },

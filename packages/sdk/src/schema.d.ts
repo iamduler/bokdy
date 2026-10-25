@@ -2164,6 +2164,288 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/branches/{id}/gallery": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List branch gallery images */
+        get: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                };
+                path: {
+                    id: components["parameters"]["BranchId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["BranchGalleryItem"][];
+                        };
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+            };
+        };
+        put?: never;
+        /** Upload a branch gallery image */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                };
+                path: {
+                    id: components["parameters"]["BranchId"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "multipart/form-data": {
+                        /** Format: binary */
+                        file: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["BranchGalleryItem"];
+                        };
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/branches/{id}/gallery/{mediaId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a gallery image */
+        delete: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                };
+                path: {
+                    id: components["parameters"]["BranchId"];
+                    mediaId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Deleted */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+            };
+        };
+        options?: never;
+        head?: never;
+        /** Update gallery item caption, sort, or cover */
+        patch: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                };
+                path: {
+                    id: components["parameters"]["BranchId"];
+                    mediaId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateBranchGalleryItemRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["BranchGalleryItem"];
+                        };
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+            };
+        };
+        trace?: never;
+    };
+    "/api/v1/branches/{id}/amenities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List amenities assigned to a branch */
+        get: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                };
+                path: {
+                    id: components["parameters"]["BranchId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["Amenity"][];
+                        };
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+            };
+        };
+        /** Replace branch amenity set */
+        put: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                };
+                path: {
+                    id: components["parameters"]["BranchId"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["PutBranchAmenitiesRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["Amenity"][];
+                        };
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reference/amenities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List active amenity catalog */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["Amenity"][];
+                        };
+                    };
+                };
+                401: components["responses"]["Error"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/branches/{id}/open": {
         parameters: {
             query?: never;
@@ -6620,6 +6902,12 @@ export interface components {
             facebook_url?: string;
             google_maps_url?: string;
             founded_year?: number;
+            short_intro_en?: string;
+            short_intro_vi?: string;
+            /** @description Sanitized HTML */
+            description_en?: string;
+            /** @description Sanitized HTML */
+            description_vi?: string;
             /**
              * Format: uuid
              * @description Avatar image file id
@@ -6662,6 +6950,12 @@ export interface components {
             facebook_url?: string;
             google_maps_url?: string;
             founded_year?: number | null;
+            short_intro_en?: string;
+            short_intro_vi?: string;
+            /** @description Sanitized HTML on write */
+            description_en?: string;
+            /** @description Sanitized HTML on write */
+            description_vi?: string;
             addresses?: components["schemas"]["BranchAddress"][];
             sport_ids?: string[];
         };
@@ -6688,6 +6982,12 @@ export interface components {
             facebook_url?: string;
             google_maps_url?: string;
             founded_year?: number | null;
+            short_intro_en?: string;
+            short_intro_vi?: string;
+            /** @description Sanitized HTML on write */
+            description_en?: string;
+            /** @description Sanitized HTML on write */
+            description_vi?: string;
             addresses?: components["schemas"]["BranchAddress"][];
             /** @description When present, replaces the full set of offered sports. */
             sport_ids?: string[];
@@ -6867,6 +7167,8 @@ export interface components {
             /** @enum {string} */
             status: "active" | "inactive" | "maintenance" | "archived";
             is_bookable: boolean;
+            /** @enum {string} */
+            environment: "indoor" | "outdoor" | "unspecified";
         };
         /** @description At least one of name_en or name_vi is required. Initial status is inactive. */
         CreateCourtRequest: {
@@ -6877,6 +7179,11 @@ export interface components {
             name_en?: string;
             name_vi?: string;
             code?: string;
+            /**
+             * @default unspecified
+             * @enum {string}
+             */
+            environment: "indoor" | "outdoor" | "unspecified";
         };
         UpdateCourtRequest: {
             name_en?: string;
@@ -6885,6 +7192,40 @@ export interface components {
             code?: string;
             /** Format: uuid */
             court_type_id?: string;
+            /** @enum {string} */
+            environment?: "indoor" | "outdoor" | "unspecified";
+        };
+        BranchGalleryItem: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            file_id: string;
+            caption_en?: string;
+            caption_vi?: string;
+            sort_order: number;
+            is_cover: boolean;
+            /** Format: date-time */
+            created_at?: string;
+        };
+        UpdateBranchGalleryItemRequest: {
+            caption_en?: string;
+            caption_vi?: string;
+            sort_order?: number;
+            is_cover?: boolean;
+        };
+        Amenity: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            /** @description Resolved from Accept-Language */
+            name: string;
+            name_en: string;
+            name_vi: string;
+            icon?: string;
+            is_active?: boolean;
+        };
+        PutBranchAmenitiesRequest: {
+            amenity_ids: string[];
         };
         ScheduleMaintenanceRequest: {
             title?: string;

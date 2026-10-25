@@ -22,6 +22,7 @@ type CreateCourtInput struct {
 	NameEn      string
 	NameVi      string
 	Code        string
+	Environment string
 }
 
 type UpdateCourtInput struct {
@@ -29,6 +30,7 @@ type UpdateCourtInput struct {
 	NameVi      *string
 	Code        *string
 	CourtTypeID *uuid.UUID
+	Environment *string
 }
 
 type ScheduleMaintenanceInput struct {
@@ -82,6 +84,7 @@ func (s *CatalogService) CreateCourt(ctx context.Context, actor uuid.UUID, in Cr
 		ID: id.MustNewUUID(), PublicID: id.MustNewPublicID(), TenantID: tenantID, LocationID: in.BranchID,
 		CourtTypeID: in.CourtTypeID, Code: code, NameEn: nameEn, NameVi: nameVi,
 		ResourceType: entity.ResourceTypeCourt, Status: entity.ResourceInactive, IsBookable: false,
+		Environment: entity.ParseCourtEnvironment(in.Environment),
 		CreatedAt: now, UpdatedAt: now,
 	}
 	var outboxID uuid.UUID
@@ -177,6 +180,9 @@ func (s *CatalogService) UpdateCourt(ctx context.Context, courtID, actor uuid.UU
 			return nil, catalogerrors.ErrCourtTypeArchived
 		}
 		court.CourtTypeID = *in.CourtTypeID
+	}
+	if in.Environment != nil {
+		court.Environment = entity.ParseCourtEnvironment(*in.Environment)
 	}
 	nameTaken, err := s.courts.NameExists(ctx, court.LocationID, court.NameEn, court.NameVi, &court.ID)
 	if err != nil {

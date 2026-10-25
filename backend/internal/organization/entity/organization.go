@@ -207,6 +207,10 @@ type Branch struct {
 	FacebookURL    string
 	GoogleMapsURL  string
 	FoundedYear    *int
+	ShortIntroEn   string
+	ShortIntroVi   string
+	DescriptionEn  string
+	DescriptionVi  string
 	LogoFileID     *uuid.UUID
 	BannerFileID   *uuid.UUID
 	Status         LocationStatus
@@ -253,4 +257,26 @@ type OrganizationAddress struct {
 	WardID           *uuid.UUID
 	AddressLine1     string
 	AddressLine2     string
+}
+
+type LocationMedia struct {
+	ID         uuid.UUID
+	LocationID uuid.UUID
+	FileID     uuid.UUID
+	CaptionEn  string
+	CaptionVi  string
+	SortOrder  int
+	IsCover    bool
+	CreatedAt  time.Time
+}
+
+type Amenity struct {
+	ID        uuid.UUID
+	Code      string
+	NameEn    string
+	NameVi    string
+	Icon      string
+	IsActive  bool
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }

@@ -255,8 +255,8 @@
     "createCancel": "Hủy",
     "createSuccess": "Đã tạo tổ chức.",
     "fieldName": "Tên",
-    "fieldNameVi": "Tên (tiếng Việt)",
-    "fieldNameEn": "Tên (tiếng Anh)",
+    "fieldNameVi": "Tên (VN)",
+    "fieldNameEn": "Tên (EN)",
     "fieldCode": "Mã",
     "fieldEmail": "Email",
     "fieldPhone": "Số điện thoại",
@@ -427,7 +427,6 @@
       "ownerApp": "Owner App",
       "mapPlaceholder": "Bản đồ chi nhánh — dữ liệu preview"
     },
-
     "detailCourts": {
       "title": "Sân thể thao — {name}",
       "subtitle": "{total} sân · {urgent} cần bảo trì gấp",
@@ -607,8 +606,14 @@
       "notFound": "Không tìm thấy chi nhánh.",
       "contact": "Liên hệ",
       "links": "Liên kết & thành lập",
+      "map": "Bản đồ",
       "address": "Địa chỉ",
+      "addressCurrent": "Địa chỉ (mới)",
+      "addressFormer": "Địa chỉ (cũ)",
+      "courtCount": "Số sân",
+      "fieldCreated": "Tham gia",
       "fieldTimezone": "Múi giờ",
+      "fieldDistrict": "Quận / Huyện",
       "fieldStatus": "Trạng thái",
       "fieldAvatar": "Ảnh đại diện",
       "fieldSports": "Bộ môn thể thao",
@@ -641,6 +646,151 @@
         "inactive": "Đã đóng",
         "maintenance": "Bảo trì",
         "archived": "Lưu trữ"
+      },
+      "sectionIntro": "Giới thiệu",
+      "fieldShortIntroVi": "Giới thiệu ngắn (VN)",
+      "fieldShortIntroEn": "Giới thiệu ngắn (EN)",
+      "fieldShortIntroCount": "{count}/{max}",
+      "shortIntroTooLong": "Giới thiệu ngắn tối đa 200 ký tự.",
+      "fieldDescription": "Giới thiệu chi tiết",
+      "fieldDescriptionVi": "Mô tả (VN)",
+      "fieldDescriptionEn": "Mô tả (EN)",
+      "fieldDescriptionPlaceholder": "Mô tả chi nhánh…",
+      "richText": {
+        "bold": "In đậm",
+        "italic": "In nghiêng",
+        "strike": "Gạch ngang",
+        "heading2": "Tiêu đề 2",
+        "heading3": "Tiêu đề 3",
+        "bulletList": "Danh sách dấu đầu dòng",
+        "orderedList": "Danh sách đánh số",
+        "blockquote": "Trích dẫn",
+        "undo": "Hoàn tác",
+        "redo": "Làm lại"
+      }
+    },
+    "branchDetail": {
+      "subnavRoot": "Chi nhánh",
+      "navTitle": "Thông tin chi nhánh",
+      "tabs": {
+        "ariaLabel": "Các mục chi nhánh",
+        "overview": "Tổng quan",
+        "pricing": "Bảng giá",
+        "images": "Hình ảnh",
+        "courts": "Danh sách sân",
+        "schedule": "Lịch mở cửa",
+        "amenities": "Tiện ích"
+      },
+      "hero": {
+        "branchTypeLabel": "Chi nhánh thể thao",
+        "changeCover": "Đổi ảnh bìa",
+        "changeAvatar": "Đổi ảnh đại diện",
+        "coverUpdated": "Đã cập nhật ảnh bìa.",
+        "avatarUpdated": "Đã cập nhật ảnh đại diện.",
+        "mediaUploadError": "Không tải lên được ảnh.",
+        "openToday": "Mở cửa hôm nay: {range}",
+        "closedToday": "Đóng cửa hôm nay",
+        "courtCount": "Sân thi đấu",
+        "sportCount": "Bộ môn"
+      },
+      "weekdays": {
+        "0": "Chủ nhật",
+        "1": "Thứ hai",
+        "2": "Thứ ba",
+        "3": "Thứ tư",
+        "4": "Thứ năm",
+        "5": "Thứ sáu",
+        "6": "Thứ bảy"
+      },
+      "weekdaysShort": {
+        "0": "CN",
+        "1": "T2",
+        "2": "T3",
+        "3": "T4",
+        "4": "T5",
+        "5": "T6",
+        "6": "T7"
+      },
+      "courts": {
+        "title": "Danh sách sân",
+        "empty": "Chi nhánh chưa có sân nào.",
+        "loadError": "Không tải được danh sách sân.",
+        "emptyValue": "-",
+        "colName": "Sân",
+        "colType": "Loại sân",
+        "colEnvironment": "Môi trường",
+        "colStatus": "Trạng thái",
+        "environment": {
+          "indoor": "Trong nhà",
+          "outdoor": "Ngoài trời",
+          "unspecified": "Chưa xác định"
+        },
+        "status": {
+          "active": "Đang mở",
+          "inactive": "Đã đóng",
+          "maintenance": "Bảo trì",
+          "archived": "Đã lưu trữ"
+        }
+      },
+      "schedule": {
+        "title": "Giờ mở cửa hằng tuần",
+        "edit": "Sửa giờ",
+        "save": "Lưu",
+        "cancel": "Hủy",
+        "saved": "Đã lưu giờ mở cửa.",
+        "loadError": "Không tải được giờ mở cửa.",
+        "closed": "Đóng cửa",
+        "opensAt": "Giờ mở",
+        "closesAt": "Giờ đóng",
+        "timeRequired": "Nhập giờ (HH:MM).",
+        "rangeInvalid": "Giờ đóng phải sau giờ mở."
+      },
+      "pricing": {
+        "ratesTitle": "Giá theo giờ",
+        "rulesTitle": "Quy tắc theo khung giờ",
+        "editCta": "Sửa bảng giá",
+        "editHint": "Bảng giá được quản lý ở cấp tổ chức. Tính năng chỉnh sửa sẽ có sau.",
+        "loadError": "Không tải được bảng giá.",
+        "noActive": "Tổ chức chưa có phiên bản giá đang áp dụng.",
+        "noCourtsHint": "Chi nhánh chưa có sân, nên hiển thị toàn bộ giá của tổ chức.",
+        "emptyRates": "Không có mức giá nào áp dụng cho các loại sân của chi nhánh.",
+        "emptyRules": "Chưa có quy tắc theo khung giờ.",
+        "emptyValue": "-",
+        "versionMeta": "Phiên bản {version} · hiệu lực từ {date}",
+        "perHour": "{amount} / giờ",
+        "adjustment": {
+          "surcharge": "Phụ thu {value}",
+          "discount": "Giảm {value}"
+        }
+      },
+      "images": {
+        "title": "Thư viện ảnh",
+        "upload": "Tải ảnh lên",
+        "uploading": "Đang tải lên…",
+        "empty": "Chưa có hình ảnh.",
+        "emptyHint": "Tải lên ảnh JPG, PNG hoặc WebP của cơ sở.",
+        "loadError": "Không tải được thư viện ảnh.",
+        "actionError": "Đã xảy ra lỗi. Vui lòng thử lại.",
+        "invalidType": "Chỉ hỗ trợ ảnh JPG, PNG hoặc WebP.",
+        "uploaded": "Đã tải ảnh lên.",
+        "cover": "Ảnh bìa",
+        "setCover": "Đặt làm ảnh bìa",
+        "coverSet": "Đã cập nhật ảnh bìa.",
+        "delete": "Xóa",
+        "deleteTitle": "Xóa ảnh",
+        "deleteConfirm": "Ảnh này sẽ bị xóa khỏi thư viện.",
+        "deleted": "Đã xóa ảnh.",
+        "cancel": "Hủy"
+      },
+      "amenities": {
+        "title": "Tiện ích",
+        "label": "Tiện ích hiện có",
+        "placeholder": "Chọn tiện ích",
+        "emptyCatalog": "Không tìm thấy tiện ích",
+        "hint": "Chọn tất cả tiện ích mà chi nhánh cung cấp cho người chơi.",
+        "save": "Lưu",
+        "saved": "Đã lưu tiện ích.",
+        "loadError": "Không tải được tiện ích."
       }
     }
   },

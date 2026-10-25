@@ -1,8 +1,10 @@
 -- name: CreateLocation :exec
 INSERT INTO organization.locations
     (id, public_id, business_unit_id, organization_id, code, slug, name_en, name_vi, phone, email, timezone,
-     website, facebook_url, google_maps_url, founded_year, status, created_at, updated_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18);
+     website, facebook_url, google_maps_url, founded_year,
+     short_intro_en, short_intro_vi, description_en, description_vi,
+     status, created_at, updated_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22);
 
 -- name: CreateLocationAddress :exec
 INSERT INTO organization.location_addresses
@@ -30,6 +32,8 @@ SELECT l.id, l.public_id, l.business_unit_id, l.organization_id, l.code, l.slug,
        COALESCE(l.timezone, '') AS timezone,
        COALESCE(l.website, '') AS website, COALESCE(l.facebook_url, '') AS facebook_url,
        COALESCE(l.google_maps_url, '') AS google_maps_url, l.founded_year,
+       COALESCE(l.short_intro_en, '') AS short_intro_en, COALESCE(l.short_intro_vi, '') AS short_intro_vi,
+       COALESCE(l.description_en, '') AS description_en, COALESCE(l.description_vi, '') AS description_vi,
        l.logo_file_id, l.banner_file_id, l.status, l.created_at, l.updated_at, l.deleted_at,
        ac.id AS current_address_id, ac.country_id AS current_country_id,
        ac.province_id AS current_province_id, ac.ward_id AS current_ward_id,
@@ -44,12 +48,36 @@ LEFT JOIN organization.location_addresses ac ON ac.location_id = l.id AND ac.div
 LEFT JOIN organization.location_addresses af ON af.location_id = l.id AND af.division_scheme = 'former_v3'
 WHERE l.organization_id = $1 AND l.id = $2 AND l.deleted_at IS NULL;
 
+-- name: FindBranchByLocationID :one
+SELECT l.id, l.public_id, l.business_unit_id, l.organization_id, l.code, l.slug,
+       COALESCE(l.name_en, '') AS name_en, COALESCE(l.name_vi, '') AS name_vi, COALESCE(l.phone, '') AS phone, COALESCE(l.email, '') AS email,
+       COALESCE(l.timezone, '') AS timezone,
+       COALESCE(l.website, '') AS website, COALESCE(l.facebook_url, '') AS facebook_url,
+       COALESCE(l.google_maps_url, '') AS google_maps_url, l.founded_year,
+       COALESCE(l.short_intro_en, '') AS short_intro_en, COALESCE(l.short_intro_vi, '') AS short_intro_vi,
+       COALESCE(l.description_en, '') AS description_en, COALESCE(l.description_vi, '') AS description_vi,
+       l.logo_file_id, l.banner_file_id, l.status, l.created_at, l.updated_at, l.deleted_at,
+       ac.id AS current_address_id, ac.country_id AS current_country_id,
+       ac.province_id AS current_province_id, ac.ward_id AS current_ward_id,
+       COALESCE(ac.address_line_1, '') AS current_address_line_1, COALESCE(ac.address_line_2, '') AS current_address_line_2,
+       ac.latitude AS current_latitude, ac.longitude AS current_longitude, ac.updated_at AS current_address_updated_at,
+       af.id AS former_address_id, af.country_id AS former_country_id,
+       af.province_former_id, af.district_former_id, af.ward_former_id,
+       COALESCE(af.address_line_1, '') AS former_address_line_1, COALESCE(af.address_line_2, '') AS former_address_line_2,
+       af.latitude AS former_latitude, af.longitude AS former_longitude, af.updated_at AS former_address_updated_at
+FROM organization.locations l
+LEFT JOIN organization.location_addresses ac ON ac.location_id = l.id AND ac.division_scheme = 'current_v2'
+LEFT JOIN organization.location_addresses af ON af.location_id = l.id AND af.division_scheme = 'former_v3'
+WHERE l.id = $1 AND l.deleted_at IS NULL;
+
 -- name: ListBranchesByOrg :many
 SELECT l.id, l.public_id, l.business_unit_id, l.organization_id, l.code, l.slug,
        COALESCE(l.name_en, '') AS name_en, COALESCE(l.name_vi, '') AS name_vi, COALESCE(l.phone, '') AS phone, COALESCE(l.email, '') AS email,
        COALESCE(l.timezone, '') AS timezone,
        COALESCE(l.website, '') AS website, COALESCE(l.facebook_url, '') AS facebook_url,
        COALESCE(l.google_maps_url, '') AS google_maps_url, l.founded_year,
+       COALESCE(l.short_intro_en, '') AS short_intro_en, COALESCE(l.short_intro_vi, '') AS short_intro_vi,
+       COALESCE(l.description_en, '') AS description_en, COALESCE(l.description_vi, '') AS description_vi,
        l.logo_file_id, l.banner_file_id, l.status, l.created_at, l.updated_at, l.deleted_at,
        ac.id AS current_address_id, ac.country_id AS current_country_id,
        ac.province_id AS current_province_id, ac.ward_id AS current_ward_id,
@@ -68,7 +96,9 @@ ORDER BY l.created_at ASC;
 -- name: UpdateLocation :exec
 UPDATE organization.locations
 SET code = $3, slug = $4, name_en = $5, name_vi = $6, phone = $7, email = $8, timezone = $9,
-    website = $10, facebook_url = $11, google_maps_url = $12, founded_year = $13, updated_at = now()
+    website = $10, facebook_url = $11, google_maps_url = $12, founded_year = $13,
+    short_intro_en = $14, short_intro_vi = $15, description_en = $16, description_vi = $17,
+    updated_at = now()
 WHERE organization_id = $1 AND id = $2 AND deleted_at IS NULL;
 
 -- name: UpdateLocationMedia :exec

@@ -23,6 +23,7 @@ type Querier interface {
 	CancelBooking(ctx context.Context, arg CancelBookingParams) error
 	CancelReservation(ctx context.Context, arg CancelReservationParams) error
 	CheckInBooking(ctx context.Context, arg CheckInBookingParams) error
+	ClearLocationMediaCover(ctx context.Context, locationID uuid.UUID) error
 	ClearUserPhoneVerified(ctx context.Context, id uuid.UUID) error
 	CompleteBooking(ctx context.Context, arg CompleteBookingParams) error
 	CompleteResourceMaintenance(ctx context.Context, id uuid.UUID) error
@@ -65,6 +66,8 @@ type Querier interface {
 	CreateInvoice(ctx context.Context, arg CreateInvoiceParams) error
 	CreateLocation(ctx context.Context, arg CreateLocationParams) error
 	CreateLocationAddress(ctx context.Context, arg CreateLocationAddressParams) error
+	CreateLocationAmenity(ctx context.Context, arg CreateLocationAmenityParams) error
+	CreateLocationMedia(ctx context.Context, arg CreateLocationMediaParams) error
 	CreateLocationSettings(ctx context.Context, arg CreateLocationSettingsParams) error
 	CreateLocationSport(ctx context.Context, arg CreateLocationSportParams) error
 	CreateOrganization(ctx context.Context, arg CreateOrganizationParams) error
@@ -86,6 +89,8 @@ type Querier interface {
 	CreateUserProfile(ctx context.Context, arg CreateUserProfileParams) error
 	DeleteBusinessHoursByLocation(ctx context.Context, locationID uuid.UUID) error
 	DeleteLocationAddresses(ctx context.Context, locationID uuid.UUID) error
+	DeleteLocationAmenities(ctx context.Context, locationID uuid.UUID) error
+	DeleteLocationMedia(ctx context.Context, arg DeleteLocationMediaParams) error
 	DeleteLocationSports(ctx context.Context, locationID uuid.UUID) error
 	DeleteMaintenanceBlock(ctx context.Context, arg DeleteMaintenanceBlockParams) error
 	DeleteMaintenanceBlocksByResource(ctx context.Context, resourceID uuid.UUID) error
@@ -104,6 +109,7 @@ type Querier interface {
 	FindBooking(ctx context.Context, id uuid.UUID) (BookingBooking, error)
 	FindBookingForUpdate(ctx context.Context, id uuid.UUID) (BookingBooking, error)
 	FindBranchByID(ctx context.Context, arg FindBranchByIDParams) (FindBranchByIDRow, error)
+	FindBranchByLocationID(ctx context.Context, id uuid.UUID) (FindBranchByLocationIDRow, error)
 	FindCategoryInTenant(ctx context.Context, arg FindCategoryInTenantParams) (uuid.UUID, error)
 	FindCompletedRefundByIntent(ctx context.Context, paymentIntentID uuid.UUID) (PaymentRefund, error)
 	FindCourtByID(ctx context.Context, arg FindCourtByIDParams) (FindCourtByIDRow, error)
@@ -127,6 +133,7 @@ type Querier interface {
 	FindInvoiceByBooking(ctx context.Context, bookingID uuid.UUID) (FindInvoiceByBookingRow, error)
 	FindInvoiceByID(ctx context.Context, id uuid.UUID) (FindInvoiceByIDRow, error)
 	FindLocalIdentityByEmail(ctx context.Context, lower string) (FindLocalIdentityByEmailRow, error)
+	FindLocationMediaByID(ctx context.Context, arg FindLocationMediaByIDParams) (FindLocationMediaByIDRow, error)
 	FindMarketplaceBranchByPublicID(ctx context.Context, publicID string) (FindMarketplaceBranchByPublicIDRow, error)
 	FindMarketplaceCourtByPublicID(ctx context.Context, publicID string) (FindMarketplaceCourtByPublicIDRow, error)
 	FindOpenMaintenance(ctx context.Context, resourceID uuid.UUID) (FindOpenMaintenanceRow, error)
@@ -164,12 +171,14 @@ type Querier interface {
 	InsertTimeSlot(ctx context.Context, arg InsertTimeSlotParams) error
 	IsActiveStaffMember(ctx context.Context, arg IsActiveStaffMemberParams) (bool, error)
 	LinkCustomerUser(ctx context.Context, arg LinkCustomerUserParams) error
+	ListActiveAmenities(ctx context.Context) ([]ListActiveAmenitiesRow, error)
 	ListActiveCourtIDsByLocation(ctx context.Context, locationID uuid.UUID) ([]uuid.UUID, error)
 	ListActiveLocales(ctx context.Context) ([]ListActiveLocalesRow, error)
 	ListAdminOwners(ctx context.Context, arg ListAdminOwnersParams) ([]ListAdminOwnersRow, error)
 	ListAdminPlayers(ctx context.Context, arg ListAdminPlayersParams) ([]ListAdminPlayersRow, error)
 	ListAdminSystemUsers(ctx context.Context, arg ListAdminSystemUsersParams) ([]ListAdminSystemUsersRow, error)
 	ListAdminUserOrganizations(ctx context.Context, userID uuid.UUID) ([]ListAdminUserOrganizationsRow, error)
+	ListAmenitiesByIDs(ctx context.Context, ids []uuid.UUID) ([]ListAmenitiesByIDsRow, error)
 	ListBookingsByCustomers(ctx context.Context, arg ListBookingsByCustomersParams) ([]BookingBooking, error)
 	ListBookingsByTenant(ctx context.Context, arg ListBookingsByTenantParams) ([]BookingBooking, error)
 	ListBranchesByOrg(ctx context.Context, organizationID uuid.UUID) ([]ListBranchesByOrgRow, error)
@@ -190,6 +199,8 @@ type Querier interface {
 	// prefer former ward whose code equals the current ward code, else lowest former code.
 	ListFormerWardsForCurrent(ctx context.Context, wardID uuid.UUID) ([]ListFormerWardsForCurrentRow, error)
 	ListHolidaysOverlapping(ctx context.Context, arg ListHolidaysOverlappingParams) ([]ListHolidaysOverlappingRow, error)
+	ListLocationAmenityIDs(ctx context.Context, locationID uuid.UUID) ([]uuid.UUID, error)
+	ListLocationMedia(ctx context.Context, locationID uuid.UUID) ([]ListLocationMediaRow, error)
 	ListLocationSportIDs(ctx context.Context, locationID uuid.UUID) ([]uuid.UUID, error)
 	ListLocationSportIDsByLocations(ctx context.Context, locationIds []uuid.UUID) ([]ListLocationSportIDsByLocationsRow, error)
 	ListLoginHistoryByUser(ctx context.Context, arg ListLoginHistoryByUserParams) ([]ListLoginHistoryByUserRow, error)
@@ -217,6 +228,7 @@ type Querier interface {
 	MarkVerificationVerified(ctx context.Context, id uuid.UUID) error
 	// Returns the highest numeric suffix for codes matching PREFIX + digits within a business unit.
 	MaxBranchCodeSeq(ctx context.Context, arg MaxBranchCodeSeqParams) (int32, error)
+	MaxLocationMediaSortOrder(ctx context.Context, locationID uuid.UUID) (int32, error)
 	NextPriceVersionNumber(ctx context.Context, priceListID uuid.UUID) (int32, error)
 	Ping(ctx context.Context) (int32, error)
 	ProvinceCurrentExists(ctx context.Context, id uuid.UUID) (bool, error)
@@ -248,6 +260,7 @@ type Querier interface {
 	UpdateInvitationStatus(ctx context.Context, arg UpdateInvitationStatusParams) error
 	UpdateLocation(ctx context.Context, arg UpdateLocationParams) error
 	UpdateLocationAddress(ctx context.Context, arg UpdateLocationAddressParams) error
+	UpdateLocationGalleryItem(ctx context.Context, arg UpdateLocationGalleryItemParams) error
 	UpdateLocationMedia(ctx context.Context, arg UpdateLocationMediaParams) error
 	UpdateLocationStatus(ctx context.Context, arg UpdateLocationStatusParams) error
 	UpdateOrganization(ctx context.Context, arg UpdateOrganizationParams) error

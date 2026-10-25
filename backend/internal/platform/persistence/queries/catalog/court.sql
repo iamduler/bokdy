@@ -1,20 +1,20 @@
 -- name: CreateCourt :exec
 INSERT INTO catalog.resources (
     id, public_id, tenant_id, location_id, court_type_id, code, name_en, name_vi,
-    resource_type, status, is_bookable, created_at, updated_at
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13);
+    resource_type, status, is_bookable, environment, created_at, updated_at
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14);
 
 -- name: FindCourtByID :one
 SELECT id, public_id, tenant_id, location_id, court_type_id, code,
        COALESCE(name_en, '') AS name_en, COALESCE(name_vi, '') AS name_vi,
-       resource_type, status, is_bookable, created_at, updated_at, deleted_at
+       resource_type, status, is_bookable, environment, created_at, updated_at, deleted_at
 FROM catalog.resources
 WHERE tenant_id = $1 AND id = $2 AND deleted_at IS NULL AND resource_type = 'court';
 
 -- name: ListCourts :many
 SELECT id, public_id, tenant_id, location_id, court_type_id, code,
        COALESCE(name_en, '') AS name_en, COALESCE(name_vi, '') AS name_vi,
-       resource_type, status, is_bookable, created_at, updated_at, deleted_at
+       resource_type, status, is_bookable, environment, created_at, updated_at, deleted_at
 FROM catalog.resources
 WHERE tenant_id = sqlc.arg(tenant_id)
   AND resource_type = 'court'
@@ -26,7 +26,7 @@ LIMIT sqlc.arg(row_limit);
 
 -- name: UpdateCourt :exec
 UPDATE catalog.resources
-SET name_en = $3, name_vi = $4, court_type_id = $5, updated_at = now()
+SET name_en = $3, name_vi = $4, court_type_id = $5, environment = $6, updated_at = now()
 WHERE tenant_id = $1 AND id = $2 AND deleted_at IS NULL AND resource_type = 'court';
 
 -- name: UpdateCourtStatus :exec

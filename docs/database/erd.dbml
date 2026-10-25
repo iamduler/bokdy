@@ -1340,6 +1340,14 @@ Table organization.locations {
 
   founded_year int
 
+  short_intro_en varchar(200)
+
+  short_intro_vi varchar(200)
+
+  description_en text
+
+  description_vi text
+
   status location_status [not null]
 
   created_at timestamptz [not null]
@@ -1356,7 +1364,32 @@ Table organization.locations {
     (organization_id, slug) [unique]
   }
 
-  Note: 'Partial unique (business_unit_id, code) and (organization_id, slug) WHERE deleted_at IS NULL. Business name: Branch. logo_file_id = Avatar; banner_file_id = Banner. founded_year CHECK 1800–2100 when set.'
+  Note: 'Partial unique (business_unit_id, code) and (organization_id, slug) WHERE deleted_at IS NULL. Business name: Branch. logo_file_id = Avatar; banner_file_id = Banner. founded_year CHECK 1800–2100 when set. description_* is sanitized HTML.'
+}
+
+Table organization.location_media {
+  id uuid [pk]
+
+  location_id uuid [not null]
+
+  file_id uuid [not null]
+
+  caption_en varchar(255)
+
+  caption_vi varchar(255)
+
+  sort_order int [not null, default: 0]
+
+  is_cover boolean [not null, default: false]
+
+  created_at timestamptz [not null]
+
+  indexes {
+    location_id
+    (location_id, sort_order)
+  }
+
+  Note: 'Branch gallery images (separate from logo/banner).'
 }
 
 Table organization.location_sports {
@@ -1375,6 +1408,41 @@ Table organization.location_sports {
   }
 
   Note: 'Branch offered sports. M:N between locations (Branch) and catalog.sports.'
+}
+
+Table organization.location_amenities {
+  location_id uuid [not null]
+
+  amenity_id uuid [not null]
+
+  created_at timestamptz [not null]
+
+  indexes {
+    (location_id, amenity_id) [pk]
+    amenity_id
+  }
+
+  Note: 'M:N Branch ↔ reference.amenities.'
+}
+
+Table reference.amenities {
+  id uuid [pk]
+
+  code varchar(50) [not null, unique]
+
+  name_en varchar(100) [not null]
+
+  name_vi varchar(100) [not null]
+
+  icon varchar(50)
+
+  is_active boolean [not null, default: true]
+
+  created_at timestamptz [not null]
+
+  updated_at timestamptz [not null]
+
+  Note: 'Amenity catalog (wifi, parking, shower, shop, …).'
 }
 
 Table organization.location_addresses {
@@ -2202,6 +2270,12 @@ Enum pricing_model {
   dynamic
 }
 
+Enum court_environment {
+  indoor
+  outdoor
+  unspecified
+}
+
 Enum resource_status {
   active
   inactive
@@ -2439,6 +2513,8 @@ Table catalog.resources {
   status resource_status [not null]
 
   is_bookable boolean [not null, default: true]
+
+  environment court_environment [not null, default: 'unspecified', note: 'indoor | outdoor | unspecified']
 
   capacity int
 

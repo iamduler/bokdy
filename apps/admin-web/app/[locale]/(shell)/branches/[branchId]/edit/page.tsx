@@ -9,12 +9,11 @@ import { useRouter } from "@/i18n/navigation";
 export default function EditBranchPage() {
   const router = useRouter();
   const params = useParams();
-  const organizationId = typeof params.id === "string" ? params.id : "";
   const branchId = typeof params.branchId === "string" ? params.branchId : "";
 
   useEffect(() => {
-    router.replace(`/organizations/${organizationId}/branches/${branchId}`);
-  }, [organizationId, branchId, router]);
+    if (branchId) router.replace(`/branches/${branchId}`);
+  }, [branchId, router]);
 
   return null;
 }

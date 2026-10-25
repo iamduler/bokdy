@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { useMemo } from "react";
 
 import { EntityDetailSubnav } from "@/components/entity/detail-subnav";
 import { usePathname } from "@/i18n/navigation";
@@ -35,22 +36,25 @@ export function OrganizationDetailSubnav() {
   const view = resolveDetailView(pathname, orgId);
   const base = `/organizations/${orgId}`;
 
-  const crumbLabel: Partial<Record<DetailView, string>> = {
-    branches: t("crumbBranches"),
-    courts: t("crumbCourts"),
-    team: t("crumbTeam"),
-    billing: t("crumbBilling"),
-    activity: t("crumbActivity"),
-    actions: t("crumbActions"),
-  };
+  const crumbs = useMemo(() => {
+    if (view === "overview") {
+      return [{ label: org.name }];
+    }
 
-  const crumbs =
-    view === "overview"
-      ? [{ label: org.name }]
-      : [
-          { label: org.name, href: base },
-          { label: crumbLabel[view] ?? "" },
-        ];
+    const sectionLabel: Partial<Record<DetailView, string>> = {
+      branches: t("crumbBranches"),
+      courts: t("crumbCourts"),
+      team: t("crumbTeam"),
+      billing: t("crumbBilling"),
+      activity: t("crumbActivity"),
+      actions: t("crumbActions"),
+    };
+
+    return [
+      { label: org.name, href: base },
+      { label: sectionLabel[view] ?? "" },
+    ];
+  }, [base, org.name, t, view]);
 
   return (
     <EntityDetailSubnav

@@ -2,6 +2,8 @@ package middleware
 
 import (
 	"context"
+	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -49,7 +51,7 @@ func RateLimitWithCounter(counter RateCounter, cfg config.RateLimitConfig, logge
 	dedupe := &sync.Map{}
 
 	return func(c *gin.Context) {
-		if isProbePath(c.Request.URL.Path) {
+		if isRateLimitExempt(c.Request.Method, c.Request.URL.Path) {
 			c.Next()
 			return
 		}
@@ -98,4 +100,16 @@ func shouldLogRateLimit(cache *sync.Map, ip string) bool {
 	}
 	cache.Store(ip, now)
 	return true
+}
+
+// isRateLimitExempt skips probes and static file downloads (SPA media imgs).
+func isRateLimitExempt(method, path string) bool {
+	if isProbePath(path) {
+		return true
+	}
+	// GET /api/v1/files/{uuid} — browser <img> must not burn the IP budget.
+	if method == http.MethodGet && strings.HasPrefix(path, "/api/v1/files/") {
+		return true
+	}
+	return false
 }

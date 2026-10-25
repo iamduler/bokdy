@@ -1,0 +1,37 @@
+---
+description: Entity detail/overview must always show important fields even when empty
+globs:
+  - apps/**/components/**/*detail*.tsx
+  - apps/**/components/**/*-view.tsx
+  - apps/**/components/entity/**/*.tsx
+alwaysApply: false
+---
+
+# Detail views: always show important fields
+
+On entity detail / overview screens, **do not hide important profile fields** when the value is missing.
+
+Show the label and an empty placeholder (`emptyValue` / `—`) instead of omitting the row or the whole panel.
+
+## Important fields (examples)
+
+* Contact: email, phone
+* Links: website, Facebook, Google Maps, founded year
+* Address (current and former): province, ward/district, address line
+* Description / short intro
+* Sports / categories tied to the entity
+
+## Allowed to omit
+
+* Entire **optional chrome** that is not a field (e.g. map widget when there are no coordinates)
+* Secondary marketing / list empty-states that are not labeled profile fields
+
+```tsx
+// ❌ BAD — hide when empty
+{website ? <ProfileRow label="Website" value={website} /> : null}
+{description ? <Panel>...</Panel> : null}
+
+// ✅ GOOD — always show, placeholder when empty
+<ProfileRow label="Website" value={website || empty} />
+<Panel>{description ? <RichTextView html={description} /> : empty}</Panel>
+```

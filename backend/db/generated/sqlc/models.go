@@ -105,6 +105,49 @@ func (ns NullBookingBookingStatus) Value() (driver.Value, error) {
 	return string(ns.BookingBookingStatus), nil
 }
 
+type CatalogCourtEnvironment string
+
+const (
+	CatalogCourtEnvironmentIndoor      CatalogCourtEnvironment = "indoor"
+	CatalogCourtEnvironmentOutdoor     CatalogCourtEnvironment = "outdoor"
+	CatalogCourtEnvironmentUnspecified CatalogCourtEnvironment = "unspecified"
+)
+
+func (e *CatalogCourtEnvironment) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = CatalogCourtEnvironment(s)
+	case string:
+		*e = CatalogCourtEnvironment(s)
+	default:
+		return fmt.Errorf("unsupported scan type for CatalogCourtEnvironment: %T", src)
+	}
+	return nil
+}
+
+type NullCatalogCourtEnvironment struct {
+	CatalogCourtEnvironment CatalogCourtEnvironment `json:"catalog_court_environment"`
+	Valid                   bool                    `json:"valid"` // Valid is true if CatalogCourtEnvironment is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullCatalogCourtEnvironment) Scan(value interface{}) error {
+	if value == nil {
+		ns.CatalogCourtEnvironment, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.CatalogCourtEnvironment.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullCatalogCourtEnvironment) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.CatalogCourtEnvironment), nil
+}
+
 type CatalogMaintenanceStatus string
 
 const (
@@ -1974,24 +2017,25 @@ type BookingCheckIn struct {
 }
 
 type CatalogResource struct {
-	ID               uuid.UUID             `json:"id"`
-	PublicID         string                `json:"public_id"`
-	TenantID         uuid.UUID             `json:"tenant_id"`
-	LocationID       uuid.UUID             `json:"location_id"`
-	CourtTypeID      *uuid.UUID            `json:"court_type_id"`
-	Code             string                `json:"code"`
-	NameEn           *string               `json:"name_en"`
-	NameVi           *string               `json:"name_vi"`
-	ResourceType     CatalogResourceType   `json:"resource_type"`
-	ParentResourceID *uuid.UUID            `json:"parent_resource_id"`
-	Status           CatalogResourceStatus `json:"status"`
-	IsBookable       bool                  `json:"is_bookable"`
-	Capacity         *int32                `json:"capacity"`
-	SortOrder        *int32                `json:"sort_order"`
-	Metadata         []byte                `json:"metadata"`
-	CreatedAt        time.Time             `json:"created_at"`
-	UpdatedAt        time.Time             `json:"updated_at"`
-	DeletedAt        *time.Time            `json:"deleted_at"`
+	ID               uuid.UUID               `json:"id"`
+	PublicID         string                  `json:"public_id"`
+	TenantID         uuid.UUID               `json:"tenant_id"`
+	LocationID       uuid.UUID               `json:"location_id"`
+	CourtTypeID      *uuid.UUID              `json:"court_type_id"`
+	Code             string                  `json:"code"`
+	NameEn           *string                 `json:"name_en"`
+	NameVi           *string                 `json:"name_vi"`
+	ResourceType     CatalogResourceType     `json:"resource_type"`
+	ParentResourceID *uuid.UUID              `json:"parent_resource_id"`
+	Status           CatalogResourceStatus   `json:"status"`
+	IsBookable       bool                    `json:"is_bookable"`
+	Capacity         *int32                  `json:"capacity"`
+	SortOrder        *int32                  `json:"sort_order"`
+	Metadata         []byte                  `json:"metadata"`
+	CreatedAt        time.Time               `json:"created_at"`
+	UpdatedAt        time.Time               `json:"updated_at"`
+	DeletedAt        *time.Time              `json:"deleted_at"`
+	Environment      CatalogCourtEnvironment `json:"environment"`
 }
 
 type CatalogResourceCategory struct {
@@ -2331,6 +2375,10 @@ type OrganizationLocation struct {
 	FacebookUrl    *string                    `json:"facebook_url"`
 	GoogleMapsUrl  *string                    `json:"google_maps_url"`
 	FoundedYear    *int32                     `json:"founded_year"`
+	ShortIntroEn   *string                    `json:"short_intro_en"`
+	ShortIntroVi   *string                    `json:"short_intro_vi"`
+	DescriptionEn  *string                    `json:"description_en"`
+	DescriptionVi  *string                    `json:"description_vi"`
 }
 
 type OrganizationLocationAddress struct {
@@ -2348,6 +2396,23 @@ type OrganizationLocationAddress struct {
 	WardFormerID     *uuid.UUID                   `json:"ward_former_id"`
 	ProvinceID       *uuid.UUID                   `json:"province_id"`
 	WardID           *uuid.UUID                   `json:"ward_id"`
+}
+
+type OrganizationLocationAmenity struct {
+	LocationID uuid.UUID `json:"location_id"`
+	AmenityID  uuid.UUID `json:"amenity_id"`
+	CreatedAt  time.Time `json:"created_at"`
+}
+
+type OrganizationLocationMedium struct {
+	ID         uuid.UUID `json:"id"`
+	LocationID uuid.UUID `json:"location_id"`
+	FileID     uuid.UUID `json:"file_id"`
+	CaptionEn  *string   `json:"caption_en"`
+	CaptionVi  *string   `json:"caption_vi"`
+	SortOrder  int32     `json:"sort_order"`
+	IsCover    bool      `json:"is_cover"`
+	CreatedAt  time.Time `json:"created_at"`
 }
 
 type OrganizationLocationSetting struct {
@@ -2570,6 +2635,17 @@ type PricingTimeRule struct {
 	Value          pgtype.Numeric         `json:"value"`
 	Priority       int32                  `json:"priority"`
 	CreatedAt      time.Time              `json:"created_at"`
+}
+
+type ReferenceAmenity struct {
+	ID        uuid.UUID `json:"id"`
+	Code      string    `json:"code"`
+	NameEn    string    `json:"name_en"`
+	NameVi    string    `json:"name_vi"`
+	Icon      *string   `json:"icon"`
+	IsActive  bool      `json:"is_active"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type ReferenceCountry struct {

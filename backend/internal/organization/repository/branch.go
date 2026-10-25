@@ -12,6 +12,8 @@ import (
 type BranchRepository interface {
 	Create(ctx context.Context, tx pgx.Tx, branch *entity.Branch) error
 	FindByID(ctx context.Context, orgID, branchID uuid.UUID) (*entity.Branch, error)
+	/** FindByLocationID loads a branch by id only (platform admin deep links). */
+	FindByLocationID(ctx context.Context, branchID uuid.UUID) (*entity.Branch, error)
 	ListByOrg(ctx context.Context, orgID uuid.UUID) ([]entity.Branch, error)
 	Update(ctx context.Context, tx pgx.Tx, branch *entity.Branch) error
 	UpdateMedia(ctx context.Context, tx pgx.Tx, orgID, branchID uuid.UUID, logoFileID, bannerFileID *uuid.UUID) error
@@ -24,4 +26,17 @@ type BranchRepository interface {
 	ListSportIDs(ctx context.Context, locationID uuid.UUID) ([]uuid.UUID, error)
 	ListSportIDsByLocations(ctx context.Context, locationIDs []uuid.UUID) (map[uuid.UUID][]uuid.UUID, error)
 	CountCourtsByLocations(ctx context.Context, locationIDs []uuid.UUID) (map[uuid.UUID]int, error)
+
+	ListGallery(ctx context.Context, locationID uuid.UUID) ([]entity.LocationMedia, error)
+	FindGalleryItem(ctx context.Context, locationID, mediaID uuid.UUID) (*entity.LocationMedia, error)
+	CreateGalleryItem(ctx context.Context, tx pgx.Tx, item *entity.LocationMedia) error
+	UpdateGalleryItem(ctx context.Context, tx pgx.Tx, item *entity.LocationMedia) error
+	DeleteGalleryItem(ctx context.Context, tx pgx.Tx, locationID, mediaID uuid.UUID) error
+	MaxGallerySortOrder(ctx context.Context, locationID uuid.UUID) (int, error)
+	ClearGalleryCover(ctx context.Context, tx pgx.Tx, locationID uuid.UUID) error
+
+	ListActiveAmenities(ctx context.Context) ([]entity.Amenity, error)
+	ListAmenitiesByIDs(ctx context.Context, ids []uuid.UUID) ([]entity.Amenity, error)
+	ListAmenityIDs(ctx context.Context, locationID uuid.UUID) ([]uuid.UUID, error)
+	ReplaceAmenities(ctx context.Context, tx pgx.Tx, locationID uuid.UUID, amenityIDs []uuid.UUID) error
 }

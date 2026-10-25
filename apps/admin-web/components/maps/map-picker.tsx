@@ -19,7 +19,10 @@ const SHEET_RESIZE_MS = 300;
 type MapPickerProps = {
   latitude?: number;
   longitude?: number;
-  onPick: (lat: number, lng: number) => void;
+  /** Required unless `readOnly` — ignored when read-only. */
+  onPick?: (lat: number, lng: number) => void;
+  /** Show marker/center only; clicks do not change coordinates. */
+  readOnly?: boolean;
   className?: string;
   unavailableLabel?: string;
 };
@@ -33,6 +36,7 @@ export function MapPicker({
   latitude,
   longitude,
   onPick,
+  readOnly = false,
   className,
   unavailableLabel,
 }: MapPickerProps) {
@@ -42,6 +46,8 @@ export function MapPicker({
   const glRef = useRef<MapGlModule | null>(null);
   const onPickRef = useRef(onPick);
   onPickRef.current = onPick;
+  const readOnlyRef = useRef(readOnly);
+  readOnlyRef.current = readOnly;
 
   const [initError, setInitError] = useState(false);
   /** Bumps when the GL map instance is ready so the pin effect can run after async init. */
@@ -97,7 +103,8 @@ export function MapPicker({
       });
       map.addControl(new gl.NavigationControl({ showCompass: false }), "top-right");
       map.on("click", (event: { lngLat: { lat: number; lng: number } }) => {
-        onPickRef.current(event.lngLat.lat, event.lngLat.lng);
+        if (readOnlyRef.current) return;
+        onPickRef.current?.(event.lngLat.lat, event.lngLat.lng);
       });
       const bumpResize = () => {
         map.resize();

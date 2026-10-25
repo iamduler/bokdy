@@ -42,35 +42,43 @@ type branchAddressRequest struct {
 }
 
 type createBranchRequest struct {
-	NameEn        string                 `json:"name_en"`
-	NameVi        string                 `json:"name_vi"`
-	Code          string                 `json:"code"`
-	Slug          string                 `json:"slug"`
-	Phone         string                 `json:"phone"`
-	Email         string                 `json:"email" binding:"omitempty,email"`
-	Timezone      string                 `json:"timezone"`
-	Website       string                 `json:"website"`
-	FacebookURL   string                 `json:"facebook_url"`
-	GoogleMapsURL string                 `json:"google_maps_url"`
-	FoundedYear   *int                   `json:"founded_year"`
-	Addresses     []branchAddressRequest `json:"addresses"`
-	SportIDs      []string               `json:"sport_ids"`
+	NameEn         string                 `json:"name_en"`
+	NameVi         string                 `json:"name_vi"`
+	Code           string                 `json:"code"`
+	Slug           string                 `json:"slug"`
+	Phone          string                 `json:"phone"`
+	Email          string                 `json:"email" binding:"omitempty,email"`
+	Timezone       string                 `json:"timezone"`
+	Website        string                 `json:"website"`
+	FacebookURL    string                 `json:"facebook_url"`
+	GoogleMapsURL  string                 `json:"google_maps_url"`
+	FoundedYear    *int                   `json:"founded_year"`
+	ShortIntroEn   string                 `json:"short_intro_en"`
+	ShortIntroVi   string                 `json:"short_intro_vi"`
+	DescriptionEn  string                 `json:"description_en"`
+	DescriptionVi  string                 `json:"description_vi"`
+	Addresses      []branchAddressRequest `json:"addresses"`
+	SportIDs       []string               `json:"sport_ids"`
 }
 
 type updateBranchRequest struct {
-	NameEn        *string                 `json:"name_en"`
-	NameVi        *string                 `json:"name_vi"`
-	Code          *string                 `json:"code"`
-	Slug          *string                 `json:"slug"`
-	Phone         *string                 `json:"phone"`
-	Email         *string                 `json:"email" binding:"omitempty,email"`
-	Timezone      *string                 `json:"timezone"`
-	Website       *string                 `json:"website"`
-	FacebookURL   *string                 `json:"facebook_url"`
-	GoogleMapsURL *string                 `json:"google_maps_url"`
-	FoundedYear   *int                    `json:"founded_year"`
-	Addresses     *[]branchAddressRequest `json:"addresses"`
-	SportIDs      *[]string               `json:"sport_ids"`
+	NameEn         *string                 `json:"name_en"`
+	NameVi         *string                 `json:"name_vi"`
+	Code           *string                 `json:"code"`
+	Slug           *string                 `json:"slug"`
+	Phone          *string                 `json:"phone"`
+	Email          *string                 `json:"email" binding:"omitempty,email"`
+	Timezone       *string                 `json:"timezone"`
+	Website        *string                 `json:"website"`
+	FacebookURL    *string                 `json:"facebook_url"`
+	GoogleMapsURL  *string                 `json:"google_maps_url"`
+	FoundedYear    *int                    `json:"founded_year"`
+	ShortIntroEn   *string                 `json:"short_intro_en"`
+	ShortIntroVi   *string                 `json:"short_intro_vi"`
+	DescriptionEn  *string                 `json:"description_en"`
+	DescriptionVi  *string                 `json:"description_vi"`
+	Addresses      *[]branchAddressRequest `json:"addresses"`
+	SportIDs       *[]string               `json:"sport_ids"`
 }
 
 type branchAddressDTO struct {
@@ -103,6 +111,10 @@ type branchDTO struct {
 	FacebookURL    string             `json:"facebook_url,omitempty"`
 	GoogleMapsURL  string             `json:"google_maps_url,omitempty"`
 	FoundedYear    *int               `json:"founded_year,omitempty"`
+	ShortIntroEn   string             `json:"short_intro_en,omitempty"`
+	ShortIntroVi   string             `json:"short_intro_vi,omitempty"`
+	DescriptionEn  string             `json:"description_en,omitempty"`
+	DescriptionVi  string             `json:"description_vi,omitempty"`
 	LogoFileID     string             `json:"logo_file_id,omitempty"`
 	BannerFileID   string             `json:"banner_file_id,omitempty"`
 	Status         string             `json:"status"`
@@ -113,6 +125,7 @@ type branchDTO struct {
 }
 
 func (h *BranchHandler) RegisterRoutes(rg *gin.RouterGroup, jwt gin.HandlerFunc) {
+	rg.GET("/reference/amenities", jwt, h.ListAmenities)
 	branches := rg.Group("/branches", jwt, middleware.OptionalOrganization())
 	{
 		branches.POST("", h.Create)
@@ -121,6 +134,12 @@ func (h *BranchHandler) RegisterRoutes(rg *gin.RouterGroup, jwt gin.HandlerFunc)
 		branches.GET("/:id", h.Get)
 		branches.PATCH("/:id", h.Update)
 		branches.POST("/:id/media", h.UploadMedia)
+		branches.GET("/:id/gallery", h.ListGallery)
+		branches.POST("/:id/gallery", h.UploadGallery)
+		branches.PATCH("/:id/gallery/:mediaId", h.UpdateGallery)
+		branches.DELETE("/:id/gallery/:mediaId", h.DeleteGallery)
+		branches.GET("/:id/amenities", h.GetAmenities)
+		branches.PUT("/:id/amenities", h.PutAmenities)
 		branches.POST("/:id/open", h.Open)
 		branches.POST("/:id/close", h.Close)
 		branches.POST("/:id/maintenance", h.Maintenance)
@@ -313,6 +332,8 @@ func toCreateBranchInput(req createBranchRequest) (service.CreateBranchInput, er
 		Phone: req.Phone, Email: req.Email, Timezone: req.Timezone,
 		Website: req.Website, FacebookURL: req.FacebookURL, GoogleMapsURL: req.GoogleMapsURL,
 		FoundedYear: req.FoundedYear,
+		ShortIntroEn: req.ShortIntroEn, ShortIntroVi: req.ShortIntroVi,
+		DescriptionEn: req.DescriptionEn, DescriptionVi: req.DescriptionVi,
 	}
 	addrs, err := toAddressInputs(req.Addresses)
 	if err != nil {
@@ -333,6 +354,8 @@ func toUpdateBranchInput(req updateBranchRequest) (service.UpdateBranchInput, er
 		Phone: req.Phone, Email: req.Email, Timezone: req.Timezone,
 		Website: req.Website, FacebookURL: req.FacebookURL, GoogleMapsURL: req.GoogleMapsURL,
 		FoundedYear: req.FoundedYear,
+		ShortIntroEn: req.ShortIntroEn, ShortIntroVi: req.ShortIntroVi,
+		DescriptionEn: req.DescriptionEn, DescriptionVi: req.DescriptionVi,
 	}
 	if req.Addresses != nil {
 		addrs, err := toAddressInputs(*req.Addresses)
@@ -423,6 +446,8 @@ func toBranchDTO(ctx context.Context, branch *entity.Branch) branchDTO {
 		NameEn: branch.NameEn, NameVi: branch.NameVi, Phone: branch.Phone, Email: branch.Email,
 		Timezone: branch.Timezone, Website: branch.Website, FacebookURL: branch.FacebookURL,
 		GoogleMapsURL: branch.GoogleMapsURL, FoundedYear: branch.FoundedYear,
+		ShortIntroEn: branch.ShortIntroEn, ShortIntroVi: branch.ShortIntroVi,
+		DescriptionEn: branch.DescriptionEn, DescriptionVi: branch.DescriptionVi,
 		Status: string(branch.Status), CourtCount: branch.CourtCount,
 		CreatedAt: branch.CreatedAt.UTC().Format(time.RFC3339),
 	}

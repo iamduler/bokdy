@@ -1,0 +1,45 @@
+---
+description: Admin Soft detail URLs are top-level; breadcrumbs keep full parent trail
+globs:
+  - apps/admin-web/app/**/*.tsx
+  - apps/admin-web/components/**/*.tsx
+alwaysApply: false
+---
+
+# Admin detail URLs + breadcrumbs
+
+## Canonical detail path
+
+Entity **detail** (and its tabs) use a **top-level** resource path — do **not** nest under the parent:
+
+```text
+/{entityPlural}/:id
+/{entityPlural}/:id/{tab}
+```
+
+Examples:
+
+* Branch detail: `/branches/:branchId`, `/branches/:branchId/pricing`
+* List of children under a parent may still nest: `/organizations/:orgId/branches`
+
+Do **not** create `/organizations/:orgId/branches/:branchId` (or similar) for detail.
+
+## Breadcrumbs
+
+Top-level detail URLs must **not** drop the parent trail. Build crumbs from entity relations (FK), not from URL nesting:
+
+```text
+{Parent list} › {Parent name} › {Child list} › {Child name} [› {Tab}]
+```
+
+Example when opening a branch from an organization:
+
+```text
+Tổ chức › {Org} › Chi nhánh › {Branch} [› Bảng giá]
+```
+
+Deep links to `/branches/:id` should still resolve the parent (e.g. `branch.organization_id`) and show the same trail.
+
+## Redirects
+
+Do not add permanent redirects from old nested detail URLs unless product explicitly asks. Update in-app links to the canonical top-level path.

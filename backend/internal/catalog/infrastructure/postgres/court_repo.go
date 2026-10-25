@@ -25,11 +25,16 @@ func NewCourtRepo(pool *pgxpool.Pool) *CourtRepo {
 var _ repository.CourtRepository = (*CourtRepo)(nil)
 
 func (r *CourtRepo) Create(ctx context.Context, tx pgx.Tx, court *entity.Court) error {
+	env := court.Environment
+	if env == "" {
+		env = entity.CourtEnvironmentUnspecified
+	}
 	return r.q.WithTx(tx).CreateCourt(ctx, dbsqlc.CreateCourtParams{
 		ID: court.ID, PublicID: court.PublicID, TenantID: court.TenantID, LocationID: court.LocationID,
 		CourtTypeID: uuidPtr(court.CourtTypeID), Code: court.Code, NameEn: nullStr(court.NameEn), NameVi: nullStr(court.NameVi),
 		ResourceType: dbsqlc.CatalogResourceType(court.ResourceType), Status: dbsqlc.CatalogResourceStatus(court.Status),
-		IsBookable: court.IsBookable, CreatedAt: court.CreatedAt, UpdatedAt: court.UpdatedAt,
+		IsBookable: court.IsBookable, Environment: dbsqlc.CatalogCourtEnvironment(env),
+		CreatedAt: court.CreatedAt, UpdatedAt: court.UpdatedAt,
 	})
 }
 
@@ -60,9 +65,13 @@ func (r *CourtRepo) List(ctx context.Context, tenantID uuid.UUID, locationID *uu
 }
 
 func (r *CourtRepo) Update(ctx context.Context, tx pgx.Tx, court *entity.Court) error {
+	env := court.Environment
+	if env == "" {
+		env = entity.CourtEnvironmentUnspecified
+	}
 	return r.q.WithTx(tx).UpdateCourt(ctx, dbsqlc.UpdateCourtParams{
 		TenantID: court.TenantID, ID: court.ID, NameEn: nullStr(court.NameEn), NameVi: nullStr(court.NameVi),
-		CourtTypeID: uuidPtr(court.CourtTypeID),
+		CourtTypeID: uuidPtr(court.CourtTypeID), Environment: dbsqlc.CatalogCourtEnvironment(env),
 	})
 }
 
@@ -118,7 +127,8 @@ func courtFromFind(row dbsqlc.FindCourtByIDRow) *entity.Court {
 		ID: row.ID, PublicID: row.PublicID, TenantID: row.TenantID, LocationID: row.LocationID,
 		Code: row.Code, NameEn: row.NameEn, NameVi: row.NameVi,
 		ResourceType: entity.ResourceType(row.ResourceType), Status: entity.ResourceStatus(row.Status),
-		IsBookable: row.IsBookable, CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt, DeletedAt: row.DeletedAt,
+		IsBookable: row.IsBookable, Environment: entity.ParseCourtEnvironment(string(row.Environment)),
+		CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt, DeletedAt: row.DeletedAt,
 	}
 	if row.CourtTypeID != nil {
 		c.CourtTypeID = *row.CourtTypeID
@@ -131,7 +141,8 @@ func courtFromList(row dbsqlc.ListCourtsRow) *entity.Court {
 		ID: row.ID, PublicID: row.PublicID, TenantID: row.TenantID, LocationID: row.LocationID,
 		Code: row.Code, NameEn: row.NameEn, NameVi: row.NameVi,
 		ResourceType: entity.ResourceType(row.ResourceType), Status: entity.ResourceStatus(row.Status),
-		IsBookable: row.IsBookable, CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt, DeletedAt: row.DeletedAt,
+		IsBookable: row.IsBookable, Environment: entity.ParseCourtEnvironment(string(row.Environment)),
+		CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt, DeletedAt: row.DeletedAt,
 	}
 	if row.CourtTypeID != nil {
 		c.CourtTypeID = *row.CourtTypeID

@@ -44,6 +44,7 @@ type createCourtRequest struct {
 	NameEn      string `json:"name_en"`
 	NameVi      string `json:"name_vi"`
 	Code        string `json:"code"`
+	Environment string `json:"environment"`
 }
 
 type updateCourtRequest struct {
@@ -51,6 +52,7 @@ type updateCourtRequest struct {
 	NameVi      *string `json:"name_vi"`
 	Code        *string `json:"code"`
 	CourtTypeID *string `json:"court_type_id" binding:"omitempty,uuid"`
+	Environment *string `json:"environment"`
 }
 
 type scheduleMaintenanceRequest struct {
@@ -80,6 +82,7 @@ type courtDTO struct {
 	NameVi      string `json:"name_vi,omitempty"`
 	Status      string `json:"status"`
 	IsBookable  bool   `json:"is_bookable"`
+	Environment string `json:"environment"`
 }
 
 type sportDTO struct {
@@ -245,6 +248,7 @@ func (h *CatalogHandler) CreateCourt(c *gin.Context) {
 	}
 	court, err := h.catalog.CreateCourt(c.Request.Context(), uid, service.CreateCourtInput{
 		BranchID: branchID, CourtTypeID: typeID, NameEn: req.NameEn, NameVi: req.NameVi, Code: req.Code,
+		Environment: req.Environment,
 	})
 	if err != nil {
 		httpx.Error(c, err)
@@ -301,7 +305,7 @@ func (h *CatalogHandler) UpdateCourt(c *gin.Context) {
 	if !httpx.BindJSON(c, &req) {
 		return
 	}
-	in := service.UpdateCourtInput{NameEn: req.NameEn, NameVi: req.NameVi, Code: req.Code}
+	in := service.UpdateCourtInput{NameEn: req.NameEn, NameVi: req.NameVi, Code: req.Code, Environment: req.Environment}
 	if req.CourtTypeID != nil && *req.CourtTypeID != "" {
 		typeID, err := uuid.Parse(*req.CourtTypeID)
 		if err != nil {
@@ -401,10 +405,15 @@ func toCourtTypeDTO(ctx context.Context, t *entity.CourtType) courtTypeDTO {
 }
 
 func toCourtDTO(ctx context.Context, court *entity.Court) courtDTO {
+	env := string(court.Environment)
+	if env == "" {
+		env = string(entity.CourtEnvironmentUnspecified)
+	}
 	return courtDTO{
 		ID: court.ID.String(), PublicID: court.PublicID, BranchID: court.LocationID.String(),
 		CourtTypeID: court.CourtTypeID.String(), Code: court.Code,
 		Name:   i18n.DisplayName(i18n.FromContext(ctx), court.NameEn, court.NameVi),
 		NameEn: court.NameEn, NameVi: court.NameVi, Status: string(court.Status), IsBookable: court.IsBookable,
+		Environment: env,
 	}
 }

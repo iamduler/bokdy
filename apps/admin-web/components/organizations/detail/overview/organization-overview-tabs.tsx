@@ -27,6 +27,11 @@ export function OrganizationOverviewTabs() {
   const { orgId } = useOrganizationDetail();
   const pathname = usePathname();
   const base = `/organizations/${orgId}`;
+  // First segment after the org base, so nested routes (e.g. branches/:id/courts)
+  // only activate their owning tab.
+  const segment = pathname.startsWith(base)
+    ? pathname.slice(base.length).split("/").filter(Boolean)[0]
+    : undefined;
 
   const tabs = useMemo<EntityDetailTabItem[]>(
     () =>
@@ -34,7 +39,7 @@ export function OrganizationOverviewTabs() {
         const isOverview = tab.id === "overview";
         const active = isOverview
           ? pathname === base || pathname.endsWith(base)
-          : Boolean(tab.href && pathname.includes(tab.href));
+          : Boolean(tab.href && segment === tab.href.slice(1));
 
         return {
           id: tab.id,
@@ -44,7 +49,7 @@ export function OrganizationOverviewTabs() {
           disabled: tab.href === null,
         };
       }),
-    [base, pathname, t],
+    [base, pathname, segment, t],
   );
 
   return <EntityDetailTabs tabs={tabs} ariaLabel={t("overview")} />;

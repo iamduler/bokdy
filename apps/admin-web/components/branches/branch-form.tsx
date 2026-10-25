@@ -23,12 +23,16 @@ import {
 } from "@/components/entity/metadata-form";
 import { AddressAutocomplete } from "@/components/maps/address-autocomplete";
 import { MapPicker } from "@/components/maps/map-picker";
+import { BranchContentFields } from "@/components/branches/branch-content-fields";
 import { ImageCropDialog } from "@/components/media/image-crop-dialog";
 import {
   PopoverCommandSelect,
   type PopoverCommandOption,
 } from "@/components/popover-command-select";
+import { useQueryClient } from "@tanstack/react-query";
+
 import {
+  branchKeys,
   useArchiveBranch,
   useCloseBranch,
   useCreateBranch,
@@ -77,6 +81,10 @@ const FORM_FIELDS = [
   "facebook_url",
   "google_maps_url",
   "founded_year",
+  "short_intro_en",
+  "short_intro_vi",
+  "description_en",
+  "description_vi",
   "province_id",
   "ward_id",
   "address_line_1",
@@ -102,6 +110,10 @@ const emptyValues: BranchFormValues = {
   facebook_url: "",
   google_maps_url: "",
   founded_year: "",
+  short_intro_en: "",
+  short_intro_vi: "",
+  description_en: "",
+  description_vi: "",
   joined_at: todayDateInput(),
   province_id: "",
   ward_id: "",
@@ -125,6 +137,10 @@ function valuesFromBranch(branch: Branch): BranchFormValues {
     google_maps_url: branch.google_maps_url ?? "",
     founded_year:
       branch.founded_year != null ? String(branch.founded_year) : "",
+    short_intro_en: branch.short_intro_en ?? "",
+    short_intro_vi: branch.short_intro_vi ?? "",
+    description_en: branch.description_en ?? "",
+    description_vi: branch.description_vi ?? "",
     joined_at: dateInputFromIso(branch.created_at),
     province_id: address?.province_id ?? "",
     ward_id: address?.ward_id ?? "",
@@ -152,6 +168,10 @@ function profileBody(
     facebook_url: values.facebook_url.trim(),
     google_maps_url: values.google_maps_url.trim(),
     founded_year: foundedYear,
+    short_intro_en: values.short_intro_en.trim(),
+    short_intro_vi: values.short_intro_vi.trim(),
+    description_en: values.description_en,
+    description_vi: values.description_vi,
     sport_ids: values.sport_ids,
     addresses: [
       {
@@ -179,6 +199,7 @@ export function BranchForm(props: BranchFormProps) {
   const branch = props.mode === "edit" ? props.branch : undefined;
   const { organizationId, onDone, onRegisterLeave } = props;
   const layout = props.layout ?? "page";
+  const queryClient = useQueryClient();
   const create = useCreateBranch(organizationId);
   const update = useUpdateBranch(organizationId, branch?.id ?? "");
   const open = useOpenBranch(organizationId, branch?.id ?? "");
@@ -211,6 +232,7 @@ export function BranchForm(props: BranchFormProps) {
         addressRequired: tb("addressRequired"),
         coordsInvalid: tb("coordsInvalid"),
         foundedYearInvalid: tb("foundedYearInvalid"),
+        shortIntroTooLong: tb("shortIntroTooLong"),
       }),
     [t, tb],
   );
@@ -368,7 +390,7 @@ export function BranchForm(props: BranchFormProps) {
   ]);
 
   const listHref = `/organizations/${organizationId}/branches`;
-  const backHref = branch ? `${listHref}/${branch.id}` : listHref;
+  const backHref = branch ? `/branches/${branch.id}` : listHref;
 
   function requestLeave() {
     if ((isDirty || mediaDirty) && !leaveConfirmed.current) {
@@ -461,6 +483,7 @@ export function BranchForm(props: BranchFormProps) {
       } else {
         saved = await update.mutateAsync(body);
       }
+      const uploadedMedia = Boolean(logo || banner);
       if (logo) {
         saved = await uploadBranchMedia(organizationId, saved.id, "logo", logo);
       }
@@ -471,6 +494,14 @@ export function BranchForm(props: BranchFormProps) {
           "banner",
           banner,
         );
+      }
+      if (uploadedMedia) {
+        void queryClient.invalidateQueries({
+          queryKey: branchKeys.list(organizationId),
+        });
+        void queryClient.invalidateQueries({
+          queryKey: branchKeys.detail(saved.id),
+        });
       }
       setLogo(null);
       setBanner(null);
@@ -691,6 +722,7 @@ export function BranchForm(props: BranchFormProps) {
           }
         >
           <EntityMetadataForm blocks={blocks} />
+          <BranchContentFields />
           <EntityFormSection
             title={tb("address")}
             icon={<MapPin className="size-4" aria-hidden />}

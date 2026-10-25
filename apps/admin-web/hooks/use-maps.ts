@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 
+import { ApiError } from "@/lib/api/errors";
 import {
   autocompletePlaces,
   getMapsConfig,
@@ -25,7 +26,12 @@ export function useMapsConfig(enabled = true) {
     queryFn: getMapsConfig,
     staleTime: 60 * 60 * 1000,
     enabled,
-    retry: false,
+    // Branch Overview bursts many GETs; config can hit IP 429 on first paint.
+    retry: (count, err) => {
+      if (err instanceof ApiError && err.status === 429) return count < 3;
+      return count < 1;
+    },
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 4000),
   });
 }
 

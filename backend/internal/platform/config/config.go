@@ -205,8 +205,8 @@ func Load() *Config {
 			Issuer:             env.GetEnv("AUTH_ISSUER", "bokdy"),
 		},
 		RateLimit: RateLimitConfig{
-			RequestsPerSec: env.GetIntEnv("RATE_LIMIT_REQUESTS_SEC", 5),
-			Burst:          env.GetIntEnv("RATE_LIMIT_BURST", 10),
+			RequestsPerSec: env.GetIntEnv("RATE_LIMIT_REQUESTS_SEC", 20),
+			Burst:          env.GetIntEnv("RATE_LIMIT_BURST", 40),
 			Window:         env.GetDurationEnv("RATE_LIMIT_WINDOW", time.Second),
 		},
 		Docs: DocsConfig{

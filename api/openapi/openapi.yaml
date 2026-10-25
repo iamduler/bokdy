@@ -1316,6 +1316,205 @@ paths:
           $ref: "#/components/responses/Error"
         "422":
           $ref: "#/components/responses/ValidationFailed"
+  /api/v1/branches/{id}/gallery:
+    get:
+      tags: [Branches]
+      summary: List branch gallery images
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/BranchId"
+        - $ref: "#/components/parameters/XOrganizationId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/BranchGalleryItem"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+    post:
+      tags: [Branches]
+      summary: Upload a branch gallery image
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/BranchId"
+        - $ref: "#/components/parameters/XOrganizationId"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/BranchGalleryItem"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /api/v1/branches/{id}/gallery/{mediaId}:
+    patch:
+      tags: [Branches]
+      summary: Update gallery item caption, sort, or cover
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/BranchId"
+        - name: mediaId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - $ref: "#/components/parameters/XOrganizationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateBranchGalleryItemRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/BranchGalleryItem"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+    delete:
+      tags: [Branches]
+      summary: Delete a gallery image
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/BranchId"
+        - name: mediaId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - $ref: "#/components/parameters/XOrganizationId"
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+  /api/v1/branches/{id}/amenities:
+    get:
+      tags: [Branches]
+      summary: List amenities assigned to a branch
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/BranchId"
+        - $ref: "#/components/parameters/XOrganizationId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Amenity"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+    put:
+      tags: [Branches]
+      summary: Replace branch amenity set
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/BranchId"
+        - $ref: "#/components/parameters/XOrganizationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PutBranchAmenitiesRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Amenity"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /api/v1/reference/amenities:
+    get:
+      tags: [Reference]
+      summary: List active amenity catalog
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Amenity"
+        "401":
+          $ref: "#/components/responses/Error"
   /api/v1/branches/{id}/open:
     post:
       tags: [Branches]
@@ -4283,6 +4482,10 @@ components:
         facebook_url: { type: string }
         google_maps_url: { type: string }
         founded_year: { type: integer, minimum: 1800, maximum: 2100 }
+        short_intro_en: { type: string, maxLength: 200 }
+        short_intro_vi: { type: string, maxLength: 200 }
+        description_en: { type: string, description: Sanitized HTML }
+        description_vi: { type: string, description: Sanitized HTML }
         logo_file_id: { type: string, format: uuid, description: Avatar image file id }
         banner_file_id: { type: string, format: uuid }
         status: { type: string, enum: [active, inactive, maintenance, archived] }
@@ -4322,6 +4525,10 @@ components:
         facebook_url: { type: string }
         google_maps_url: { type: string }
         founded_year: { type: integer, minimum: 1800, maximum: 2100, nullable: true }
+        short_intro_en: { type: string, maxLength: 200 }
+        short_intro_vi: { type: string, maxLength: 200 }
+        description_en: { type: string, description: Sanitized HTML on write }
+        description_vi: { type: string, description: Sanitized HTML on write }
         addresses:
           type: array
           items:
@@ -4352,6 +4559,10 @@ components:
         facebook_url: { type: string }
         google_maps_url: { type: string }
         founded_year: { type: integer, minimum: 1800, maximum: 2100, nullable: true }
+        short_intro_en: { type: string, maxLength: 200 }
+        short_intro_vi: { type: string, maxLength: 200 }
+        description_en: { type: string, description: Sanitized HTML on write }
+        description_vi: { type: string, description: Sanitized HTML on write }
         addresses:
           type: array
           items:
@@ -4534,7 +4745,7 @@ components:
         slot_duration_minutes: { type: integer, minimum: 15, maximum: 180 }
     Court:
       type: object
-      required: [id, public_id, branch_id, court_type_id, code, name, status, is_bookable]
+      required: [id, public_id, branch_id, court_type_id, code, name, status, is_bookable, environment]
       properties:
         id: { type: string, format: uuid }
         public_id: { type: string, minLength: 26, maxLength: 26 }
@@ -4546,6 +4757,7 @@ components:
         name_vi: { type: string }
         status: { type: string, enum: [active, inactive, maintenance, archived] }
         is_bookable: { type: boolean }
+        environment: { type: string, enum: [indoor, outdoor, unspecified] }
     CreateCourtRequest:
       type: object
       required: [branch_id, court_type_id]
@@ -4556,6 +4768,7 @@ components:
         name_en: { type: string }
         name_vi: { type: string }
         code: { type: string }
+        environment: { type: string, enum: [indoor, outdoor, unspecified], default: unspecified }
     UpdateCourtRequest:
       type: object
       properties:
@@ -4563,6 +4776,43 @@ components:
         name_vi: { type: string }
         code: { type: string, description: Immutable; sending a different value is rejected }
         court_type_id: { type: string, format: uuid }
+        environment: { type: string, enum: [indoor, outdoor, unspecified] }
+    BranchGalleryItem:
+      type: object
+      required: [id, file_id, sort_order, is_cover]
+      properties:
+        id: { type: string, format: uuid }
+        file_id: { type: string, format: uuid }
+        caption_en: { type: string }
+        caption_vi: { type: string }
+        sort_order: { type: integer }
+        is_cover: { type: boolean }
+        created_at: { type: string, format: date-time }
+    UpdateBranchGalleryItemRequest:
+      type: object
+      properties:
+        caption_en: { type: string }
+        caption_vi: { type: string }
+        sort_order: { type: integer }
+        is_cover: { type: boolean }
+    Amenity:
+      type: object
+      required: [id, code, name, name_en, name_vi]
+      properties:
+        id: { type: string, format: uuid }
+        code: { type: string }
+        name: { type: string, description: Resolved from Accept-Language }
+        name_en: { type: string }
+        name_vi: { type: string }
+        icon: { type: string }
+        is_active: { type: boolean }
+    PutBranchAmenitiesRequest:
+      type: object
+      required: [amenity_ids]
+      properties:
+        amenity_ids:
+          type: array
+          items: { type: string, format: uuid }
     ScheduleMaintenanceRequest:
       type: object
       properties:

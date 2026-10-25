@@ -96,24 +96,25 @@ func (q *Queries) CourtNameExists(ctx context.Context, arg CourtNameExistsParams
 const createCourt = `-- name: CreateCourt :exec
 INSERT INTO catalog.resources (
     id, public_id, tenant_id, location_id, court_type_id, code, name_en, name_vi,
-    resource_type, status, is_bookable, created_at, updated_at
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+    resource_type, status, is_bookable, environment, created_at, updated_at
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
 `
 
 type CreateCourtParams struct {
-	ID           uuid.UUID             `json:"id"`
-	PublicID     string                `json:"public_id"`
-	TenantID     uuid.UUID             `json:"tenant_id"`
-	LocationID   uuid.UUID             `json:"location_id"`
-	CourtTypeID  *uuid.UUID            `json:"court_type_id"`
-	Code         string                `json:"code"`
-	NameEn       *string               `json:"name_en"`
-	NameVi       *string               `json:"name_vi"`
-	ResourceType CatalogResourceType   `json:"resource_type"`
-	Status       CatalogResourceStatus `json:"status"`
-	IsBookable   bool                  `json:"is_bookable"`
-	CreatedAt    time.Time             `json:"created_at"`
-	UpdatedAt    time.Time             `json:"updated_at"`
+	ID           uuid.UUID               `json:"id"`
+	PublicID     string                  `json:"public_id"`
+	TenantID     uuid.UUID               `json:"tenant_id"`
+	LocationID   uuid.UUID               `json:"location_id"`
+	CourtTypeID  *uuid.UUID              `json:"court_type_id"`
+	Code         string                  `json:"code"`
+	NameEn       *string                 `json:"name_en"`
+	NameVi       *string                 `json:"name_vi"`
+	ResourceType CatalogResourceType     `json:"resource_type"`
+	Status       CatalogResourceStatus   `json:"status"`
+	IsBookable   bool                    `json:"is_bookable"`
+	Environment  CatalogCourtEnvironment `json:"environment"`
+	CreatedAt    time.Time               `json:"created_at"`
+	UpdatedAt    time.Time               `json:"updated_at"`
 }
 
 func (q *Queries) CreateCourt(ctx context.Context, arg CreateCourtParams) error {
@@ -129,6 +130,7 @@ func (q *Queries) CreateCourt(ctx context.Context, arg CreateCourtParams) error 
 		arg.ResourceType,
 		arg.Status,
 		arg.IsBookable,
+		arg.Environment,
 		arg.CreatedAt,
 		arg.UpdatedAt,
 	)
@@ -169,7 +171,7 @@ func (q *Queries) CreateResourceMaintenance(ctx context.Context, arg CreateResou
 const findCourtByID = `-- name: FindCourtByID :one
 SELECT id, public_id, tenant_id, location_id, court_type_id, code,
        COALESCE(name_en, '') AS name_en, COALESCE(name_vi, '') AS name_vi,
-       resource_type, status, is_bookable, created_at, updated_at, deleted_at
+       resource_type, status, is_bookable, environment, created_at, updated_at, deleted_at
 FROM catalog.resources
 WHERE tenant_id = $1 AND id = $2 AND deleted_at IS NULL AND resource_type = 'court'
 `
@@ -180,20 +182,21 @@ type FindCourtByIDParams struct {
 }
 
 type FindCourtByIDRow struct {
-	ID           uuid.UUID             `json:"id"`
-	PublicID     string                `json:"public_id"`
-	TenantID     uuid.UUID             `json:"tenant_id"`
-	LocationID   uuid.UUID             `json:"location_id"`
-	CourtTypeID  *uuid.UUID            `json:"court_type_id"`
-	Code         string                `json:"code"`
-	NameEn       string                `json:"name_en"`
-	NameVi       string                `json:"name_vi"`
-	ResourceType CatalogResourceType   `json:"resource_type"`
-	Status       CatalogResourceStatus `json:"status"`
-	IsBookable   bool                  `json:"is_bookable"`
-	CreatedAt    time.Time             `json:"created_at"`
-	UpdatedAt    time.Time             `json:"updated_at"`
-	DeletedAt    *time.Time            `json:"deleted_at"`
+	ID           uuid.UUID               `json:"id"`
+	PublicID     string                  `json:"public_id"`
+	TenantID     uuid.UUID               `json:"tenant_id"`
+	LocationID   uuid.UUID               `json:"location_id"`
+	CourtTypeID  *uuid.UUID              `json:"court_type_id"`
+	Code         string                  `json:"code"`
+	NameEn       string                  `json:"name_en"`
+	NameVi       string                  `json:"name_vi"`
+	ResourceType CatalogResourceType     `json:"resource_type"`
+	Status       CatalogResourceStatus   `json:"status"`
+	IsBookable   bool                    `json:"is_bookable"`
+	Environment  CatalogCourtEnvironment `json:"environment"`
+	CreatedAt    time.Time               `json:"created_at"`
+	UpdatedAt    time.Time               `json:"updated_at"`
+	DeletedAt    *time.Time              `json:"deleted_at"`
 }
 
 func (q *Queries) FindCourtByID(ctx context.Context, arg FindCourtByIDParams) (FindCourtByIDRow, error) {
@@ -211,6 +214,7 @@ func (q *Queries) FindCourtByID(ctx context.Context, arg FindCourtByIDParams) (F
 		&i.ResourceType,
 		&i.Status,
 		&i.IsBookable,
+		&i.Environment,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
@@ -257,7 +261,7 @@ func (q *Queries) FindInProgressMaintenance(ctx context.Context, resourceID uuid
 const listCourts = `-- name: ListCourts :many
 SELECT id, public_id, tenant_id, location_id, court_type_id, code,
        COALESCE(name_en, '') AS name_en, COALESCE(name_vi, '') AS name_vi,
-       resource_type, status, is_bookable, created_at, updated_at, deleted_at
+       resource_type, status, is_bookable, environment, created_at, updated_at, deleted_at
 FROM catalog.resources
 WHERE tenant_id = $1
   AND resource_type = 'court'
@@ -275,20 +279,21 @@ type ListCourtsParams struct {
 }
 
 type ListCourtsRow struct {
-	ID           uuid.UUID             `json:"id"`
-	PublicID     string                `json:"public_id"`
-	TenantID     uuid.UUID             `json:"tenant_id"`
-	LocationID   uuid.UUID             `json:"location_id"`
-	CourtTypeID  *uuid.UUID            `json:"court_type_id"`
-	Code         string                `json:"code"`
-	NameEn       string                `json:"name_en"`
-	NameVi       string                `json:"name_vi"`
-	ResourceType CatalogResourceType   `json:"resource_type"`
-	Status       CatalogResourceStatus `json:"status"`
-	IsBookable   bool                  `json:"is_bookable"`
-	CreatedAt    time.Time             `json:"created_at"`
-	UpdatedAt    time.Time             `json:"updated_at"`
-	DeletedAt    *time.Time            `json:"deleted_at"`
+	ID           uuid.UUID               `json:"id"`
+	PublicID     string                  `json:"public_id"`
+	TenantID     uuid.UUID               `json:"tenant_id"`
+	LocationID   uuid.UUID               `json:"location_id"`
+	CourtTypeID  *uuid.UUID              `json:"court_type_id"`
+	Code         string                  `json:"code"`
+	NameEn       string                  `json:"name_en"`
+	NameVi       string                  `json:"name_vi"`
+	ResourceType CatalogResourceType     `json:"resource_type"`
+	Status       CatalogResourceStatus   `json:"status"`
+	IsBookable   bool                    `json:"is_bookable"`
+	Environment  CatalogCourtEnvironment `json:"environment"`
+	CreatedAt    time.Time               `json:"created_at"`
+	UpdatedAt    time.Time               `json:"updated_at"`
+	DeletedAt    *time.Time              `json:"deleted_at"`
 }
 
 func (q *Queries) ListCourts(ctx context.Context, arg ListCourtsParams) ([]ListCourtsRow, error) {
@@ -312,6 +317,7 @@ func (q *Queries) ListCourts(ctx context.Context, arg ListCourtsParams) ([]ListC
 			&i.ResourceType,
 			&i.Status,
 			&i.IsBookable,
+			&i.Environment,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.DeletedAt,
@@ -328,16 +334,17 @@ func (q *Queries) ListCourts(ctx context.Context, arg ListCourtsParams) ([]ListC
 
 const updateCourt = `-- name: UpdateCourt :exec
 UPDATE catalog.resources
-SET name_en = $3, name_vi = $4, court_type_id = $5, updated_at = now()
+SET name_en = $3, name_vi = $4, court_type_id = $5, environment = $6, updated_at = now()
 WHERE tenant_id = $1 AND id = $2 AND deleted_at IS NULL AND resource_type = 'court'
 `
 
 type UpdateCourtParams struct {
-	TenantID    uuid.UUID  `json:"tenant_id"`
-	ID          uuid.UUID  `json:"id"`
-	NameEn      *string    `json:"name_en"`
-	NameVi      *string    `json:"name_vi"`
-	CourtTypeID *uuid.UUID `json:"court_type_id"`
+	TenantID    uuid.UUID               `json:"tenant_id"`
+	ID          uuid.UUID               `json:"id"`
+	NameEn      *string                 `json:"name_en"`
+	NameVi      *string                 `json:"name_vi"`
+	CourtTypeID *uuid.UUID              `json:"court_type_id"`
+	Environment CatalogCourtEnvironment `json:"environment"`
 }
 
 func (q *Queries) UpdateCourt(ctx context.Context, arg UpdateCourtParams) error {
@@ -347,6 +354,7 @@ func (q *Queries) UpdateCourt(ctx context.Context, arg UpdateCourtParams) error 
 		arg.NameEn,
 		arg.NameVi,
 		arg.CourtTypeID,
+		arg.Environment,
 	)
 	return err
 }

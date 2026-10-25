@@ -332,6 +332,10 @@ func (s *OrganizationService) Update(ctx context.Context, orgID, requester uuid.
 }
 
 func (s *OrganizationService) RequireMembership(ctx context.Context, orgID, userID uuid.UUID) error {
+	// Platform admin is not staff; org-scoped reads/writes still require X-Organization-ID.
+	if requestctx.IsSystemAdmin(ctx) {
+		return nil
+	}
 	ok, err := s.staff.IsActiveMember(ctx, orgID, userID)
 	if err != nil {
 		return apperr.Wrap(err, apperr.CodeInternal, "check membership")

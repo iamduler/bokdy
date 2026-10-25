@@ -18,8 +18,7 @@ import {
 export const branchKeys = {
   all: ["branches"] as const,
   list: (organizationId: string) => [...branchKeys.all, "list", organizationId] as const,
-  detail: (organizationId: string, id: string) =>
-    [...branchKeys.all, "detail", organizationId, id] as const,
+  detail: (id: string) => [...branchKeys.all, "detail", id] as const,
 };
 
 export function useBranches(organizationId: string) {
@@ -30,11 +29,12 @@ export function useBranches(organizationId: string) {
   });
 }
 
-export function useBranch(organizationId: string, id: string) {
+/** When `organizationId` is omitted, admin Get runs without X-Organization-ID. */
+export function useBranch(id: string, organizationId?: string) {
   return useQuery({
-    queryKey: branchKeys.detail(organizationId, id),
-    queryFn: () => getBranch(organizationId, id),
-    enabled: Boolean(organizationId && id),
+    queryKey: branchKeys.detail(id),
+    queryFn: () => getBranch(id, organizationId),
+    enabled: Boolean(id),
   });
 }
 
@@ -44,7 +44,7 @@ function useInvalidateBranches(organizationId: string) {
     void queryClient.invalidateQueries({ queryKey: branchKeys.list(organizationId) });
     void queryClient.invalidateQueries({ queryKey: adminOrganizationKeys.detail(organizationId) });
     if (id) {
-      void queryClient.invalidateQueries({ queryKey: branchKeys.detail(organizationId, id) });
+      void queryClient.invalidateQueries({ queryKey: branchKeys.detail(id) });
     }
   };
 }

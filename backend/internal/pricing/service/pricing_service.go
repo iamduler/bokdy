@@ -66,6 +66,17 @@ type CalculateInput struct {
 	EndsAt        time.Time
 }
 
+func (s *PricingService) resolveTenant(ctx context.Context, orgID uuid.UUID) (uuid.UUID, error) {
+	org, err := s.orgs.FindByID(ctx, orgID)
+	if err != nil {
+		return uuid.Nil, apperr.Wrap(err, apperr.CodeInternal, "lookup organization")
+	}
+	if org == nil {
+		return uuid.Nil, apperr.New(apperr.CodeNotFound, "organization not found")
+	}
+	return org.TenantID, nil
+}
+
 func (s *PricingService) requireOwnerTenant(ctx context.Context, actor uuid.UUID) (orgID, tenantID uuid.UUID, err error) {
 	orgID, ok := requestctx.OrganizationID(ctx)
 	if !ok {
@@ -74,14 +85,27 @@ func (s *PricingService) requireOwnerTenant(ctx context.Context, actor uuid.UUID
 	if err := s.orgSvc.RequireOwner(ctx, orgID, actor); err != nil {
 		return uuid.Nil, uuid.Nil, err
 	}
-	org, err := s.orgs.FindByID(ctx, orgID)
+	tenantID, err = s.resolveTenant(ctx, orgID)
 	if err != nil {
-		return uuid.Nil, uuid.Nil, apperr.Wrap(err, apperr.CodeInternal, "lookup organization")
+		return uuid.Nil, uuid.Nil, err
 	}
-	if org == nil {
-		return uuid.Nil, uuid.Nil, apperr.New(apperr.CodeNotFound, "organization not found")
+	return orgID, tenantID, nil
+}
+
+/** requireOwnerOrAdminTenant — list/get for Owner and platform admin (mutations stay RequireOwner). */
+func (s *PricingService) requireOwnerOrAdminTenant(ctx context.Context, actor uuid.UUID) (orgID, tenantID uuid.UUID, err error) {
+	orgID, ok := requestctx.OrganizationID(ctx)
+	if !ok {
+		return uuid.Nil, uuid.Nil, pricingerrors.ErrOrgHeaderRequired
 	}
-	return orgID, org.TenantID, nil
+	if err := s.orgSvc.RequireOwnerOrAdmin(ctx, orgID, actor); err != nil {
+		return uuid.Nil, uuid.Nil, err
+	}
+	tenantID, err = s.resolveTenant(ctx, orgID)
+	if err != nil {
+		return uuid.Nil, uuid.Nil, err
+	}
+	return orgID, tenantID, nil
 }
 
 func parseClock(s string) (time.Time, error) {
@@ -256,7 +280,7 @@ func (s *PricingService) ensureVersionOwned(ctx context.Context, tenantID, versi
 }
 
 func (s *PricingService) GetVersion(ctx context.Context, versionID, actor uuid.UUID) (*entity.PriceVersion, error) {
-	_, tenantID, err := s.requireOwnerTenant(ctx, actor)
+	_, tenantID, err := s.requireOwnerOrAdminTenant(ctx, actor)
 	if err != nil {
 		return nil, err
 	}
@@ -268,7 +292,7 @@ func (s *PricingService) GetVersion(ctx context.Context, versionID, actor uuid.U
 }
 
 func (s *PricingService) ListVersions(ctx context.Context, actor uuid.UUID) ([]entity.PriceVersion, error) {
-	_, tenantID, err := s.requireOwnerTenant(ctx, actor)
+	_, tenantID, err := s.requireOwnerOrAdminTenant(ctx, actor)
 	if err != nil {
 		return nil, err
 	}
