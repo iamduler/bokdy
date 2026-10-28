@@ -109,9 +109,16 @@ type AssignRoleInput struct {
 	RoleCode string
 }
 
+type StaffRoleRef struct {
+	ID   uuid.UUID
+	Code string
+}
+
 type StaffWithRoles struct {
-	Member entity.StaffMember
-	Roles  []string
+	Member      entity.StaffMember
+	Email       string
+	DisplayName string
+	Roles       []StaffRoleRef
 }
 
 func (s *OrganizationService) Create(ctx context.Context, ownerID uuid.UUID, in CreateOrganizationInput) (*entity.Organization, error) {
@@ -395,24 +402,56 @@ func (s *OrganizationService) ListStaff(ctx context.Context, orgID, requester uu
 	}
 	out := make([]StaffWithRoles, 0, len(members))
 	for _, m := range members {
-		roles, err := s.roles.ListByUserTenant(ctx, m.UserID, org.TenantID)
+		row, err := s.enrichStaff(ctx, org.TenantID, m)
 		if err != nil {
-			return nil, apperr.Wrap(err, apperr.CodeInternal, "list staff roles")
+			return nil, err
 		}
-		codes := make([]string, 0, len(roles))
-		for _, r := range roles {
-			codes = append(codes, r.RoleCode)
-		}
-		out = append(out, StaffWithRoles{Member: m, Roles: codes})
+		out = append(out, *row)
 	}
 	return out, nil
+}
+
+func (s *OrganizationService) enrichStaff(ctx context.Context, tenantID uuid.UUID, m entity.StaffMember) (*StaffWithRoles, error) {
+	roles, err := s.roles.ListByUserTenant(ctx, m.UserID, tenantID)
+	if err != nil {
+		return nil, apperr.Wrap(err, apperr.CodeInternal, "list staff roles")
+	}
+	refs := make([]StaffRoleRef, 0, len(roles))
+	for _, r := range roles {
+		refs = append(refs, StaffRoleRef{ID: r.RoleID, Code: r.RoleCode})
+	}
+	email, displayName := "", ""
+	if contact, err := s.users.FindContact(ctx, m.UserID); err != nil {
+		return nil, apperr.Wrap(err, apperr.CodeInternal, "lookup staff contact")
+	} else if contact != nil {
+		email, displayName = contact.Email, contact.DisplayName
+	}
+	return &StaffWithRoles{Member: m, Email: email, DisplayName: displayName, Roles: refs}, nil
+}
+
+func (s *OrganizationService) ListInvitations(ctx context.Context, orgID, requester uuid.UUID) ([]entity.StaffInvitation, error) {
+	if err := s.ensurePathOrgHeader(ctx, orgID); err != nil {
+		return nil, err
+	}
+	if err := s.RequireMembership(ctx, orgID, requester); err != nil {
+		return nil, err
+	}
+	org, err := s.orgs.FindByID(ctx, orgID)
+	if err != nil || org == nil {
+		return nil, orgerrors.ErrOrganizationNotFound
+	}
+	list, err := s.invites.ListPendingByOrg(ctx, orgID)
+	if err != nil {
+		return nil, apperr.Wrap(err, apperr.CodeInternal, "list invitations")
+	}
+	return list, nil
 }
 
 func (s *OrganizationService) Invite(ctx context.Context, orgID, inviter uuid.UUID, in InviteInput) (*entity.StaffInvitation, error) {
 	if err := s.ensurePathOrgHeader(ctx, orgID); err != nil {
 		return nil, err
 	}
-	if err := s.RequireOwner(ctx, orgID, inviter); err != nil {
+	if err := s.RequireOwnerOrAdmin(ctx, orgID, inviter); err != nil {
 		return nil, err
 	}
 	email := strings.ToLower(strings.TrimSpace(in.Email))
@@ -600,7 +639,7 @@ func (s *OrganizationService) RevokeInvitation(ctx context.Context, orgID, invit
 	if err := s.ensurePathOrgHeader(ctx, orgID); err != nil {
 		return err
 	}
-	if err := s.RequireOwner(ctx, orgID, actor); err != nil {
+	if err := s.RequireOwnerOrAdmin(ctx, orgID, actor); err != nil {
 		return err
 	}
 	inv, err := s.invites.FindByID(ctx, orgID, invitationID)
@@ -681,7 +720,7 @@ func (s *OrganizationService) AddStaff(ctx context.Context, orgID, actor uuid.UU
 	if err := s.ensurePathOrgHeader(ctx, orgID); err != nil {
 		return nil, err
 	}
-	if err := s.RequireOwner(ctx, orgID, actor); err != nil {
+	if err := s.RequireOwnerOrAdmin(ctx, orgID, actor); err != nil {
 		return nil, err
 	}
 	if in.UserID == uuid.Nil {
@@ -762,14 +801,14 @@ func (s *OrganizationService) AddStaff(ctx context.Context, orgID, actor uuid.UU
 		return nil, apperr.Wrap(err, apperr.CodeInternal, "add staff")
 	}
 	events.AfterCommit(ctx, s.outbox, outboxID)
-	return &StaffWithRoles{Member: *member, Roles: []string{roleCode}}, nil
+	return s.enrichStaff(ctx, org.TenantID, *member)
 }
 
 func (s *OrganizationService) UpdateStaff(ctx context.Context, orgID, staffID, actor uuid.UUID, in UpdateStaffInput) (*StaffWithRoles, error) {
 	if err := s.ensurePathOrgHeader(ctx, orgID); err != nil {
 		return nil, err
 	}
-	if err := s.RequireOwner(ctx, orgID, actor); err != nil {
+	if err := s.RequireOwnerOrAdmin(ctx, orgID, actor); err != nil {
 		return nil, err
 	}
 	org, err := s.orgs.FindByID(ctx, orgID)
@@ -808,12 +847,7 @@ func (s *OrganizationService) UpdateStaff(ctx context.Context, orgID, staffID, a
 		return nil, apperr.Wrap(err, apperr.CodeInternal, "update staff")
 	}
 	events.AfterCommit(ctx, s.outbox, outboxID)
-	roles, _ := s.roles.ListByUserTenant(ctx, member.UserID, org.TenantID)
-	codes := make([]string, 0, len(roles))
-	for _, r := range roles {
-		codes = append(codes, r.RoleCode)
-	}
-	return &StaffWithRoles{Member: *member, Roles: codes}, nil
+	return s.enrichStaff(ctx, org.TenantID, *member)
 }
 
 func (s *OrganizationService) SuspendStaff(ctx context.Context, orgID, staffID, actor uuid.UUID) error {
@@ -828,7 +862,7 @@ func (s *OrganizationService) RemoveStaff(ctx context.Context, orgID, staffID, a
 	if err := s.ensurePathOrgHeader(ctx, orgID); err != nil {
 		return err
 	}
-	if err := s.RequireOwner(ctx, orgID, actor); err != nil {
+	if err := s.RequireOwnerOrAdmin(ctx, orgID, actor); err != nil {
 		return err
 	}
 	org, err := s.orgs.FindByID(ctx, orgID)
@@ -879,7 +913,7 @@ func (s *OrganizationService) AssignRole(ctx context.Context, orgID, staffID, ac
 	if err := s.ensurePathOrgHeader(ctx, orgID); err != nil {
 		return err
 	}
-	if err := s.RequireOwner(ctx, orgID, actor); err != nil {
+	if err := s.RequireOwnerOrAdmin(ctx, orgID, actor); err != nil {
 		return err
 	}
 	if !isSeededRole(in.RoleCode) {
@@ -930,7 +964,7 @@ func (s *OrganizationService) RemoveRole(ctx context.Context, orgID, staffID, ro
 	if err := s.ensurePathOrgHeader(ctx, orgID); err != nil {
 		return err
 	}
-	if err := s.RequireOwner(ctx, orgID, actor); err != nil {
+	if err := s.RequireOwnerOrAdmin(ctx, orgID, actor); err != nil {
 		return err
 	}
 	org, err := s.orgs.FindByID(ctx, orgID)
@@ -983,7 +1017,7 @@ func (s *OrganizationService) changeStaffStatus(
 	if err := s.ensurePathOrgHeader(ctx, orgID); err != nil {
 		return err
 	}
-	if err := s.RequireOwner(ctx, orgID, actor); err != nil {
+	if err := s.RequireOwnerOrAdmin(ctx, orgID, actor); err != nil {
 		return err
 	}
 	org, err := s.orgs.FindByID(ctx, orgID)

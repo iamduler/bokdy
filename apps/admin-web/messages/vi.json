@@ -558,27 +558,27 @@
     },
     "detailTeam": {
       "title": "Nhân sự — {name}",
-      "subtitle": "{count} thành viên · {pending} đang chờ mời",
-      "invite": "Mời nhân viên",
+      "subtitle": "{count} thành viên · {pending} lời mời chờ",
+      "invite": "Mời nhân sự",
       "colMember": "Thành viên",
       "colRole": "Vai trò",
       "colBranch": "Chi nhánh",
-      "colLastLogin": "Đăng nhập cuối",
+      "colLastLogin": "Đăng nhập gần nhất",
       "colStatus": "Trạng thái",
       "rolesAction": "Vai trò",
-      "roleDistribution": "Phân bổ vai trò",
+      "roleDistribution": "Tổng quan",
       "roles": {
-        "owner": "Organization Owner",
-        "branchManager": "Branch Manager",
-        "receptionist": "Receptionist",
-        "cashier": "Cashier",
-        "coach": "Coach",
-        "staff": "Staff"
+        "owner": "Chủ tổ chức",
+        "staff": "Nhân viên",
+        "branchManager": "Quản lý chi nhánh",
+        "receptionist": "Lễ tân",
+        "cashier": "Thu ngân",
+        "coach": "HLV"
       },
       "memberStatus": {
-        "active": "Hoạt động",
-        "inactive": "Không hoạt động",
-        "pending": "Chờ xác nhận"
+        "active": "Đang hoạt động",
+        "inactive": "Tạm khóa",
+        "pending": "Chờ chấp nhận"
       }
     },
     "detailBilling": {
@@ -1080,5 +1080,77 @@
     "ONE_OF": "Chọn một giá trị hợp lệ",
     "INVALID": "Giá trị không hợp lệ",
     "PASSWORD_POLICY": "Mật khẩu phải có ít nhất 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt"
+  },
+  "team": {
+    "title": "Nhân sự — {name}",
+    "subtitle": "{count} thành viên · {pending} lời mời chờ",
+    "loadError": "Không tải được nhân sự.",
+    "empty": "Chưa có thành viên",
+    "emptyHint": "Mời nhân sự qua email để tham gia tổ chức này.",
+    "colMember": "Thành viên",
+    "colRole": "Vai trò",
+    "colBranch": "Chi nhánh",
+    "colStatus": "Trạng thái",
+    "roles": {
+      "org_owner": "Chủ tổ chức",
+      "org_staff": "Nhân viên"
+    },
+    "status": {
+      "active": "Đang hoạt động",
+      "invited": "Đã mời",
+      "suspended": "Tạm khóa",
+      "resigned": "Đã rời",
+      "pending": "Chờ chấp nhận"
+    },
+    "fields": {
+      "email": "Email",
+      "role": "Vai trò",
+      "title": "Chức danh",
+      "branch": "Chi nhánh"
+    },
+    "validation": {
+      "emailRequired": "Email là bắt buộc.",
+      "emailInvalid": "Nhập địa chỉ email hợp lệ."
+    },
+    "actions": {
+      "cancel": "Hủy",
+      "edit": "Sửa",
+      "more": "Thêm thao tác",
+      "suspend": "Tạm khóa",
+      "restore": "Khôi phục",
+      "remove": "Gỡ bỏ",
+      "revoke": "Thu hồi lời mời"
+    },
+    "invite": {
+      "cta": "Mời nhân sự",
+      "title": "Mời nhân sự",
+      "section": "Lời mời",
+      "emailPlaceholder": "dongnghiep@example.com",
+      "submit": "Gửi lời mời",
+      "success": "Đã gửi lời mời.",
+      "revokeSuccess": "Đã thu hồi lời mời.",
+      "pendingHint": "Chờ chấp nhận"
+    },
+    "member": {
+      "title": "Sửa thành viên",
+      "section": "Chi tiết thành viên",
+      "titlePlaceholder": "vd. Quản lý sân",
+      "noBranch": "Tất cả chi nhánh",
+      "save": "Lưu thay đổi",
+      "saveSuccess": "Đã cập nhật thành viên.",
+      "suspendSuccess": "Đã tạm khóa thành viên.",
+      "restoreSuccess": "Đã khôi phục thành viên.",
+      "removeSuccess": "Đã gỡ thành viên.",
+      "removeConfirmTitle": "Gỡ thành viên?",
+      "removeConfirmBody": "Gỡ {name} khỏi tổ chức này? Họ sẽ mất quyền truy cập."
+    },
+    "sidebar": {
+      "title": "Tổng quan",
+      "owners": "Chủ tổ chức",
+      "staff": "Nhân viên",
+      "active": "Đang hoạt động",
+      "suspended": "Tạm khóa",
+      "pending": "Lời mời chờ"
+    }
   }
 }

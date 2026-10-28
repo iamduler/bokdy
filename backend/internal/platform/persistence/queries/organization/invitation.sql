@@ -23,3 +23,11 @@ UPDATE organization.staff_invitations
 SET status = 'expired'
 WHERE status = 'pending' AND expires_at <= $1
 RETURNING id, organization_id, email, role_code, invitation_token, status, expires_at, invited_by, accepted_by, created_at;
+
+-- name: ListPendingInvitationsByOrg :many
+SELECT id, organization_id, email, role_code, invitation_token, status, expires_at, invited_by, accepted_by, created_at
+FROM organization.staff_invitations
+WHERE organization_id = $1
+  AND status = 'pending'
+  AND expires_at > now()
+ORDER BY created_at DESC;

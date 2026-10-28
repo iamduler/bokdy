@@ -1015,6 +1015,33 @@ paths:
         "404":
           $ref: "#/components/responses/Error"
   /api/v1/organizations/{id}/invitations:
+    get:
+      tags: [Organizations]
+      summary: List pending invitations
+      description: Pending, unexpired invitations. Does not return invitation tokens.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - $ref: "#/components/parameters/XOrganizationIdOptional"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/InvitationSummary"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
     post:
       tags: [Organizations]
       summary: Invite staff
@@ -4570,18 +4597,27 @@ components:
               province_former_id: { type: string, format: uuid }
               district_former_id: { type: string, format: uuid }
               ward_former_id: { type: string, format: uuid }
+    StaffRole:
+      type: object
+      required: [id, code]
+      properties:
+        id: { type: string, format: uuid }
+        code: { type: string, enum: [org_owner, org_staff] }
     StaffMember:
       type: object
       required: [id, user_id, status, roles]
       properties:
         id: { type: string, format: uuid }
         user_id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        display_name: { type: string }
         title: { type: string }
         branch_id: { type: string, format: uuid }
         status: { type: string, enum: [invited, active, suspended, resigned] }
         roles:
           type: array
-          items: { type: string }
+          items:
+            $ref: "#/components/schemas/StaffRole"
     AddStaffRequest:
       type: object
       required: [user_id]
@@ -4614,6 +4650,16 @@ components:
         role_code: { type: string }
         token: { type: string }
         expires_at: { type: string, format: date-time }
+    InvitationSummary:
+      type: object
+      required: [id, email, role_code, status, expires_at, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        role_code: { type: string, enum: [org_owner, org_staff] }
+        status: { type: string, enum: [pending] }
+        expires_at: { type: string, format: date-time }
+        created_at: { type: string, format: date-time }
     AcceptInviteRequest:
       type: object
       required: [token]

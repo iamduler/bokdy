@@ -74,6 +74,17 @@ func (r *UserRepo) FindByEmail(ctx context.Context, email string) (*entity.User,
 	return mapUser(row.ID, row.PublicID, row.Status, row.IsSystemAdmin, row.LastLoginAt, row.EmailVerifiedAt, row.PhoneVerifiedAt, row.CreatedAt, row.UpdatedAt), nil
 }
 
+func (r *UserRepo) FindContact(ctx context.Context, userID uuid.UUID) (*repository.UserContact, error) {
+	row, err := r.q.FindUserContactByID(ctx, userID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &repository.UserContact{Email: row.Email, DisplayName: row.DisplayName}, nil
+}
+
 func (r *UserRepo) UpdateStatus(ctx context.Context, tx pgx.Tx, id uuid.UUID, status entity.UserStatus) error {
 	return r.q.WithTx(tx).UpdateUserStatus(ctx, dbsqlc.UpdateUserStatusParams{
 		ID: id, Status: dbsqlc.IdentityUserStatus(status),

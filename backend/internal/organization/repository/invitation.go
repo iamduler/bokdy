@@ -14,6 +14,7 @@ type InvitationRepository interface {
 	Create(ctx context.Context, tx pgx.Tx, inv *entity.StaffInvitation) error
 	FindByToken(ctx context.Context, token string) (*entity.StaffInvitation, error)
 	FindByID(ctx context.Context, orgID, invitationID uuid.UUID) (*entity.StaffInvitation, error)
+	ListPendingByOrg(ctx context.Context, orgID uuid.UUID) ([]entity.StaffInvitation, error)
 	UpdateStatus(ctx context.Context, tx pgx.Tx, invitationID uuid.UUID, status entity.InvitationStatus, acceptedBy *uuid.UUID) error
 	ExpirePending(ctx context.Context, tx pgx.Tx, now time.Time) ([]entity.StaffInvitation, error)
 }

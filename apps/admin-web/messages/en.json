@@ -566,19 +566,19 @@
       "colLastLogin": "Last login",
       "colStatus": "Status",
       "rolesAction": "Roles",
-      "roleDistribution": "Role distribution",
+      "roleDistribution": "Overview",
       "roles": {
         "owner": "Organization owner",
+        "staff": "Staff",
         "branchManager": "Branch manager",
         "receptionist": "Receptionist",
         "cashier": "Cashier",
-        "coach": "Coach",
-        "staff": "Staff"
+        "coach": "Coach"
       },
       "memberStatus": {
         "active": "Active",
-        "inactive": "Inactive",
-        "pending": "Pending"
+        "inactive": "Suspended",
+        "pending": "Pending invite"
       }
     },
     "detailBilling": {
@@ -1080,5 +1080,77 @@
     "ONE_OF": "Select a valid option",
     "INVALID": "This value is invalid",
     "PASSWORD_POLICY": "Password must be at least 8 characters and include uppercase, lowercase, a number, and a special character"
+  },
+  "team": {
+    "title": "Team — {name}",
+    "subtitle": "{count} members · {pending} pending invite",
+    "loadError": "Could not load team.",
+    "empty": "No team members yet",
+    "emptyHint": "Invite staff by email to join this organization.",
+    "colMember": "Member",
+    "colRole": "Role",
+    "colBranch": "Branch",
+    "colStatus": "Status",
+    "roles": {
+      "org_owner": "Organization owner",
+      "org_staff": "Staff"
+    },
+    "status": {
+      "active": "Active",
+      "invited": "Invited",
+      "suspended": "Suspended",
+      "resigned": "Resigned",
+      "pending": "Pending invite"
+    },
+    "fields": {
+      "email": "Email",
+      "role": "Role",
+      "title": "Title",
+      "branch": "Branch"
+    },
+    "validation": {
+      "emailRequired": "Email is required.",
+      "emailInvalid": "Enter a valid email address."
+    },
+    "actions": {
+      "cancel": "Cancel",
+      "edit": "Edit",
+      "more": "More actions",
+      "suspend": "Suspend",
+      "restore": "Restore",
+      "remove": "Remove",
+      "revoke": "Revoke invite"
+    },
+    "invite": {
+      "cta": "Invite staff",
+      "title": "Invite staff",
+      "section": "Invitation",
+      "emailPlaceholder": "colleague@example.com",
+      "submit": "Send invite",
+      "success": "Invitation sent.",
+      "revokeSuccess": "Invitation revoked.",
+      "pendingHint": "Awaiting acceptance"
+    },
+    "member": {
+      "title": "Edit member",
+      "section": "Member details",
+      "titlePlaceholder": "e.g. Court manager",
+      "noBranch": "All branches",
+      "save": "Save changes",
+      "saveSuccess": "Member updated.",
+      "suspendSuccess": "Member suspended.",
+      "restoreSuccess": "Member restored.",
+      "removeSuccess": "Member removed.",
+      "removeConfirmTitle": "Remove team member?",
+      "removeConfirmBody": "Remove {name} from this organization? They will lose access."
+    },
+    "sidebar": {
+      "title": "Overview",
+      "owners": "Owners",
+      "staff": "Staff",
+      "active": "Active",
+      "suspended": "Suspended",
+      "pending": "Pending invites"
+    }
   }
 }

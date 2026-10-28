@@ -38,6 +38,18 @@ SELECT id, user_id, COALESCE(first_name, '') AS first_name, COALESCE(last_name, 
 FROM identity.user_profiles
 WHERE user_id = $1;
 
+-- name: FindUserContactByID :one
+SELECT COALESCE(i.email, '')::text AS email,
+       CASE
+         WHEN COALESCE(p.display_name, '') <> '' THEN p.display_name
+         WHEN COALESCE(p.full_name, '') <> '' THEN p.full_name
+         ELSE ''
+       END::text AS display_name
+FROM identity.users u
+LEFT JOIN identity.identities i ON i.user_id = u.id AND i.is_primary = true
+LEFT JOIN identity.user_profiles p ON p.user_id = u.id
+WHERE u.id = $1 AND u.deleted_at IS NULL;
+
 -- name: UpdateUserProfile :exec
 UPDATE identity.user_profiles SET
     first_name = $2, last_name = $3, full_name = $4, display_name = $5, locale_id = $6, timezone = $7,

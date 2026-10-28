@@ -55,6 +55,18 @@ func (r *InvitationRepo) FindByID(ctx context.Context, orgID, invitationID uuid.
 	return toInvitation(row), nil
 }
 
+func (r *InvitationRepo) ListPendingByOrg(ctx context.Context, orgID uuid.UUID) ([]entity.StaffInvitation, error) {
+	rows, err := r.q.ListPendingInvitationsByOrg(ctx, orgID)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]entity.StaffInvitation, 0, len(rows))
+	for i := range rows {
+		out = append(out, *toInvitation(rows[i]))
+	}
+	return out, nil
+}
+
 func (r *InvitationRepo) UpdateStatus(ctx context.Context, tx pgx.Tx, invitationID uuid.UUID, status entity.InvitationStatus, acceptedBy *uuid.UUID) error {
 	return r.q.WithTx(tx).UpdateInvitationStatus(ctx, dbsqlc.UpdateInvitationStatusParams{
 		ID: invitationID, Status: dbsqlc.OrganizationInvitationStatus(status), AcceptedBy: acceptedBy,

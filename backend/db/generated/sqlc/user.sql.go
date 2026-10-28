@@ -166,6 +166,31 @@ func (q *Queries) FindUserByID(ctx context.Context, id uuid.UUID) (FindUserByIDR
 	return i, err
 }
 
+const findUserContactByID = `-- name: FindUserContactByID :one
+SELECT COALESCE(i.email, '')::text AS email,
+       CASE
+         WHEN COALESCE(p.display_name, '') <> '' THEN p.display_name
+         WHEN COALESCE(p.full_name, '') <> '' THEN p.full_name
+         ELSE ''
+       END::text AS display_name
+FROM identity.users u
+LEFT JOIN identity.identities i ON i.user_id = u.id AND i.is_primary = true
+LEFT JOIN identity.user_profiles p ON p.user_id = u.id
+WHERE u.id = $1 AND u.deleted_at IS NULL
+`
+
+type FindUserContactByIDRow struct {
+	Email       string `json:"email"`
+	DisplayName string `json:"display_name"`
+}
+
+func (q *Queries) FindUserContactByID(ctx context.Context, id uuid.UUID) (FindUserContactByIDRow, error) {
+	row := q.db.QueryRow(ctx, findUserContactByID, id)
+	var i FindUserContactByIDRow
+	err := row.Scan(&i.Email, &i.DisplayName)
+	return i, err
+}
+
 const getUserProfile = `-- name: GetUserProfile :one
 SELECT id, user_id, COALESCE(first_name, '') AS first_name, COALESCE(last_name, '') AS last_name, full_name,
        COALESCE(display_name, '') AS display_name, locale_id, COALESCE(timezone, '') AS timezone, country_id,

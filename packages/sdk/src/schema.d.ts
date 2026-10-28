@@ -1706,7 +1706,40 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * List pending invitations
+         * @description Pending, unexpired invitations. Does not return invitation tokens.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: {
+                    /** @description If present on nested `/organizations/{id}/...` routes, must match path id. */
+                    "X-Organization-ID"?: components["parameters"]["XOrganizationIdOptional"];
+                };
+                path: {
+                    id: components["parameters"]["OrganizationId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["InvitationSummary"][];
+                        };
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+            };
+        };
         put?: never;
         /**
          * Invite staff
@@ -7048,17 +7081,26 @@ export interface components {
                 ward_former_id: string;
             }[];
         };
+        StaffRole: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            code: "org_owner" | "org_staff";
+        };
         StaffMember: {
             /** Format: uuid */
             id: string;
             /** Format: uuid */
             user_id: string;
+            /** Format: email */
+            email?: string;
+            display_name?: string;
             title?: string;
             /** Format: uuid */
             branch_id?: string;
             /** @enum {string} */
             status: "invited" | "active" | "suspended" | "resigned";
-            roles: string[];
+            roles: components["schemas"]["StaffRole"][];
         };
         AddStaffRequest: {
             /** Format: uuid */
@@ -7097,6 +7139,20 @@ export interface components {
             token: string;
             /** Format: date-time */
             expires_at: string;
+        };
+        InvitationSummary: {
+            /** Format: uuid */
+            id: string;
+            /** Format: email */
+            email: string;
+            /** @enum {string} */
+            role_code: "org_owner" | "org_staff";
+            /** @enum {string} */
+            status: "pending";
+            /** Format: date-time */
+            expires_at: string;
+            /** Format: date-time */
+            created_at: string;
         };
         AcceptInviteRequest: {
             token: string;

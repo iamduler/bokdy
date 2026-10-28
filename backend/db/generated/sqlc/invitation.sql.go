@@ -136,6 +136,46 @@ func (q *Queries) FindInvitationByToken(ctx context.Context, invitationToken str
 	return i, err
 }
 
+const listPendingInvitationsByOrg = `-- name: ListPendingInvitationsByOrg :many
+SELECT id, organization_id, email, role_code, invitation_token, status, expires_at, invited_by, accepted_by, created_at
+FROM organization.staff_invitations
+WHERE organization_id = $1
+  AND status = 'pending'
+  AND expires_at > now()
+ORDER BY created_at DESC
+`
+
+func (q *Queries) ListPendingInvitationsByOrg(ctx context.Context, organizationID uuid.UUID) ([]OrganizationStaffInvitation, error) {
+	rows, err := q.db.Query(ctx, listPendingInvitationsByOrg, organizationID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []OrganizationStaffInvitation{}
+	for rows.Next() {
+		var i OrganizationStaffInvitation
+		if err := rows.Scan(
+			&i.ID,
+			&i.OrganizationID,
+			&i.Email,
+			&i.RoleCode,
+			&i.InvitationToken,
+			&i.Status,
+			&i.ExpiresAt,
+			&i.InvitedBy,
+			&i.AcceptedBy,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateInvitationStatus = `-- name: UpdateInvitationStatus :exec
 UPDATE organization.staff_invitations
 SET status = $2, accepted_by = COALESCE($3, accepted_by)

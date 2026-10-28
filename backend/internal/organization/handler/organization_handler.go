@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"time"
 
 	"bokdy/internal/organization/entity"
 	"bokdy/internal/organization/service"
@@ -119,13 +120,20 @@ type formerDTO struct {
 	WardFormerID     string `json:"ward_former_id"`
 }
 
+type staffRoleDTO struct {
+	ID   string `json:"id"`
+	Code string `json:"code"`
+}
+
 type staffDTO struct {
-	ID       string   `json:"id"`
-	UserID   string   `json:"user_id"`
-	Title    string   `json:"title,omitempty"`
-	BranchID string   `json:"branch_id,omitempty"`
-	Status   string   `json:"status"`
-	Roles    []string `json:"roles"`
+	ID          string         `json:"id"`
+	UserID      string         `json:"user_id"`
+	Email       string         `json:"email,omitempty"`
+	DisplayName string         `json:"display_name,omitempty"`
+	Title       string         `json:"title,omitempty"`
+	BranchID    string         `json:"branch_id,omitempty"`
+	Status      string         `json:"status"`
+	Roles       []staffRoleDTO `json:"roles"`
 }
 
 type inviteDTO struct {
@@ -134,6 +142,15 @@ type inviteDTO struct {
 	RoleCode  string `json:"role_code"`
 	Token     string `json:"token"`
 	ExpiresAt string `json:"expires_at"`
+}
+
+type invitationListDTO struct {
+	ID        string `json:"id"`
+	Email     string `json:"email"`
+	RoleCode  string `json:"role_code"`
+	Status    string `json:"status"`
+	ExpiresAt string `json:"expires_at"`
+	CreatedAt string `json:"created_at"`
 }
 
 func (h *OrganizationHandler) RegisterRoutes(rg *gin.RouterGroup, jwt gin.HandlerFunc) {
@@ -156,6 +173,7 @@ func (h *OrganizationHandler) RegisterRoutes(rg *gin.RouterGroup, jwt gin.Handle
 		orgs.DELETE("/:id/staff/:staffId", h.RemoveStaff)
 		orgs.POST("/:id/staff/:staffId/roles", h.AssignRole)
 		orgs.DELETE("/:id/staff/:staffId/roles/:roleId", h.RemoveRole)
+		orgs.GET("/:id/invitations", h.ListInvitations)
 		orgs.POST("/:id/invitations", h.Invite)
 		orgs.POST("/:id/invitations/:invitationId/revoke", h.RevokeInvitation)
 	}
@@ -421,12 +439,14 @@ func (h *OrganizationHandler) DownloadFile(c *gin.Context) {
 }
 
 func toStaffDTO(row service.StaffWithRoles) staffDTO {
-	dto := staffDTO{
-		ID: row.Member.ID.String(), UserID: row.Member.UserID.String(), Title: row.Member.Title,
-		Status: string(row.Member.Status), Roles: row.Roles,
+	roles := make([]staffRoleDTO, 0, len(row.Roles))
+	for _, r := range row.Roles {
+		roles = append(roles, staffRoleDTO{ID: r.ID.String(), Code: r.Code})
 	}
-	if dto.Roles == nil {
-		dto.Roles = []string{}
+	dto := staffDTO{
+		ID: row.Member.ID.String(), UserID: row.Member.UserID.String(),
+		Email: row.Email, DisplayName: row.DisplayName, Title: row.Member.Title,
+		Status: string(row.Member.Status), Roles: roles,
 	}
 	if row.Member.BranchID != nil {
 		dto.BranchID = row.Member.BranchID.String()
@@ -453,6 +473,34 @@ func (h *OrganizationHandler) ListStaff(c *gin.Context) {
 	out := make([]staffDTO, 0, len(staff))
 	for _, m := range staff {
 		out = append(out, toStaffDTO(m))
+	}
+	httpx.OK(c, out)
+}
+
+func (h *OrganizationHandler) ListInvitations(c *gin.Context) {
+	uid, ok := requestctx.UserID(c.Request.Context())
+	if !ok {
+		httpx.Error(c, apperr.New(apperr.CodeUnauthorized, "unauthorized"))
+		return
+	}
+	orgID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		httpx.Error(c, apperr.New(apperr.CodeBadRequest, "invalid organization id"))
+		return
+	}
+	list, err := h.orgs.ListInvitations(c.Request.Context(), orgID, uid)
+	if err != nil {
+		httpx.Error(c, err)
+		return
+	}
+	out := make([]invitationListDTO, 0, len(list))
+	for _, inv := range list {
+		out = append(out, invitationListDTO{
+			ID: inv.ID.String(), Email: inv.Email, RoleCode: inv.RoleCode,
+			Status: string(inv.Status),
+			ExpiresAt: inv.ExpiresAt.UTC().Format(time.RFC3339),
+			CreatedAt: inv.CreatedAt.UTC().Format(time.RFC3339),
+		})
 	}
 	httpx.OK(c, out)
 }

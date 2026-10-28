@@ -1,11 +1,8 @@
-import {
-  SoftStatusChip,
-  type SoftStatusToneKey,
-} from "@/components/entity/soft-status-chip";
+import { SoftChip, type SoftChipToneKey } from "@/components/entity/soft-chip";
 
 type EntityStatusBadgeProps = {
   label: string;
-  tone?: SoftStatusToneKey;
+  tone?: SoftChipToneKey;
   className?: string;
 };
 
@@ -15,5 +12,5 @@ export function EntityStatusBadge({
   tone = "muted",
   className,
 }: EntityStatusBadgeProps) {
-  return <SoftStatusChip label={label} tone={tone} className={className} />;
+  return <SoftChip label={label} tone={tone} className={className} />;
 }
