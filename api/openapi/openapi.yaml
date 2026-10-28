@@ -2277,7 +2277,7 @@ paths:
   /api/v1/courts/{id}/gallery:
     get:
       tags: [Courts]
-      summary: List court gallery images
+      summary: List court gallery media (images and videos)
       security:
         - bearerAuth: []
       parameters:
@@ -2303,7 +2303,9 @@ paths:
           $ref: "#/components/responses/Error"
     post:
       tags: [Courts]
-      summary: Upload a court gallery image
+      summary: Upload a court gallery image or video
+      description: |
+        Accepts JPEG/PNG/WebP (max 5MB) or MP4/WebM (max 50MB).
       security:
         - bearerAuth: []
       parameters:
@@ -2317,7 +2319,10 @@ paths:
               type: object
               required: [file]
               properties:
-                file: { type: string, format: binary }
+                file:
+                  type: string
+                  format: binary
+                  description: image/jpeg, image/png, image/webp, video/mp4, or video/webm
       responses:
         "201":
           description: Created
@@ -4990,10 +4995,14 @@ components:
           items: { type: string, format: uuid }
     CourtGalleryItem:
       type: object
-      required: [id, file_id, sort_order, is_cover]
+      required: [id, file_id, mime_type, sort_order, is_cover]
       properties:
         id: { type: string, format: uuid }
         file_id: { type: string, format: uuid }
+        mime_type:
+          type: string
+          description: Stored file MIME (e.g. image/jpeg, video/mp4)
+          example: image/jpeg
         caption_en: { type: string }
         caption_vi: { type: string }
         sort_order: { type: integer }

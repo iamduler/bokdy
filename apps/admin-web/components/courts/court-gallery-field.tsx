@@ -1,20 +1,32 @@
 "use client";
 
 import { Button, Input, toast } from "@bokdy/ui";
-import { Trash2 } from "lucide-react";
+import { Play, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
+import {
+  MediaLightbox,
+  type MediaPreviewItem,
+} from "@/components/entity/media-lightbox";
 import { useCourtGallery } from "@/hooks/use-courts";
 import { courtGalleryFileSrc } from "@/lib/api/courts";
+import {
+  isAllowedGalleryMime,
+  mediaKindFromFile,
+  mediaKindFromMime,
+} from "@/lib/media-kind";
 
-export const COURT_IMAGE_ACCEPT = "image/jpeg,image/png,image/webp";
+export const COURT_IMAGE_ACCEPT =
+  "image/jpeg,image/png,image/webp,video/mp4,video/webm";
 const ACCEPT_TYPES = COURT_IMAGE_ACCEPT.split(",");
 
-/** Keep only supported image files; reports unsupported ones via `onInvalid`. */
+/** Keep only supported media files; reports unsupported ones via `onInvalid`. */
 export function filterCourtImages(files: FileList | null, onInvalid: () => void): File[] {
   const picked = Array.from(files ?? []);
-  const valid = picked.filter((file) => ACCEPT_TYPES.includes(file.type));
+  const valid = picked.filter(
+    (file) => ACCEPT_TYPES.includes(file.type) || isAllowedGalleryMime(file.type),
+  );
   if (valid.length !== picked.length) onInvalid();
   return valid;
 }
@@ -28,12 +40,32 @@ type PendingProps = {
 /** Create mode: files are queued locally and uploaded after the court exists. */
 export function CourtPendingImages({ files, onChange, disabled }: PendingProps) {
   const t = useTranslations("organization.court.images");
+  const [previewIndex, setPreviewIndex] = useState<number | null>(null);
   const previews = useMemo(
-    () => files.map((file) => ({ file, url: URL.createObjectURL(file) })),
+    () =>
+      files.map((file, index) => ({
+        file,
+        url: URL.createObjectURL(file),
+        item: {
+          id: `pending-${index}-${file.name}`,
+          src: "",
+          kind: mediaKindFromFile(file),
+          alt: file.name,
+        } satisfies MediaPreviewItem,
+      })),
     [files],
   );
   useEffect(
     () => () => previews.forEach((preview) => URL.revokeObjectURL(preview.url)),
+    [previews],
+  );
+
+  const playlist = useMemo<MediaPreviewItem[]>(
+    () =>
+      previews.map((preview) => ({
+        ...preview.item,
+        src: preview.url,
+      })),
     [previews],
   );
 
@@ -62,12 +94,18 @@ export function CourtPendingImages({ files, onChange, disabled }: PendingProps) 
               key={`${preview.file.name}-${index}`}
               className="relative overflow-hidden rounded-lg ring-1 ring-black/5"
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={preview.url}
-                alt={preview.file.name}
-                className="aspect-4/3 w-full object-cover"
-              />
+              <button
+                type="button"
+                className="block w-full cursor-pointer"
+                aria-label={t("preview")}
+                onClick={() => setPreviewIndex(index)}
+              >
+                <GalleryThumb
+                  kind={preview.item.kind}
+                  src={preview.url}
+                  alt={preview.file.name}
+                />
+              </button>
               <Button
                 type="button"
                 size="icon-sm"
@@ -84,6 +122,17 @@ export function CourtPendingImages({ files, onChange, disabled }: PendingProps) 
           ))}
         </ul>
       )}
+      <MediaLightbox
+        items={playlist}
+        index={previewIndex}
+        onIndexChange={setPreviewIndex}
+        closeLabel={t("closePreview")}
+        previousLabel={t("previous")}
+        nextLabel={t("next")}
+        titleLabel={t("preview")}
+        zoomInLabel={t("zoomIn")}
+        zoomOutLabel={t("zoomOut")}
+      />
     </div>
   );
 }
@@ -112,6 +161,7 @@ export function CourtGalleryManager({
 }: DraftProps) {
   const t = useTranslations("organization.court.images");
   const gallery = useCourtGallery(organizationId, courtId);
+  const [previewIndex, setPreviewIndex] = useState<number | null>(null);
   const removedSet = useMemo(() => new Set(removedIds), [removedIds]);
 
   const savedItems = [...(gallery.data ?? [])]
@@ -119,13 +169,35 @@ export function CourtGalleryManager({
     .sort((a, b) => Number(b.is_cover) - Number(a.is_cover) || a.sort_order - b.sort_order);
 
   const pendingPreviews = useMemo(
-    () => pendingFiles.map((file) => ({ file, url: URL.createObjectURL(file) })),
+    () =>
+      pendingFiles.map((file, index) => ({
+        file,
+        url: URL.createObjectURL(file),
+        id: `pending-${index}-${file.name}`,
+        kind: mediaKindFromFile(file),
+      })),
     [pendingFiles],
   );
   useEffect(
     () => () => pendingPreviews.forEach((preview) => URL.revokeObjectURL(preview.url)),
     [pendingPreviews],
   );
+
+  const playlist = useMemo<MediaPreviewItem[]>(() => {
+    const saved: MediaPreviewItem[] = savedItems.map((item) => ({
+      id: item.id,
+      src: courtGalleryFileSrc(item),
+      kind: mediaKindFromMime(item.mime_type),
+      alt: item.caption_vi || item.caption_en || "",
+    }));
+    const pending: MediaPreviewItem[] = pendingPreviews.map((preview) => ({
+      id: preview.id,
+      src: preview.url,
+      kind: preview.kind,
+      alt: preview.file.name,
+    }));
+    return [...saved, ...pending];
+  }, [savedItems, pendingPreviews]);
 
   const empty =
     !gallery.isLoading &&
@@ -169,18 +241,23 @@ export function CourtGalleryManager({
         <p className="text-xs text-muted-foreground">{t("empty")}</p>
       ) : (
         <ul className="grid grid-cols-3 gap-2">
-          {savedItems.map((item) => (
+          {savedItems.map((item, index) => (
             <li
               key={item.id}
               className="relative overflow-hidden rounded-lg ring-1 ring-black/5"
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={courtGalleryFileSrc(item)}
-                alt={item.caption_vi || item.caption_en || ""}
-                className="aspect-4/3 w-full object-cover"
-                loading="lazy"
-              />
+              <button
+                type="button"
+                className="block w-full cursor-pointer"
+                aria-label={t("preview")}
+                onClick={() => setPreviewIndex(index)}
+              >
+                <GalleryThumb
+                  kind={mediaKindFromMime(item.mime_type)}
+                  src={courtGalleryFileSrc(item)}
+                  alt={item.caption_vi || item.caption_en || ""}
+                />
+              </button>
               <Button
                 type="button"
                 size="icon-sm"
@@ -197,15 +274,21 @@ export function CourtGalleryManager({
           ))}
           {pendingPreviews.map((preview, index) => (
             <li
-              key={`pending-${preview.file.name}-${index}`}
+              key={preview.id}
               className="relative overflow-hidden rounded-lg ring-1 ring-black/5"
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={preview.url}
-                alt={preview.file.name}
-                className="aspect-4/3 w-full object-cover"
-              />
+              <button
+                type="button"
+                className="block w-full cursor-pointer"
+                aria-label={t("preview")}
+                onClick={() => setPreviewIndex(savedItems.length + index)}
+              >
+                <GalleryThumb
+                  kind={preview.kind}
+                  src={preview.url}
+                  alt={preview.file.name}
+                />
+              </button>
               <Button
                 type="button"
                 size="icon-sm"
@@ -224,6 +307,48 @@ export function CourtGalleryManager({
           ))}
         </ul>
       )}
+      <MediaLightbox
+        items={playlist}
+        index={previewIndex}
+        onIndexChange={setPreviewIndex}
+        closeLabel={t("closePreview")}
+        previousLabel={t("previous")}
+        nextLabel={t("next")}
+        titleLabel={t("preview")}
+        zoomInLabel={t("zoomIn")}
+        zoomOutLabel={t("zoomOut")}
+      />
     </div>
+  );
+}
+
+function GalleryThumb({
+  kind,
+  src,
+  alt,
+}: {
+  kind: "image" | "video";
+  src: string;
+  alt: string;
+}) {
+  if (kind === "video") {
+    return (
+      <span className="relative block aspect-4/3 w-full bg-muted">
+        <video
+          src={src}
+          muted
+          playsInline
+          preload="metadata"
+          className="aspect-4/3 w-full object-cover"
+        />
+        <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/25">
+          <Play className="size-6 text-white" aria-hidden />
+        </span>
+      </span>
+    );
+  }
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={src} alt={alt} className="aspect-4/3 w-full object-cover" loading="lazy" />
   );
 }

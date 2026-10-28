@@ -100,7 +100,7 @@ type Amenity struct {
 	IsActive bool
 }
 
-// CourtMedia is one gallery image of a Court.
+// CourtMedia is one gallery image or video of a Court.
 type CourtMedia struct {
 	ID        uuid.UUID
 	CourtID   uuid.UUID
@@ -110,6 +110,28 @@ type CourtMedia struct {
 	SortOrder int
 	IsCover   bool
 	CreatedAt time.Time
+	// MimeType comes from platform.files (joined on list/get). Empty on create before join.
+	MimeType string
+}
+
+// IsGalleryImage reports whether the media mime is an allowed still image.
+func IsGalleryImage(mime string) bool {
+	switch mime {
+	case "image/jpeg", "image/png", "image/webp":
+		return true
+	default:
+		return false
+	}
+}
+
+// IsGalleryVideo reports whether the media mime is an allowed video.
+func IsGalleryVideo(mime string) bool {
+	switch mime {
+	case "video/mp4", "video/webm":
+		return true
+	default:
+		return false
+	}
 }
 
 type Court struct {

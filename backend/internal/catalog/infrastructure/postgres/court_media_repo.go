@@ -35,6 +35,7 @@ func (r *CourtMediaRepo) List(ctx context.Context, courtID uuid.UUID) ([]entity.
 			ID: row.ID, CourtID: row.CourtID, FileID: row.FileID,
 			CaptionEn: row.CaptionEn, CaptionVi: row.CaptionVi,
 			SortOrder: int(row.SortOrder), IsCover: row.IsCover, CreatedAt: row.CreatedAt,
+			MimeType: row.MimeType,
 		})
 	}
 	return out, nil
@@ -52,6 +53,7 @@ func (r *CourtMediaRepo) Find(ctx context.Context, courtID, mediaID uuid.UUID) (
 		ID: row.ID, CourtID: row.CourtID, FileID: row.FileID,
 		CaptionEn: row.CaptionEn, CaptionVi: row.CaptionVi,
 		SortOrder: int(row.SortOrder), IsCover: row.IsCover, CreatedAt: row.CreatedAt,
+		MimeType: row.MimeType,
 	}, nil
 }
 

@@ -20,7 +20,10 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-const maxGalleryImageBytes = 5 << 20
+const (
+	maxGalleryImageBytes = 5 << 20  // 5 MiB
+	maxGalleryVideoBytes = 50 << 20 // 50 MiB
+)
 
 // loadWritableCourt resolves a non-archived Court inside the caller's tenant (staff membership required).
 func (s *CatalogService) loadWritableCourt(ctx context.Context, courtID, actor uuid.UUID) (*entity.Court, uuid.UUID, error) {
@@ -58,6 +61,7 @@ func (s *CatalogService) AddCourtGalleryImage(
 		return nil, err
 	}
 	ext := ""
+	maxBytes := maxGalleryImageBytes
 	switch mime {
 	case "image/jpeg":
 		ext = ".jpg"
@@ -65,10 +69,19 @@ func (s *CatalogService) AddCourtGalleryImage(
 		ext = ".png"
 	case "image/webp":
 		ext = ".webp"
+	case "video/mp4":
+		ext = ".mp4"
+		maxBytes = maxGalleryVideoBytes
+	case "video/webm":
+		ext = ".webm"
+		maxBytes = maxGalleryVideoBytes
 	default:
-		return nil, apperr.New(apperr.CodeValidation, "unsupported image type")
+		return nil, apperr.New(apperr.CodeValidation, "unsupported media type")
 	}
-	if len(body) == 0 || len(body) > maxGalleryImageBytes {
+	if len(body) == 0 || len(body) > maxBytes {
+		if entity.IsGalleryVideo(mime) {
+			return nil, apperr.New(apperr.CodeValidation, "video must be between 1 byte and 50MB")
+		}
 		return nil, apperr.New(apperr.CodeValidation, "image must be between 1 byte and 5MB")
 	}
 	org, err := s.orgs.FindByID(ctx, orgID)
@@ -101,6 +114,7 @@ func (s *CatalogService) AddCourtGalleryImage(
 	item := &entity.CourtMedia{
 		ID: id.MustNewUUID(), CourtID: court.ID, FileID: fileID,
 		SortOrder: maxSort + 1, IsCover: false, CreatedAt: time.Now().UTC(),
+		MimeType: mime,
 	}
 	err = persistence.WithinTx(ctx, s.pool, func(tx pgx.Tx) error {
 		if err := s.orgs.InsertFile(ctx, tx, stored); err != nil {
@@ -110,7 +124,7 @@ func (s *CatalogService) AddCourtGalleryImage(
 	})
 	if err != nil {
 		_ = os.Remove(abs)
-		return nil, apperr.Wrap(err, apperr.CodeInternal, "store gallery image")
+		return nil, apperr.Wrap(err, apperr.CodeInternal, "store gallery media")
 	}
 	return item, nil
 }
@@ -146,6 +160,9 @@ func (s *CatalogService) UpdateCourtGalleryItem(
 		item.SortOrder = *in.SortOrder
 	}
 	setCover := in.IsCover != nil && *in.IsCover
+	if setCover && !entity.IsGalleryImage(item.MimeType) {
+		return nil, apperr.New(apperr.CodeValidation, "only images can be set as cover")
+	}
 	if in.IsCover != nil {
 		item.IsCover = *in.IsCover
 	}

@@ -67,11 +67,13 @@ func (q *Queries) DeleteCourtMedia(ctx context.Context, arg DeleteCourtMediaPara
 }
 
 const findCourtMediaByID = `-- name: FindCourtMediaByID :one
-SELECT id, court_id, file_id,
-       COALESCE(caption_en, '') AS caption_en, COALESCE(caption_vi, '') AS caption_vi,
-       sort_order, is_cover, created_at
-FROM catalog.court_media
-WHERE court_id = $1 AND id = $2
+SELECT m.id, m.court_id, m.file_id,
+       COALESCE(m.caption_en, '') AS caption_en, COALESCE(m.caption_vi, '') AS caption_vi,
+       m.sort_order, m.is_cover, m.created_at,
+       COALESCE(f.mime_type, '') AS mime_type
+FROM catalog.court_media m
+LEFT JOIN platform.files f ON f.id = m.file_id
+WHERE m.court_id = $1 AND m.id = $2
 `
 
 type FindCourtMediaByIDParams struct {
@@ -88,6 +90,7 @@ type FindCourtMediaByIDRow struct {
 	SortOrder int32     `json:"sort_order"`
 	IsCover   bool      `json:"is_cover"`
 	CreatedAt time.Time `json:"created_at"`
+	MimeType  string    `json:"mime_type"`
 }
 
 func (q *Queries) FindCourtMediaByID(ctx context.Context, arg FindCourtMediaByIDParams) (FindCourtMediaByIDRow, error) {
@@ -102,17 +105,20 @@ func (q *Queries) FindCourtMediaByID(ctx context.Context, arg FindCourtMediaByID
 		&i.SortOrder,
 		&i.IsCover,
 		&i.CreatedAt,
+		&i.MimeType,
 	)
 	return i, err
 }
 
 const listCourtMedia = `-- name: ListCourtMedia :many
-SELECT id, court_id, file_id,
-       COALESCE(caption_en, '') AS caption_en, COALESCE(caption_vi, '') AS caption_vi,
-       sort_order, is_cover, created_at
-FROM catalog.court_media
-WHERE court_id = $1
-ORDER BY sort_order ASC, created_at ASC
+SELECT m.id, m.court_id, m.file_id,
+       COALESCE(m.caption_en, '') AS caption_en, COALESCE(m.caption_vi, '') AS caption_vi,
+       m.sort_order, m.is_cover, m.created_at,
+       COALESCE(f.mime_type, '') AS mime_type
+FROM catalog.court_media m
+LEFT JOIN platform.files f ON f.id = m.file_id
+WHERE m.court_id = $1
+ORDER BY m.sort_order ASC, m.created_at ASC
 `
 
 type ListCourtMediaRow struct {
@@ -124,6 +130,7 @@ type ListCourtMediaRow struct {
 	SortOrder int32     `json:"sort_order"`
 	IsCover   bool      `json:"is_cover"`
 	CreatedAt time.Time `json:"created_at"`
+	MimeType  string    `json:"mime_type"`
 }
 
 func (q *Queries) ListCourtMedia(ctx context.Context, courtID uuid.UUID) ([]ListCourtMediaRow, error) {
@@ -144,6 +151,7 @@ func (q *Queries) ListCourtMedia(ctx context.Context, courtID uuid.UUID) ([]List
 			&i.SortOrder,
 			&i.IsCover,
 			&i.CreatedAt,
+			&i.MimeType,
 		); err != nil {
 			return nil, err
 		}

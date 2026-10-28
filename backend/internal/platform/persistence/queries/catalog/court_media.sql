@@ -4,19 +4,23 @@ INSERT INTO catalog.court_media
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8);
 
 -- name: ListCourtMedia :many
-SELECT id, court_id, file_id,
-       COALESCE(caption_en, '') AS caption_en, COALESCE(caption_vi, '') AS caption_vi,
-       sort_order, is_cover, created_at
-FROM catalog.court_media
-WHERE court_id = $1
-ORDER BY sort_order ASC, created_at ASC;
+SELECT m.id, m.court_id, m.file_id,
+       COALESCE(m.caption_en, '') AS caption_en, COALESCE(m.caption_vi, '') AS caption_vi,
+       m.sort_order, m.is_cover, m.created_at,
+       COALESCE(f.mime_type, '') AS mime_type
+FROM catalog.court_media m
+LEFT JOIN platform.files f ON f.id = m.file_id
+WHERE m.court_id = $1
+ORDER BY m.sort_order ASC, m.created_at ASC;
 
 -- name: FindCourtMediaByID :one
-SELECT id, court_id, file_id,
-       COALESCE(caption_en, '') AS caption_en, COALESCE(caption_vi, '') AS caption_vi,
-       sort_order, is_cover, created_at
-FROM catalog.court_media
-WHERE court_id = $1 AND id = $2;
+SELECT m.id, m.court_id, m.file_id,
+       COALESCE(m.caption_en, '') AS caption_en, COALESCE(m.caption_vi, '') AS caption_vi,
+       m.sort_order, m.is_cover, m.created_at,
+       COALESCE(f.mime_type, '') AS mime_type
+FROM catalog.court_media m
+LEFT JOIN platform.files f ON f.id = m.file_id
+WHERE m.court_id = $1 AND m.id = $2;
 
 -- name: UpdateCourtGalleryItem :exec
 UPDATE catalog.court_media

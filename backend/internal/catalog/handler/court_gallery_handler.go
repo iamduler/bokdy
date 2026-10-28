@@ -3,6 +3,8 @@ package handler
 import (
 	"io"
 	"net/http"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"bokdy/internal/catalog/entity"
@@ -15,11 +17,13 @@ import (
 	"github.com/google/uuid"
 )
 
-const maxGalleryUploadBytes = 5 << 20
+// Allow video payloads up to service max; image validation is stricter in the service.
+const maxGalleryUploadBytes = 50 << 20
 
 type courtGalleryItemDTO struct {
 	ID        string `json:"id"`
 	FileID    string `json:"file_id"`
+	MimeType  string `json:"mime_type"`
 	CaptionEn string `json:"caption_en,omitempty"`
 	CaptionVi string `json:"caption_vi,omitempty"`
 	SortOrder int    `json:"sort_order"`
@@ -81,10 +85,7 @@ func (h *CatalogHandler) UploadCourtGallery(c *gin.Context) {
 		httpx.Error(c, apperr.Wrap(err, apperr.CodeBadRequest, "read file"))
 		return
 	}
-	mimeType := header.Header.Get("Content-Type")
-	if mimeType == "" {
-		mimeType = http.DetectContentType(body)
-	}
+	mimeType := normalizeGalleryMime(header.Header.Get("Content-Type"), header.Filename, body)
 	item, err := h.catalog.AddCourtGalleryImage(c.Request.Context(), id, uid, header.Filename, mimeType, body)
 	if err != nil {
 		httpx.Error(c, err)
@@ -170,7 +171,7 @@ func (h *CatalogHandler) PutCourtAmenities(c *gin.Context) {
 
 func toCourtGalleryDTO(item *entity.CourtMedia) courtGalleryItemDTO {
 	return courtGalleryItemDTO{
-		ID: item.ID.String(), FileID: item.FileID.String(),
+		ID: item.ID.String(), FileID: item.FileID.String(), MimeType: item.MimeType,
 		CaptionEn: item.CaptionEn, CaptionVi: item.CaptionVi,
 		SortOrder: item.SortOrder, IsCover: item.IsCover,
 		CreatedAt: item.CreatedAt.UTC().Format(time.RFC3339),
@@ -188,4 +189,30 @@ func toAmenityDTOs(c *gin.Context, items []entity.Amenity) []amenityDTO {
 		})
 	}
 	return out
+}
+
+// normalizeGalleryMime prefers a known Content-Type; falls back to extension then sniffing.
+func normalizeGalleryMime(headerType, filename string, body []byte) string {
+	ct := strings.TrimSpace(strings.Split(headerType, ";")[0])
+	if entity.IsGalleryImage(ct) || entity.IsGalleryVideo(ct) {
+		return ct
+	}
+	switch strings.ToLower(filepath.Ext(filename)) {
+	case ".jpg", ".jpeg":
+		return "image/jpeg"
+	case ".png":
+		return "image/png"
+	case ".webp":
+		return "image/webp"
+	case ".mp4":
+		return "video/mp4"
+	case ".webm":
+		return "video/webm"
+	}
+	detected := http.DetectContentType(body)
+	detected = strings.TrimSpace(strings.Split(detected, ";")[0])
+	if entity.IsGalleryImage(detected) || entity.IsGalleryVideo(detected) {
+		return detected
+	}
+	return ct
 }

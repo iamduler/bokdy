@@ -3689,7 +3689,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List court gallery images */
+        /** List court gallery media (images and videos) */
         get: {
             parameters: {
                 query?: never;
@@ -3721,7 +3721,10 @@ export interface paths {
             };
         };
         put?: never;
-        /** Upload a court gallery image */
+        /**
+         * Upload a court gallery image or video
+         * @description Accepts JPEG/PNG/WebP (max 5MB) or MP4/WebM (max 50MB).
+         */
         post: {
             parameters: {
                 query?: never;
@@ -3737,7 +3740,10 @@ export interface paths {
             requestBody: {
                 content: {
                     "multipart/form-data": {
-                        /** Format: binary */
+                        /**
+                         * Format: binary
+                         * @description image/jpeg, image/png, image/webp, video/mp4, or video/webm
+                         */
                         file: string;
                     };
                 };
@@ -7478,6 +7484,11 @@ export interface components {
             id: string;
             /** Format: uuid */
             file_id: string;
+            /**
+             * @description Stored file MIME (e.g. image/jpeg, video/mp4)
+             * @example image/jpeg
+             */
+            mime_type: string;
             caption_en?: string;
             caption_vi?: string;
             sort_order: number;
