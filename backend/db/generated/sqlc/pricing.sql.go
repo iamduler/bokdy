@@ -104,39 +104,21 @@ func (q *Queries) FindActivePriceVersion(ctx context.Context, tenantID uuid.UUID
 	return i, err
 }
 
-const findCategoryInTenant = `-- name: FindCategoryInTenant :one
-SELECT id FROM catalog.resource_categories
-WHERE id = $1 AND tenant_id = $2 AND resource_type = 'court' AND deleted_at IS NULL
-`
-
-type FindCategoryInTenantParams struct {
-	ID       uuid.UUID `json:"id"`
-	TenantID uuid.UUID `json:"tenant_id"`
-}
-
-func (q *Queries) FindCategoryInTenant(ctx context.Context, arg FindCategoryInTenantParams) (uuid.UUID, error) {
-	row := q.db.QueryRow(ctx, findCategoryInTenant, arg.ID, arg.TenantID)
-	var id uuid.UUID
-	err := row.Scan(&id)
-	return id, err
-}
-
 const findCourtForPricing = `-- name: FindCourtForPricing :one
-SELECT r.id, r.public_id, r.tenant_id, r.location_id, r.court_type_id, r.status::text AS status,
-       COALESCE(ct.slot_duration_minutes, 60)::int AS slot_duration_minutes
-FROM catalog.resources r
-LEFT JOIN catalog.resource_categories ct ON ct.id = r.court_type_id
+SELECT r.id, r.public_id, r.tenant_id, r.branch_id, r.sport_id, r.status::text AS status,
+       60::int AS slot_duration_minutes
+FROM catalog.courts r
 WHERE r.id = $1 AND r.resource_type = 'court' AND r.deleted_at IS NULL
 `
 
 type FindCourtForPricingRow struct {
-	ID                  uuid.UUID  `json:"id"`
-	PublicID            string     `json:"public_id"`
-	TenantID            uuid.UUID  `json:"tenant_id"`
-	LocationID          uuid.UUID  `json:"location_id"`
-	CourtTypeID         *uuid.UUID `json:"court_type_id"`
-	Status              string     `json:"status"`
-	SlotDurationMinutes int32      `json:"slot_duration_minutes"`
+	ID                  uuid.UUID `json:"id"`
+	PublicID            string    `json:"public_id"`
+	TenantID            uuid.UUID `json:"tenant_id"`
+	BranchID            uuid.UUID `json:"branch_id"`
+	SportID             uuid.UUID `json:"sport_id"`
+	Status              string    `json:"status"`
+	SlotDurationMinutes int32     `json:"slot_duration_minutes"`
 }
 
 func (q *Queries) FindCourtForPricing(ctx context.Context, id uuid.UUID) (FindCourtForPricingRow, error) {
@@ -146,8 +128,8 @@ func (q *Queries) FindCourtForPricing(ctx context.Context, id uuid.UUID) (FindCo
 		&i.ID,
 		&i.PublicID,
 		&i.TenantID,
-		&i.LocationID,
-		&i.CourtTypeID,
+		&i.BranchID,
+		&i.SportID,
 		&i.Status,
 		&i.SlotDurationMinutes,
 	)
@@ -155,21 +137,20 @@ func (q *Queries) FindCourtForPricing(ctx context.Context, id uuid.UUID) (FindCo
 }
 
 const findCourtForPricingByPublicID = `-- name: FindCourtForPricingByPublicID :one
-SELECT r.id, r.public_id, r.tenant_id, r.location_id, r.court_type_id, r.status::text AS status,
-       COALESCE(ct.slot_duration_minutes, 60)::int AS slot_duration_minutes
-FROM catalog.resources r
-LEFT JOIN catalog.resource_categories ct ON ct.id = r.court_type_id
+SELECT r.id, r.public_id, r.tenant_id, r.branch_id, r.sport_id, r.status::text AS status,
+       60::int AS slot_duration_minutes
+FROM catalog.courts r
 WHERE r.public_id = $1 AND r.resource_type = 'court' AND r.deleted_at IS NULL
 `
 
 type FindCourtForPricingByPublicIDRow struct {
-	ID                  uuid.UUID  `json:"id"`
-	PublicID            string     `json:"public_id"`
-	TenantID            uuid.UUID  `json:"tenant_id"`
-	LocationID          uuid.UUID  `json:"location_id"`
-	CourtTypeID         *uuid.UUID `json:"court_type_id"`
-	Status              string     `json:"status"`
-	SlotDurationMinutes int32      `json:"slot_duration_minutes"`
+	ID                  uuid.UUID `json:"id"`
+	PublicID            string    `json:"public_id"`
+	TenantID            uuid.UUID `json:"tenant_id"`
+	BranchID            uuid.UUID `json:"branch_id"`
+	SportID             uuid.UUID `json:"sport_id"`
+	Status              string    `json:"status"`
+	SlotDurationMinutes int32     `json:"slot_duration_minutes"`
 }
 
 func (q *Queries) FindCourtForPricingByPublicID(ctx context.Context, publicID string) (FindCourtForPricingByPublicIDRow, error) {
@@ -179,8 +160,8 @@ func (q *Queries) FindCourtForPricingByPublicID(ctx context.Context, publicID st
 		&i.ID,
 		&i.PublicID,
 		&i.TenantID,
-		&i.LocationID,
-		&i.CourtTypeID,
+		&i.BranchID,
+		&i.SportID,
 		&i.Status,
 		&i.SlotDurationMinutes,
 	)
@@ -246,15 +227,26 @@ func (q *Queries) FindPriceVersion(ctx context.Context, id uuid.UUID) (PricingPr
 	return i, err
 }
 
+const findSportByID = `-- name: FindSportByID :one
+SELECT id FROM catalog.sports WHERE id = $1
+`
+
+func (q *Queries) FindSportByID(ctx context.Context, id uuid.UUID) (uuid.UUID, error) {
+	row := q.db.QueryRow(ctx, findSportByID, id)
+	var id_2 uuid.UUID
+	err := row.Scan(&id_2)
+	return id_2, err
+}
+
 const insertCategoryPrice = `-- name: InsertCategoryPrice :exec
-INSERT INTO pricing.category_prices (id, price_version_id, category_id, amount, created_at)
+INSERT INTO pricing.category_prices (id, price_version_id, sport_id, amount, created_at)
 VALUES ($1, $2, $3, $4, $5)
 `
 
 type InsertCategoryPriceParams struct {
 	ID             uuid.UUID      `json:"id"`
 	PriceVersionID uuid.UUID      `json:"price_version_id"`
-	CategoryID     uuid.UUID      `json:"category_id"`
+	SportID        uuid.UUID      `json:"sport_id"`
 	Amount         pgtype.Numeric `json:"amount"`
 	CreatedAt      time.Time      `json:"created_at"`
 }
@@ -263,7 +255,7 @@ func (q *Queries) InsertCategoryPrice(ctx context.Context, arg InsertCategoryPri
 	_, err := q.db.Exec(ctx, insertCategoryPrice,
 		arg.ID,
 		arg.PriceVersionID,
-		arg.CategoryID,
+		arg.SportID,
 		arg.Amount,
 		arg.CreatedAt,
 	)
@@ -306,7 +298,7 @@ func (q *Queries) InsertTimeRule(ctx context.Context, arg InsertTimeRuleParams) 
 }
 
 const listCategoryPrices = `-- name: ListCategoryPrices :many
-SELECT id, price_version_id, category_id, amount, created_at
+SELECT id, price_version_id, sport_id, amount, created_at
 FROM pricing.category_prices
 WHERE price_version_id = $1
 ORDER BY created_at ASC
@@ -324,7 +316,7 @@ func (q *Queries) ListCategoryPrices(ctx context.Context, priceVersionID uuid.UU
 		if err := rows.Scan(
 			&i.ID,
 			&i.PriceVersionID,
-			&i.CategoryID,
+			&i.SportID,
 			&i.Amount,
 			&i.CreatedAt,
 		); err != nil {

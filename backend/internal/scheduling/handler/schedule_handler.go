@@ -111,7 +111,7 @@ type marketplaceBranchDTO struct {
 
 type marketplaceCourtDTO struct {
 	PublicID    string `json:"public_id"`
-	CourtTypeID string `json:"court_type_id,omitempty"`
+	SportID     string `json:"sport_id,omitempty"`
 	Code        string `json:"code"`
 	Name        string `json:"name"`
 	NameEn      string `json:"name_en,omitempty"`
@@ -436,7 +436,7 @@ func toSpecialDTO(c *gin.Context, h *entity.SpecialSchedule) specialScheduleDTO 
 
 func toBlockDTO(b *entity.ResourceBlock) blockDTO {
 	return blockDTO{
-		ID: b.ID.String(), CourtID: b.ResourceID.String(),
+		ID: b.ID.String(), CourtID: b.CourtID.String(),
 		StartsAt: b.StartsAt.Format(time.RFC3339), EndsAt: b.EndsAt.Format(time.RFC3339), Reason: b.Reason,
 	}
 }
@@ -445,7 +445,7 @@ func toSlotDTOs(slots []entity.TimeSlot) []timeSlotDTO {
 	out := make([]timeSlotDTO, 0, len(slots))
 	for _, s := range slots {
 		out = append(out, timeSlotDTO{
-			ID: s.ID.String(), CourtID: s.ResourceID.String(),
+			ID: s.ID.String(), CourtID: s.CourtID.String(),
 			StartsAt: s.StartsAt.Format(time.RFC3339), EndsAt: s.EndsAt.Format(time.RFC3339),
 			IsAvailable: s.IsAvailable,
 		})
@@ -469,8 +469,8 @@ func toMarketCourtDTO(c *gin.Context, court *repository.MarketplaceCourt) market
 		NameEn: court.NameEn, NameVi: court.NameVi, Status: court.Status,
 		IsBookable: court.IsBookable, SlotMinutes: court.SlotMinutes,
 	}
-	if court.CourtTypeID != uuid.Nil {
-		dto.CourtTypeID = court.CourtTypeID.String()
+	if court.SportID != uuid.Nil {
+		dto.SportID = court.SportID.String()
 	}
 	return dto
 }

@@ -17,7 +17,7 @@ type BranchRepository interface {
 	ListByOrg(ctx context.Context, orgID uuid.UUID) ([]entity.Branch, error)
 	Update(ctx context.Context, tx pgx.Tx, branch *entity.Branch) error
 	UpdateMedia(ctx context.Context, tx pgx.Tx, orgID, branchID uuid.UUID, logoFileID, bannerFileID *uuid.UUID) error
-	UpdateStatus(ctx context.Context, tx pgx.Tx, orgID, branchID uuid.UUID, status entity.LocationStatus) error
+	UpdateStatus(ctx context.Context, tx pgx.Tx, orgID, branchID uuid.UUID, status entity.BranchStatus) error
 	CodeExists(ctx context.Context, businessUnitID uuid.UUID, code string, excludeID *uuid.UUID) (bool, error)
 	MaxCodeSeq(ctx context.Context, businessUnitID uuid.UUID, prefix string) (int, error)
 	NameExists(ctx context.Context, orgID uuid.UUID, nameEn, nameVi string, excludeID *uuid.UUID) (bool, error)

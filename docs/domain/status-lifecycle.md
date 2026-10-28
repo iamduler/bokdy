@@ -349,9 +349,9 @@ Canceled
 
 ---
 
-# 7. Resource (Court)
+# 7. Court
 
-W4 maps Court to `catalog.resources` where `resource_type = court`.
+W4 maps Court to `catalog.courts` (column `resource_type` remains for legacy discriminator; MVP rows are court). Court requires `sport_id`; no `court_type_id` (dropped in 00032).
 
 API verbs use open/close/maintenance/archive; stored statuses:
 
@@ -402,13 +402,13 @@ archived
 ## Rules
 
 - Archive requires `inactive`. Future-booking check deferred until Booking exists (W7).
-- Court Type (`resource_categories`) uses `active` / `archived`. Archive type is blocked while any non-archived court references it.
+- Court Type (`catalog.court_types`) uses `active` / `archived`. Courts no longer reference types; archive is not blocked by court FKs.
 
 ---
 
 # 7b. Branch (location)
 
-W2 maps Branch to `organization.locations`.
+W2 maps Branch to `organization.branches`.
 
 API verbs use open/close/maintenance/archive; stored statuses:
 

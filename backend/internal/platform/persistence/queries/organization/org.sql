@@ -113,7 +113,7 @@ SELECT o.id, o.public_id, o.tenant_id, o.code,
        t.status AS tenant_status,
        (
          SELECT COUNT(*)::int
-         FROM organization.locations l
+         FROM organization.branches l
          WHERE l.organization_id = o.id AND l.deleted_at IS NULL
        ) AS branch_count
 FROM organization.organizations o
@@ -133,8 +133,8 @@ WHERE o.deleted_at IS NULL
     sqlc.narg(province_id)::uuid IS NULL
     OR EXISTS (
       SELECT 1
-      FROM organization.locations l
-      JOIN organization.location_addresses a ON a.location_id = l.id
+      FROM organization.branches l
+      JOIN organization.branch_addresses a ON a.branch_id = l.id
       WHERE l.organization_id = o.id
         AND l.deleted_at IS NULL
         AND a.division_scheme = 'current_v2'
@@ -146,6 +146,6 @@ LIMIT sqlc.arg(row_limit);
 
 -- name: CountBranchesByOrganization :one
 SELECT COUNT(*)::int AS branch_count
-FROM organization.locations
+FROM organization.branches
 WHERE organization_id = $1 AND deleted_at IS NULL;
 

@@ -206,13 +206,6 @@ func (s *CatalogService) ArchiveCourtType(ctx context.Context, typeID, actor uui
 	if t.Status == entity.CategoryArchived {
 		return catalogerrors.ErrInvalidCourtTypeStatus
 	}
-	n, err := s.types.CountNonArchivedCourts(ctx, tenantID, typeID)
-	if err != nil {
-		return apperr.Wrap(err, apperr.CodeInternal, "count courts")
-	}
-	if n > 0 {
-		return catalogerrors.ErrCourtTypeInUse
-	}
 	now := time.Now().UTC()
 	var outboxID uuid.UUID
 	err = persistence.WithinTx(ctx, s.pool, func(tx pgx.Tx) error {

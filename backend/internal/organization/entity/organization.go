@@ -105,13 +105,13 @@ const (
 	BusinessUnitInactive BusinessUnitStatus = "inactive"
 )
 
-type LocationStatus string
+type BranchStatus string
 
 const (
-	LocationActive      LocationStatus = "active"
-	LocationInactive    LocationStatus = "inactive"
-	LocationMaintenance LocationStatus = "maintenance"
-	LocationArchived    LocationStatus = "archived"
+	BranchActive      BranchStatus = "active"
+	BranchInactive    BranchStatus = "inactive"
+	BranchMaintenance BranchStatus = "maintenance"
+	BranchArchived    BranchStatus = "archived"
 )
 
 const (
@@ -170,7 +170,7 @@ type BusinessUnit struct {
 type StaffMember struct {
 	ID             uuid.UUID
 	OrganizationID uuid.UUID
-	LocationID     *uuid.UUID
+	BranchID       *uuid.UUID
 	UserID         uuid.UUID
 	Title          string
 	Status         StaffStatus
@@ -213,7 +213,7 @@ type Branch struct {
 	DescriptionVi  string
 	LogoFileID     *uuid.UUID
 	BannerFileID   *uuid.UUID
-	Status         LocationStatus
+	Status         BranchStatus
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
 	DeletedAt      *time.Time
@@ -231,7 +231,7 @@ const (
 
 type BranchAddress struct {
 	ID               uuid.UUID
-	LocationID       uuid.UUID
+	BranchID         uuid.UUID
 	DivisionScheme   AdminDivisionScheme
 	CountryID        *uuid.UUID
 	ProvinceFormerID *uuid.UUID
@@ -260,14 +260,14 @@ type OrganizationAddress struct {
 }
 
 type LocationMedia struct {
-	ID         uuid.UUID
-	LocationID uuid.UUID
-	FileID     uuid.UUID
-	CaptionEn  string
-	CaptionVi  string
-	SortOrder  int
-	IsCover    bool
-	CreatedAt  time.Time
+	ID        uuid.UUID
+	BranchID  uuid.UUID
+	FileID    uuid.UUID
+	CaptionEn string
+	CaptionVi string
+	SortOrder int
+	IsCover   bool
+	CreatedAt time.Time
 }
 
 type Amenity struct {

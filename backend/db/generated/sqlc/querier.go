@@ -23,7 +23,8 @@ type Querier interface {
 	CancelBooking(ctx context.Context, arg CancelBookingParams) error
 	CancelReservation(ctx context.Context, arg CancelReservationParams) error
 	CheckInBooking(ctx context.Context, arg CheckInBookingParams) error
-	ClearLocationMediaCover(ctx context.Context, locationID uuid.UUID) error
+	ClearBranchMediaCover(ctx context.Context, branchID uuid.UUID) error
+	ClearCourtMediaCover(ctx context.Context, courtID uuid.UUID) error
 	ClearUserPhoneVerified(ctx context.Context, id uuid.UUID) error
 	CompleteBooking(ctx context.Context, arg CompleteBookingParams) error
 	CompleteResourceMaintenance(ctx context.Context, id uuid.UUID) error
@@ -39,8 +40,7 @@ type Querier interface {
 	CountBookingsByUser(ctx context.Context, userID *uuid.UUID) (int32, error)
 	CountBranchesByOrganization(ctx context.Context, organizationID uuid.UUID) (int32, error)
 	CountConflictingBlocks(ctx context.Context, arg CountConflictingBlocksParams) (int64, error)
-	CountCourtsByLocationIDs(ctx context.Context, locationIds []uuid.UUID) ([]CountCourtsByLocationIDsRow, error)
-	CountNonArchivedCourtsByType(ctx context.Context, arg CountNonArchivedCourtsByTypeParams) (int64, error)
+	CountCourtsByLocationIDs(ctx context.Context, branchIds []uuid.UUID) ([]CountCourtsByLocationIDsRow, error)
 	CountOverlappingBlocks(ctx context.Context, arg CountOverlappingBlocksParams) (int64, error)
 	CountOverlappingBlocksExcludingReference(ctx context.Context, arg CountOverlappingBlocksExcludingReferenceParams) (int64, error)
 	CountOverlappingBookings(ctx context.Context, arg CountOverlappingBookingsParams) (int64, error)
@@ -51,9 +51,12 @@ type Querier interface {
 	CourtTypeNameExists(ctx context.Context, arg CourtTypeNameExistsParams) (bool, error)
 	CreateBooking(ctx context.Context, arg CreateBookingParams) error
 	CreateBookingResource(ctx context.Context, arg CreateBookingResourceParams) error
+	CreateBranchMedia(ctx context.Context, arg CreateBranchMediaParams) error
 	CreateBusinessUnit(ctx context.Context, arg CreateBusinessUnitParams) error
 	CreateCheckIn(ctx context.Context, arg CreateCheckInParams) error
 	CreateCourt(ctx context.Context, arg CreateCourtParams) error
+	CreateCourtAmenity(ctx context.Context, arg CreateCourtAmenityParams) error
+	CreateCourtMedia(ctx context.Context, arg CreateCourtMediaParams) error
 	CreateCourtType(ctx context.Context, arg CreateCourtTypeParams) error
 	CreateCustomer(ctx context.Context, arg CreateCustomerParams) error
 	CreateCustomerContact(ctx context.Context, arg CreateCustomerContactParams) error
@@ -67,7 +70,6 @@ type Querier interface {
 	CreateLocation(ctx context.Context, arg CreateLocationParams) error
 	CreateLocationAddress(ctx context.Context, arg CreateLocationAddressParams) error
 	CreateLocationAmenity(ctx context.Context, arg CreateLocationAmenityParams) error
-	CreateLocationMedia(ctx context.Context, arg CreateLocationMediaParams) error
 	CreateLocationSettings(ctx context.Context, arg CreateLocationSettingsParams) error
 	CreateLocationSport(ctx context.Context, arg CreateLocationSportParams) error
 	CreateOrganization(ctx context.Context, arg CreateOrganizationParams) error
@@ -87,13 +89,15 @@ type Querier interface {
 	CreateTenant(ctx context.Context, arg CreateTenantParams) error
 	CreateUser(ctx context.Context, arg CreateUserParams) error
 	CreateUserProfile(ctx context.Context, arg CreateUserProfileParams) error
-	DeleteBusinessHoursByLocation(ctx context.Context, locationID uuid.UUID) error
-	DeleteLocationAddresses(ctx context.Context, locationID uuid.UUID) error
-	DeleteLocationAmenities(ctx context.Context, locationID uuid.UUID) error
-	DeleteLocationMedia(ctx context.Context, arg DeleteLocationMediaParams) error
-	DeleteLocationSports(ctx context.Context, locationID uuid.UUID) error
+	DeleteBranchMedia(ctx context.Context, arg DeleteBranchMediaParams) error
+	DeleteBusinessHoursByLocation(ctx context.Context, branchID uuid.UUID) error
+	DeleteCourtAmenities(ctx context.Context, courtID uuid.UUID) error
+	DeleteCourtMedia(ctx context.Context, arg DeleteCourtMediaParams) error
+	DeleteLocationAddresses(ctx context.Context, branchID uuid.UUID) error
+	DeleteLocationAmenities(ctx context.Context, branchID uuid.UUID) error
+	DeleteLocationSports(ctx context.Context, branchID uuid.UUID) error
 	DeleteMaintenanceBlock(ctx context.Context, arg DeleteMaintenanceBlockParams) error
-	DeleteMaintenanceBlocksByResource(ctx context.Context, resourceID uuid.UUID) error
+	DeleteMaintenanceBlocksByResource(ctx context.Context, courtID uuid.UUID) error
 	DeleteOrganizationAddresses(ctx context.Context, organizationID uuid.UUID) error
 	DeleteProjectionsFrom(ctx context.Context, arg DeleteProjectionsFromParams) error
 	DeleteResourceBlock(ctx context.Context, arg DeleteResourceBlockParams) error
@@ -110,14 +114,17 @@ type Querier interface {
 	FindBookingForUpdate(ctx context.Context, id uuid.UUID) (BookingBooking, error)
 	FindBranchByID(ctx context.Context, arg FindBranchByIDParams) (FindBranchByIDRow, error)
 	FindBranchByLocationID(ctx context.Context, id uuid.UUID) (FindBranchByLocationIDRow, error)
-	FindCategoryInTenant(ctx context.Context, arg FindCategoryInTenantParams) (uuid.UUID, error)
+	FindBranchMediaByID(ctx context.Context, arg FindBranchMediaByIDParams) (FindBranchMediaByIDRow, error)
 	FindCompletedRefundByIntent(ctx context.Context, paymentIntentID uuid.UUID) (PaymentRefund, error)
 	FindCourtByID(ctx context.Context, arg FindCourtByIDParams) (FindCourtByIDRow, error)
+	FindCourtByResourceID(ctx context.Context, id uuid.UUID) (FindCourtByResourceIDRow, error)
 	FindCourtForBooking(ctx context.Context, id uuid.UUID) (FindCourtForBookingRow, error)
 	FindCourtForPricing(ctx context.Context, id uuid.UUID) (FindCourtForPricingRow, error)
 	FindCourtForPricingByPublicID(ctx context.Context, publicID string) (FindCourtForPricingByPublicIDRow, error)
 	FindCourtForReservation(ctx context.Context, id uuid.UUID) (FindCourtForReservationRow, error)
 	FindCourtForSync(ctx context.Context, id uuid.UUID) (FindCourtForSyncRow, error)
+	FindCourtMediaByID(ctx context.Context, arg FindCourtMediaByIDParams) (FindCourtMediaByIDRow, error)
+	FindCourtTypeByCode(ctx context.Context, arg FindCourtTypeByCodeParams) (FindCourtTypeByCodeRow, error)
 	FindCourtTypeByID(ctx context.Context, arg FindCourtTypeByIDParams) (FindCourtTypeByIDRow, error)
 	FindCustomerByID(ctx context.Context, arg FindCustomerByIDParams) (FindCustomerByIDRow, error)
 	FindCustomerByIDAnyTenant(ctx context.Context, id uuid.UUID) (FindCustomerByIDAnyTenantRow, error)
@@ -127,16 +134,15 @@ type Querier interface {
 	FindDefaultPriceList(ctx context.Context, tenantID uuid.UUID) (FindDefaultPriceListRow, error)
 	FindFileByID(ctx context.Context, id uuid.UUID) (FindFileByIDRow, error)
 	FindIdentityByPhone(ctx context.Context, phone *string) (FindIdentityByPhoneRow, error)
-	FindInProgressMaintenance(ctx context.Context, resourceID uuid.UUID) (FindInProgressMaintenanceRow, error)
+	FindInProgressMaintenance(ctx context.Context, courtID uuid.UUID) (FindInProgressMaintenanceRow, error)
 	FindInvitationByID(ctx context.Context, arg FindInvitationByIDParams) (OrganizationStaffInvitation, error)
 	FindInvitationByToken(ctx context.Context, invitationToken string) (OrganizationStaffInvitation, error)
 	FindInvoiceByBooking(ctx context.Context, bookingID uuid.UUID) (FindInvoiceByBookingRow, error)
 	FindInvoiceByID(ctx context.Context, id uuid.UUID) (FindInvoiceByIDRow, error)
 	FindLocalIdentityByEmail(ctx context.Context, lower string) (FindLocalIdentityByEmailRow, error)
-	FindLocationMediaByID(ctx context.Context, arg FindLocationMediaByIDParams) (FindLocationMediaByIDRow, error)
 	FindMarketplaceBranchByPublicID(ctx context.Context, publicID string) (FindMarketplaceBranchByPublicIDRow, error)
 	FindMarketplaceCourtByPublicID(ctx context.Context, publicID string) (FindMarketplaceCourtByPublicIDRow, error)
-	FindOpenMaintenance(ctx context.Context, resourceID uuid.UUID) (FindOpenMaintenanceRow, error)
+	FindOpenMaintenance(ctx context.Context, courtID uuid.UUID) (FindOpenMaintenanceRow, error)
 	FindOpenPaymentIntentByInvoice(ctx context.Context, invoiceID uuid.UUID) (PaymentPaymentIntent, error)
 	FindOrganizationByID(ctx context.Context, id uuid.UUID) (FindOrganizationByIDRow, error)
 	FindOrganizationByTenant(ctx context.Context, tenantID uuid.UUID) (FindOrganizationByTenantRow, error)
@@ -150,6 +156,7 @@ type Querier interface {
 	FindResourceBlock(ctx context.Context, arg FindResourceBlockParams) (FindResourceBlockRow, error)
 	FindRoleByCode(ctx context.Context, code string) (FindRoleByCodeRow, error)
 	FindRoleByID(ctx context.Context, id uuid.UUID) (FindRoleByIDRow, error)
+	FindSportByID(ctx context.Context, id uuid.UUID) (uuid.UUID, error)
 	FindSportsByIDs(ctx context.Context, ids []uuid.UUID) ([]FindSportsByIDsRow, error)
 	FindStaffByID(ctx context.Context, arg FindStaffByIDParams) (FindStaffByIDRow, error)
 	FindStaffByOrgUser(ctx context.Context, arg FindStaffByOrgUserParams) (FindStaffByOrgUserRow, error)
@@ -172,7 +179,7 @@ type Querier interface {
 	IsActiveStaffMember(ctx context.Context, arg IsActiveStaffMemberParams) (bool, error)
 	LinkCustomerUser(ctx context.Context, arg LinkCustomerUserParams) error
 	ListActiveAmenities(ctx context.Context) ([]ListActiveAmenitiesRow, error)
-	ListActiveCourtIDsByLocation(ctx context.Context, locationID uuid.UUID) ([]uuid.UUID, error)
+	ListActiveCourtIDsByLocation(ctx context.Context, branchID uuid.UUID) ([]uuid.UUID, error)
 	ListActiveLocales(ctx context.Context) ([]ListActiveLocalesRow, error)
 	ListAdminOwners(ctx context.Context, arg ListAdminOwnersParams) ([]ListAdminOwnersRow, error)
 	ListAdminPlayers(ctx context.Context, arg ListAdminPlayersParams) ([]ListAdminPlayersRow, error)
@@ -181,9 +188,13 @@ type Querier interface {
 	ListAmenitiesByIDs(ctx context.Context, ids []uuid.UUID) ([]ListAmenitiesByIDsRow, error)
 	ListBookingsByCustomers(ctx context.Context, arg ListBookingsByCustomersParams) ([]BookingBooking, error)
 	ListBookingsByTenant(ctx context.Context, arg ListBookingsByTenantParams) ([]BookingBooking, error)
+	ListBranchMedia(ctx context.Context, branchID uuid.UUID) ([]ListBranchMediaRow, error)
 	ListBranchesByOrg(ctx context.Context, organizationID uuid.UUID) ([]ListBranchesByOrgRow, error)
-	ListBusinessHours(ctx context.Context, locationID uuid.UUID) ([]SchedulingBusinessHour, error)
+	ListBusinessHours(ctx context.Context, branchID uuid.UUID) ([]SchedulingBusinessHour, error)
 	ListCategoryPrices(ctx context.Context, priceVersionID uuid.UUID) ([]PricingCategoryPrice, error)
+	ListCourtAmenityIDs(ctx context.Context, courtID uuid.UUID) ([]uuid.UUID, error)
+	ListCourtAmenityLinksByCourtIDs(ctx context.Context, courtIds []uuid.UUID) ([]ListCourtAmenityLinksByCourtIDsRow, error)
+	ListCourtMedia(ctx context.Context, courtID uuid.UUID) ([]ListCourtMediaRow, error)
 	ListCourtTypesByTenant(ctx context.Context, arg ListCourtTypesByTenantParams) ([]ListCourtTypesByTenantRow, error)
 	ListCourts(ctx context.Context, arg ListCourtsParams) ([]ListCourtsRow, error)
 	ListCurrentProvinces(ctx context.Context, countryID uuid.UUID) ([]ListCurrentProvincesRow, error)
@@ -199,12 +210,11 @@ type Querier interface {
 	// prefer former ward whose code equals the current ward code, else lowest former code.
 	ListFormerWardsForCurrent(ctx context.Context, wardID uuid.UUID) ([]ListFormerWardsForCurrentRow, error)
 	ListHolidaysOverlapping(ctx context.Context, arg ListHolidaysOverlappingParams) ([]ListHolidaysOverlappingRow, error)
-	ListLocationAmenityIDs(ctx context.Context, locationID uuid.UUID) ([]uuid.UUID, error)
-	ListLocationMedia(ctx context.Context, locationID uuid.UUID) ([]ListLocationMediaRow, error)
-	ListLocationSportIDs(ctx context.Context, locationID uuid.UUID) ([]uuid.UUID, error)
-	ListLocationSportIDsByLocations(ctx context.Context, locationIds []uuid.UUID) ([]ListLocationSportIDsByLocationsRow, error)
+	ListLocationAmenityIDs(ctx context.Context, branchID uuid.UUID) ([]uuid.UUID, error)
+	ListLocationSportIDs(ctx context.Context, branchID uuid.UUID) ([]uuid.UUID, error)
+	ListLocationSportIDsByLocations(ctx context.Context, branchIds []uuid.UUID) ([]ListLocationSportIDsByLocationsRow, error)
 	ListLoginHistoryByUser(ctx context.Context, arg ListLoginHistoryByUserParams) ([]ListLoginHistoryByUserRow, error)
-	ListMarketplaceCourts(ctx context.Context, locationID uuid.UUID) ([]ListMarketplaceCourtsRow, error)
+	ListMarketplaceCourts(ctx context.Context, branchID uuid.UUID) ([]ListMarketplaceCourtsRow, error)
 	ListOrganizationAddresses(ctx context.Context, organizationID uuid.UUID) ([]ListOrganizationAddressesRow, error)
 	ListOrganizationsAdmin(ctx context.Context, arg ListOrganizationsAdminParams) ([]ListOrganizationsAdminRow, error)
 	ListOrganizationsByUser(ctx context.Context, userID uuid.UUID) ([]ListOrganizationsByUserRow, error)
@@ -228,7 +238,10 @@ type Querier interface {
 	MarkVerificationVerified(ctx context.Context, id uuid.UUID) error
 	// Returns the highest numeric suffix for codes matching PREFIX + digits within a business unit.
 	MaxBranchCodeSeq(ctx context.Context, arg MaxBranchCodeSeqParams) (int32, error)
-	MaxLocationMediaSortOrder(ctx context.Context, locationID uuid.UUID) (int32, error)
+	MaxBranchMediaSortOrder(ctx context.Context, branchID uuid.UUID) (int32, error)
+	// Highest numeric suffix for PREFIX + digits within a branch (location).
+	MaxCourtCodeSeq(ctx context.Context, arg MaxCourtCodeSeqParams) (int32, error)
+	MaxCourtMediaSortOrder(ctx context.Context, courtID uuid.UUID) (int32, error)
 	NextPriceVersionNumber(ctx context.Context, priceListID uuid.UUID) (int32, error)
 	Ping(ctx context.Context) (int32, error)
 	ProvinceCurrentExists(ctx context.Context, id uuid.UUID) (bool, error)
@@ -251,7 +264,9 @@ type Querier interface {
 	SucceedPaymentIntent(ctx context.Context, arg SucceedPaymentIntentParams) error
 	TouchUserLastLogin(ctx context.Context, arg TouchUserLastLoginParams) error
 	UpdateBookingResourceSchedule(ctx context.Context, arg UpdateBookingResourceScheduleParams) error
+	UpdateBranchGalleryItem(ctx context.Context, arg UpdateBranchGalleryItemParams) error
 	UpdateCourt(ctx context.Context, arg UpdateCourtParams) error
+	UpdateCourtGalleryItem(ctx context.Context, arg UpdateCourtGalleryItemParams) error
 	UpdateCourtStatus(ctx context.Context, arg UpdateCourtStatusParams) error
 	UpdateCourtType(ctx context.Context, arg UpdateCourtTypeParams) error
 	UpdateCustomer(ctx context.Context, arg UpdateCustomerParams) error
@@ -260,7 +275,6 @@ type Querier interface {
 	UpdateInvitationStatus(ctx context.Context, arg UpdateInvitationStatusParams) error
 	UpdateLocation(ctx context.Context, arg UpdateLocationParams) error
 	UpdateLocationAddress(ctx context.Context, arg UpdateLocationAddressParams) error
-	UpdateLocationGalleryItem(ctx context.Context, arg UpdateLocationGalleryItemParams) error
 	UpdateLocationMedia(ctx context.Context, arg UpdateLocationMediaParams) error
 	UpdateLocationStatus(ctx context.Context, arg UpdateLocationStatusParams) error
 	UpdateOrganization(ctx context.Context, arg UpdateOrganizationParams) error

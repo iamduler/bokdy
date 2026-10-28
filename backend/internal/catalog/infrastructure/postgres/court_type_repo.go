@@ -27,7 +27,7 @@ var _ repository.CourtTypeRepository = (*CourtTypeRepo)(nil)
 func (r *CourtTypeRepo) Create(ctx context.Context, tx pgx.Tx, t *entity.CourtType) error {
 	return r.q.WithTx(tx).CreateCourtType(ctx, dbsqlc.CreateCourtTypeParams{
 		ID: t.ID, TenantID: t.TenantID, Code: t.Code, NameEn: nullStr(t.NameEn), NameVi: nullStr(t.NameVi),
-		ResourceType: dbsqlc.CatalogResourceType(t.ResourceType), Status: dbsqlc.CatalogResourceCategoryStatus(t.Status),
+		ResourceType: dbsqlc.CatalogResourceType(t.ResourceType), Status: dbsqlc.CatalogCourtTypeStatus(t.Status),
 		SlotDurationMinutes: int32(t.SlotDurationMinutes), CreatedAt: t.CreatedAt, UpdatedAt: t.UpdatedAt,
 	})
 }
@@ -41,6 +41,17 @@ func (r *CourtTypeRepo) FindByID(ctx context.Context, tenantID, id uuid.UUID) (*
 		return nil, err
 	}
 	return courtTypeFromFind(row), nil
+}
+
+func (r *CourtTypeRepo) FindByCode(ctx context.Context, tenantID uuid.UUID, code string) (*entity.CourtType, error) {
+	row, err := r.q.FindCourtTypeByCode(ctx, dbsqlc.FindCourtTypeByCodeParams{TenantID: tenantID, Code: code})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return courtTypeFromCode(row), nil
 }
 
 func (r *CourtTypeRepo) ListByTenant(ctx context.Context, tenantID uuid.UUID, status *entity.CategoryStatus) ([]entity.CourtType, error) {
@@ -81,13 +92,15 @@ func (r *CourtTypeRepo) NameExists(ctx context.Context, tenantID uuid.UUID, name
 	})
 }
 
-func (r *CourtTypeRepo) CountNonArchivedCourts(ctx context.Context, tenantID, courtTypeID uuid.UUID) (int64, error) {
-	return r.q.CountNonArchivedCourtsByType(ctx, dbsqlc.CountNonArchivedCourtsByTypeParams{
-		TenantID: tenantID, CourtTypeID: uuidPtr(courtTypeID),
-	})
+func courtTypeFromFind(row dbsqlc.FindCourtTypeByIDRow) *entity.CourtType {
+	return &entity.CourtType{
+		ID: row.ID, TenantID: row.TenantID, Code: row.Code, NameEn: row.NameEn, NameVi: row.NameVi,
+		ResourceType: entity.ResourceType(row.ResourceType), Status: entity.CategoryStatus(row.Status),
+		SlotDurationMinutes: int(row.SlotDurationMinutes), CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt, DeletedAt: row.DeletedAt,
+	}
 }
 
-func courtTypeFromFind(row dbsqlc.FindCourtTypeByIDRow) *entity.CourtType {
+func courtTypeFromCode(row dbsqlc.FindCourtTypeByCodeRow) *entity.CourtType {
 	return &entity.CourtType{
 		ID: row.ID, TenantID: row.TenantID, Code: row.Code, NameEn: row.NameEn, NameVi: row.NameVi,
 		ResourceType: entity.ResourceType(row.ResourceType), Status: entity.CategoryStatus(row.Status),

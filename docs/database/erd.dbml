@@ -61,14 +61,14 @@ Project Bokdy {
 //
 // Out of scope (P3)
 // - Do not merge reservation and booking aggregates.
-// - Do not flatten resource -> court.
+// - Court is catalog.courts; Branch is organization.branches.
 // - Do not encode every business rule as a DB constraint.
 // - Phase 2 domains stay out: inventory, POS / cash shift, loyalty, ads, review.
 //
 // Vietnam addresses
 // - Do not use state, city, or postal_code on address satellites.
 // - Use FK catalogs reference.province* / reference.ward* (and *_former for pre-merger).
-// - Branch (location_addresses): up to two rows per location — former_v3 and current_v2.
+// - Branch (branch_addresses): up to two rows per branch — former_v3 and current_v2.
 // - Customer (customer_addresses): one row per address with division_scheme.
 //
 
@@ -1083,10 +1083,10 @@ TableGroup "Organization" {
 
   organization.business_units
 
-  organization.locations
-  organization.location_addresses
-  organization.location_settings
-  organization.location_sports
+  organization.branches
+  organization.branch_addresses
+  organization.branch_settings
+  organization.branch_sports
 
   organization.staff_members
   organization.staff_profiles
@@ -1134,7 +1134,7 @@ Enum business_unit_status {
   inactive
 }
 
-Enum location_status {
+Enum branch_status {
   active
   inactive
   maintenance
@@ -1303,10 +1303,10 @@ Table organization.business_units {
 }
 
 //////////////////////////////////////////////////////////////
-// LOCATION
+// BRANCH
 //////////////////////////////////////////////////////////////
 
-Table organization.locations {
+Table organization.branches {
   id uuid [pk]
 
   public_id varchar(26) [not null, unique]
@@ -1348,7 +1348,7 @@ Table organization.locations {
 
   description_vi text
 
-  status location_status [not null]
+  status branch_status [not null]
 
   created_at timestamptz [not null]
 
@@ -1364,13 +1364,13 @@ Table organization.locations {
     (organization_id, slug) [unique]
   }
 
-  Note: 'Partial unique (business_unit_id, code) and (organization_id, slug) WHERE deleted_at IS NULL. Business name: Branch. logo_file_id = Avatar; banner_file_id = Banner. founded_year CHECK 1800–2100 when set. description_* is sanitized HTML.'
+  Note: 'Partial unique (business_unit_id, code) and (organization_id, slug) WHERE deleted_at IS NULL. logo_file_id = Avatar; banner_file_id = Banner. founded_year CHECK 1800–2100 when set. description_* is sanitized HTML.'
 }
 
-Table organization.location_media {
+Table organization.branch_media {
   id uuid [pk]
 
-  location_id uuid [not null]
+  branch_id uuid [not null]
 
   file_id uuid [not null]
 
@@ -1385,40 +1385,40 @@ Table organization.location_media {
   created_at timestamptz [not null]
 
   indexes {
-    location_id
-    (location_id, sort_order)
+    branch_id
+    (branch_id, sort_order)
   }
 
   Note: 'Branch gallery images (separate from logo/banner).'
 }
 
-Table organization.location_sports {
+Table organization.branch_sports {
   id uuid [pk]
 
-  location_id uuid [not null]
+  branch_id uuid [not null]
 
   sport_id uuid [not null]
 
   created_at timestamptz [not null]
 
   indexes {
-    location_id
+    branch_id
     sport_id
-    (location_id, sport_id) [unique]
+    (branch_id, sport_id) [unique]
   }
 
-  Note: 'Branch offered sports. M:N between locations (Branch) and catalog.sports.'
+  Note: 'Branch offered sports. M:N between branches and catalog.sports.'
 }
 
-Table organization.location_amenities {
-  location_id uuid [not null]
+Table organization.branch_amenities {
+  branch_id uuid [not null]
 
   amenity_id uuid [not null]
 
   created_at timestamptz [not null]
 
   indexes {
-    (location_id, amenity_id) [pk]
+    (branch_id, amenity_id) [pk]
     amenity_id
   }
 
@@ -1445,10 +1445,10 @@ Table reference.amenities {
   Note: 'Amenity catalog (wifi, parking, shower, shop, …).'
 }
 
-Table organization.location_addresses {
+Table organization.branch_addresses {
   id uuid [pk]
 
-  location_id uuid [not null]
+  branch_id uuid [not null]
 
   division_scheme admin_division_scheme [not null]
 
@@ -1475,9 +1475,9 @@ Table organization.location_addresses {
   updated_at timestamptz [not null]
 
   indexes {
-    location_id
+    branch_id
     division_scheme
-    (location_id, division_scheme) [unique]
+    (branch_id, division_scheme) [unique]
     province_former_id
     district_former_id
     ward_former_id
@@ -1485,13 +1485,13 @@ Table organization.location_addresses {
     ward_id
   }
 
-  Note: 'Branch address satellite. 1:N with locations — at most one row per division_scheme (former_v3 + current_v2) so players can search by pre- or post-merger admin units. former_v3: province_former_id, district_former_id, ward_former_id required; current FKs null. current_v2: province_id, ward_id required; former FKs null. No state, city, district/ward text, or postal_code. CHECK constraints in migration.'
+  Note: 'Branch address satellite. 1:N with branches — at most one row per division_scheme (former_v3 + current_v2) so players can search by pre- or post-merger admin units. former_v3: province_former_id, district_former_id, ward_former_id required; current FKs null. current_v2: province_id, ward_id required; former FKs null. No state, city, district/ward text, or postal_code. CHECK constraints in migration.'
 }
 
-Table organization.location_settings {
+Table organization.branch_settings {
   id uuid [pk]
 
-  location_id uuid [not null, unique]
+  branch_id uuid [not null, unique]
 
   booking_settings jsonb
 
@@ -1513,7 +1513,7 @@ Table organization.staff_members {
 
   organization_id uuid [not null]
 
-  location_id uuid
+  branch_id uuid
 
   user_id uuid [not null]
 
@@ -1533,7 +1533,7 @@ Table organization.staff_members {
 
   indexes {
     organization_id
-    location_id
+    branch_id
     user_id
     status
     (organization_id, employee_code) [unique]
@@ -1970,7 +1970,7 @@ Table crm.customer_addresses {
     ward_id
   }
 
-  Note: 'One row per customer address with division_scheme (former_v3 or current_v2). Same FK rules as organization.location_addresses. No state, city, district/ward text, or postal_code.'
+  Note: 'One row per customer address with division_scheme (former_v3 or current_v2). Same FK rules as organization.branch_addresses. No state, city, district/ward text, or postal_code.'
 }
 
 //////////////////////////////////////////////////////////////
@@ -2219,9 +2219,9 @@ TableGroup "Catalog" {
   catalog.services
   catalog.service_resources
 
-  catalog.resource_categories
+  catalog.court_types
 
-  catalog.resources
+  catalog.courts
   catalog.resource_category_assignments
 
   catalog.resource_capabilities
@@ -2238,11 +2238,12 @@ TableGroup "Catalog" {
 
   catalog.resource_capacities
 
-  catalog.resource_maintenances
+  catalog.court_maintenances
 
   catalog.resource_costs
 
-  catalog.resource_media
+  catalog.court_media
+  catalog.court_amenities
 }
 
 //////////////////////////////////////////////////////////////
@@ -2276,14 +2277,26 @@ Enum court_environment {
   unspecified
 }
 
-Enum resource_status {
+Enum court_surface {
+  unspecified
+  pvc
+  wood
+  hard_court
+  grass
+  artificial_turf
+  clay
+  rubber
+  other
+}
+
+Enum court_status {
   active
   inactive
   maintenance
   archived
 }
 
-Enum resource_category_status {
+Enum court_type_status {
   active
   archived
 }
@@ -2435,22 +2448,22 @@ Table catalog.services {
 Table catalog.service_resources {
   service_id uuid [not null]
 
-  resource_id uuid [not null]
+  court_id uuid [not null]
 
   is_required boolean [not null, default: true]
 
   quantity int [not null, default: 1]
 
   indexes {
-    (service_id, resource_id) [pk]
+    (service_id, court_id) [pk]
   }
 }
 
 //////////////////////////////////////////////////////////////
-// RESOURCE CATEGORY
+// COURT TYPE
 //////////////////////////////////////////////////////////////
 
-Table catalog.resource_categories {
+Table catalog.court_types {
   id uuid [pk]
 
   tenant_id uuid [not null]
@@ -2465,7 +2478,7 @@ Table catalog.resource_categories {
 
   resource_type resource_type [not null]
 
-  status resource_category_status [not null]
+  status court_type_status [not null]
 
   slot_duration_minutes int [not null]
 
@@ -2482,23 +2495,23 @@ Table catalog.resource_categories {
     (tenant_id, code) [unique, note: 'Partial WHERE deleted_at IS NULL']
   }
 
-  Note: 'Business name: Court Type when resource_type = court. W4 adds status + slot_duration_minutes. DEF-20260814-01.'
+  Note: 'Court type (resource_type = court). W4 adds status + slot_duration_minutes. DEF-20260814-01.'
 }
 
 //////////////////////////////////////////////////////////////
-// RESOURCE
+// COURT
 //////////////////////////////////////////////////////////////
 
-Table catalog.resources {
+Table catalog.courts {
   id uuid [pk]
 
   public_id varchar(26) [not null, unique]
 
   tenant_id uuid [not null]
 
-  location_id uuid [not null]
+  branch_id uuid [not null]
 
-  court_type_id uuid
+  sport_id uuid [not null, note: 'catalog.sports — discipline played on this court']
 
   code varchar(100) [not null]
 
@@ -2508,13 +2521,21 @@ Table catalog.resources {
 
   resource_type resource_type [not null]
 
-  parent_resource_id uuid
+  parent_court_id uuid
 
-  status resource_status [not null]
+  status court_status [not null]
 
   is_bookable boolean [not null, default: true]
 
   environment court_environment [not null, default: 'unspecified', note: 'indoor | outdoor | unspecified']
+
+  surface court_surface [not null, default: 'unspecified']
+
+  dimensions varchar(100)
+
+  description_en text [note: 'HTML sanitized on write']
+
+  description_vi text [note: 'HTML sanitized on write']
 
   capacity int
 
@@ -2530,22 +2551,23 @@ Table catalog.resources {
 
   indexes {
     tenant_id
-    location_id
-    parent_resource_id
+    branch_id
+    sport_id
+    parent_court_id
     status
-    (location_id, code) [unique, note: 'W4 courts: partial WHERE deleted_at IS NULL AND resource_type = court. DEF-20260814-01.']
+    (branch_id, code) [unique, note: 'W4 courts: partial WHERE deleted_at IS NULL AND resource_type = court. DEF-20260814-01.']
   }
 
-  Note: 'Business name: Court when resource_type = court. W4 requires court_type_id (BR-004). Code unique per branch, not tenant. DEF-20260814-01.'
+  Note: 'Court row when resource_type = court. Sport is required; CourtType is no longer linked to Court (court_types remains for legacy /court-types API). Code unique per branch, not tenant. DEF-20260814-01.'
 }
 
 Table catalog.resource_category_assignments {
-  resource_id uuid [not null]
+  court_id uuid [not null]
 
   resource_category_id uuid [not null]
 
   indexes {
-    (resource_id, resource_category_id) [pk]
+    (court_id, resource_category_id) [pk]
   }
 }
 
@@ -2579,14 +2601,14 @@ Table catalog.resource_capabilities {
 }
 
 Table catalog.resource_capability_assignments {
-  resource_id uuid [not null]
+  court_id uuid [not null]
 
   capability_id uuid [not null]
 
   level capability_level
 
   indexes {
-    (resource_id, capability_id) [pk]
+    (court_id, capability_id) [pk]
   }
 }
 
@@ -2622,16 +2644,16 @@ Table catalog.resource_attributes {
 Table catalog.resource_attribute_values {
   id uuid [pk]
 
-  resource_id uuid [not null]
+  court_id uuid [not null]
 
   attribute_id uuid [not null]
 
   value jsonb [not null]
 
   indexes {
-    resource_id
+    court_id
     attribute_id
-    (resource_id, attribute_id) [unique]
+    (court_id, attribute_id) [unique]
   }
 }
 
@@ -2662,12 +2684,12 @@ Table catalog.resource_labels {
 }
 
 Table catalog.resource_label_assignments {
-  resource_id uuid [not null]
+  court_id uuid [not null]
 
   label_id uuid [not null]
 
   indexes {
-    (resource_id, label_id) [pk]
+    (court_id, label_id) [pk]
   }
 }
 
@@ -2702,10 +2724,10 @@ Table catalog.resource_groups {
 
 Table catalog.resource_group_members {
   group_id uuid [not null]
-  resource_id uuid [not null]
+  court_id uuid [not null]
 
   indexes {
-    (group_id, resource_id) [pk]
+    (group_id, court_id) [pk]
   }
 }
 
@@ -2716,7 +2738,7 @@ Table catalog.resource_group_members {
 Table catalog.resource_capacities {
   id uuid [pk]
 
-  resource_id uuid [not null]
+  court_id uuid [not null]
 
   capacity_type varchar(100) [not null]
 
@@ -2727,7 +2749,7 @@ Table catalog.resource_capacities {
   updated_at timestamptz [not null]
 
   indexes {
-    resource_id
+    court_id
   }
 }
 
@@ -2735,10 +2757,10 @@ Table catalog.resource_capacities {
 // MAINTENANCE
 //////////////////////////////////////////////////////////////
 
-Table catalog.resource_maintenances {
+Table catalog.court_maintenances {
   id uuid [pk]
 
-  resource_id uuid [not null]
+  court_id uuid [not null]
 
   status maintenance_status [not null]
 
@@ -2757,7 +2779,7 @@ Table catalog.resource_maintenances {
   updated_at timestamptz [not null]
 
   indexes {
-    resource_id
+    court_id
     status
     next_maintenance_at
   }
@@ -2770,7 +2792,7 @@ Table catalog.resource_maintenances {
 Table catalog.resource_costs {
   id uuid [pk]
 
-  resource_id uuid [not null]
+  court_id uuid [not null]
 
   cost_type cost_type [not null]
 
@@ -2785,7 +2807,7 @@ Table catalog.resource_costs {
   created_at timestamptz [not null]
 
   indexes {
-    resource_id
+    court_id
     effective_from
   }
 }
@@ -2794,23 +2816,44 @@ Table catalog.resource_costs {
 // MEDIA
 //////////////////////////////////////////////////////////////
 
-Table catalog.resource_media {
+Table catalog.court_media {
   id uuid [pk]
 
-  resource_id uuid [not null]
+  court_id uuid [not null]
 
   file_id uuid [not null]
 
-  is_primary boolean [not null, default: false]
+  caption_en varchar(255)
 
-  sort_order int [default: 0]
+  caption_vi varchar(255)
+
+  sort_order int [not null, default: 0]
+
+  is_cover boolean [not null, default: false]
 
   created_at timestamptz [not null]
 
   indexes {
-    resource_id
-    is_primary
+    court_id
+    (court_id, sort_order)
   }
+
+  Note: 'Court gallery images (same shape as organization.branch_media).'
+}
+
+Table catalog.court_amenities {
+  court_id uuid [not null]
+
+  amenity_id uuid [not null]
+
+  created_at timestamptz [not null]
+
+  indexes {
+    (court_id, amenity_id) [pk]
+    amenity_id
+  }
+
+  Note: 'M:N Court ↔ reference.amenities (lights, air_conditioning, rest_seats, …).'
 }
 
 //////////////////////////////////////////////////////////////
@@ -2830,7 +2873,7 @@ TableGroup "Scheduling" {
 
   scheduling.resource_availability
 
-  scheduling.resource_blocks
+  scheduling.court_blocks
 
   scheduling.resource_maintenance_windows
 
@@ -2878,7 +2921,7 @@ Enum projection_status {
 Table scheduling.business_hours {
   id uuid [pk]
 
-  location_id uuid [not null]
+  branch_id uuid [not null]
 
   weekday smallint [not null]
 
@@ -2893,9 +2936,9 @@ Table scheduling.business_hours {
   updated_at timestamptz [not null]
 
   indexes {
-    location_id
+    branch_id
     weekday
-    (location_id, weekday) [unique]
+    (branch_id, weekday) [unique]
   }
 }
 
@@ -2935,10 +2978,10 @@ Table scheduling.calendar_rules {
 Table scheduling.calendar_rule_resources {
   calendar_rule_id uuid [not null]
 
-  resource_id uuid [not null]
+  court_id uuid [not null]
 
   indexes {
-    (calendar_rule_id, resource_id) [pk]
+    (calendar_rule_id, court_id) [pk]
   }
 }
 
@@ -2971,7 +3014,7 @@ Table scheduling.calendar_holidays {
 
   tenant_id uuid [not null]
 
-  location_id uuid
+  branch_id uuid
 
   name_en varchar(255)
 
@@ -2991,7 +3034,7 @@ Table scheduling.calendar_holidays {
 
   indexes {
     tenant_id
-    location_id
+    branch_id
     starts_at
   }
 
@@ -3005,7 +3048,7 @@ Table scheduling.calendar_holidays {
 Table scheduling.availability_rules {
   id uuid [pk]
 
-  resource_id uuid [not null]
+  court_id uuid [not null]
 
   availability_type availability_type [not null]
 
@@ -3024,19 +3067,19 @@ Table scheduling.availability_rules {
   updated_at timestamptz [not null]
 
   indexes {
-    resource_id
+    court_id
     priority
   }
 }
 
 //////////////////////////////////////////////////////////////
-// RESOURCE AVAILABILITY
+// COURT AVAILABILITY
 //////////////////////////////////////////////////////////////
 
 Table scheduling.resource_availability {
   id uuid [pk]
 
-  resource_id uuid [not null]
+  court_id uuid [not null]
 
   starts_at timestamptz [not null]
 
@@ -3049,7 +3092,7 @@ Table scheduling.resource_availability {
   created_at timestamptz [not null]
 
   indexes {
-    resource_id
+    court_id
     starts_at
     ends_at
   }
@@ -3059,10 +3102,10 @@ Table scheduling.resource_availability {
 // BLOCKS
 //////////////////////////////////////////////////////////////
 
-Table scheduling.resource_blocks {
+Table scheduling.court_blocks {
   id uuid [pk]
 
-  resource_id uuid [not null]
+  court_id uuid [not null]
 
   block_type block_type [not null]
 
@@ -3079,7 +3122,7 @@ Table scheduling.resource_blocks {
   created_at timestamptz [not null]
 
   indexes {
-    resource_id
+    court_id
     block_type
     starts_at
     ends_at
@@ -3097,7 +3140,7 @@ Table scheduling.resource_blocks {
 Table scheduling.resource_maintenance_windows {
   id uuid [pk]
 
-  resource_id uuid [not null]
+  court_id uuid [not null]
 
   maintenance_id uuid
 
@@ -3108,7 +3151,7 @@ Table scheduling.resource_maintenance_windows {
   created_at timestamptz [not null]
 
   indexes {
-    resource_id
+    court_id
     starts_at
   }
 }
@@ -3120,7 +3163,7 @@ Table scheduling.resource_maintenance_windows {
 Table scheduling.availability_projections {
   id uuid [pk]
 
-  resource_id uuid [not null]
+  court_id uuid [not null]
 
   projection_date date [not null]
 
@@ -3133,9 +3176,9 @@ Table scheduling.availability_projections {
   generated_at timestamptz [not null]
 
   indexes {
-    resource_id
+    court_id
     projection_date
-    (resource_id, projection_date) [unique]
+    (court_id, projection_date) [unique]
   }
 
   Note: 'Read model generated asynchronously.'
@@ -3148,7 +3191,7 @@ Table scheduling.availability_projections {
 Table scheduling.time_slots {
   id uuid [pk]
 
-  resource_id uuid [not null]
+  court_id uuid [not null]
 
   starts_at timestamptz [not null]
 
@@ -3163,10 +3206,10 @@ Table scheduling.time_slots {
   generated_at timestamptz [not null]
 
   indexes {
-    resource_id
+    court_id
     starts_at
     is_available
-    (resource_id, starts_at) [unique]
+    (court_id, starts_at) [unique]
   }
 
   Note: 'Pre-generated booking slots for fast search.'
@@ -3336,7 +3379,7 @@ Table pricing.price_versions {
 }
 
 //////////////////////////////////////////////////////////////
-// CATEGORY PRICE (W6 — court type hourly base)
+// CATEGORY PRICE (W6 — sport hourly base)
 //////////////////////////////////////////////////////////////
 
 Table pricing.category_prices {
@@ -3344,7 +3387,7 @@ Table pricing.category_prices {
 
   price_version_id uuid [not null]
 
-  category_id uuid [not null, note: 'catalog.resource_categories (court type)']
+  sport_id uuid [not null, note: 'catalog.sports']
 
   amount decimal(18,2) [not null, note: 'VND per hour']
 
@@ -3352,11 +3395,11 @@ Table pricing.category_prices {
 
   indexes {
     price_version_id
-    category_id
-    (price_version_id, category_id) [unique]
+    sport_id
+    (price_version_id, sport_id) [unique]
   }
 
-  Note: 'W6 MVP base rates by court type. Full resource_prices remain for per-court override later.'
+  Note: 'W6 MVP base hourly rates by sport (table name kept as category_prices). Full resource_prices remain for per-court override later.'
 }
 
 //////////////////////////////////////////////////////////////
@@ -3538,7 +3581,7 @@ Table pricing.service_prices {
 }
 
 //////////////////////////////////////////////////////////////
-// RESOURCE PRICE
+// COURT PRICE
 //////////////////////////////////////////////////////////////
 
 Table pricing.resource_prices {
@@ -3546,16 +3589,16 @@ Table pricing.resource_prices {
 
   price_version_id uuid [not null]
 
-  resource_id uuid [not null]
+  court_id uuid [not null]
 
   amount decimal(18,2) [not null]
 
   created_at timestamptz [not null]
 
   indexes {
-    resource_id
+    court_id
     price_version_id
-    (price_version_id, resource_id) [unique]
+    (price_version_id, court_id) [unique]
   }
 }
 
@@ -3715,7 +3758,7 @@ TableGroup "Reservation" {
 
   reservation.reservation_items
 
-  reservation.reservation_resources
+  reservation.reservation_courts
 
   reservation.reservation_holds
 
@@ -3846,15 +3889,15 @@ Table reservation.reservation_items {
 }
 
 //////////////////////////////////////////////////////////////
-// RESERVED RESOURCES
+// RESERVED COURTS
 //////////////////////////////////////////////////////////////
 
-Table reservation.reservation_resources {
+Table reservation.reservation_courts {
   id uuid [pk]
 
   reservation_item_id uuid [not null]
 
-  resource_id uuid [not null]
+  court_id uuid [not null]
 
   quantity int [not null, default: 1]
 
@@ -3866,7 +3909,7 @@ Table reservation.reservation_resources {
 
   indexes {
     reservation_item_id
-    resource_id
+    court_id
     starts_at
   }
 }
@@ -3880,7 +3923,7 @@ Table reservation.reservation_holds {
 
   reservation_id uuid [not null]
 
-  resource_id uuid [not null]
+  court_id uuid [not null]
 
   status reservation_hold_status [not null]
 
@@ -3898,12 +3941,12 @@ Table reservation.reservation_holds {
 
   indexes {
     reservation_id
-    resource_id
+    court_id
     status
     expires_at
   }
 
-  Note: 'Temporary resource lock before booking confirmation.'
+  Note: 'Temporary court lock before booking confirmation.'
 }
 
 //////////////////////////////////////////////////////////////
@@ -4014,7 +4057,7 @@ TableGroup "Booking" {
 
   booking.booking_items
 
-  booking.booking_resources
+  booking.booking_courts
 
   booking.booking_participants
 
@@ -4087,7 +4130,7 @@ Table booking.bookings {
 
   customer_id uuid [not null]
 
-  location_id uuid [not null]
+  branch_id uuid [not null]
 
   status booking_status [not null]
 
@@ -4118,7 +4161,7 @@ Table booking.bookings {
     tenant_id
     reservation_id
     customer_id
-    location_id
+    branch_id
     status
     completed_at
   }
@@ -4166,12 +4209,12 @@ Table booking.booking_items {
 // BOOKING RESOURCES
 //////////////////////////////////////////////////////////////
 
-Table booking.booking_resources {
+Table booking.booking_courts {
   id uuid [pk]
 
   booking_item_id uuid [not null]
 
-  resource_id uuid [not null]
+  court_id uuid [not null]
 
   quantity int [not null, default: 1]
 
@@ -4183,7 +4226,7 @@ Table booking.booking_resources {
 
   indexes {
     booking_item_id
-    resource_id
+    court_id
     starts_at
   }
 }
@@ -4229,7 +4272,7 @@ Table booking.booking_assignments {
 
   assignment_type assignment_type [not null]
 
-  resource_id uuid
+  court_id uuid
 
   staff_member_id uuid
 
@@ -4244,7 +4287,7 @@ Table booking.booking_assignments {
   indexes {
     booking_item_id
     assignment_type
-    resource_id
+    court_id
     staff_member_id
   }
 
@@ -6313,7 +6356,7 @@ Table platform.file_references {
     (file_id, entity_type, entity_id) [unique]
   }
 
-  Note: 'entity_type is a known aggregate name (user, organization, location, resource, booking, ...).'
+  Note: 'entity_type is a known aggregate name (user, organization, branch, court, booking, ...).'
 }
 
 //////////////////////////////////////////////////////////////
@@ -6564,7 +6607,7 @@ Table analytics.fact_bookings {
 
   customer_id uuid
 
-  location_id uuid
+  branch_id uuid
 
   service_id uuid
 
@@ -6578,7 +6621,7 @@ Table analytics.fact_bookings {
     tenant_id
     date_key
     service_id
-    location_id
+    branch_id
   }
 }
 
@@ -6634,7 +6677,7 @@ Table analytics.fact_resources {
 
   tenant_id uuid [not null]
 
-  resource_id uuid [not null]
+  court_id uuid [not null]
 
   date_key date [not null]
 
@@ -6648,7 +6691,7 @@ Table analytics.fact_resources {
 
   indexes {
     tenant_id
-    resource_id
+    court_id
     date_key
   }
 }
@@ -6746,23 +6789,23 @@ Ref: organization.organizations.id > organization.organization_settings.organiza
 
 Ref: organization.organizations.id > organization.business_units.organization_id
 
-Ref: organization.organizations.id > organization.locations.organization_id
-Ref: organization.locations.id > organization.location_addresses.location_id
-Ref: reference.province_former.id > organization.location_addresses.province_former_id
-Ref: reference.district_former.id > organization.location_addresses.district_former_id
-Ref: reference.ward_former.id > organization.location_addresses.ward_former_id
-Ref: reference.province.id > organization.location_addresses.province_id
-Ref: reference.ward.id > organization.location_addresses.ward_id
+Ref: organization.organizations.id > organization.branches.organization_id
+Ref: organization.branches.id > organization.branch_addresses.branch_id
+Ref: reference.province_former.id > organization.branch_addresses.province_former_id
+Ref: reference.district_former.id > organization.branch_addresses.district_former_id
+Ref: reference.ward_former.id > organization.branch_addresses.ward_former_id
+Ref: reference.province.id > organization.branch_addresses.province_id
+Ref: reference.ward.id > organization.branch_addresses.ward_id
 Ref: reference.locales.id > organization.tenants.locale_id
 Ref: reference.locales.id > crm.customers.preferred_locale_id
 Ref: reference.countries.id > reference.country_translations.country_id
 Ref: reference.locales.id > reference.country_translations.locale_id
-Ref: reference.countries.id > organization.location_addresses.country_id
-Ref: organization.locations.id > organization.location_settings.location_id
-Ref: organization.locations.id > organization.location_sports.location_id
-Ref: catalog.sports.id > organization.location_sports.sport_id
-Ref: platform.files.id > organization.locations.logo_file_id
-Ref: platform.files.id > organization.locations.banner_file_id
+Ref: reference.countries.id > organization.branch_addresses.country_id
+Ref: organization.branches.id > organization.branch_settings.branch_id
+Ref: organization.branches.id > organization.branch_sports.branch_id
+Ref: catalog.sports.id > organization.branch_sports.sport_id
+Ref: platform.files.id > organization.branches.logo_file_id
+Ref: platform.files.id > organization.branches.banner_file_id
 
 Ref: organization.organizations.id > organization.staff_members.organization_id
 Ref: identity.users.id > organization.staff_members.user_id
@@ -6822,54 +6865,57 @@ Ref: catalog.sports.id > catalog.service_categories.sport_id
 Ref: catalog.service_categories.id > catalog.services.service_category_id
 
 Ref: catalog.services.id > catalog.service_resources.service_id
-Ref: catalog.resources.id > catalog.service_resources.resource_id
+Ref: catalog.courts.id > catalog.service_resources.court_id
 
-Ref: catalog.resources.id > catalog.resource_category_assignments.resource_id
-Ref: catalog.resource_categories.id > catalog.resource_category_assignments.resource_category_id
-Ref: catalog.resource_categories.id > catalog.resources.court_type_id
-Ref: organization.locations.id > catalog.resources.location_id
+Ref: catalog.courts.id > catalog.resource_category_assignments.court_id
+Ref: catalog.court_types.id > catalog.resource_category_assignments.resource_category_id
+Ref: catalog.sports.id > catalog.courts.sport_id
+Ref: organization.branches.id > catalog.courts.branch_id
 
-Ref: catalog.resources.id > catalog.resource_capability_assignments.resource_id
+Ref: catalog.courts.id > catalog.resource_capability_assignments.court_id
 Ref: catalog.resource_capabilities.id > catalog.resource_capability_assignments.capability_id
 
-Ref: catalog.resources.id > catalog.resource_attribute_values.resource_id
+Ref: catalog.courts.id > catalog.resource_attribute_values.court_id
 Ref: catalog.resource_attributes.id > catalog.resource_attribute_values.attribute_id
 
-Ref: catalog.resources.id > catalog.resource_label_assignments.resource_id
+Ref: catalog.courts.id > catalog.resource_label_assignments.court_id
 Ref: catalog.resource_labels.id > catalog.resource_label_assignments.label_id
 
 Ref: catalog.resource_groups.id > catalog.resource_group_members.group_id
-Ref: catalog.resources.id > catalog.resource_group_members.resource_id
+Ref: catalog.courts.id > catalog.resource_group_members.court_id
 
-Ref: catalog.resources.id > catalog.resource_capacities.resource_id
-Ref: catalog.resources.id > catalog.resource_maintenances.resource_id
-Ref: catalog.resources.id > catalog.resource_costs.resource_id
-Ref: catalog.resources.id > catalog.resource_media.resource_id
+Ref: catalog.courts.id > catalog.resource_capacities.court_id
+Ref: catalog.courts.id > catalog.court_maintenances.court_id
+Ref: catalog.courts.id > catalog.resource_costs.court_id
+Ref: catalog.courts.id > catalog.court_media.court_id
+Ref: platform.files.id > catalog.court_media.file_id
+Ref: catalog.courts.id > catalog.court_amenities.court_id
+Ref: reference.amenities.id > catalog.court_amenities.amenity_id
 
 //////////////////////////////////////////////////////////////
 // SCHEDULING
 //////////////////////////////////////////////////////////////
 
-Ref: organization.locations.id > scheduling.business_hours.location_id
+Ref: organization.branches.id > scheduling.business_hours.branch_id
 
 Ref: scheduling.calendar_rules.id > scheduling.calendar_rule_resources.calendar_rule_id
-Ref: catalog.resources.id > scheduling.calendar_rule_resources.resource_id
+Ref: catalog.courts.id > scheduling.calendar_rule_resources.court_id
 
 Ref: scheduling.calendar_rules.id > scheduling.calendar_exceptions.calendar_rule_id
 
-Ref: organization.locations.id > scheduling.calendar_holidays.location_id
+Ref: organization.branches.id > scheduling.calendar_holidays.branch_id
 
-Ref: catalog.resources.id > scheduling.availability_rules.resource_id
+Ref: catalog.courts.id > scheduling.availability_rules.court_id
 
-Ref: catalog.resources.id > scheduling.resource_availability.resource_id
+Ref: catalog.courts.id > scheduling.resource_availability.court_id
 
-Ref: catalog.resources.id > scheduling.resource_blocks.resource_id
+Ref: catalog.courts.id > scheduling.court_blocks.court_id
 
-Ref: catalog.resources.id > scheduling.resource_maintenance_windows.resource_id
+Ref: catalog.courts.id > scheduling.resource_maintenance_windows.court_id
 
-Ref: catalog.resources.id > scheduling.availability_projections.resource_id
+Ref: catalog.courts.id > scheduling.availability_projections.court_id
 
-Ref: catalog.resources.id > scheduling.time_slots.resource_id
+Ref: catalog.courts.id > scheduling.time_slots.court_id
 
 //////////////////////////////////////////////////////////////
 // PRICING
@@ -6880,7 +6926,7 @@ Ref: pricing.price_lists.id > pricing.price_versions.price_list_id
 
 Ref: pricing.price_versions.id > pricing.pricing_rule_sets.price_version_id
 Ref: pricing.price_versions.id > pricing.category_prices.price_version_id
-Ref: catalog.resource_categories.id > pricing.category_prices.category_id
+Ref: catalog.sports.id > pricing.category_prices.sport_id
 Ref: pricing.price_versions.id > pricing.time_rules.price_version_id
 Ref: pricing.pricing_rule_sets.id > pricing.pricing_rules.rule_set_id
 Ref: pricing.pricing_rules.id > pricing.pricing_conditions.pricing_rule_id
@@ -6889,7 +6935,7 @@ Ref: pricing.pricing_rules.id > pricing.pricing_adjustments.pricing_rule_id
 Ref: catalog.services.id > pricing.service_prices.service_id
 Ref: pricing.price_versions.id > pricing.service_prices.price_version_id
 
-Ref: catalog.resources.id > pricing.resource_prices.resource_id
+Ref: catalog.courts.id > pricing.resource_prices.court_id
 Ref: pricing.price_versions.id > pricing.resource_prices.price_version_id
 
 //////////////////////////////////////////////////////////////
@@ -6915,11 +6961,11 @@ Ref: crm.customers.id > reservation.reservations.customer_id
 Ref: reservation.reservations.id > reservation.reservation_items.reservation_id
 Ref: catalog.services.id > reservation.reservation_items.service_id
 
-Ref: reservation.reservation_items.id > reservation.reservation_resources.reservation_item_id
-Ref: catalog.resources.id > reservation.reservation_resources.resource_id
+Ref: reservation.reservation_items.id > reservation.reservation_courts.reservation_item_id
+Ref: catalog.courts.id > reservation.reservation_courts.court_id
 
 Ref: reservation.reservations.id > reservation.reservation_holds.reservation_id
-Ref: catalog.resources.id > reservation.reservation_holds.resource_id
+Ref: catalog.courts.id > reservation.reservation_holds.court_id
 
 Ref: reservation.reservation_items.id > reservation.reservation_guests.reservation_item_id
 
@@ -6934,18 +6980,18 @@ Ref: reservation.reservations.id > reservation.reservation_expirations.reservati
 Ref: organization.tenants.id > booking.bookings.tenant_id
 Ref: reservation.reservations.id > booking.bookings.reservation_id
 Ref: crm.customers.id > booking.bookings.customer_id
-Ref: organization.locations.id > booking.bookings.location_id
+Ref: organization.branches.id > booking.bookings.branch_id
 
 Ref: booking.bookings.id > booking.booking_items.booking_id
 Ref: catalog.services.id > booking.booking_items.service_id
 
-Ref: booking.booking_items.id > booking.booking_resources.booking_item_id
-Ref: catalog.resources.id > booking.booking_resources.resource_id
+Ref: booking.booking_items.id > booking.booking_courts.booking_item_id
+Ref: catalog.courts.id > booking.booking_courts.court_id
 
 Ref: booking.booking_items.id > booking.booking_participants.booking_item_id
 
 Ref: booking.booking_items.id > booking.booking_assignments.booking_item_id
-Ref: catalog.resources.id > booking.booking_assignments.resource_id
+Ref: catalog.courts.id > booking.booking_assignments.court_id
 Ref: organization.staff_members.id > booking.booking_assignments.staff_member_id
 
 Ref: booking.booking_participants.id > booking.check_ins.booking_participant_id
@@ -7073,7 +7119,7 @@ Ref: organization.tenants.id > analytics.metric_snapshots.tenant_id
 Ref: organization.tenants.id > analytics.fact_bookings.tenant_id
 Ref: booking.bookings.id > analytics.fact_bookings.booking_id
 Ref: crm.customers.id > analytics.fact_bookings.customer_id
-Ref: organization.locations.id > analytics.fact_bookings.location_id
+Ref: organization.branches.id > analytics.fact_bookings.branch_id
 Ref: catalog.services.id > analytics.fact_bookings.service_id
 
 Ref: organization.tenants.id > analytics.fact_revenue.tenant_id
@@ -7084,7 +7130,7 @@ Ref: organization.tenants.id > analytics.fact_customers.tenant_id
 Ref: crm.customers.id > analytics.fact_customers.customer_id
 
 Ref: organization.tenants.id > analytics.fact_resources.tenant_id
-Ref: catalog.resources.id > analytics.fact_resources.resource_id
+Ref: catalog.courts.id > analytics.fact_resources.court_id
 
 //////////////////////////////////////////////////////////////
 // PRODUCTION NOTES
@@ -7146,7 +7192,7 @@ Ref: catalog.resources.id > analytics.fact_resources.resource_id
 // Organization
 // - Tenant
 // - Organization
-// - Location
+// - Branch
 // - StaffMember
 
 // CRM
@@ -7154,7 +7200,7 @@ Ref: catalog.resources.id > analytics.fact_resources.resource_id
 
 // Catalog
 // - Service
-// - Resource
+// - Court
 
 // Pricing
 // - PriceList

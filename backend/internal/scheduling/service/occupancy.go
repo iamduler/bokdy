@@ -35,7 +35,7 @@ func NewOccupancyService(repo repository.ScheduleRepository, sync SyncEnqueuer) 
 func (s *OccupancyService) HoldReservation(ctx context.Context, tx pgx.Tx, reservationID, resourceID uuid.UUID, starts, ends time.Time) error {
 	ref := reservationID
 	b := &entity.ResourceBlock{
-		ID: id.MustNewUUID(), ResourceID: resourceID, BlockType: entity.BlockReservation,
+		ID: id.MustNewUUID(), CourtID: resourceID, BlockType: entity.BlockReservation,
 		ReferenceType: "reservation", ReferenceID: &ref,
 		StartsAt: starts, EndsAt: ends, Reason: "reservation hold", CreatedAt: time.Now().UTC(),
 	}
@@ -49,7 +49,7 @@ func (s *OccupancyService) ReleaseReservation(ctx context.Context, tx pgx.Tx, re
 func (s *OccupancyService) HoldBooking(ctx context.Context, tx pgx.Tx, bookingID, resourceID uuid.UUID, starts, ends time.Time) error {
 	ref := bookingID
 	b := &entity.ResourceBlock{
-		ID: id.MustNewUUID(), ResourceID: resourceID, BlockType: entity.BlockBooking,
+		ID: id.MustNewUUID(), CourtID: resourceID, BlockType: entity.BlockBooking,
 		ReferenceType: "booking", ReferenceID: &ref,
 		StartsAt: starts, EndsAt: ends, Reason: "booking", CreatedAt: time.Now().UTC(),
 	}

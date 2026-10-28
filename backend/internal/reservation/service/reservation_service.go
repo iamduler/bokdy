@@ -186,7 +186,7 @@ func (s *ReservationService) CreateHold(ctx context.Context, actor uuid.UUID, in
 	res := &entity.Reservation{
 		ID: id.MustNewUUID(), PublicID: publicID, TenantID: court.TenantID,
 		ReservationNo: entity.NumberFor(publicID), CustomerID: caller.customerID,
-		LocationID: court.LocationID, CourtID: court.ID, Source: source, Status: entity.StatusPending,
+		BranchID: court.BranchID, CourtID: court.ID, Source: source, Status: entity.StatusPending,
 		Currency: quote.Currency, Subtotal: quote.TotalAmount, TotalAmount: quote.TotalAmount,
 		PriceVersionID: &priceVersionID,
 		StartsAt:       starts, EndsAt: ends, ExpiresAt: now.Add(entity.HoldTTL),
@@ -210,7 +210,7 @@ func (s *ReservationService) CreateHold(ctx context.Context, actor uuid.UUID, in
 		createdID, err := events.Append(ctx, tx, s.event("ReservationCreated", res, caller.actorType(), actor, now, map[string]any{
 			"customer_id": res.CustomerID.String(),
 			"court_id":    res.CourtID.String(),
-			"branch_id":   res.LocationID.String(),
+			"branch_id":   res.BranchID.String(),
 			"starts_at":   res.StartsAt.Format(time.RFC3339),
 			"ends_at":     res.EndsAt.Format(time.RFC3339),
 			"expires_at":  res.ExpiresAt.Format(time.RFC3339),
@@ -318,7 +318,7 @@ func (s *ReservationService) Convert(ctx context.Context, reservationID, actor u
 		}
 		booking, err = s.bookings.CreateFromReservation(ctx, tx, ConvertedHold{
 			ReservationID: locked.ID, TenantID: locked.TenantID, CustomerID: locked.CustomerID,
-			LocationID: locked.LocationID, CourtID: locked.CourtID, Currency: locked.Currency,
+			BranchID: locked.BranchID, CourtID: locked.CourtID, Currency: locked.Currency,
 			Subtotal: locked.Subtotal, DiscountAmount: locked.DiscountAmount,
 			TaxAmount: locked.TaxAmount, TotalAmount: locked.TotalAmount,
 			PriceVersionID: locked.PriceVersionID, StartsAt: locked.StartsAt, EndsAt: locked.EndsAt,

@@ -223,7 +223,7 @@ SELECT
     o.name_vi,
     COALESCE(r.code, 'org_staff') AS staff_role,
     (
-        SELECT COUNT(*)::int FROM organization.locations l
+        SELECT COUNT(*)::int FROM organization.branches l
         WHERE l.organization_id = o.id AND l.status != 'archived'
     ) AS branch_count
 FROM organization.staff_members sm

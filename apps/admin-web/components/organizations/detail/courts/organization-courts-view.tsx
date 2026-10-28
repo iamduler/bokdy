@@ -1,117 +1,200 @@
 "use client";
 
-import { Badge, cn } from "@bokdy/ui";
-import { Home, Sun } from "lucide-react";
+import { Button, cn } from "@bokdy/ui";
+import { Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
-import { EntityHealthBar } from "@/components/entity/health-bar";
-import { EntitySectionHead } from "@/components/entity/section-head";
-import { EntityUnavailableButton } from "@/components/entity/unavailable";
+import { DataListEmpty, softDirectoryPrimaryBtn } from "@/components/data-list";
+import {
+  EntityDetailError,
+  EntityDetailLoading,
+} from "@/components/entity/detail-state";
+import { CourtCard } from "@/components/courts/court-card";
+import { CourtFormSheet } from "@/components/courts/court-form-sheet";
+import {
+  PopoverCommandSelect,
+  type PopoverCommandOption,
+} from "@/components/popover-command-select";
+import { useBranches } from "@/hooks/use-branches";
+import { useOrgCourts } from "@/hooks/use-courts";
+import type { Court, CourtEnvironment, CourtStatus } from "@/lib/api/courts";
+import { ApiError } from "@/lib/api/errors";
 
 import { OrganizationDetailScreenHeader } from "../organization-detail-screen-header";
 import { useOrganizationDetail } from "../organization-detail-context";
-import { DETAIL_MOCK } from "../shared/detail-mock-data";
+
+const ALL = "";
+const filterComboClass =
+  "h-8 min-w-[8.5rem] justify-between border border-border bg-background px-2.5 text-xs";
 
 export function OrganizationCourtsView() {
   const t = useTranslations("organization.detailCourts");
-  const tu = useTranslations("organization");
-  const { org } = useOrganizationDetail();
-  const [filterSport, setFilterSport] = useState("");
+  const tc = useTranslations("organization.court");
+  const tCommon = useTranslations("common");
+  const ts = useTranslations("shell");
+  const { org, orgId } = useOrganizationDetail();
+  const { data, isLoading, isError, error, refetch, isFetching } =
+    useOrgCourts(orgId);
+  const { data: branches = [] } = useBranches(orgId);
+  const courts = data ?? [];
 
-  const sports = [...new Set(DETAIL_MOCK.courtPortfolio.map((c) => c.sport))];
-  const filtered = DETAIL_MOCK.courtPortfolio.filter((c) => !filterSport || c.sport === filterSport);
-  const urgentCount = DETAIL_MOCK.courtPortfolio.filter((c) => c.maintenance === "urgent").length;
+  const [filterBranch, setFilterBranch] = useState(ALL);
+  const [filterStatus, setFilterStatus] = useState(ALL);
+  const [filterEnv, setFilterEnv] = useState(ALL);
+  const [sheetOpen, setSheetOpen] = useState(false);
+
+  const branchName = useMemo(
+    () => new Map(branches.map((b) => [b.id, b.name])),
+    [branches],
+  );
+
+  const filtered = useMemo(() => {
+    return courts.filter((court) => {
+      if (filterBranch && court.branch_id !== filterBranch) return false;
+      if (filterStatus && court.status !== filterStatus) return false;
+      if (filterEnv && (court.environment ?? "unspecified") !== filterEnv)
+        return false;
+      return true;
+    });
+  }, [courts, filterBranch, filterEnv, filterStatus]);
+
+  const branchOptions = useMemo<PopoverCommandOption[]>(
+    () => [
+      { value: ALL, label: t("allBranches"), keywords: "all" },
+      ...branches.map((branch) => ({
+        value: branch.id,
+        label: branch.name,
+        keywords: `${branch.code} ${branch.name}`,
+      })),
+    ],
+    [branches, t],
+  );
+
+  const statusOptions = useMemo<PopoverCommandOption[]>(
+    () => [
+      { value: ALL, label: t("allStatuses"), keywords: "all" },
+      ...(
+        ["active", "inactive", "maintenance", "archived"] as CourtStatus[]
+      ).map((status) => ({
+        value: status,
+        label: tc(`status.${status}`),
+        keywords: status,
+      })),
+    ],
+    [t, tc],
+  );
+
+  const envOptions = useMemo<PopoverCommandOption[]>(
+    () => [
+      { value: ALL, label: t("allEnvironments"), keywords: "all" },
+      ...(["indoor", "outdoor", "unspecified"] as CourtEnvironment[]).map(
+        (env) => ({
+          value: env,
+          label: tc(`environment.${env}`),
+          keywords: env,
+        }),
+      ),
+    ],
+    [t, tc],
+  );
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       <OrganizationDetailScreenHeader
         title={t("title", { name: org.name })}
-        subtitle={t("subtitle", { total: DETAIL_MOCK.courtPortfolio.length, urgent: urgentCount })}
+        subtitle={t("subtitle", { total: courts.length })}
         actions={
           <>
-            <select
-              value={filterSport}
-              onChange={(e) => setFilterSport(e.target.value)}
-              className="h-8 rounded-md border border-border bg-background px-2.5 text-xs"
-              aria-label={t("filterSport")}
+            <PopoverCommandSelect
+              value={filterBranch}
+              onValueChange={setFilterBranch}
+              options={branchOptions}
+              aria-label={t("filterBranch")}
+              searchable
+              className={filterComboClass}
+              align="start"
+            />
+            <PopoverCommandSelect
+              value={filterStatus}
+              onValueChange={setFilterStatus}
+              options={statusOptions}
+              aria-label={t("filterStatus")}
+              className={filterComboClass}
+              align="start"
+            />
+            <PopoverCommandSelect
+              value={filterEnv}
+              onValueChange={setFilterEnv}
+              options={envOptions}
+              aria-label={t("filterEnvironment")}
+              className={filterComboClass}
+              align="start"
+            />
+            <Button
+              type="button"
+              size="lg"
+              className={softDirectoryPrimaryBtn}
+              onClick={() => setSheetOpen(true)}
             >
-              <option value="">{t("allSports")}</option>
-              {sports.map((s) => (
-                <option key={s} value={s}>
-                  {s}
-                </option>
-              ))}
-            </select>
-            <EntityUnavailableButton label={t("export")} reason={tu("unavailable")} />
+              <Plus className="size-4" />
+              {t("addCourt")}
+            </Button>
           </>
         }
       />
 
-      <div className="flex-1 overflow-y-auto soft-scrollbar p-4 md:px-6 md:pb-6">
-        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filtered.map((c) => {
-            const maintClass =
-              c.maintenance === "ok"
-                ? "border-transparent bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
-                : c.maintenance === "scheduled"
-                  ? "border-transparent bg-amber-500/15 text-amber-800 dark:text-amber-300"
-                  : "border-transparent bg-destructive/15 text-destructive";
-            return (
-              <div
-                key={c.name}
-                className={cn(
-                  "relative overflow-hidden rounded-md border bg-card/40 p-3.5",
-                  c.maintenance === "urgent" ? "border-destructive/40" : "border-border",
-                )}
-              >
-                <div
-                  className={cn(
-                    "absolute top-0 right-0 left-0 h-0.5",
-                    c.occupancy >= 75
-                      ? "bg-emerald-500"
-                      : c.occupancy >= 50
-                        ? "bg-amber-500"
-                        : "bg-destructive",
-                  )}
-                />
-                <div className="mb-2.5 flex items-start justify-between gap-2">
-                  <p className="text-[15px] font-semibold text-foreground">{c.name}</p>
-                  <Badge variant="outline" className={cn("text-[10px]", maintClass)}>
-                    {t(`maintenance.${c.maintenance}`)}
-                  </Badge>
-                </div>
-                <div className="mb-2.5 grid grid-cols-2 gap-1.5">
-                  {[
-                    [t("fieldSport"), c.sport],
-                    [t("fieldSurface"), c.surface],
-                    [t("fieldType"), c.indoor ? t("indoor") : t("outdoor")],
-                    [t("fieldBranch"), c.branch],
-                  ].map(([label, value]) => (
-                    <div key={String(label)}>
-                      <EntitySectionHead>{label}</EntitySectionHead>
-                      <p className="flex items-center gap-1 text-xs font-semibold text-muted-foreground">
-                        {label === t("fieldType") ? (
-                          c.indoor ? (
-                            <Home className="h-3 w-3" />
-                          ) : (
-                            <Sun className="h-3 w-3" />
-                          )
-                        ) : null}
-                        {value}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-                <EntitySectionHead>
-                  {t("usageMeta", { rate: c.bookingRate })}
-                </EntitySectionHead>
-                <EntityHealthBar score={c.occupancy} size="sm" />
-              </div>
-            );
-          })}
-        </div>
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto soft-scrollbar p-4 md:px-6 md:pb-6">
+        {isLoading ? <EntityDetailLoading label={tCommon("loading")} /> : null}
+        {isError ? (
+          <EntityDetailError
+            message={tc("loadError")}
+            notFound={error instanceof ApiError && error.status === 404}
+            retryLabel={tCommon("retry")}
+            onRetry={() => void refetch()}
+            retryDisabled={isFetching}
+            backHref={`/organizations/${orgId}`}
+            backLabel={ts("menuBack")}
+          />
+        ) : null}
+        {!isLoading && !isError && filtered.length === 0 ? (
+          <DataListEmpty
+            title={courts.length === 0 ? tc("empty") : t("emptyFiltered")}
+            description={courts.length === 0 ? t("emptyHint") : undefined}
+            action={
+              courts.length === 0 ? (
+                <Button
+                  type="button"
+                  size="lg"
+                  className={cn("mt-3", softDirectoryPrimaryBtn)}
+                  onClick={() => setSheetOpen(true)}
+                >
+                  <Plus className="size-4" />
+                  {t("addCourt")}
+                </Button>
+              ) : undefined
+            }
+          />
+        ) : null}
+        {!isLoading && !isError && filtered.length > 0 ? (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-4 xl:grid-cols-5">
+            {filtered.map((court: Court) => (
+              <CourtCard
+                key={court.id}
+                court={court}
+                branchName={branchName.get(court.branch_id)}
+              />
+            ))}
+          </div>
+        ) : null}
       </div>
+
+      <CourtFormSheet
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+        organizationId={orgId}
+        mode="create"
+      />
     </div>
   );
 }

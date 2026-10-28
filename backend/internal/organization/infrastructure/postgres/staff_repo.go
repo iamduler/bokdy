@@ -27,7 +27,7 @@ var _ repository.StaffRepository = (*StaffRepo)(nil)
 
 func (r *StaffRepo) Add(ctx context.Context, tx pgx.Tx, member *entity.StaffMember) error {
 	return r.q.WithTx(tx).AddStaffMember(ctx, dbsqlc.AddStaffMemberParams{
-		ID: member.ID, OrganizationID: member.OrganizationID, LocationID: member.LocationID, UserID: member.UserID,
+		ID: member.ID, OrganizationID: member.OrganizationID, BranchID: member.BranchID, UserID: member.UserID,
 		Title: nullStr(member.Title), Status: dbsqlc.OrganizationStaffStatus(member.Status),
 		CreatedAt: member.CreatedAt, UpdatedAt: member.UpdatedAt,
 	})
@@ -41,7 +41,7 @@ func (r *StaffRepo) FindByID(ctx context.Context, orgID, staffID uuid.UUID) (*en
 		}
 		return nil, err
 	}
-	return toStaff(row.ID, row.OrganizationID, row.LocationID, row.UserID, row.Title, row.Status, row.CreatedAt, row.UpdatedAt), nil
+	return toStaff(row.ID, row.OrganizationID, row.BranchID, row.UserID, row.Title, row.Status, row.CreatedAt, row.UpdatedAt), nil
 }
 
 func (r *StaffRepo) FindByOrgUser(ctx context.Context, orgID, userID uuid.UUID) (*entity.StaffMember, error) {
@@ -52,7 +52,7 @@ func (r *StaffRepo) FindByOrgUser(ctx context.Context, orgID, userID uuid.UUID) 
 		}
 		return nil, err
 	}
-	return toStaff(row.ID, row.OrganizationID, row.LocationID, row.UserID, row.Title, row.Status, row.CreatedAt, row.UpdatedAt), nil
+	return toStaff(row.ID, row.OrganizationID, row.BranchID, row.UserID, row.Title, row.Status, row.CreatedAt, row.UpdatedAt), nil
 }
 
 func (r *StaffRepo) IsActiveMember(ctx context.Context, orgID, userID uuid.UUID) (bool, error) {
@@ -66,14 +66,14 @@ func (r *StaffRepo) ListByOrg(ctx context.Context, orgID uuid.UUID) ([]entity.St
 	}
 	out := make([]entity.StaffMember, 0, len(rows))
 	for _, row := range rows {
-		out = append(out, *toStaff(row.ID, row.OrganizationID, row.LocationID, row.UserID, row.Title, row.Status, row.CreatedAt, row.UpdatedAt))
+		out = append(out, *toStaff(row.ID, row.OrganizationID, row.BranchID, row.UserID, row.Title, row.Status, row.CreatedAt, row.UpdatedAt))
 	}
 	return out, nil
 }
 
 func (r *StaffRepo) Update(ctx context.Context, tx pgx.Tx, member *entity.StaffMember) error {
 	return r.q.WithTx(tx).UpdateStaffMember(ctx, dbsqlc.UpdateStaffMemberParams{
-		OrganizationID: member.OrganizationID, ID: member.ID, Title: nullStr(member.Title), LocationID: member.LocationID,
+		OrganizationID: member.OrganizationID, ID: member.ID, Title: nullStr(member.Title), BranchID: member.BranchID,
 	})
 }
 
@@ -88,7 +88,7 @@ func toStaff(
 	status dbsqlc.OrganizationStaffStatus, createdAt, updatedAt time.Time,
 ) *entity.StaffMember {
 	return &entity.StaffMember{
-		ID: id, OrganizationID: orgID, LocationID: locationID, UserID: userID, Title: title,
+		ID: id, OrganizationID: orgID, BranchID: locationID, UserID: userID, Title: title,
 		Status: entity.StaffStatus(status), CreatedAt: createdAt, UpdatedAt: updatedAt,
 	}
 }

@@ -140,6 +140,11 @@ func (s *OrganizationService) OpenFile(ctx context.Context, fileID uuid.UUID) (s
 	return filepath.Join(s.fileDirOrDefault(), file.Path), file.MimeType, nil
 }
 
+// FileDir returns the local directory where uploaded files are stored.
+func (s *OrganizationService) FileDir() string {
+	return s.fileDirOrDefault()
+}
+
 func (s *OrganizationService) fileDirOrDefault() string {
 	if s.fileDir != "" {
 		return s.fileDir

@@ -196,7 +196,7 @@ func toReservationDTO(res *entity.Reservation) reservationDTO {
 	dto := reservationDTO{
 		ID: res.ID.String(), PublicID: res.PublicID, ReservationNo: res.ReservationNo,
 		Status: string(res.Status), Source: string(res.Source),
-		CustomerID: res.CustomerID.String(), BranchID: res.LocationID.String(),
+		CustomerID: res.CustomerID.String(), BranchID: res.BranchID.String(),
 		CourtID: res.CourtID.String(), Currency: res.Currency,
 		Subtotal: res.Subtotal, DiscountAmount: res.DiscountAmount,
 		TaxAmount: res.TaxAmount, TotalAmount: res.TotalAmount,

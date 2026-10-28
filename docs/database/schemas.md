@@ -9,10 +9,10 @@ Read the `CONVENTIONS` block at the top of that file before adding tables.
 |--------|------|
 | `infrastructure` | Outbox, idempotency, jobs, worker internals |
 | `identity` | Users, credentials, sessions, RBAC |
-| `organization` | Tenant, organization, staff (Branch/Court live later as location/resource) |
+| `organization` | Tenant, organization, staff, Branch (`branches`) |
 | `reference` | Shared catalogs: `locales`, `countries`, `currencies` |
 | `platform` | Cross-cutting files, audit (`00005`), notifications |
-| `catalog` | Services, resources (Court), categories |
+| `catalog` | Court (`courts`), Court Type (`court_types`), sports |
 | `crm` | Customers |
 | `booking` | Reservation + booking aggregates (do not merge) |
 | `billing` | Invoices, payments |

@@ -1358,7 +1358,7 @@ Court
 
 Trigger
 
-Owner creates a court (`catalog.resources`, `resource_type=court`). Initial status `inactive`. Availability init deferred to W5.
+Owner creates a court (`catalog.courts`). Initial status `inactive`. Availability init deferred to W5.
 
 Consumers
 

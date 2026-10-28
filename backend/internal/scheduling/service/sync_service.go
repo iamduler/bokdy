@@ -51,7 +51,7 @@ func (s *SyncService) SyncCourt(ctx context.Context, courtID uuid.UUID) error {
 	from := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
 	to := from.AddDate(0, 0, entity.SyncHorizonDays)
 
-	hours, err := s.repo.ListBusinessHours(ctx, court.LocationID)
+	hours, err := s.repo.ListBusinessHours(ctx, court.BranchID)
 	if err != nil {
 		return apperr.Wrap(err, apperr.CodeInternal, "load business hours")
 	}
@@ -59,7 +59,7 @@ func (s *SyncService) SyncCourt(ctx context.Context, courtID uuid.UUID) error {
 	for _, h := range hours {
 		hourByDow[h.Weekday] = h
 	}
-	holidays, err := s.repo.ListHolidays(ctx, court.LocationID, from, to)
+	holidays, err := s.repo.ListHolidays(ctx, court.BranchID, from, to)
 	if err != nil {
 		return apperr.Wrap(err, apperr.CodeInternal, "load holidays")
 	}
@@ -95,7 +95,7 @@ func (s *SyncService) SyncCourt(ctx context.Context, courtID uuid.UUID) error {
 			}
 			end := to.Add(24 * time.Hour)
 			b := &entity.ResourceBlock{
-				ID: id.MustNewUUID(), ResourceID: courtID, BlockType: entity.BlockMaintenance,
+				ID: id.MustNewUUID(), CourtID: courtID, BlockType: entity.BlockMaintenance,
 				ReferenceType: "resource_maintenance", ReferenceID: &maint.ID,
 				StartsAt: start, EndsAt: end, Reason: "maintenance", CreatedAt: now,
 			}
@@ -116,7 +116,7 @@ func (s *SyncService) SyncCourt(ctx context.Context, courtID uuid.UUID) error {
 
 		for d := from; d.Before(to); d = d.AddDate(0, 0, 1) {
 			proj := &entity.AvailabilityProjection{
-				ID: id.MustNewUUID(), ResourceID: courtID, ProjectionDate: d,
+				ID: id.MustNewUUID(), CourtID: courtID, ProjectionDate: d,
 				Status: entity.ProjectionGenerated, GeneratedAt: now,
 			}
 			daySlots, availMin, occMin := buildDaySlots(d, hourByDow, holidays, blocks, courtID, slotMin, bookableStatus, now)
@@ -140,7 +140,7 @@ func (s *SyncService) SyncCourt(ctx context.Context, courtID uuid.UUID) error {
 			EntityType: "Court", EntityID: courtID,
 			Payload: map[string]any{
 				"resource_id": courtID.String(),
-				"location_id": court.LocationID.String(),
+				"location_id": court.BranchID.String(),
 				"from":        from.Format(time.RFC3339),
 				"to":          to.Format(time.RFC3339),
 				"slot_count":  len(allSlots),
@@ -177,7 +177,7 @@ func buildDaySlots(
 		end := t.Add(step)
 		avail := !overlapsBlock(t, end, blocks)
 		slots = append(slots, entity.TimeSlot{
-			ID: id.MustNewUUID(), ResourceID: courtID, StartsAt: t, EndsAt: end,
+			ID: id.MustNewUUID(), CourtID: courtID, StartsAt: t, EndsAt: end,
 			IsAvailable: avail, Source: "projection", GeneratedAt: now,
 		})
 		mins := slotMin

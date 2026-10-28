@@ -195,13 +195,21 @@ A playable sports court.
 
 Each Court belongs to one Branch.
 
-Each Court belongs to one Court Type.
+Each Court belongs to exactly one Sport (`catalog.sports`).
 
 Each Court has
 
 - Code
 - Name
 - Status
+- Environment (indoor / outdoor / unspecified)
+- Surface (PVC, wood, hard court, grass, …)
+- Dimensions (optional free text)
+- Description (optional sanitized HTML)
+- Gallery images
+- Court amenities (lights, AC, seating, …)
+
+Court is not linked to Court Type. Pricing base rates key off Sport.
 
 ---
 
@@ -213,9 +221,9 @@ A permanent business identifier.
 
 Example
 
-BAD-001
+CRT00001
 
-Court Code never changes.
+Court Code never changes. Assigned by the system per branch.
 
 ---
 
@@ -253,19 +261,9 @@ VIP Zone
 
 ## Court Type
 
-Defines the sport played on a court.
+Legacy catalog aggregate (`catalog.court_types`). Not attached to Court.
 
-Examples
-
-Badminton
-
-Football
-
-Tennis
-
-Pickleball
-
-Each Court belongs to exactly one Court Type.
+Historical W4 used Court Type for BR-004 and pricing; MVP now uses Sport on Court and `sport_id` on category prices. `/court-types` remains for deferred cleanup.
 
 ---
 

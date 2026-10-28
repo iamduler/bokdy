@@ -316,7 +316,7 @@ func toBookingDTOs(items []entity.Booking) []bookingDTO {
 func toBookingDTO(b *entity.Booking) bookingDTO {
 	dto := bookingDTO{
 		ID: b.ID.String(), PublicID: b.PublicID, BookingNo: b.BookingNo, Status: string(b.Status),
-		CustomerID: b.CustomerID.String(), BranchID: b.LocationID.String(), CourtID: b.CourtID.String(),
+		CustomerID: b.CustomerID.String(), BranchID: b.BranchID.String(), CourtID: b.CourtID.String(),
 		Currency: b.Currency, Subtotal: b.Subtotal, DiscountAmount: b.DiscountAmount,
 		TaxAmount: b.TaxAmount, TotalAmount: b.TotalAmount,
 		StartsAt: b.StartsAt.Format(time.RFC3339), EndsAt: b.EndsAt.Format(time.RFC3339),

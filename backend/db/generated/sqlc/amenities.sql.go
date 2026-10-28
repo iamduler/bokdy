@@ -13,27 +13,27 @@ import (
 )
 
 const createLocationAmenity = `-- name: CreateLocationAmenity :exec
-INSERT INTO organization.location_amenities (location_id, amenity_id, created_at)
+INSERT INTO organization.branch_amenities (branch_id, amenity_id, created_at)
 VALUES ($1, $2, $3)
 `
 
 type CreateLocationAmenityParams struct {
-	LocationID uuid.UUID `json:"location_id"`
-	AmenityID  uuid.UUID `json:"amenity_id"`
-	CreatedAt  time.Time `json:"created_at"`
+	BranchID  uuid.UUID `json:"branch_id"`
+	AmenityID uuid.UUID `json:"amenity_id"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 func (q *Queries) CreateLocationAmenity(ctx context.Context, arg CreateLocationAmenityParams) error {
-	_, err := q.db.Exec(ctx, createLocationAmenity, arg.LocationID, arg.AmenityID, arg.CreatedAt)
+	_, err := q.db.Exec(ctx, createLocationAmenity, arg.BranchID, arg.AmenityID, arg.CreatedAt)
 	return err
 }
 
 const deleteLocationAmenities = `-- name: DeleteLocationAmenities :exec
-DELETE FROM organization.location_amenities WHERE location_id = $1
+DELETE FROM organization.branch_amenities WHERE branch_id = $1
 `
 
-func (q *Queries) DeleteLocationAmenities(ctx context.Context, locationID uuid.UUID) error {
-	_, err := q.db.Exec(ctx, deleteLocationAmenities, locationID)
+func (q *Queries) DeleteLocationAmenities(ctx context.Context, branchID uuid.UUID) error {
+	_, err := q.db.Exec(ctx, deleteLocationAmenities, branchID)
 	return err
 }
 
@@ -131,13 +131,13 @@ func (q *Queries) ListAmenitiesByIDs(ctx context.Context, ids []uuid.UUID) ([]Li
 }
 
 const listLocationAmenityIDs = `-- name: ListLocationAmenityIDs :many
-SELECT amenity_id FROM organization.location_amenities
-WHERE location_id = $1
+SELECT amenity_id FROM organization.branch_amenities
+WHERE branch_id = $1
 ORDER BY amenity_id ASC
 `
 
-func (q *Queries) ListLocationAmenityIDs(ctx context.Context, locationID uuid.UUID) ([]uuid.UUID, error) {
-	rows, err := q.db.Query(ctx, listLocationAmenityIDs, locationID)
+func (q *Queries) ListLocationAmenityIDs(ctx context.Context, branchID uuid.UUID) ([]uuid.UUID, error) {
+	rows, err := q.db.Query(ctx, listLocationAmenityIDs, branchID)
 	if err != nil {
 		return nil, err
 	}

@@ -18,9 +18,9 @@ SELECT l.id, l.public_id, l.organization_id, l.code,
        COALESCE(l.timezone, '') AS timezone, l.status::text AS status,
        COALESCE(p.name_vi, '') AS province_name, COALESCE(w.name_vi, '') AS ward_name,
        COALESCE(a.address_line_1, '') AS address_line_1
-FROM organization.locations l
+FROM organization.branches l
 JOIN organization.organizations o ON o.id = l.organization_id
-LEFT JOIN organization.location_addresses a ON a.location_id = l.id AND a.division_scheme = 'current_v2'
+LEFT JOIN organization.branch_addresses a ON a.branch_id = l.id AND a.division_scheme = 'current_v2'
 LEFT JOIN reference.province p ON p.id = a.province_id
 LEFT JOIN reference.ward w ON w.id = a.ward_id
 WHERE l.public_id = $1 AND l.deleted_at IS NULL AND l.status = 'active' AND o.status = 'active'
@@ -64,26 +64,25 @@ func (q *Queries) FindMarketplaceBranchByPublicID(ctx context.Context, publicID 
 }
 
 const findMarketplaceCourtByPublicID = `-- name: FindMarketplaceCourtByPublicID :one
-SELECT r.id, r.public_id, r.location_id, r.court_type_id, r.code,
+SELECT r.id, r.public_id, r.branch_id, r.sport_id, r.code,
        COALESCE(r.name_en, '') AS name_en, COALESCE(r.name_vi, '') AS name_vi,
        r.status::text AS status, r.is_bookable,
-       COALESCE(ct.slot_duration_minutes, 60)::int AS slot_minutes
-FROM catalog.resources r
-LEFT JOIN catalog.resource_categories ct ON ct.id = r.court_type_id
+       60::int AS slot_minutes
+FROM catalog.courts r
 WHERE r.public_id = $1 AND r.resource_type = 'court' AND r.deleted_at IS NULL AND r.status <> 'archived'
 `
 
 type FindMarketplaceCourtByPublicIDRow struct {
-	ID          uuid.UUID  `json:"id"`
-	PublicID    string     `json:"public_id"`
-	LocationID  uuid.UUID  `json:"location_id"`
-	CourtTypeID *uuid.UUID `json:"court_type_id"`
-	Code        string     `json:"code"`
-	NameEn      string     `json:"name_en"`
-	NameVi      string     `json:"name_vi"`
-	Status      string     `json:"status"`
-	IsBookable  bool       `json:"is_bookable"`
-	SlotMinutes int32      `json:"slot_minutes"`
+	ID          uuid.UUID `json:"id"`
+	PublicID    string    `json:"public_id"`
+	BranchID    uuid.UUID `json:"branch_id"`
+	SportID     uuid.UUID `json:"sport_id"`
+	Code        string    `json:"code"`
+	NameEn      string    `json:"name_en"`
+	NameVi      string    `json:"name_vi"`
+	Status      string    `json:"status"`
+	IsBookable  bool      `json:"is_bookable"`
+	SlotMinutes int32     `json:"slot_minutes"`
 }
 
 func (q *Queries) FindMarketplaceCourtByPublicID(ctx context.Context, publicID string) (FindMarketplaceCourtByPublicIDRow, error) {
@@ -92,8 +91,8 @@ func (q *Queries) FindMarketplaceCourtByPublicID(ctx context.Context, publicID s
 	err := row.Scan(
 		&i.ID,
 		&i.PublicID,
-		&i.LocationID,
-		&i.CourtTypeID,
+		&i.BranchID,
+		&i.SportID,
 		&i.Code,
 		&i.NameEn,
 		&i.NameVi,
@@ -105,31 +104,30 @@ func (q *Queries) FindMarketplaceCourtByPublicID(ctx context.Context, publicID s
 }
 
 const listMarketplaceCourts = `-- name: ListMarketplaceCourts :many
-SELECT r.id, r.public_id, r.location_id, r.court_type_id, r.code,
+SELECT r.id, r.public_id, r.branch_id, r.sport_id, r.code,
        COALESCE(r.name_en, '') AS name_en, COALESCE(r.name_vi, '') AS name_vi,
        r.status::text AS status, r.is_bookable,
-       COALESCE(ct.slot_duration_minutes, 60)::int AS slot_minutes
-FROM catalog.resources r
-LEFT JOIN catalog.resource_categories ct ON ct.id = r.court_type_id
-WHERE r.location_id = $1 AND r.resource_type = 'court' AND r.deleted_at IS NULL AND r.status <> 'archived'
+       60::int AS slot_minutes
+FROM catalog.courts r
+WHERE r.branch_id = $1 AND r.resource_type = 'court' AND r.deleted_at IS NULL AND r.status <> 'archived'
 ORDER BY r.created_at ASC
 `
 
 type ListMarketplaceCourtsRow struct {
-	ID          uuid.UUID  `json:"id"`
-	PublicID    string     `json:"public_id"`
-	LocationID  uuid.UUID  `json:"location_id"`
-	CourtTypeID *uuid.UUID `json:"court_type_id"`
-	Code        string     `json:"code"`
-	NameEn      string     `json:"name_en"`
-	NameVi      string     `json:"name_vi"`
-	Status      string     `json:"status"`
-	IsBookable  bool       `json:"is_bookable"`
-	SlotMinutes int32      `json:"slot_minutes"`
+	ID          uuid.UUID `json:"id"`
+	PublicID    string    `json:"public_id"`
+	BranchID    uuid.UUID `json:"branch_id"`
+	SportID     uuid.UUID `json:"sport_id"`
+	Code        string    `json:"code"`
+	NameEn      string    `json:"name_en"`
+	NameVi      string    `json:"name_vi"`
+	Status      string    `json:"status"`
+	IsBookable  bool      `json:"is_bookable"`
+	SlotMinutes int32     `json:"slot_minutes"`
 }
 
-func (q *Queries) ListMarketplaceCourts(ctx context.Context, locationID uuid.UUID) ([]ListMarketplaceCourtsRow, error) {
-	rows, err := q.db.Query(ctx, listMarketplaceCourts, locationID)
+func (q *Queries) ListMarketplaceCourts(ctx context.Context, branchID uuid.UUID) ([]ListMarketplaceCourtsRow, error) {
+	rows, err := q.db.Query(ctx, listMarketplaceCourts, branchID)
 	if err != nil {
 		return nil, err
 	}
@@ -140,8 +138,8 @@ func (q *Queries) ListMarketplaceCourts(ctx context.Context, locationID uuid.UUI
 		if err := rows.Scan(
 			&i.ID,
 			&i.PublicID,
-			&i.LocationID,
-			&i.CourtTypeID,
+			&i.BranchID,
+			&i.SportID,
 			&i.Code,
 			&i.NameEn,
 			&i.NameVi,
@@ -166,9 +164,9 @@ SELECT l.id, l.public_id, l.organization_id, l.code,
        COALESCE(l.timezone, '') AS timezone, l.status::text AS status,
        COALESCE(p.name_vi, '') AS province_name, COALESCE(w.name_vi, '') AS ward_name,
        COALESCE(a.address_line_1, '') AS address_line_1
-FROM organization.locations l
+FROM organization.branches l
 JOIN organization.organizations o ON o.id = l.organization_id
-LEFT JOIN organization.location_addresses a ON a.location_id = l.id AND a.division_scheme = 'current_v2'
+LEFT JOIN organization.branch_addresses a ON a.branch_id = l.id AND a.division_scheme = 'current_v2'
 LEFT JOIN reference.province p ON p.id = a.province_id
 LEFT JOIN reference.ward w ON w.id = a.ward_id
 WHERE l.deleted_at IS NULL

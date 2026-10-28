@@ -39,10 +39,10 @@ type ScheduleRepository interface {
 
 type CourtSyncRow struct {
 	ID                  uuid.UUID
-	LocationID          uuid.UUID
+	BranchID            uuid.UUID
 	TenantID            uuid.UUID
 	Status              string
-	CourtTypeID         *uuid.UUID
+	SportID             uuid.UUID
 	SlotDurationMinutes int
 	PublicID            string
 }
@@ -78,8 +78,8 @@ type MarketplaceBranch struct {
 type MarketplaceCourt struct {
 	ID          uuid.UUID
 	PublicID    string
-	LocationID  uuid.UUID
-	CourtTypeID uuid.UUID
+	BranchID    uuid.UUID
+	SportID     uuid.UUID
 	Code        string
 	NameEn      string
 	NameVi      string

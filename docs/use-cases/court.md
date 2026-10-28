@@ -16,17 +16,20 @@ Actors
 Preconditions
 
 - Branch exists.
+- Sport exists in platform catalog.
 
 Validations
 
-- Court code unique within branch.
+- Court code unique within branch (server-generated CRT#####).
 - Court name unique within branch.
-- Court type exists.
+- Sport is required.
+- Optional: surface, dimensions, description, amenity_ids, gallery (after create).
 
 Flow
 
-1. Create court.
-2. Initialize availability.
+1. Create court (inactive; sport + profile fields).
+2. Optionally upload gallery images.
+3. Initialize availability (deferred / sync on open).
 
 Events
 

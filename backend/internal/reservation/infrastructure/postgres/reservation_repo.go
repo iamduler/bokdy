@@ -28,7 +28,7 @@ var _ repository.ReservationRepository = (*ReservationRepo)(nil)
 func (r *ReservationRepo) Create(ctx context.Context, tx pgx.Tx, res *entity.Reservation) error {
 	return r.q.WithTx(tx).CreateReservation(ctx, dbsqlc.CreateReservationParams{
 		ID: res.ID, PublicID: res.PublicID, TenantID: res.TenantID, ReservationNo: res.ReservationNo,
-		CustomerID: res.CustomerID, LocationID: res.LocationID, ResourceID: res.CourtID,
+		CustomerID: res.CustomerID, BranchID: res.BranchID, CourtID: res.CourtID,
 		Source:   dbsqlc.ReservationReservationSource(res.Source),
 		Status:   dbsqlc.ReservationReservationStatus(res.Status),
 		Currency: res.Currency,
@@ -42,7 +42,7 @@ func (r *ReservationRepo) Create(ctx context.Context, tx pgx.Tx, res *entity.Res
 
 func (r *ReservationRepo) CreateResource(ctx context.Context, tx pgx.Tx, res *entity.ReservationResource) error {
 	return r.q.WithTx(tx).CreateReservationResource(ctx, dbsqlc.CreateReservationResourceParams{
-		ID: res.ID, ReservationID: res.ReservationID, ResourceID: res.CourtID,
+		ID: res.ID, ReservationID: res.ReservationID, CourtID: res.CourtID,
 		StartsAt: res.StartsAt, EndsAt: res.EndsAt, CreatedAt: res.CreatedAt,
 	})
 }
@@ -105,14 +105,14 @@ func (r *ReservationRepo) FindCourt(ctx context.Context, courtID uuid.UUID) (*en
 	}
 	return &entity.CourtRef{
 		ID: row.ID, PublicID: row.PublicID, TenantID: row.TenantID,
-		LocationID: row.LocationID, CourtTypeID: row.CourtTypeID, Status: row.Status,
+		BranchID: row.BranchID, SportID: row.SportID, Status: row.Status,
 	}, nil
 }
 
 func mapReservation(row dbsqlc.ReservationReservation) *entity.Reservation {
 	return &entity.Reservation{
 		ID: row.ID, PublicID: row.PublicID, TenantID: row.TenantID, ReservationNo: row.ReservationNo,
-		CustomerID: row.CustomerID, LocationID: row.LocationID, CourtID: row.ResourceID,
+		CustomerID: row.CustomerID, BranchID: row.BranchID, CourtID: row.CourtID,
 		Source: entity.Source(row.Source), Status: entity.Status(row.Status), Currency: row.Currency,
 		Subtotal: fromNumeric(row.Subtotal), DiscountAmount: fromNumeric(row.DiscountAmount),
 		TaxAmount: fromNumeric(row.TaxAmount), TotalAmount: fromNumeric(row.TotalAmount),

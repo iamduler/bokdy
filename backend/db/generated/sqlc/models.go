@@ -148,6 +148,141 @@ func (ns NullCatalogCourtEnvironment) Value() (driver.Value, error) {
 	return string(ns.CatalogCourtEnvironment), nil
 }
 
+type CatalogCourtStatus string
+
+const (
+	CatalogCourtStatusActive      CatalogCourtStatus = "active"
+	CatalogCourtStatusInactive    CatalogCourtStatus = "inactive"
+	CatalogCourtStatusMaintenance CatalogCourtStatus = "maintenance"
+	CatalogCourtStatusArchived    CatalogCourtStatus = "archived"
+)
+
+func (e *CatalogCourtStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = CatalogCourtStatus(s)
+	case string:
+		*e = CatalogCourtStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for CatalogCourtStatus: %T", src)
+	}
+	return nil
+}
+
+type NullCatalogCourtStatus struct {
+	CatalogCourtStatus CatalogCourtStatus `json:"catalog_court_status"`
+	Valid              bool               `json:"valid"` // Valid is true if CatalogCourtStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullCatalogCourtStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.CatalogCourtStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.CatalogCourtStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullCatalogCourtStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.CatalogCourtStatus), nil
+}
+
+type CatalogCourtSurface string
+
+const (
+	CatalogCourtSurfaceUnspecified    CatalogCourtSurface = "unspecified"
+	CatalogCourtSurfacePvc            CatalogCourtSurface = "pvc"
+	CatalogCourtSurfaceWood           CatalogCourtSurface = "wood"
+	CatalogCourtSurfaceHardCourt      CatalogCourtSurface = "hard_court"
+	CatalogCourtSurfaceGrass          CatalogCourtSurface = "grass"
+	CatalogCourtSurfaceArtificialTurf CatalogCourtSurface = "artificial_turf"
+	CatalogCourtSurfaceClay           CatalogCourtSurface = "clay"
+	CatalogCourtSurfaceRubber         CatalogCourtSurface = "rubber"
+	CatalogCourtSurfaceOther          CatalogCourtSurface = "other"
+)
+
+func (e *CatalogCourtSurface) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = CatalogCourtSurface(s)
+	case string:
+		*e = CatalogCourtSurface(s)
+	default:
+		return fmt.Errorf("unsupported scan type for CatalogCourtSurface: %T", src)
+	}
+	return nil
+}
+
+type NullCatalogCourtSurface struct {
+	CatalogCourtSurface CatalogCourtSurface `json:"catalog_court_surface"`
+	Valid               bool                `json:"valid"` // Valid is true if CatalogCourtSurface is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullCatalogCourtSurface) Scan(value interface{}) error {
+	if value == nil {
+		ns.CatalogCourtSurface, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.CatalogCourtSurface.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullCatalogCourtSurface) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.CatalogCourtSurface), nil
+}
+
+type CatalogCourtTypeStatus string
+
+const (
+	CatalogCourtTypeStatusActive   CatalogCourtTypeStatus = "active"
+	CatalogCourtTypeStatusArchived CatalogCourtTypeStatus = "archived"
+)
+
+func (e *CatalogCourtTypeStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = CatalogCourtTypeStatus(s)
+	case string:
+		*e = CatalogCourtTypeStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for CatalogCourtTypeStatus: %T", src)
+	}
+	return nil
+}
+
+type NullCatalogCourtTypeStatus struct {
+	CatalogCourtTypeStatus CatalogCourtTypeStatus `json:"catalog_court_type_status"`
+	Valid                  bool                   `json:"valid"` // Valid is true if CatalogCourtTypeStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullCatalogCourtTypeStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.CatalogCourtTypeStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.CatalogCourtTypeStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullCatalogCourtTypeStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.CatalogCourtTypeStatus), nil
+}
+
 type CatalogMaintenanceStatus string
 
 const (
@@ -190,92 +325,6 @@ func (ns NullCatalogMaintenanceStatus) Value() (driver.Value, error) {
 		return nil, nil
 	}
 	return string(ns.CatalogMaintenanceStatus), nil
-}
-
-type CatalogResourceCategoryStatus string
-
-const (
-	CatalogResourceCategoryStatusActive   CatalogResourceCategoryStatus = "active"
-	CatalogResourceCategoryStatusArchived CatalogResourceCategoryStatus = "archived"
-)
-
-func (e *CatalogResourceCategoryStatus) Scan(src interface{}) error {
-	switch s := src.(type) {
-	case []byte:
-		*e = CatalogResourceCategoryStatus(s)
-	case string:
-		*e = CatalogResourceCategoryStatus(s)
-	default:
-		return fmt.Errorf("unsupported scan type for CatalogResourceCategoryStatus: %T", src)
-	}
-	return nil
-}
-
-type NullCatalogResourceCategoryStatus struct {
-	CatalogResourceCategoryStatus CatalogResourceCategoryStatus `json:"catalog_resource_category_status"`
-	Valid                         bool                          `json:"valid"` // Valid is true if CatalogResourceCategoryStatus is not NULL
-}
-
-// Scan implements the Scanner interface.
-func (ns *NullCatalogResourceCategoryStatus) Scan(value interface{}) error {
-	if value == nil {
-		ns.CatalogResourceCategoryStatus, ns.Valid = "", false
-		return nil
-	}
-	ns.Valid = true
-	return ns.CatalogResourceCategoryStatus.Scan(value)
-}
-
-// Value implements the driver Valuer interface.
-func (ns NullCatalogResourceCategoryStatus) Value() (driver.Value, error) {
-	if !ns.Valid {
-		return nil, nil
-	}
-	return string(ns.CatalogResourceCategoryStatus), nil
-}
-
-type CatalogResourceStatus string
-
-const (
-	CatalogResourceStatusActive      CatalogResourceStatus = "active"
-	CatalogResourceStatusInactive    CatalogResourceStatus = "inactive"
-	CatalogResourceStatusMaintenance CatalogResourceStatus = "maintenance"
-	CatalogResourceStatusArchived    CatalogResourceStatus = "archived"
-)
-
-func (e *CatalogResourceStatus) Scan(src interface{}) error {
-	switch s := src.(type) {
-	case []byte:
-		*e = CatalogResourceStatus(s)
-	case string:
-		*e = CatalogResourceStatus(s)
-	default:
-		return fmt.Errorf("unsupported scan type for CatalogResourceStatus: %T", src)
-	}
-	return nil
-}
-
-type NullCatalogResourceStatus struct {
-	CatalogResourceStatus CatalogResourceStatus `json:"catalog_resource_status"`
-	Valid                 bool                  `json:"valid"` // Valid is true if CatalogResourceStatus is not NULL
-}
-
-// Scan implements the Scanner interface.
-func (ns *NullCatalogResourceStatus) Scan(value interface{}) error {
-	if value == nil {
-		ns.CatalogResourceStatus, ns.Valid = "", false
-		return nil
-	}
-	ns.Valid = true
-	return ns.CatalogResourceStatus.Scan(value)
-}
-
-// Value implements the driver Valuer interface.
-func (ns NullCatalogResourceStatus) Value() (driver.Value, error) {
-	if !ns.Valid {
-		return nil, nil
-	}
-	return string(ns.CatalogResourceStatus), nil
 }
 
 type CatalogResourceType string
@@ -895,6 +944,50 @@ func (ns NullInfrastructureEventStatus) Value() (driver.Value, error) {
 	return string(ns.InfrastructureEventStatus), nil
 }
 
+type OrganizationBranchStatus string
+
+const (
+	OrganizationBranchStatusActive      OrganizationBranchStatus = "active"
+	OrganizationBranchStatusInactive    OrganizationBranchStatus = "inactive"
+	OrganizationBranchStatusMaintenance OrganizationBranchStatus = "maintenance"
+	OrganizationBranchStatusArchived    OrganizationBranchStatus = "archived"
+)
+
+func (e *OrganizationBranchStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = OrganizationBranchStatus(s)
+	case string:
+		*e = OrganizationBranchStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for OrganizationBranchStatus: %T", src)
+	}
+	return nil
+}
+
+type NullOrganizationBranchStatus struct {
+	OrganizationBranchStatus OrganizationBranchStatus `json:"organization_branch_status"`
+	Valid                    bool                     `json:"valid"` // Valid is true if OrganizationBranchStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullOrganizationBranchStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.OrganizationBranchStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.OrganizationBranchStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullOrganizationBranchStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.OrganizationBranchStatus), nil
+}
+
 type OrganizationBusinessUnitStatus string
 
 const (
@@ -980,50 +1073,6 @@ func (ns NullOrganizationInvitationStatus) Value() (driver.Value, error) {
 		return nil, nil
 	}
 	return string(ns.OrganizationInvitationStatus), nil
-}
-
-type OrganizationLocationStatus string
-
-const (
-	OrganizationLocationStatusActive      OrganizationLocationStatus = "active"
-	OrganizationLocationStatusInactive    OrganizationLocationStatus = "inactive"
-	OrganizationLocationStatusMaintenance OrganizationLocationStatus = "maintenance"
-	OrganizationLocationStatusArchived    OrganizationLocationStatus = "archived"
-)
-
-func (e *OrganizationLocationStatus) Scan(src interface{}) error {
-	switch s := src.(type) {
-	case []byte:
-		*e = OrganizationLocationStatus(s)
-	case string:
-		*e = OrganizationLocationStatus(s)
-	default:
-		return fmt.Errorf("unsupported scan type for OrganizationLocationStatus: %T", src)
-	}
-	return nil
-}
-
-type NullOrganizationLocationStatus struct {
-	OrganizationLocationStatus OrganizationLocationStatus `json:"organization_location_status"`
-	Valid                      bool                       `json:"valid"` // Valid is true if OrganizationLocationStatus is not NULL
-}
-
-// Scan implements the Scanner interface.
-func (ns *NullOrganizationLocationStatus) Scan(value interface{}) error {
-	if value == nil {
-		ns.OrganizationLocationStatus, ns.Valid = "", false
-		return nil
-	}
-	ns.Valid = true
-	return ns.OrganizationLocationStatus.Scan(value)
-}
-
-// Value implements the driver Valuer interface.
-func (ns NullOrganizationLocationStatus) Value() (driver.Value, error) {
-	if !ns.Valid {
-		return nil, nil
-	}
-	return string(ns.OrganizationLocationStatus), nil
 }
 
 type OrganizationOrganizationStatus string
@@ -1978,8 +2027,8 @@ type BookingBooking struct {
 	BookingNo      string               `json:"booking_no"`
 	ReservationID  *uuid.UUID           `json:"reservation_id"`
 	CustomerID     uuid.UUID            `json:"customer_id"`
-	LocationID     uuid.UUID            `json:"location_id"`
-	ResourceID     uuid.UUID            `json:"resource_id"`
+	BranchID       uuid.UUID            `json:"branch_id"`
+	CourtID        uuid.UUID            `json:"court_id"`
 	Status         BookingBookingStatus `json:"status"`
 	Currency       string               `json:"currency"`
 	Subtotal       pgtype.Numeric       `json:"subtotal"`
@@ -1999,13 +2048,13 @@ type BookingBooking struct {
 	UpdatedAt      time.Time            `json:"updated_at"`
 }
 
-type BookingBookingResource struct {
-	ID         uuid.UUID `json:"id"`
-	BookingID  uuid.UUID `json:"booking_id"`
-	ResourceID uuid.UUID `json:"resource_id"`
-	StartsAt   time.Time `json:"starts_at"`
-	EndsAt     time.Time `json:"ends_at"`
-	CreatedAt  time.Time `json:"created_at"`
+type BookingBookingCourt struct {
+	ID        uuid.UUID `json:"id"`
+	BookingID uuid.UUID `json:"booking_id"`
+	CourtID   uuid.UUID `json:"court_id"`
+	StartsAt  time.Time `json:"starts_at"`
+	EndsAt    time.Time `json:"ends_at"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 type BookingCheckIn struct {
@@ -2016,46 +2065,41 @@ type BookingCheckIn struct {
 	CreatedAt   time.Time  `json:"created_at"`
 }
 
-type CatalogResource struct {
-	ID               uuid.UUID               `json:"id"`
-	PublicID         string                  `json:"public_id"`
-	TenantID         uuid.UUID               `json:"tenant_id"`
-	LocationID       uuid.UUID               `json:"location_id"`
-	CourtTypeID      *uuid.UUID              `json:"court_type_id"`
-	Code             string                  `json:"code"`
-	NameEn           *string                 `json:"name_en"`
-	NameVi           *string                 `json:"name_vi"`
-	ResourceType     CatalogResourceType     `json:"resource_type"`
-	ParentResourceID *uuid.UUID              `json:"parent_resource_id"`
-	Status           CatalogResourceStatus   `json:"status"`
-	IsBookable       bool                    `json:"is_bookable"`
-	Capacity         *int32                  `json:"capacity"`
-	SortOrder        *int32                  `json:"sort_order"`
-	Metadata         []byte                  `json:"metadata"`
-	CreatedAt        time.Time               `json:"created_at"`
-	UpdatedAt        time.Time               `json:"updated_at"`
-	DeletedAt        *time.Time              `json:"deleted_at"`
-	Environment      CatalogCourtEnvironment `json:"environment"`
+type CatalogCourt struct {
+	ID            uuid.UUID               `json:"id"`
+	PublicID      string                  `json:"public_id"`
+	TenantID      uuid.UUID               `json:"tenant_id"`
+	BranchID      uuid.UUID               `json:"branch_id"`
+	Code          string                  `json:"code"`
+	NameEn        *string                 `json:"name_en"`
+	NameVi        *string                 `json:"name_vi"`
+	ResourceType  CatalogResourceType     `json:"resource_type"`
+	ParentCourtID *uuid.UUID              `json:"parent_court_id"`
+	Status        CatalogCourtStatus      `json:"status"`
+	IsBookable    bool                    `json:"is_bookable"`
+	Capacity      *int32                  `json:"capacity"`
+	SortOrder     *int32                  `json:"sort_order"`
+	Metadata      []byte                  `json:"metadata"`
+	CreatedAt     time.Time               `json:"created_at"`
+	UpdatedAt     time.Time               `json:"updated_at"`
+	DeletedAt     *time.Time              `json:"deleted_at"`
+	Environment   CatalogCourtEnvironment `json:"environment"`
+	SportID       uuid.UUID               `json:"sport_id"`
+	Surface       CatalogCourtSurface     `json:"surface"`
+	Dimensions    *string                 `json:"dimensions"`
+	DescriptionEn *string                 `json:"description_en"`
+	DescriptionVi *string                 `json:"description_vi"`
 }
 
-type CatalogResourceCategory struct {
-	ID                  uuid.UUID                     `json:"id"`
-	TenantID            uuid.UUID                     `json:"tenant_id"`
-	ParentID            *uuid.UUID                    `json:"parent_id"`
-	Code                string                        `json:"code"`
-	NameEn              *string                       `json:"name_en"`
-	NameVi              *string                       `json:"name_vi"`
-	ResourceType        CatalogResourceType           `json:"resource_type"`
-	Status              CatalogResourceCategoryStatus `json:"status"`
-	SlotDurationMinutes int32                         `json:"slot_duration_minutes"`
-	CreatedAt           time.Time                     `json:"created_at"`
-	UpdatedAt           time.Time                     `json:"updated_at"`
-	DeletedAt           *time.Time                    `json:"deleted_at"`
+type CatalogCourtAmenity struct {
+	CourtID   uuid.UUID `json:"court_id"`
+	AmenityID uuid.UUID `json:"amenity_id"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
-type CatalogResourceMaintenance struct {
+type CatalogCourtMaintenance struct {
 	ID                uuid.UUID                `json:"id"`
-	ResourceID        uuid.UUID                `json:"resource_id"`
+	CourtID           uuid.UUID                `json:"court_id"`
 	Status            CatalogMaintenanceStatus `json:"status"`
 	Title             *string                  `json:"title"`
 	Description       *string                  `json:"description"`
@@ -2064,6 +2108,32 @@ type CatalogResourceMaintenance struct {
 	NextMaintenanceAt *time.Time               `json:"next_maintenance_at"`
 	CreatedAt         time.Time                `json:"created_at"`
 	UpdatedAt         time.Time                `json:"updated_at"`
+}
+
+type CatalogCourtMedium struct {
+	ID        uuid.UUID `json:"id"`
+	CourtID   uuid.UUID `json:"court_id"`
+	FileID    uuid.UUID `json:"file_id"`
+	CaptionEn *string   `json:"caption_en"`
+	CaptionVi *string   `json:"caption_vi"`
+	SortOrder int32     `json:"sort_order"`
+	IsCover   bool      `json:"is_cover"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+type CatalogCourtType struct {
+	ID                  uuid.UUID              `json:"id"`
+	TenantID            uuid.UUID              `json:"tenant_id"`
+	ParentID            *uuid.UUID             `json:"parent_id"`
+	Code                string                 `json:"code"`
+	NameEn              *string                `json:"name_en"`
+	NameVi              *string                `json:"name_vi"`
+	ResourceType        CatalogResourceType    `json:"resource_type"`
+	Status              CatalogCourtTypeStatus `json:"status"`
+	SlotDurationMinutes int32                  `json:"slot_duration_minutes"`
+	CreatedAt           time.Time              `json:"created_at"`
+	UpdatedAt           time.Time              `json:"updated_at"`
+	DeletedAt           *time.Time             `json:"deleted_at"`
 }
 
 type CatalogSport struct {
@@ -2342,48 +2412,37 @@ type InfrastructureOutboxEvent struct {
 	CreatedAt   time.Time                 `json:"created_at"`
 }
 
-type OrganizationBusinessUnit struct {
-	ID             uuid.UUID                      `json:"id"`
-	OrganizationID uuid.UUID                      `json:"organization_id"`
-	Code           string                         `json:"code"`
-	NameEn         *string                        `json:"name_en"`
-	NameVi         *string                        `json:"name_vi"`
-	Status         OrganizationBusinessUnitStatus `json:"status"`
-	CreatedAt      time.Time                      `json:"created_at"`
-	UpdatedAt      time.Time                      `json:"updated_at"`
+type OrganizationBranch struct {
+	ID             uuid.UUID                `json:"id"`
+	PublicID       string                   `json:"public_id"`
+	BusinessUnitID uuid.UUID                `json:"business_unit_id"`
+	OrganizationID uuid.UUID                `json:"organization_id"`
+	Code           string                   `json:"code"`
+	NameEn         *string                  `json:"name_en"`
+	NameVi         *string                  `json:"name_vi"`
+	Phone          *string                  `json:"phone"`
+	Email          *string                  `json:"email"`
+	Timezone       *string                  `json:"timezone"`
+	Status         OrganizationBranchStatus `json:"status"`
+	CreatedAt      time.Time                `json:"created_at"`
+	UpdatedAt      time.Time                `json:"updated_at"`
+	DeletedAt      *time.Time               `json:"deleted_at"`
+	Slug           string                   `json:"slug"`
+	LogoFileID     *uuid.UUID               `json:"logo_file_id"`
+	BannerFileID   *uuid.UUID               `json:"banner_file_id"`
+	Website        *string                  `json:"website"`
+	FacebookUrl    *string                  `json:"facebook_url"`
+	GoogleMapsUrl  *string                  `json:"google_maps_url"`
+	FoundedYear    *int32                   `json:"founded_year"`
+	ShortIntroEn   *string                  `json:"short_intro_en"`
+	ShortIntroVi   *string                  `json:"short_intro_vi"`
+	DescriptionEn  *string                  `json:"description_en"`
+	DescriptionVi  *string                  `json:"description_vi"`
 }
 
-type OrganizationLocation struct {
-	ID             uuid.UUID                  `json:"id"`
-	PublicID       string                     `json:"public_id"`
-	BusinessUnitID uuid.UUID                  `json:"business_unit_id"`
-	OrganizationID uuid.UUID                  `json:"organization_id"`
-	Code           string                     `json:"code"`
-	NameEn         *string                    `json:"name_en"`
-	NameVi         *string                    `json:"name_vi"`
-	Phone          *string                    `json:"phone"`
-	Email          *string                    `json:"email"`
-	Timezone       *string                    `json:"timezone"`
-	Status         OrganizationLocationStatus `json:"status"`
-	CreatedAt      time.Time                  `json:"created_at"`
-	UpdatedAt      time.Time                  `json:"updated_at"`
-	DeletedAt      *time.Time                 `json:"deleted_at"`
-	Slug           string                     `json:"slug"`
-	LogoFileID     *uuid.UUID                 `json:"logo_file_id"`
-	BannerFileID   *uuid.UUID                 `json:"banner_file_id"`
-	Website        *string                    `json:"website"`
-	FacebookUrl    *string                    `json:"facebook_url"`
-	GoogleMapsUrl  *string                    `json:"google_maps_url"`
-	FoundedYear    *int32                     `json:"founded_year"`
-	ShortIntroEn   *string                    `json:"short_intro_en"`
-	ShortIntroVi   *string                    `json:"short_intro_vi"`
-	DescriptionEn  *string                    `json:"description_en"`
-	DescriptionVi  *string                    `json:"description_vi"`
-}
-
-type OrganizationLocationAddress struct {
+type OrganizationBranchAddress struct {
 	ID               uuid.UUID                    `json:"id"`
-	LocationID       uuid.UUID                    `json:"location_id"`
+	BranchID         uuid.UUID                    `json:"branch_id"`
 	CountryID        *uuid.UUID                   `json:"country_id"`
 	AddressLine1     *string                      `json:"address_line_1"`
 	AddressLine2     *string                      `json:"address_line_2"`
@@ -2398,26 +2457,26 @@ type OrganizationLocationAddress struct {
 	WardID           *uuid.UUID                   `json:"ward_id"`
 }
 
-type OrganizationLocationAmenity struct {
-	LocationID uuid.UUID `json:"location_id"`
-	AmenityID  uuid.UUID `json:"amenity_id"`
-	CreatedAt  time.Time `json:"created_at"`
+type OrganizationBranchAmenity struct {
+	BranchID  uuid.UUID `json:"branch_id"`
+	AmenityID uuid.UUID `json:"amenity_id"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
-type OrganizationLocationMedium struct {
-	ID         uuid.UUID `json:"id"`
-	LocationID uuid.UUID `json:"location_id"`
-	FileID     uuid.UUID `json:"file_id"`
-	CaptionEn  *string   `json:"caption_en"`
-	CaptionVi  *string   `json:"caption_vi"`
-	SortOrder  int32     `json:"sort_order"`
-	IsCover    bool      `json:"is_cover"`
-	CreatedAt  time.Time `json:"created_at"`
+type OrganizationBranchMedium struct {
+	ID        uuid.UUID `json:"id"`
+	BranchID  uuid.UUID `json:"branch_id"`
+	FileID    uuid.UUID `json:"file_id"`
+	CaptionEn *string   `json:"caption_en"`
+	CaptionVi *string   `json:"caption_vi"`
+	SortOrder int32     `json:"sort_order"`
+	IsCover   bool      `json:"is_cover"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
-type OrganizationLocationSetting struct {
+type OrganizationBranchSetting struct {
 	ID                   uuid.UUID `json:"id"`
-	LocationID           uuid.UUID `json:"location_id"`
+	BranchID             uuid.UUID `json:"branch_id"`
 	BookingSettings      []byte    `json:"booking_settings"`
 	PricingSettings      []byte    `json:"pricing_settings"`
 	CalendarSettings     []byte    `json:"calendar_settings"`
@@ -2425,11 +2484,22 @@ type OrganizationLocationSetting struct {
 	UpdatedAt            time.Time `json:"updated_at"`
 }
 
-type OrganizationLocationSport struct {
-	ID         uuid.UUID `json:"id"`
-	LocationID uuid.UUID `json:"location_id"`
-	SportID    uuid.UUID `json:"sport_id"`
-	CreatedAt  time.Time `json:"created_at"`
+type OrganizationBranchSport struct {
+	ID        uuid.UUID `json:"id"`
+	BranchID  uuid.UUID `json:"branch_id"`
+	SportID   uuid.UUID `json:"sport_id"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+type OrganizationBusinessUnit struct {
+	ID             uuid.UUID                      `json:"id"`
+	OrganizationID uuid.UUID                      `json:"organization_id"`
+	Code           string                         `json:"code"`
+	NameEn         *string                        `json:"name_en"`
+	NameVi         *string                        `json:"name_vi"`
+	Status         OrganizationBusinessUnitStatus `json:"status"`
+	CreatedAt      time.Time                      `json:"created_at"`
+	UpdatedAt      time.Time                      `json:"updated_at"`
 }
 
 type OrganizationOrganization struct {
@@ -2494,7 +2564,7 @@ type OrganizationStaffInvitation struct {
 type OrganizationStaffMember struct {
 	ID             uuid.UUID               `json:"id"`
 	OrganizationID uuid.UUID               `json:"organization_id"`
-	LocationID     *uuid.UUID              `json:"location_id"`
+	BranchID       *uuid.UUID              `json:"branch_id"`
 	UserID         uuid.UUID               `json:"user_id"`
 	EmployeeCode   *string                 `json:"employee_code"`
 	Title          *string                 `json:"title"`
@@ -2595,7 +2665,7 @@ type PlatformFileReference struct {
 type PricingCategoryPrice struct {
 	ID             uuid.UUID      `json:"id"`
 	PriceVersionID uuid.UUID      `json:"price_version_id"`
-	CategoryID     uuid.UUID      `json:"category_id"`
+	SportID        uuid.UUID      `json:"sport_id"`
 	Amount         pgtype.Numeric `json:"amount"`
 	CreatedAt      time.Time      `json:"created_at"`
 }
@@ -2762,8 +2832,8 @@ type ReservationReservation struct {
 	TenantID       uuid.UUID                    `json:"tenant_id"`
 	ReservationNo  string                       `json:"reservation_no"`
 	CustomerID     uuid.UUID                    `json:"customer_id"`
-	LocationID     uuid.UUID                    `json:"location_id"`
-	ResourceID     uuid.UUID                    `json:"resource_id"`
+	BranchID       uuid.UUID                    `json:"branch_id"`
+	CourtID        uuid.UUID                    `json:"court_id"`
 	Source         ReservationReservationSource `json:"source"`
 	Status         ReservationReservationStatus `json:"status"`
 	Currency       string                       `json:"currency"`
@@ -2782,10 +2852,10 @@ type ReservationReservation struct {
 	UpdatedAt      time.Time                    `json:"updated_at"`
 }
 
-type ReservationReservationResource struct {
+type ReservationReservationCourt struct {
 	ID            uuid.UUID `json:"id"`
 	ReservationID uuid.UUID `json:"reservation_id"`
-	ResourceID    uuid.UUID `json:"resource_id"`
+	CourtID       uuid.UUID `json:"court_id"`
 	StartsAt      time.Time `json:"starts_at"`
 	EndsAt        time.Time `json:"ends_at"`
 	CreatedAt     time.Time `json:"created_at"`
@@ -2793,7 +2863,7 @@ type ReservationReservationResource struct {
 
 type SchedulingAvailabilityProjection struct {
 	ID               uuid.UUID                  `json:"id"`
-	ResourceID       uuid.UUID                  `json:"resource_id"`
+	CourtID          uuid.UUID                  `json:"court_id"`
 	ProjectionDate   pgtype.Date                `json:"projection_date"`
 	AvailableMinutes int32                      `json:"available_minutes"`
 	OccupiedMinutes  int32                      `json:"occupied_minutes"`
@@ -2802,33 +2872,33 @@ type SchedulingAvailabilityProjection struct {
 }
 
 type SchedulingBusinessHour struct {
-	ID         uuid.UUID   `json:"id"`
-	LocationID uuid.UUID   `json:"location_id"`
-	Weekday    int16       `json:"weekday"`
-	OpensAt    pgtype.Time `json:"opens_at"`
-	ClosesAt   pgtype.Time `json:"closes_at"`
-	IsClosed   bool        `json:"is_closed"`
-	CreatedAt  time.Time   `json:"created_at"`
-	UpdatedAt  time.Time   `json:"updated_at"`
+	ID        uuid.UUID   `json:"id"`
+	BranchID  uuid.UUID   `json:"branch_id"`
+	Weekday   int16       `json:"weekday"`
+	OpensAt   pgtype.Time `json:"opens_at"`
+	ClosesAt  pgtype.Time `json:"closes_at"`
+	IsClosed  bool        `json:"is_closed"`
+	CreatedAt time.Time   `json:"created_at"`
+	UpdatedAt time.Time   `json:"updated_at"`
 }
 
 type SchedulingCalendarHoliday struct {
-	ID         uuid.UUID   `json:"id"`
-	TenantID   uuid.UUID   `json:"tenant_id"`
-	LocationID *uuid.UUID  `json:"location_id"`
-	NameEn     *string     `json:"name_en"`
-	NameVi     *string     `json:"name_vi"`
-	StartsAt   time.Time   `json:"starts_at"`
-	EndsAt     time.Time   `json:"ends_at"`
-	IsClosed   bool        `json:"is_closed"`
-	OpensAt    pgtype.Time `json:"opens_at"`
-	ClosesAt   pgtype.Time `json:"closes_at"`
-	CreatedAt  time.Time   `json:"created_at"`
+	ID        uuid.UUID   `json:"id"`
+	TenantID  uuid.UUID   `json:"tenant_id"`
+	BranchID  *uuid.UUID  `json:"branch_id"`
+	NameEn    *string     `json:"name_en"`
+	NameVi    *string     `json:"name_vi"`
+	StartsAt  time.Time   `json:"starts_at"`
+	EndsAt    time.Time   `json:"ends_at"`
+	IsClosed  bool        `json:"is_closed"`
+	OpensAt   pgtype.Time `json:"opens_at"`
+	ClosesAt  pgtype.Time `json:"closes_at"`
+	CreatedAt time.Time   `json:"created_at"`
 }
 
-type SchedulingResourceBlock struct {
+type SchedulingCourtBlock struct {
 	ID            uuid.UUID           `json:"id"`
-	ResourceID    uuid.UUID           `json:"resource_id"`
+	CourtID       uuid.UUID           `json:"court_id"`
 	BlockType     SchedulingBlockType `json:"block_type"`
 	ReferenceType *string             `json:"reference_type"`
 	ReferenceID   *uuid.UUID          `json:"reference_id"`
@@ -2840,7 +2910,7 @@ type SchedulingResourceBlock struct {
 
 type SchedulingTimeSlot struct {
 	ID           uuid.UUID  `json:"id"`
-	ResourceID   uuid.UUID  `json:"resource_id"`
+	CourtID      uuid.UUID  `json:"court_id"`
 	StartsAt     time.Time  `json:"starts_at"`
 	EndsAt       time.Time  `json:"ends_at"`
 	IsAvailable  bool       `json:"is_available"`

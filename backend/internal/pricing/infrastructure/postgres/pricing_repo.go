@@ -64,7 +64,7 @@ func (r *PricingRepo) CreateVersion(ctx context.Context, tx pgx.Tx, v *entity.Pr
 
 func (r *PricingRepo) InsertCategoryPrice(ctx context.Context, tx pgx.Tx, p *entity.CategoryPrice) error {
 	return r.q.WithTx(tx).InsertCategoryPrice(ctx, dbsqlc.InsertCategoryPriceParams{
-		ID: p.ID, PriceVersionID: p.PriceVersionID, CategoryID: p.CategoryID,
+		ID: p.ID, PriceVersionID: p.PriceVersionID, SportID: p.SportID,
 		Amount: toNumeric(p.Amount), CreatedAt: p.CreatedAt,
 	})
 }
@@ -112,7 +112,7 @@ func (r *PricingRepo) ListCategoryPrices(ctx context.Context, versionID uuid.UUI
 	out := make([]entity.CategoryPrice, 0, len(rows))
 	for _, row := range rows {
 		out = append(out, entity.CategoryPrice{
-			ID: row.ID, PriceVersionID: row.PriceVersionID, CategoryID: row.CategoryID,
+			ID: row.ID, PriceVersionID: row.PriceVersionID, SportID: row.SportID,
 			Amount: fromNumeric(row.Amount), CreatedAt: row.CreatedAt,
 		})
 	}
@@ -176,7 +176,7 @@ func (r *PricingRepo) FindCourt(ctx context.Context, courtID uuid.UUID) (*entity
 		}
 		return nil, err
 	}
-	return mapCourt(row.ID, row.PublicID, row.TenantID, row.LocationID, row.CourtTypeID, row.Status, int(row.SlotDurationMinutes)), nil
+	return mapCourt(row.ID, row.PublicID, row.TenantID, row.BranchID, row.SportID, row.Status, int(row.SlotDurationMinutes)), nil
 }
 
 func (r *PricingRepo) FindCourtByPublicID(ctx context.Context, publicID string) (*entity.CourtPricingRow, error) {
@@ -187,11 +187,11 @@ func (r *PricingRepo) FindCourtByPublicID(ctx context.Context, publicID string) 
 		}
 		return nil, err
 	}
-	return mapCourt(row.ID, row.PublicID, row.TenantID, row.LocationID, row.CourtTypeID, row.Status, int(row.SlotDurationMinutes)), nil
+	return mapCourt(row.ID, row.PublicID, row.TenantID, row.BranchID, row.SportID, row.Status, int(row.SlotDurationMinutes)), nil
 }
 
-func (r *PricingRepo) CategoryBelongsToTenant(ctx context.Context, categoryID, tenantID uuid.UUID) (bool, error) {
-	_, err := r.q.FindCategoryInTenant(ctx, dbsqlc.FindCategoryInTenantParams{ID: categoryID, TenantID: tenantID})
+func (r *PricingRepo) SportExists(ctx context.Context, sportID uuid.UUID) (bool, error) {
+	_, err := r.q.FindSportByID(ctx, sportID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return false, nil
@@ -210,9 +210,9 @@ func mapVersion(row dbsqlc.PricingPriceVersion) *entity.PriceVersion {
 	}
 }
 
-func mapCourt(id uuid.UUID, publicID string, tenantID, locationID uuid.UUID, courtTypeID *uuid.UUID, status string, slotMin int) *entity.CourtPricingRow {
+func mapCourt(id uuid.UUID, publicID string, tenantID, locationID uuid.UUID, sportID uuid.UUID, status string, slotMin int) *entity.CourtPricingRow {
 	return &entity.CourtPricingRow{
-		ID: id, PublicID: publicID, TenantID: tenantID, LocationID: locationID,
-		CourtTypeID: courtTypeID, Status: status, SlotDurationMinutes: slotMin,
+		ID: id, PublicID: publicID, TenantID: tenantID, BranchID: locationID,
+		SportID: sportID, Status: status, SlotDurationMinutes: slotMin,
 	}
 }

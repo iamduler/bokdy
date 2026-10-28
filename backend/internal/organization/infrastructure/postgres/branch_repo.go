@@ -37,7 +37,7 @@ func (r *BranchRepo) Create(ctx context.Context, tx pgx.Tx, branch *entity.Branc
 		FoundedYear: toInt32Ptr(branch.FoundedYear),
 		ShortIntroEn: nullStr(branch.ShortIntroEn), ShortIntroVi: nullStr(branch.ShortIntroVi),
 		DescriptionEn: nullStr(branch.DescriptionEn), DescriptionVi: nullStr(branch.DescriptionVi),
-		Status: dbsqlc.OrganizationLocationStatus(branch.Status), CreatedAt: branch.CreatedAt, UpdatedAt: branch.UpdatedAt,
+		Status: dbsqlc.OrganizationBranchStatus(branch.Status), CreatedAt: branch.CreatedAt, UpdatedAt: branch.UpdatedAt,
 	}); err != nil {
 		return err
 	}
@@ -50,7 +50,7 @@ func (r *BranchRepo) Create(ctx context.Context, tx pgx.Tx, branch *entity.Branc
 		return err
 	}
 	return q.CreateLocationSettings(ctx, dbsqlc.CreateLocationSettingsParams{
-		ID: id.MustNewUUID(), LocationID: branch.ID,
+		ID: id.MustNewUUID(), BranchID: branch.ID,
 	})
 }
 
@@ -150,9 +150,9 @@ func (r *BranchRepo) UpdateMedia(ctx context.Context, tx pgx.Tx, orgID, branchID
 	})
 }
 
-func (r *BranchRepo) UpdateStatus(ctx context.Context, tx pgx.Tx, orgID, branchID uuid.UUID, status entity.LocationStatus) error {
+func (r *BranchRepo) UpdateStatus(ctx context.Context, tx pgx.Tx, orgID, branchID uuid.UUID, status entity.BranchStatus) error {
 	return r.q.WithTx(tx).UpdateLocationStatus(ctx, dbsqlc.UpdateLocationStatusParams{
-		OrganizationID: orgID, ID: branchID, Status: dbsqlc.OrganizationLocationStatus(status),
+		OrganizationID: orgID, ID: branchID, Status: dbsqlc.OrganizationBranchStatus(status),
 	})
 }
 
@@ -203,7 +203,7 @@ func (r *BranchRepo) replaceSports(ctx context.Context, q *dbsqlc.Queries, locat
 		}
 		seen[sportID] = struct{}{}
 		if err := q.CreateLocationSport(ctx, dbsqlc.CreateLocationSportParams{
-			ID: id.MustNewUUID(), LocationID: locationID, SportID: sportID, CreatedAt: now,
+			ID: id.MustNewUUID(), BranchID: locationID, SportID: sportID, CreatedAt: now,
 		}); err != nil {
 			return err
 		}
@@ -232,7 +232,7 @@ func (r *BranchRepo) ListSportIDsByLocations(ctx context.Context, locationIDs []
 		return nil, err
 	}
 	for _, row := range rows {
-		out[row.LocationID] = append(out[row.LocationID], row.SportID)
+		out[row.BranchID] = append(out[row.BranchID], row.SportID)
 	}
 	return out, nil
 }
@@ -247,20 +247,20 @@ func (r *BranchRepo) CountCourtsByLocations(ctx context.Context, locationIDs []u
 		return nil, err
 	}
 	for _, row := range rows {
-		out[row.LocationID] = int(row.CourtCount)
+		out[row.BranchID] = int(row.CourtCount)
 	}
 	return out, nil
 }
 
 func (r *BranchRepo) ListGallery(ctx context.Context, locationID uuid.UUID) ([]entity.LocationMedia, error) {
-	rows, err := r.q.ListLocationMedia(ctx, locationID)
+	rows, err := r.q.ListBranchMedia(ctx, locationID)
 	if err != nil {
 		return nil, err
 	}
 	out := make([]entity.LocationMedia, 0, len(rows))
 	for _, row := range rows {
 		out = append(out, entity.LocationMedia{
-			ID: row.ID, LocationID: row.LocationID, FileID: row.FileID,
+			ID: row.ID, BranchID: row.BranchID, FileID: row.FileID,
 			CaptionEn: row.CaptionEn, CaptionVi: row.CaptionVi,
 			SortOrder: int(row.SortOrder), IsCover: row.IsCover, CreatedAt: row.CreatedAt,
 		})
@@ -269,8 +269,8 @@ func (r *BranchRepo) ListGallery(ctx context.Context, locationID uuid.UUID) ([]e
 }
 
 func (r *BranchRepo) FindGalleryItem(ctx context.Context, locationID, mediaID uuid.UUID) (*entity.LocationMedia, error) {
-	row, err := r.q.FindLocationMediaByID(ctx, dbsqlc.FindLocationMediaByIDParams{
-		LocationID: locationID, ID: mediaID,
+	row, err := r.q.FindBranchMediaByID(ctx, dbsqlc.FindBranchMediaByIDParams{
+		BranchID: locationID, ID: mediaID,
 	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -279,36 +279,36 @@ func (r *BranchRepo) FindGalleryItem(ctx context.Context, locationID, mediaID uu
 		return nil, err
 	}
 	return &entity.LocationMedia{
-		ID: row.ID, LocationID: row.LocationID, FileID: row.FileID,
+		ID: row.ID, BranchID: row.BranchID, FileID: row.FileID,
 		CaptionEn: row.CaptionEn, CaptionVi: row.CaptionVi,
 		SortOrder: int(row.SortOrder), IsCover: row.IsCover, CreatedAt: row.CreatedAt,
 	}, nil
 }
 
 func (r *BranchRepo) CreateGalleryItem(ctx context.Context, tx pgx.Tx, item *entity.LocationMedia) error {
-	return r.q.WithTx(tx).CreateLocationMedia(ctx, dbsqlc.CreateLocationMediaParams{
-		ID: item.ID, LocationID: item.LocationID, FileID: item.FileID,
+	return r.q.WithTx(tx).CreateBranchMedia(ctx, dbsqlc.CreateBranchMediaParams{
+		ID: item.ID, BranchID: item.BranchID, FileID: item.FileID,
 		CaptionEn: nullStr(item.CaptionEn), CaptionVi: nullStr(item.CaptionVi),
 		SortOrder: int32(item.SortOrder), IsCover: item.IsCover, CreatedAt: item.CreatedAt,
 	})
 }
 
 func (r *BranchRepo) UpdateGalleryItem(ctx context.Context, tx pgx.Tx, item *entity.LocationMedia) error {
-	return r.q.WithTx(tx).UpdateLocationGalleryItem(ctx, dbsqlc.UpdateLocationGalleryItemParams{
-		LocationID: item.LocationID, ID: item.ID,
+	return r.q.WithTx(tx).UpdateBranchGalleryItem(ctx, dbsqlc.UpdateBranchGalleryItemParams{
+		BranchID: item.BranchID, ID: item.ID,
 		CaptionEn: nullStr(item.CaptionEn), CaptionVi: nullStr(item.CaptionVi),
 		SortOrder: int32(item.SortOrder), IsCover: item.IsCover,
 	})
 }
 
 func (r *BranchRepo) DeleteGalleryItem(ctx context.Context, tx pgx.Tx, locationID, mediaID uuid.UUID) error {
-	return r.q.WithTx(tx).DeleteLocationMedia(ctx, dbsqlc.DeleteLocationMediaParams{
-		LocationID: locationID, ID: mediaID,
+	return r.q.WithTx(tx).DeleteBranchMedia(ctx, dbsqlc.DeleteBranchMediaParams{
+		BranchID: locationID, ID: mediaID,
 	})
 }
 
 func (r *BranchRepo) MaxGallerySortOrder(ctx context.Context, locationID uuid.UUID) (int, error) {
-	v, err := r.q.MaxLocationMediaSortOrder(ctx, locationID)
+	v, err := r.q.MaxBranchMediaSortOrder(ctx, locationID)
 	if err != nil {
 		return 0, err
 	}
@@ -316,7 +316,7 @@ func (r *BranchRepo) MaxGallerySortOrder(ctx context.Context, locationID uuid.UU
 }
 
 func (r *BranchRepo) ClearGalleryCover(ctx context.Context, tx pgx.Tx, locationID uuid.UUID) error {
-	return r.q.WithTx(tx).ClearLocationMediaCover(ctx, locationID)
+	return r.q.WithTx(tx).ClearBranchMediaCover(ctx, locationID)
 }
 
 func (r *BranchRepo) ListActiveAmenities(ctx context.Context) ([]entity.Amenity, error) {
@@ -379,7 +379,7 @@ func (r *BranchRepo) ReplaceAmenities(ctx context.Context, tx pgx.Tx, locationID
 		}
 		seen[amenityID] = struct{}{}
 		if err := q.CreateLocationAmenity(ctx, dbsqlc.CreateLocationAmenityParams{
-			LocationID: locationID, AmenityID: amenityID, CreatedAt: now,
+			BranchID: locationID, AmenityID: amenityID, CreatedAt: now,
 		}); err != nil {
 			return err
 		}
@@ -390,7 +390,7 @@ func (r *BranchRepo) ReplaceAmenities(ctx context.Context, tx pgx.Tx, locationID
 func toCreateAddressParams(locationID uuid.UUID, addr entity.BranchAddress) dbsqlc.CreateLocationAddressParams {
 	return dbsqlc.CreateLocationAddressParams{
 		ID:               id.MustNewUUID(),
-		LocationID:       locationID,
+		BranchID:       locationID,
 		DivisionScheme:   dbsqlc.ReferenceAdminDivisionScheme(addr.DivisionScheme),
 		CountryID:        addr.CountryID,
 		ProvinceFormerID: addr.ProvinceFormerID,
@@ -414,7 +414,7 @@ func toBranchFromFind(row dbsqlc.FindBranchByIDRow) *entity.Branch {
 		ShortIntroEn: row.ShortIntroEn, ShortIntroVi: row.ShortIntroVi,
 		DescriptionEn: row.DescriptionEn, DescriptionVi: row.DescriptionVi,
 		LogoFileID: row.LogoFileID, BannerFileID: row.BannerFileID,
-		Status: entity.LocationStatus(row.Status), CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
+		Status: entity.BranchStatus(row.Status), CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
 		DeletedAt: row.DeletedAt, SportIDs: []uuid.UUID{},
 	}
 	b.Addresses = appendBranchAddresses(row.CurrentAddressID, row.CurrentCountryID, row.CurrentProvinceID, row.CurrentWardID,
@@ -455,7 +455,7 @@ func toBranchFromList(row dbsqlc.ListBranchesByOrgRow) *entity.Branch {
 		ShortIntroEn: row.ShortIntroEn, ShortIntroVi: row.ShortIntroVi,
 		DescriptionEn: row.DescriptionEn, DescriptionVi: row.DescriptionVi,
 		LogoFileID: row.LogoFileID, BannerFileID: row.BannerFileID,
-		Status: entity.LocationStatus(row.Status), CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
+		Status: entity.BranchStatus(row.Status), CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
 		DeletedAt: row.DeletedAt, SportIDs: []uuid.UUID{},
 	}
 	b.Addresses = appendBranchAddresses(row.CurrentAddressID, row.CurrentCountryID, row.CurrentProvinceID, row.CurrentWardID,
@@ -475,7 +475,7 @@ func appendBranchAddresses(
 	var out []entity.BranchAddress
 	if currentID != nil {
 		out = append(out, entity.BranchAddress{
-			ID: *currentID, LocationID: locationID, DivisionScheme: entity.AdminDivisionCurrentV2,
+			ID: *currentID, BranchID: locationID, DivisionScheme: entity.AdminDivisionCurrentV2,
 			CountryID: currentCountryID, ProvinceID: currentProvinceID, WardID: currentWardID,
 			AddressLine1: currentLine1, AddressLine2: currentLine2,
 			Latitude: fromNumericPtr(currentLat), Longitude: fromNumericPtr(currentLng),
@@ -484,7 +484,7 @@ func appendBranchAddresses(
 	}
 	if formerID != nil {
 		out = append(out, entity.BranchAddress{
-			ID: *formerID, LocationID: locationID, DivisionScheme: entity.AdminDivisionFormerV3,
+			ID: *formerID, BranchID: locationID, DivisionScheme: entity.AdminDivisionFormerV3,
 			CountryID: formerCountryID, ProvinceFormerID: provinceFormerID, DistrictFormerID: districtFormerID,
 			WardFormerID: wardFormerID, AddressLine1: formerLine1, AddressLine2: formerLine2,
 			Latitude: fromNumericPtr(formerLat), Longitude: fromNumericPtr(formerLng),

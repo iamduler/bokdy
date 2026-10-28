@@ -23,8 +23,8 @@ func NewPricingHandler(pricing *service.PricingService) *PricingHandler {
 }
 
 type categoryRateRequest struct {
-	CourtTypeID string  `json:"court_type_id" binding:"required,uuid"`
-	Amount      float64 `json:"amount"`
+	SportID string  `json:"sport_id" binding:"required,uuid"`
+	Amount  float64 `json:"amount"`
 }
 
 type timeRuleRequest struct {
@@ -50,8 +50,8 @@ type calculateRequest struct {
 }
 
 type categoryPriceDTO struct {
-	CourtTypeID string  `json:"court_type_id"`
-	Amount      float64 `json:"amount"`
+	SportID string  `json:"sport_id"`
+	Amount  float64 `json:"amount"`
 }
 
 type timeRuleDTO struct {
@@ -120,12 +120,12 @@ func (h *PricingHandler) CreateVersion(c *gin.Context) {
 	}
 	rates := make([]service.CategoryRateInput, 0, len(req.Rates))
 	for _, r := range req.Rates {
-		id, err := uuid.Parse(r.CourtTypeID)
+		id, err := uuid.Parse(r.SportID)
 		if err != nil {
-			httpx.Error(c, apperr.New(apperr.CodeValidation, "invalid court_type_id"))
+			httpx.Error(c, apperr.New(apperr.CodeValidation, "invalid sport_id"))
 			return
 		}
-		rates = append(rates, service.CategoryRateInput{CourtTypeID: id, Amount: r.Amount})
+		rates = append(rates, service.CategoryRateInput{SportID: id, Amount: r.Amount})
 	}
 	rules := make([]service.TimeRuleInput, 0, len(req.TimeRules))
 	for _, tr := range req.TimeRules {
@@ -271,7 +271,7 @@ func toVersionDTO(v *entity.PriceVersion, detail bool) priceVersionDTO {
 	if detail {
 		dto.Rates = make([]categoryPriceDTO, 0, len(v.Rates))
 		for _, r := range v.Rates {
-			dto.Rates = append(dto.Rates, categoryPriceDTO{CourtTypeID: r.CategoryID.String(), Amount: r.Amount})
+			dto.Rates = append(dto.Rates, categoryPriceDTO{SportID: r.SportID.String(), Amount: r.Amount})
 		}
 		dto.TimeRules = make([]timeRuleDTO, 0, len(v.TimeRules))
 		for _, tr := range v.TimeRules {

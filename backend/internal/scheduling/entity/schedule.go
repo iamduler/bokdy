@@ -27,33 +27,33 @@ const (
 )
 
 type BusinessHour struct {
-	ID         uuid.UUID
-	LocationID uuid.UUID
-	Weekday    Weekday
-	OpensAt    time.Time // time-of-day on a fixed date; only clock used
-	ClosesAt   time.Time
-	IsClosed   bool
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
+	ID        uuid.UUID
+	BranchID  uuid.UUID
+	Weekday   Weekday
+	OpensAt   time.Time // time-of-day on a fixed date; only clock used
+	ClosesAt  time.Time
+	IsClosed  bool
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 type SpecialSchedule struct {
-	ID         uuid.UUID
-	TenantID   uuid.UUID
-	LocationID uuid.UUID
-	NameEn     string
-	NameVi     string
-	StartsAt   time.Time
-	EndsAt     time.Time
-	IsClosed   bool
-	OpensAt    *time.Time
-	ClosesAt   *time.Time
-	CreatedAt  time.Time
+	ID        uuid.UUID
+	TenantID  uuid.UUID
+	BranchID  uuid.UUID
+	NameEn    string
+	NameVi    string
+	StartsAt  time.Time
+	EndsAt    time.Time
+	IsClosed  bool
+	OpensAt   *time.Time
+	ClosesAt  *time.Time
+	CreatedAt time.Time
 }
 
 type ResourceBlock struct {
 	ID            uuid.UUID
-	ResourceID    uuid.UUID
+	CourtID       uuid.UUID
 	BlockType     BlockType
 	ReferenceType string
 	ReferenceID   *uuid.UUID
@@ -65,7 +65,7 @@ type ResourceBlock struct {
 
 type TimeSlot struct {
 	ID           uuid.UUID
-	ResourceID   uuid.UUID
+	CourtID      uuid.UUID
 	StartsAt     time.Time
 	EndsAt       time.Time
 	IsAvailable  bool
@@ -76,7 +76,7 @@ type TimeSlot struct {
 
 type AvailabilityProjection struct {
 	ID               uuid.UUID
-	ResourceID       uuid.UUID
+	CourtID          uuid.UUID
 	ProjectionDate   time.Time
 	AvailableMinutes int
 	OccupiedMinutes  int

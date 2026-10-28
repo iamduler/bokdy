@@ -14,14 +14,14 @@ import (
 
 const addStaffMember = `-- name: AddStaffMember :exec
 INSERT INTO organization.staff_members
-    (id, organization_id, location_id, user_id, title, status, joined_at, created_at, updated_at)
+    (id, organization_id, branch_id, user_id, title, status, joined_at, created_at, updated_at)
 VALUES ($1, $2, $3, $4, $5, $6, CURRENT_DATE, $7, $8)
 `
 
 type AddStaffMemberParams struct {
 	ID             uuid.UUID               `json:"id"`
 	OrganizationID uuid.UUID               `json:"organization_id"`
-	LocationID     *uuid.UUID              `json:"location_id"`
+	BranchID       *uuid.UUID              `json:"branch_id"`
 	UserID         uuid.UUID               `json:"user_id"`
 	Title          *string                 `json:"title"`
 	Status         OrganizationStaffStatus `json:"status"`
@@ -33,7 +33,7 @@ func (q *Queries) AddStaffMember(ctx context.Context, arg AddStaffMemberParams) 
 	_, err := q.db.Exec(ctx, addStaffMember,
 		arg.ID,
 		arg.OrganizationID,
-		arg.LocationID,
+		arg.BranchID,
 		arg.UserID,
 		arg.Title,
 		arg.Status,
@@ -44,7 +44,7 @@ func (q *Queries) AddStaffMember(ctx context.Context, arg AddStaffMemberParams) 
 }
 
 const findStaffByID = `-- name: FindStaffByID :one
-SELECT id, organization_id, location_id, user_id, COALESCE(title, '') AS title, status, created_at, updated_at
+SELECT id, organization_id, branch_id, user_id, COALESCE(title, '') AS title, status, created_at, updated_at
 FROM organization.staff_members
 WHERE organization_id = $1 AND id = $2
 `
@@ -57,7 +57,7 @@ type FindStaffByIDParams struct {
 type FindStaffByIDRow struct {
 	ID             uuid.UUID               `json:"id"`
 	OrganizationID uuid.UUID               `json:"organization_id"`
-	LocationID     *uuid.UUID              `json:"location_id"`
+	BranchID       *uuid.UUID              `json:"branch_id"`
 	UserID         uuid.UUID               `json:"user_id"`
 	Title          string                  `json:"title"`
 	Status         OrganizationStaffStatus `json:"status"`
@@ -71,7 +71,7 @@ func (q *Queries) FindStaffByID(ctx context.Context, arg FindStaffByIDParams) (F
 	err := row.Scan(
 		&i.ID,
 		&i.OrganizationID,
-		&i.LocationID,
+		&i.BranchID,
 		&i.UserID,
 		&i.Title,
 		&i.Status,
@@ -82,7 +82,7 @@ func (q *Queries) FindStaffByID(ctx context.Context, arg FindStaffByIDParams) (F
 }
 
 const findStaffByOrgUser = `-- name: FindStaffByOrgUser :one
-SELECT id, organization_id, location_id, user_id, COALESCE(title, '') AS title, status, created_at, updated_at
+SELECT id, organization_id, branch_id, user_id, COALESCE(title, '') AS title, status, created_at, updated_at
 FROM organization.staff_members
 WHERE organization_id = $1 AND user_id = $2
 `
@@ -95,7 +95,7 @@ type FindStaffByOrgUserParams struct {
 type FindStaffByOrgUserRow struct {
 	ID             uuid.UUID               `json:"id"`
 	OrganizationID uuid.UUID               `json:"organization_id"`
-	LocationID     *uuid.UUID              `json:"location_id"`
+	BranchID       *uuid.UUID              `json:"branch_id"`
 	UserID         uuid.UUID               `json:"user_id"`
 	Title          string                  `json:"title"`
 	Status         OrganizationStaffStatus `json:"status"`
@@ -109,7 +109,7 @@ func (q *Queries) FindStaffByOrgUser(ctx context.Context, arg FindStaffByOrgUser
 	err := row.Scan(
 		&i.ID,
 		&i.OrganizationID,
-		&i.LocationID,
+		&i.BranchID,
 		&i.UserID,
 		&i.Title,
 		&i.Status,
@@ -139,7 +139,7 @@ func (q *Queries) IsActiveStaffMember(ctx context.Context, arg IsActiveStaffMemb
 }
 
 const listStaffByOrg = `-- name: ListStaffByOrg :many
-SELECT id, organization_id, location_id, user_id, COALESCE(title, '') AS title, status, created_at, updated_at
+SELECT id, organization_id, branch_id, user_id, COALESCE(title, '') AS title, status, created_at, updated_at
 FROM organization.staff_members
 WHERE organization_id = $1
 ORDER BY created_at ASC
@@ -148,7 +148,7 @@ ORDER BY created_at ASC
 type ListStaffByOrgRow struct {
 	ID             uuid.UUID               `json:"id"`
 	OrganizationID uuid.UUID               `json:"organization_id"`
-	LocationID     *uuid.UUID              `json:"location_id"`
+	BranchID       *uuid.UUID              `json:"branch_id"`
 	UserID         uuid.UUID               `json:"user_id"`
 	Title          string                  `json:"title"`
 	Status         OrganizationStaffStatus `json:"status"`
@@ -168,7 +168,7 @@ func (q *Queries) ListStaffByOrg(ctx context.Context, organizationID uuid.UUID) 
 		if err := rows.Scan(
 			&i.ID,
 			&i.OrganizationID,
-			&i.LocationID,
+			&i.BranchID,
 			&i.UserID,
 			&i.Title,
 			&i.Status,
@@ -187,7 +187,7 @@ func (q *Queries) ListStaffByOrg(ctx context.Context, organizationID uuid.UUID) 
 
 const updateStaffMember = `-- name: UpdateStaffMember :exec
 UPDATE organization.staff_members
-SET title = $3, location_id = $4, updated_at = now()
+SET title = $3, branch_id = $4, updated_at = now()
 WHERE organization_id = $1 AND id = $2
 `
 
@@ -195,7 +195,7 @@ type UpdateStaffMemberParams struct {
 	OrganizationID uuid.UUID  `json:"organization_id"`
 	ID             uuid.UUID  `json:"id"`
 	Title          *string    `json:"title"`
-	LocationID     *uuid.UUID `json:"location_id"`
+	BranchID       *uuid.UUID `json:"branch_id"`
 }
 
 func (q *Queries) UpdateStaffMember(ctx context.Context, arg UpdateStaffMemberParams) error {
@@ -203,7 +203,7 @@ func (q *Queries) UpdateStaffMember(ctx context.Context, arg UpdateStaffMemberPa
 		arg.OrganizationID,
 		arg.ID,
 		arg.Title,
-		arg.LocationID,
+		arg.BranchID,
 	)
 	return err
 }

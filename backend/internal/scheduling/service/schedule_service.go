@@ -144,7 +144,7 @@ func (s *ScheduleService) PutWeeklySchedule(ctx context.Context, branchID, actor
 			}
 		}
 		hours = append(hours, entity.BusinessHour{
-			ID: id.MustNewUUID(), LocationID: branchID, Weekday: entity.Weekday(d.Weekday),
+			ID: id.MustNewUUID(), BranchID: branchID, Weekday: entity.Weekday(d.Weekday),
 			OpensAt: opens, ClosesAt: closes, IsClosed: d.IsClosed, CreatedAt: now, UpdatedAt: now,
 		})
 	}
@@ -217,7 +217,7 @@ func (s *ScheduleService) CreateSpecial(ctx context.Context, branchID, actor uui
 	}
 	now := time.Now().UTC()
 	h := &entity.SpecialSchedule{
-		ID: id.MustNewUUID(), TenantID: tenantID, LocationID: branchID,
+		ID: id.MustNewUUID(), TenantID: tenantID, BranchID: branchID,
 		NameEn: strings.TrimSpace(in.NameEn), NameVi: strings.TrimSpace(in.NameVi),
 		StartsAt: in.StartsAt.UTC(), EndsAt: in.EndsAt.UTC(), IsClosed: isClosed,
 		OpensAt: opens, ClosesAt: closes, CreatedAt: now,
@@ -257,7 +257,7 @@ func (s *ScheduleService) CreateBlock(ctx context.Context, courtID, actor uuid.U
 	if court == nil {
 		return nil, schederrors.ErrCourtNotFound
 	}
-	if err := s.loadBranch(ctx, orgID, court.LocationID); err != nil {
+	if err := s.loadBranch(ctx, orgID, court.BranchID); err != nil {
 		return nil, err
 	}
 	if !in.EndsAt.After(in.StartsAt) {
@@ -272,7 +272,7 @@ func (s *ScheduleService) CreateBlock(ctx context.Context, courtID, actor uuid.U
 	}
 	now := time.Now().UTC()
 	b := &entity.ResourceBlock{
-		ID: id.MustNewUUID(), ResourceID: courtID, BlockType: entity.BlockManual,
+		ID: id.MustNewUUID(), CourtID: courtID, BlockType: entity.BlockManual,
 		StartsAt: in.StartsAt.UTC(), EndsAt: in.EndsAt.UTC(), Reason: strings.TrimSpace(in.Reason), CreatedAt: now,
 	}
 	var outboxID uuid.UUID
@@ -313,7 +313,7 @@ func (s *ScheduleService) DeleteBlock(ctx context.Context, courtID, blockID, act
 	if court == nil {
 		return schederrors.ErrCourtNotFound
 	}
-	if err := s.loadBranch(ctx, orgID, court.LocationID); err != nil {
+	if err := s.loadBranch(ctx, orgID, court.BranchID); err != nil {
 		return err
 	}
 	b, err := s.repo.FindBlock(ctx, courtID, blockID)
@@ -356,7 +356,7 @@ func (s *ScheduleService) CourtAvailability(ctx context.Context, courtID, actor 
 	if err != nil || court == nil {
 		return nil, schederrors.ErrCourtNotFound
 	}
-	if err := s.loadBranch(ctx, orgID, court.LocationID); err != nil {
+	if err := s.loadBranch(ctx, orgID, court.BranchID); err != nil {
 		return nil, err
 	}
 	if !to.After(from) {

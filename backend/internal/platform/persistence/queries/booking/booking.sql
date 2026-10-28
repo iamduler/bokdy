@@ -1,6 +1,6 @@
 -- name: CreateBooking :exec
 INSERT INTO booking.bookings (
-    id, public_id, tenant_id, booking_no, reservation_id, customer_id, location_id, resource_id,
+    id, public_id, tenant_id, booking_no, reservation_id, customer_id, branch_id, court_id,
     status, currency, subtotal, discount_amount, tax_amount, total_amount,
     price_version_id, starts_at, ends_at, expires_at, confirmed_at, created_by, created_at, updated_at
 ) VALUES (
@@ -10,17 +10,17 @@ INSERT INTO booking.bookings (
 );
 
 -- name: CreateBookingResource :exec
-INSERT INTO booking.booking_resources (
-    id, booking_id, resource_id, starts_at, ends_at, created_at
+INSERT INTO booking.booking_courts (
+    id, booking_id, court_id, starts_at, ends_at, created_at
 ) VALUES ($1, $2, $3, $4, $5, $6);
 
 -- name: UpdateBookingResourceSchedule :exec
-UPDATE booking.booking_resources
+UPDATE booking.booking_courts
 SET starts_at = $2, ends_at = $3
 WHERE booking_id = $1;
 
 -- name: FindBooking :one
-SELECT id, public_id, tenant_id, booking_no, reservation_id, customer_id, location_id, resource_id,
+SELECT id, public_id, tenant_id, booking_no, reservation_id, customer_id, branch_id, court_id,
        status, currency, subtotal, discount_amount, tax_amount, total_amount, price_version_id,
        starts_at, ends_at, expires_at, confirmed_at, canceled_at, completed_at, checked_in_at,
        created_by, created_at, updated_at
@@ -28,7 +28,7 @@ FROM booking.bookings
 WHERE id = $1;
 
 -- name: FindBookingForUpdate :one
-SELECT id, public_id, tenant_id, booking_no, reservation_id, customer_id, location_id, resource_id,
+SELECT id, public_id, tenant_id, booking_no, reservation_id, customer_id, branch_id, court_id,
        status, currency, subtotal, discount_amount, tax_amount, total_amount, price_version_id,
        starts_at, ends_at, expires_at, confirmed_at, canceled_at, completed_at, checked_in_at,
        created_by, created_at, updated_at
@@ -37,13 +37,13 @@ WHERE id = $1
 FOR UPDATE;
 
 -- name: ListBookingsByTenant :many
-SELECT id, public_id, tenant_id, booking_no, reservation_id, customer_id, location_id, resource_id,
+SELECT id, public_id, tenant_id, booking_no, reservation_id, customer_id, branch_id, court_id,
        status, currency, subtotal, discount_amount, tax_amount, total_amount, price_version_id,
        starts_at, ends_at, expires_at, confirmed_at, canceled_at, completed_at, checked_in_at,
        created_by, created_at, updated_at
 FROM booking.bookings
 WHERE tenant_id = sqlc.arg(tenant_id)
-  AND (sqlc.narg(location_id)::uuid IS NULL OR location_id = sqlc.narg(location_id)::uuid)
+  AND (sqlc.narg(branch_id)::uuid IS NULL OR branch_id = sqlc.narg(branch_id)::uuid)
   AND (sqlc.narg(status_filter)::text IS NULL OR status = sqlc.narg(status_filter)::booking.booking_status)
   AND (sqlc.narg(range_start)::timestamptz IS NULL OR starts_at >= sqlc.narg(range_start)::timestamptz)
   AND (sqlc.narg(range_end)::timestamptz IS NULL OR starts_at < sqlc.narg(range_end)::timestamptz)
@@ -51,7 +51,7 @@ ORDER BY starts_at DESC
 LIMIT sqlc.arg(row_limit);
 
 -- name: ListBookingsByCustomers :many
-SELECT id, public_id, tenant_id, booking_no, reservation_id, customer_id, location_id, resource_id,
+SELECT id, public_id, tenant_id, booking_no, reservation_id, customer_id, branch_id, court_id,
        status, currency, subtotal, discount_amount, tax_amount, total_amount, price_version_id,
        starts_at, ends_at, expires_at, confirmed_at, canceled_at, completed_at, checked_in_at,
        created_by, created_at, updated_at
@@ -61,7 +61,7 @@ ORDER BY starts_at DESC
 LIMIT sqlc.arg(row_limit);
 
 -- name: ListExpiredPendingBookings :many
-SELECT id, public_id, tenant_id, booking_no, reservation_id, customer_id, location_id, resource_id,
+SELECT id, public_id, tenant_id, booking_no, reservation_id, customer_id, branch_id, court_id,
        status, currency, subtotal, discount_amount, tax_amount, total_amount, price_version_id,
        starts_at, ends_at, expires_at, confirmed_at, canceled_at, completed_at, checked_in_at,
        created_by, created_at, updated_at
@@ -104,13 +104,13 @@ ON CONFLICT (booking_id) DO NOTHING;
 -- name: CountOverlappingBookings :one
 SELECT COUNT(*)
 FROM booking.bookings
-WHERE resource_id = sqlc.arg(resource_id)
+WHERE court_id = sqlc.arg(court_id)
   AND id <> sqlc.arg(exclude_id)
   AND status IN ('pending', 'confirmed', 'checked_in', 'in_progress')
   AND starts_at < sqlc.arg(range_end)
   AND ends_at > sqlc.arg(range_start);
 
 -- name: FindCourtForBooking :one
-SELECT r.id, r.public_id, r.tenant_id, r.location_id, r.court_type_id, r.status::text AS status
-FROM catalog.resources r
+SELECT r.id, r.public_id, r.tenant_id, r.branch_id, r.sport_id, r.status::text AS status
+FROM catalog.courts r
 WHERE r.id = $1 AND r.resource_type = 'court' AND r.deleted_at IS NULL;

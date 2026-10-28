@@ -29,7 +29,7 @@ type ConvertedHold struct {
 	ReservationID  uuid.UUID
 	TenantID       uuid.UUID
 	CustomerID     uuid.UUID
-	LocationID     uuid.UUID
+	BranchID       uuid.UUID
 	CourtID        uuid.UUID
 	Currency       string
 	Subtotal       float64

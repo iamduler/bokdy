@@ -2007,7 +2007,7 @@ paths:
     post:
       tags: [CourtTypes]
       summary: Archive court type
-      description: Blocked while non-archived courts still use the type. Emits CourtTypeArchived.
+      description: Emits CourtTypeArchived. Courts no longer reference court types.
       security:
         - bearerAuth: []
       parameters:
@@ -2274,6 +2274,185 @@ paths:
           $ref: "#/components/responses/Error"
         "404":
           $ref: "#/components/responses/Error"
+  /api/v1/courts/{id}/gallery:
+    get:
+      tags: [Courts]
+      summary: List court gallery images
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourtId"
+        - $ref: "#/components/parameters/XOrganizationId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CourtGalleryItem"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+    post:
+      tags: [Courts]
+      summary: Upload a court gallery image
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourtId"
+        - $ref: "#/components/parameters/XOrganizationId"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/CourtGalleryItem"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /api/v1/courts/{id}/gallery/{mediaId}:
+    patch:
+      tags: [Courts]
+      summary: Update gallery item caption, sort, or cover
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourtId"
+        - name: mediaId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - $ref: "#/components/parameters/XOrganizationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCourtGalleryItemRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/CourtGalleryItem"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+    delete:
+      tags: [Courts]
+      summary: Delete a gallery image
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourtId"
+        - name: mediaId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - $ref: "#/components/parameters/XOrganizationId"
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+  /api/v1/courts/{id}/amenities:
+    get:
+      tags: [Courts]
+      summary: List amenities assigned to a court
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourtId"
+        - $ref: "#/components/parameters/XOrganizationId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Amenity"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+    put:
+      tags: [Courts]
+      summary: Replace court amenity set
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourtId"
+        - $ref: "#/components/parameters/XOrganizationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PutCourtAmenitiesRequest"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Amenity"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
   /api/v1/branches/{id}/schedule:
     get:
       tags: [Schedule]
@@ -2666,7 +2845,7 @@ paths:
       description: |
         Public quote. No promo/membership. Side-effect free: BookingPriceCalculated is emitted
         when a hold or booking is created, not here.
-        Amounts are integer VND (half-up). Base rate is VND/hour by court type.
+        Amounts are integer VND (half-up). Base rate is VND/hour by sport.
       requestBody:
         required: true
         content:
@@ -4393,7 +4572,7 @@ components:
         id: { type: string, format: uuid }
         user_id: { type: string, format: uuid }
         title: { type: string }
-        location_id: { type: string, format: uuid }
+        branch_id: { type: string, format: uuid }
         status: { type: string, enum: [invited, active, suspended, resigned] }
         roles:
           type: array
@@ -4409,7 +4588,7 @@ components:
       type: object
       properties:
         title: { type: string }
-        location_id: { type: string, format: uuid }
+        branch_id: { type: string, format: uuid }
     AssignRoleRequest:
       type: object
       required: [role_code]
@@ -4743,14 +4922,18 @@ components:
         name_vi: { type: string }
         code: { type: string }
         slot_duration_minutes: { type: integer, minimum: 15, maximum: 180 }
+    CourtSurface:
+      type: string
+      enum: [unspecified, pvc, wood, hard_court, grass, artificial_turf, clay, rubber, other]
     Court:
       type: object
-      required: [id, public_id, branch_id, court_type_id, code, name, status, is_bookable, environment]
+      required: [id, public_id, branch_id, sport_id, code, name, status, is_bookable, environment, surface, amenity_ids]
       properties:
         id: { type: string, format: uuid }
         public_id: { type: string, minLength: 26, maxLength: 26 }
+        organization_id: { type: string, format: uuid, description: Owning organization (from branch location) }
         branch_id: { type: string, format: uuid }
-        court_type_id: { type: string, format: uuid }
+        sport_id: { type: string, format: uuid, description: Discipline played on this court (catalog.sports) }
         code: { type: string }
         name: { type: string, description: Resolved from Accept-Language }
         name_en: { type: string }
@@ -4758,25 +4941,78 @@ components:
         status: { type: string, enum: [active, inactive, maintenance, archived] }
         is_bookable: { type: boolean }
         environment: { type: string, enum: [indoor, outdoor, unspecified] }
+        surface: { $ref: "#/components/schemas/CourtSurface" }
+        dimensions: { type: string, maxLength: 100, description: "Free text, e.g. 13.4 x 6.1 m" }
+        description: { type: string, description: Resolved from Accept-Language (sanitized HTML) }
+        description_en: { type: string, description: Sanitized HTML }
+        description_vi: { type: string, description: Sanitized HTML }
+        amenity_ids:
+          type: array
+          items: { type: string, format: uuid }
     CreateCourtRequest:
       type: object
-      required: [branch_id, court_type_id]
-      description: At least one of name_en or name_vi is required. Initial status is inactive.
+      required: [branch_id, sport_id]
+      description: >
+        At least one of name_en or name_vi is required. Initial status is inactive.
+        description_* HTML is sanitized on write. amenity_ids must be active reference amenities.
       properties:
         branch_id: { type: string, format: uuid }
-        court_type_id: { type: string, format: uuid }
+        sport_id: { type: string, format: uuid }
         name_en: { type: string }
         name_vi: { type: string }
-        code: { type: string }
+        code:
+          type: string
+          description: Ignored on create — server generates CRT + 5-digit sequence per branch.
+          deprecated: true
         environment: { type: string, enum: [indoor, outdoor, unspecified], default: unspecified }
+        surface: { $ref: "#/components/schemas/CourtSurface" }
+        dimensions: { type: string, maxLength: 100 }
+        description_en: { type: string }
+        description_vi: { type: string }
+        amenity_ids:
+          type: array
+          items: { type: string, format: uuid }
     UpdateCourtRequest:
       type: object
+      description: Omitted fields are unchanged. `amenity_ids`, when present, replaces the full amenity set.
       properties:
         name_en: { type: string }
         name_vi: { type: string }
         code: { type: string, description: Immutable; sending a different value is rejected }
-        court_type_id: { type: string, format: uuid }
+        sport_id: { type: string, format: uuid }
         environment: { type: string, enum: [indoor, outdoor, unspecified] }
+        surface: { $ref: "#/components/schemas/CourtSurface" }
+        dimensions: { type: string, maxLength: 100 }
+        description_en: { type: string }
+        description_vi: { type: string }
+        amenity_ids:
+          type: array
+          items: { type: string, format: uuid }
+    CourtGalleryItem:
+      type: object
+      required: [id, file_id, sort_order, is_cover]
+      properties:
+        id: { type: string, format: uuid }
+        file_id: { type: string, format: uuid }
+        caption_en: { type: string }
+        caption_vi: { type: string }
+        sort_order: { type: integer }
+        is_cover: { type: boolean }
+        created_at: { type: string, format: date-time }
+    UpdateCourtGalleryItemRequest:
+      type: object
+      properties:
+        caption_en: { type: string }
+        caption_vi: { type: string }
+        sort_order: { type: integer }
+        is_cover: { type: boolean }
+    PutCourtAmenitiesRequest:
+      type: object
+      required: [amenity_ids]
+      properties:
+        amenity_ids:
+          type: array
+          items: { type: string, format: uuid }
     BranchGalleryItem:
       type: object
       required: [id, file_id, sort_order, is_cover]
@@ -4943,7 +5179,7 @@ components:
       required: [public_id, code, name, status, is_bookable, slot_duration_minutes]
       properties:
         public_id: { type: string, minLength: 26, maxLength: 26 }
-        court_type_id: { type: string, format: uuid }
+        sport_id: { type: string, format: uuid }
         code: { type: string }
         name: { type: string }
         name_en: { type: string }
@@ -4980,9 +5216,9 @@ components:
           minItems: 1
           items:
             type: object
-            required: [court_type_id, amount]
+            required: [sport_id, amount]
             properties:
-              court_type_id: { type: string, format: uuid }
+              sport_id: { type: string, format: uuid }
               amount: { type: number, minimum: 0, description: VND per hour }
         time_rules:
           type: array
@@ -5013,9 +5249,9 @@ components:
           type: array
           items:
             type: object
-            required: [court_type_id, amount]
+            required: [sport_id, amount]
             properties:
-              court_type_id: { type: string, format: uuid }
+              sport_id: { type: string, format: uuid }
               amount: { type: number }
         time_rules:
           type: array

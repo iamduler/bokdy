@@ -36957,3 +36957,232 @@ INSERT INTO reference.amenities (id, code, name_en, name_vi, icon, is_active, cr
     ('a1000000-0000-4000-8000-000000000004', 'shop', 'Shop', 'Cửa hàng', 'shop', true, now(), now());
 
 
+-- >>> 00031_rename_location_resource_to_branch_court.sql
+-- Align physical names with API + domain: Branch, Court, CourtType.
+
+-- ── Organization: locations → branches ──────────────────────────────────────
+ALTER TYPE organization.location_status RENAME TO branch_status;
+
+ALTER TABLE organization.locations RENAME TO branches;
+ALTER TABLE organization.branches RENAME CONSTRAINT locations_pkey TO branches_pkey;
+ALTER TABLE organization.branches RENAME CONSTRAINT locations_display_name_chk TO branches_display_name_chk;
+ALTER INDEX organization.locations_bu_code_uidx RENAME TO branches_bu_code_uidx;
+ALTER INDEX organization.locations_organization_id_idx RENAME TO branches_organization_id_idx;
+ALTER INDEX organization.locations_business_unit_id_idx RENAME TO branches_business_unit_id_idx;
+ALTER INDEX organization.locations_status_idx RENAME TO branches_status_idx;
+ALTER INDEX organization.locations_public_id_key RENAME TO branches_public_id_key;
+ALTER INDEX organization.locations_org_slug_uidx RENAME TO branches_org_slug_uidx;
+
+ALTER TABLE organization.location_addresses RENAME TO branch_addresses;
+ALTER TABLE organization.branch_addresses RENAME COLUMN location_id TO branch_id;
+ALTER INDEX organization.location_addresses_pkey RENAME TO branch_addresses_pkey;
+ALTER INDEX organization.location_addresses_location_scheme_uidx RENAME TO branch_addresses_branch_scheme_uidx;
+ALTER INDEX organization.location_addresses_district_former_id_idx RENAME TO branch_addresses_district_former_id_idx;
+ALTER INDEX organization.location_addresses_province_former_id_idx RENAME TO branch_addresses_province_former_id_idx;
+ALTER INDEX organization.location_addresses_province_id_idx RENAME TO branch_addresses_province_id_idx;
+ALTER INDEX organization.location_addresses_ward_former_id_idx RENAME TO branch_addresses_ward_former_id_idx;
+ALTER INDEX organization.location_addresses_ward_id_idx RENAME TO branch_addresses_ward_id_idx;
+
+ALTER TABLE organization.location_settings RENAME TO branch_settings;
+ALTER TABLE organization.branch_settings RENAME COLUMN location_id TO branch_id;
+ALTER INDEX organization.location_settings_pkey RENAME TO branch_settings_pkey;
+ALTER INDEX organization.location_settings_location_id_key RENAME TO branch_settings_branch_id_key;
+
+ALTER TABLE organization.location_media RENAME TO branch_media;
+ALTER TABLE organization.branch_media RENAME COLUMN location_id TO branch_id;
+ALTER INDEX organization.location_media_pkey RENAME TO branch_media_pkey;
+ALTER INDEX organization.location_media_location_id_idx RENAME TO branch_media_branch_id_idx;
+ALTER INDEX organization.location_media_location_sort_idx RENAME TO branch_media_branch_sort_idx;
+
+ALTER TABLE organization.location_sports RENAME TO branch_sports;
+ALTER TABLE organization.branch_sports RENAME COLUMN location_id TO branch_id;
+ALTER INDEX organization.location_sports_pkey RENAME TO branch_sports_pkey;
+ALTER INDEX organization.location_sports_location_sport_uidx RENAME TO branch_sports_branch_sport_uidx;
+ALTER INDEX organization.location_sports_location_id_idx RENAME TO branch_sports_branch_id_idx;
+ALTER INDEX organization.location_sports_sport_id_idx RENAME TO branch_sports_sport_id_idx;
+
+ALTER TABLE organization.location_amenities RENAME TO branch_amenities;
+ALTER TABLE organization.branch_amenities RENAME COLUMN location_id TO branch_id;
+ALTER INDEX organization.location_amenities_pkey RENAME TO branch_amenities_pkey;
+ALTER INDEX organization.location_amenities_amenity_id_idx RENAME TO branch_amenities_amenity_id_idx;
+
+ALTER TABLE organization.staff_members RENAME COLUMN location_id TO branch_id;
+
+-- ── Catalog: resources → courts, resource_categories → court_types ───────────
+ALTER TYPE catalog.resource_status RENAME TO court_status;
+ALTER TYPE catalog.resource_category_status RENAME TO court_type_status;
+
+ALTER TABLE catalog.resource_categories RENAME TO court_types;
+ALTER INDEX catalog.resource_categories_pkey RENAME TO court_types_pkey;
+ALTER INDEX catalog.resource_categories_tenant_code_uidx RENAME TO court_types_tenant_code_uidx;
+ALTER INDEX catalog.resource_categories_tenant_id_idx RENAME TO court_types_tenant_id_idx;
+ALTER INDEX catalog.resource_categories_status_idx RENAME TO court_types_status_idx;
+
+ALTER TABLE catalog.resources RENAME TO courts;
+ALTER TABLE catalog.courts RENAME COLUMN location_id TO branch_id;
+ALTER TABLE catalog.courts RENAME COLUMN parent_resource_id TO parent_court_id;
+ALTER INDEX catalog.resources_pkey RENAME TO courts_pkey;
+ALTER INDEX catalog.resources_public_id_key RENAME TO courts_public_id_key;
+ALTER INDEX catalog.courts_location_code_uidx RENAME TO courts_branch_code_uidx;
+ALTER INDEX catalog.resources_tenant_id_idx RENAME TO courts_tenant_id_idx;
+ALTER INDEX catalog.resources_location_id_idx RENAME TO courts_branch_id_idx;
+ALTER INDEX catalog.resources_court_type_id_idx RENAME TO courts_court_type_id_idx;
+ALTER INDEX catalog.resources_status_idx RENAME TO courts_status_idx;
+
+ALTER TABLE catalog.resource_maintenances RENAME TO court_maintenances;
+ALTER TABLE catalog.court_maintenances RENAME COLUMN resource_id TO court_id;
+ALTER INDEX catalog.resource_maintenances_pkey RENAME TO court_maintenances_pkey;
+ALTER INDEX catalog.resource_maintenances_resource_id_idx RENAME TO court_maintenances_court_id_idx;
+ALTER INDEX catalog.resource_maintenances_status_idx RENAME TO court_maintenances_status_idx;
+ALTER INDEX catalog.resource_maintenances_in_progress_uidx RENAME TO court_maintenances_in_progress_uidx;
+
+-- ── Scheduling ──────────────────────────────────────────────────────────────
+ALTER TABLE scheduling.business_hours RENAME COLUMN location_id TO branch_id;
+ALTER INDEX scheduling.business_hours_location_weekday_uidx RENAME TO business_hours_branch_weekday_uidx;
+ALTER INDEX scheduling.business_hours_location_id_idx RENAME TO business_hours_branch_id_idx;
+
+ALTER TABLE scheduling.calendar_holidays RENAME COLUMN location_id TO branch_id;
+ALTER INDEX scheduling.calendar_holidays_location_id_idx RENAME TO calendar_holidays_branch_id_idx;
+
+ALTER TABLE scheduling.resource_blocks RENAME TO court_blocks;
+ALTER TABLE scheduling.court_blocks RENAME COLUMN resource_id TO court_id;
+ALTER TABLE scheduling.court_blocks RENAME CONSTRAINT resource_blocks_range_chk TO court_blocks_range_chk;
+ALTER INDEX scheduling.resource_blocks_pkey RENAME TO court_blocks_pkey;
+ALTER INDEX scheduling.resource_blocks_resource_id_idx RENAME TO court_blocks_court_id_idx;
+ALTER INDEX scheduling.resource_blocks_block_type_idx RENAME TO court_blocks_block_type_idx;
+ALTER INDEX scheduling.resource_blocks_starts_at_idx RENAME TO court_blocks_starts_at_idx;
+ALTER INDEX scheduling.resource_blocks_ends_at_idx RENAME TO court_blocks_ends_at_idx;
+ALTER INDEX scheduling.resource_blocks_maintenance_ref_uidx RENAME TO court_blocks_maintenance_ref_uidx;
+ALTER INDEX scheduling.resource_blocks_booking_ref_uidx RENAME TO court_blocks_booking_ref_uidx;
+ALTER INDEX scheduling.resource_blocks_reservation_ref_uidx RENAME TO court_blocks_reservation_ref_uidx;
+
+ALTER TABLE scheduling.availability_projections RENAME COLUMN resource_id TO court_id;
+ALTER INDEX scheduling.availability_projections_resource_date_uidx RENAME TO availability_projections_court_date_uidx;
+ALTER INDEX scheduling.availability_projections_resource_id_idx RENAME TO availability_projections_court_id_idx;
+
+ALTER TABLE scheduling.time_slots RENAME COLUMN resource_id TO court_id;
+ALTER INDEX scheduling.time_slots_resource_starts_uidx RENAME TO time_slots_court_starts_uidx;
+ALTER INDEX scheduling.time_slots_resource_id_idx RENAME TO time_slots_court_id_idx;
+
+-- ── Reservation / booking ───────────────────────────────────────────────────
+ALTER TABLE reservation.reservations RENAME COLUMN location_id TO branch_id;
+ALTER TABLE reservation.reservations RENAME COLUMN resource_id TO court_id;
+ALTER INDEX reservation.reservations_resource_id_idx RENAME TO reservations_court_id_idx;
+
+ALTER TABLE reservation.reservation_resources RENAME TO reservation_courts;
+ALTER TABLE reservation.reservation_courts RENAME COLUMN resource_id TO court_id;
+ALTER TABLE reservation.reservation_courts RENAME CONSTRAINT reservation_resources_range_chk TO reservation_courts_range_chk;
+ALTER INDEX reservation.reservation_resources_pkey RENAME TO reservation_courts_pkey;
+ALTER INDEX reservation.reservation_resources_reservation_id_idx RENAME TO reservation_courts_reservation_id_idx;
+ALTER INDEX reservation.reservation_resources_resource_id_idx RENAME TO reservation_courts_court_id_idx;
+
+ALTER TABLE booking.bookings RENAME COLUMN location_id TO branch_id;
+ALTER TABLE booking.bookings RENAME COLUMN resource_id TO court_id;
+ALTER INDEX booking.bookings_location_id_idx RENAME TO bookings_branch_id_idx;
+ALTER INDEX booking.bookings_resource_id_idx RENAME TO bookings_court_id_idx;
+
+ALTER TABLE booking.booking_resources RENAME TO booking_courts;
+ALTER TABLE booking.booking_courts RENAME COLUMN resource_id TO court_id;
+ALTER TABLE booking.booking_courts RENAME CONSTRAINT booking_resources_range_chk TO booking_courts_range_chk;
+ALTER INDEX booking.booking_resources_pkey RENAME TO booking_courts_pkey;
+ALTER INDEX booking.booking_resources_booking_id_idx RENAME TO booking_courts_booking_id_idx;
+ALTER INDEX booking.booking_resources_resource_id_idx RENAME TO booking_courts_court_id_idx;
+
+
+-- >>> 00032_court_profile_and_drop_type.sql
+-- Court profile (sport, surface, dimensions, descriptions, gallery, amenities) and
+-- removal of CourtType from Court. Pricing rates are re-keyed from court type to sport.
+
+CREATE TYPE catalog.court_surface AS ENUM (
+    'unspecified', 'pvc', 'wood', 'hard_court', 'grass', 'artificial_turf', 'clay', 'rubber', 'other'
+);
+
+ALTER TABLE catalog.courts
+    ADD COLUMN sport_id       uuid REFERENCES catalog.sports (id),
+    ADD COLUMN surface        catalog.court_surface NOT NULL DEFAULT 'unspecified',
+    ADD COLUMN dimensions     varchar(100),
+    ADD COLUMN description_en text,
+    ADD COLUMN description_vi text;
+
+-- Placeholder sport only when the catalog is empty.
+INSERT INTO catalog.sports (id, code, name_en, name_vi, created_at, updated_at)
+SELECT 'a0000000-0000-4000-8000-000000000099', 'other', 'Other', 'Khác', now(), now()
+WHERE NOT EXISTS (SELECT 1 FROM catalog.sports);
+
+-- Backfill: first branch sport, else first catalog sport by code.
+UPDATE catalog.courts c
+SET sport_id = COALESCE(
+    (SELECT bs.sport_id
+     FROM organization.branch_sports bs
+     WHERE bs.branch_id = c.branch_id
+     ORDER BY bs.created_at ASC, bs.id ASC
+     LIMIT 1),
+    (SELECT s.id FROM catalog.sports s ORDER BY s.code ASC LIMIT 1)
+);
+
+ALTER TABLE catalog.courts ALTER COLUMN sport_id SET NOT NULL;
+CREATE INDEX courts_sport_id_idx ON catalog.courts (sport_id);
+
+-- Pricing: category_id (court type) → sport_id. Must run before courts.court_type_id is dropped.
+ALTER TABLE pricing.category_prices DROP CONSTRAINT category_prices_category_id_fkey;
+DROP INDEX pricing.category_prices_version_category_uidx;
+DROP INDEX pricing.category_prices_category_id_idx;
+ALTER TABLE pricing.category_prices RENAME COLUMN category_id TO sport_id;
+
+-- Map each former court type to the sport of its first court; otherwise first sport by code.
+UPDATE pricing.category_prices cp
+SET sport_id = COALESCE(
+    (SELECT c.sport_id
+     FROM catalog.courts c
+     WHERE c.court_type_id = cp.sport_id
+     ORDER BY c.created_at ASC, c.id ASC
+     LIMIT 1),
+    (SELECT s.id FROM catalog.sports s ORDER BY s.code ASC LIMIT 1)
+);
+
+-- Several court types may collapse into one sport: keep the earliest rate per (version, sport).
+DELETE FROM pricing.category_prices a
+USING pricing.category_prices b
+WHERE a.price_version_id = b.price_version_id
+  AND a.sport_id = b.sport_id
+  AND (a.created_at, a.id) > (b.created_at, b.id);
+
+ALTER TABLE pricing.category_prices
+    ADD CONSTRAINT category_prices_sport_id_fkey FOREIGN KEY (sport_id) REFERENCES catalog.sports (id);
+CREATE UNIQUE INDEX category_prices_version_sport_uidx
+    ON pricing.category_prices (price_version_id, sport_id);
+CREATE INDEX category_prices_sport_id_idx ON pricing.category_prices (sport_id);
+
+-- Drop CourtType FK from Court (index courts_court_type_id_idx goes with the column).
+ALTER TABLE catalog.courts DROP COLUMN court_type_id;
+
+CREATE TABLE catalog.court_media (
+    id         uuid PRIMARY KEY,
+    court_id   uuid NOT NULL REFERENCES catalog.courts (id),
+    file_id    uuid NOT NULL REFERENCES platform.files (id),
+    caption_en varchar(255),
+    caption_vi varchar(255),
+    sort_order int NOT NULL DEFAULT 0,
+    is_cover   boolean NOT NULL DEFAULT false,
+    created_at timestamptz NOT NULL
+);
+
+CREATE INDEX court_media_court_id_idx ON catalog.court_media (court_id);
+CREATE INDEX court_media_court_sort_idx ON catalog.court_media (court_id, sort_order);
+
+CREATE TABLE catalog.court_amenities (
+    court_id   uuid NOT NULL REFERENCES catalog.courts (id),
+    amenity_id uuid NOT NULL REFERENCES reference.amenities (id),
+    created_at timestamptz NOT NULL,
+    PRIMARY KEY (court_id, amenity_id)
+);
+
+CREATE INDEX court_amenities_amenity_id_idx ON catalog.court_amenities (amenity_id);
+
+-- Court-level amenities (stable UUIDs, continuing a1000000-… series from 00030).
+INSERT INTO reference.amenities (id, code, name_en, name_vi, icon, is_active, created_at, updated_at) VALUES
+    ('a1000000-0000-4000-8000-000000000005', 'lights', 'Lights', 'Đèn chiếu sáng', 'lightbulb', true, now(), now()),
+    ('a1000000-0000-4000-8000-000000000006', 'air_conditioning', 'Air conditioning', 'Điều hòa', 'snowflake', true, now(), now()),
+    ('a1000000-0000-4000-8000-000000000007', 'rest_seats', 'Rest seats', 'Ghế nghỉ', 'chair', true, now(), now());
+
+

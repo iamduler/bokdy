@@ -15,21 +15,21 @@ import (
 
 const countConflictingBlocks = `-- name: CountConflictingBlocks :one
 SELECT COUNT(*)::bigint AS count
-FROM scheduling.resource_blocks
-WHERE resource_id = $1
+FROM scheduling.court_blocks
+WHERE court_id = $1
   AND block_type = 'manual'
   AND starts_at < $2
   AND ends_at > $3
 `
 
 type CountConflictingBlocksParams struct {
-	ResourceID uuid.UUID `json:"resource_id"`
+	CourtID    uuid.UUID `json:"court_id"`
 	RangeEnd   time.Time `json:"range_end"`
 	RangeStart time.Time `json:"range_start"`
 }
 
 func (q *Queries) CountConflictingBlocks(ctx context.Context, arg CountConflictingBlocksParams) (int64, error) {
-	row := q.db.QueryRow(ctx, countConflictingBlocks, arg.ResourceID, arg.RangeEnd, arg.RangeStart)
+	row := q.db.QueryRow(ctx, countConflictingBlocks, arg.CourtID, arg.RangeEnd, arg.RangeStart)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -37,20 +37,20 @@ func (q *Queries) CountConflictingBlocks(ctx context.Context, arg CountConflicti
 
 const countOverlappingBlocks = `-- name: CountOverlappingBlocks :one
 SELECT COUNT(*)::bigint AS count
-FROM scheduling.resource_blocks
-WHERE resource_id = $1
+FROM scheduling.court_blocks
+WHERE court_id = $1
   AND starts_at < $2
   AND ends_at > $3
 `
 
 type CountOverlappingBlocksParams struct {
-	ResourceID uuid.UUID `json:"resource_id"`
+	CourtID    uuid.UUID `json:"court_id"`
 	RangeEnd   time.Time `json:"range_end"`
 	RangeStart time.Time `json:"range_start"`
 }
 
 func (q *Queries) CountOverlappingBlocks(ctx context.Context, arg CountOverlappingBlocksParams) (int64, error) {
-	row := q.db.QueryRow(ctx, countOverlappingBlocks, arg.ResourceID, arg.RangeEnd, arg.RangeStart)
+	row := q.db.QueryRow(ctx, countOverlappingBlocks, arg.CourtID, arg.RangeEnd, arg.RangeStart)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -58,15 +58,15 @@ func (q *Queries) CountOverlappingBlocks(ctx context.Context, arg CountOverlappi
 
 const countOverlappingBlocksExcludingReference = `-- name: CountOverlappingBlocksExcludingReference :one
 SELECT COUNT(*)::bigint AS count
-FROM scheduling.resource_blocks
-WHERE resource_id = $1
+FROM scheduling.court_blocks
+WHERE court_id = $1
   AND starts_at < $2
   AND ends_at > $3
   AND (reference_id IS NULL OR reference_id <> $4)
 `
 
 type CountOverlappingBlocksExcludingReferenceParams struct {
-	ResourceID         uuid.UUID  `json:"resource_id"`
+	CourtID            uuid.UUID  `json:"court_id"`
 	RangeEnd           time.Time  `json:"range_end"`
 	RangeStart         time.Time  `json:"range_start"`
 	ExcludeReferenceID *uuid.UUID `json:"exclude_reference_id"`
@@ -74,7 +74,7 @@ type CountOverlappingBlocksExcludingReferenceParams struct {
 
 func (q *Queries) CountOverlappingBlocksExcludingReference(ctx context.Context, arg CountOverlappingBlocksExcludingReferenceParams) (int64, error) {
 	row := q.db.QueryRow(ctx, countOverlappingBlocksExcludingReference,
-		arg.ResourceID,
+		arg.CourtID,
 		arg.RangeEnd,
 		arg.RangeStart,
 		arg.ExcludeReferenceID,
@@ -86,29 +86,29 @@ func (q *Queries) CountOverlappingBlocksExcludingReference(ctx context.Context, 
 
 const createHoliday = `-- name: CreateHoliday :exec
 INSERT INTO scheduling.calendar_holidays (
-    id, tenant_id, location_id, name_en, name_vi, starts_at, ends_at, is_closed, opens_at, closes_at, created_at
+    id, tenant_id, branch_id, name_en, name_vi, starts_at, ends_at, is_closed, opens_at, closes_at, created_at
 ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 `
 
 type CreateHolidayParams struct {
-	ID         uuid.UUID   `json:"id"`
-	TenantID   uuid.UUID   `json:"tenant_id"`
-	LocationID *uuid.UUID  `json:"location_id"`
-	NameEn     *string     `json:"name_en"`
-	NameVi     *string     `json:"name_vi"`
-	StartsAt   time.Time   `json:"starts_at"`
-	EndsAt     time.Time   `json:"ends_at"`
-	IsClosed   bool        `json:"is_closed"`
-	OpensAt    pgtype.Time `json:"opens_at"`
-	ClosesAt   pgtype.Time `json:"closes_at"`
-	CreatedAt  time.Time   `json:"created_at"`
+	ID        uuid.UUID   `json:"id"`
+	TenantID  uuid.UUID   `json:"tenant_id"`
+	BranchID  *uuid.UUID  `json:"branch_id"`
+	NameEn    *string     `json:"name_en"`
+	NameVi    *string     `json:"name_vi"`
+	StartsAt  time.Time   `json:"starts_at"`
+	EndsAt    time.Time   `json:"ends_at"`
+	IsClosed  bool        `json:"is_closed"`
+	OpensAt   pgtype.Time `json:"opens_at"`
+	ClosesAt  pgtype.Time `json:"closes_at"`
+	CreatedAt time.Time   `json:"created_at"`
 }
 
 func (q *Queries) CreateHoliday(ctx context.Context, arg CreateHolidayParams) error {
 	_, err := q.db.Exec(ctx, createHoliday,
 		arg.ID,
 		arg.TenantID,
-		arg.LocationID,
+		arg.BranchID,
 		arg.NameEn,
 		arg.NameVi,
 		arg.StartsAt,
@@ -122,14 +122,14 @@ func (q *Queries) CreateHoliday(ctx context.Context, arg CreateHolidayParams) er
 }
 
 const createResourceBlock = `-- name: CreateResourceBlock :exec
-INSERT INTO scheduling.resource_blocks (
-    id, resource_id, block_type, reference_type, reference_id, starts_at, ends_at, reason, created_at
+INSERT INTO scheduling.court_blocks (
+    id, court_id, block_type, reference_type, reference_id, starts_at, ends_at, reason, created_at
 ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 `
 
 type CreateResourceBlockParams struct {
 	ID            uuid.UUID           `json:"id"`
-	ResourceID    uuid.UUID           `json:"resource_id"`
+	CourtID       uuid.UUID           `json:"court_id"`
 	BlockType     SchedulingBlockType `json:"block_type"`
 	ReferenceType *string             `json:"reference_type"`
 	ReferenceID   *uuid.UUID          `json:"reference_id"`
@@ -142,7 +142,7 @@ type CreateResourceBlockParams struct {
 func (q *Queries) CreateResourceBlock(ctx context.Context, arg CreateResourceBlockParams) error {
 	_, err := q.db.Exec(ctx, createResourceBlock,
 		arg.ID,
-		arg.ResourceID,
+		arg.CourtID,
 		arg.BlockType,
 		arg.ReferenceType,
 		arg.ReferenceID,
@@ -155,113 +155,112 @@ func (q *Queries) CreateResourceBlock(ctx context.Context, arg CreateResourceBlo
 }
 
 const deleteBusinessHoursByLocation = `-- name: DeleteBusinessHoursByLocation :exec
-DELETE FROM scheduling.business_hours WHERE location_id = $1
+DELETE FROM scheduling.business_hours WHERE branch_id = $1
 `
 
-func (q *Queries) DeleteBusinessHoursByLocation(ctx context.Context, locationID uuid.UUID) error {
-	_, err := q.db.Exec(ctx, deleteBusinessHoursByLocation, locationID)
+func (q *Queries) DeleteBusinessHoursByLocation(ctx context.Context, branchID uuid.UUID) error {
+	_, err := q.db.Exec(ctx, deleteBusinessHoursByLocation, branchID)
 	return err
 }
 
 const deleteMaintenanceBlock = `-- name: DeleteMaintenanceBlock :exec
-DELETE FROM scheduling.resource_blocks
-WHERE resource_id = $1 AND block_type = 'maintenance' AND reference_id = $2
+DELETE FROM scheduling.court_blocks
+WHERE court_id = $1 AND block_type = 'maintenance' AND reference_id = $2
 `
 
 type DeleteMaintenanceBlockParams struct {
-	ResourceID  uuid.UUID  `json:"resource_id"`
+	CourtID     uuid.UUID  `json:"court_id"`
 	ReferenceID *uuid.UUID `json:"reference_id"`
 }
 
 func (q *Queries) DeleteMaintenanceBlock(ctx context.Context, arg DeleteMaintenanceBlockParams) error {
-	_, err := q.db.Exec(ctx, deleteMaintenanceBlock, arg.ResourceID, arg.ReferenceID)
+	_, err := q.db.Exec(ctx, deleteMaintenanceBlock, arg.CourtID, arg.ReferenceID)
 	return err
 }
 
 const deleteMaintenanceBlocksByResource = `-- name: DeleteMaintenanceBlocksByResource :exec
-DELETE FROM scheduling.resource_blocks
-WHERE resource_id = $1 AND block_type = 'maintenance'
+DELETE FROM scheduling.court_blocks
+WHERE court_id = $1 AND block_type = 'maintenance'
 `
 
-func (q *Queries) DeleteMaintenanceBlocksByResource(ctx context.Context, resourceID uuid.UUID) error {
-	_, err := q.db.Exec(ctx, deleteMaintenanceBlocksByResource, resourceID)
+func (q *Queries) DeleteMaintenanceBlocksByResource(ctx context.Context, courtID uuid.UUID) error {
+	_, err := q.db.Exec(ctx, deleteMaintenanceBlocksByResource, courtID)
 	return err
 }
 
 const deleteProjectionsFrom = `-- name: DeleteProjectionsFrom :exec
-DELETE FROM scheduling.availability_projections WHERE resource_id = $1 AND projection_date >= $2::date
+DELETE FROM scheduling.availability_projections WHERE court_id = $1 AND projection_date >= $2::date
 `
 
 type DeleteProjectionsFromParams struct {
-	ResourceID uuid.UUID   `json:"resource_id"`
-	Column2    pgtype.Date `json:"column_2"`
+	CourtID uuid.UUID   `json:"court_id"`
+	Column2 pgtype.Date `json:"column_2"`
 }
 
 func (q *Queries) DeleteProjectionsFrom(ctx context.Context, arg DeleteProjectionsFromParams) error {
-	_, err := q.db.Exec(ctx, deleteProjectionsFrom, arg.ResourceID, arg.Column2)
+	_, err := q.db.Exec(ctx, deleteProjectionsFrom, arg.CourtID, arg.Column2)
 	return err
 }
 
 const deleteResourceBlock = `-- name: DeleteResourceBlock :exec
-DELETE FROM scheduling.resource_blocks WHERE resource_id = $1 AND id = $2
+DELETE FROM scheduling.court_blocks WHERE court_id = $1 AND id = $2
 `
 
 type DeleteResourceBlockParams struct {
-	ResourceID uuid.UUID `json:"resource_id"`
-	ID         uuid.UUID `json:"id"`
+	CourtID uuid.UUID `json:"court_id"`
+	ID      uuid.UUID `json:"id"`
 }
 
 func (q *Queries) DeleteResourceBlock(ctx context.Context, arg DeleteResourceBlockParams) error {
-	_, err := q.db.Exec(ctx, deleteResourceBlock, arg.ResourceID, arg.ID)
+	_, err := q.db.Exec(ctx, deleteResourceBlock, arg.CourtID, arg.ID)
 	return err
 }
 
 const deleteTimeSlotsFrom = `-- name: DeleteTimeSlotsFrom :exec
-DELETE FROM scheduling.time_slots WHERE resource_id = $1 AND starts_at >= $2
+DELETE FROM scheduling.time_slots WHERE court_id = $1 AND starts_at >= $2
 `
 
 type DeleteTimeSlotsFromParams struct {
-	ResourceID uuid.UUID `json:"resource_id"`
-	StartsAt   time.Time `json:"starts_at"`
+	CourtID  uuid.UUID `json:"court_id"`
+	StartsAt time.Time `json:"starts_at"`
 }
 
 func (q *Queries) DeleteTimeSlotsFrom(ctx context.Context, arg DeleteTimeSlotsFromParams) error {
-	_, err := q.db.Exec(ctx, deleteTimeSlotsFrom, arg.ResourceID, arg.StartsAt)
+	_, err := q.db.Exec(ctx, deleteTimeSlotsFrom, arg.CourtID, arg.StartsAt)
 	return err
 }
 
 const deleteTypedBlock = `-- name: DeleteTypedBlock :exec
-DELETE FROM scheduling.resource_blocks
-WHERE resource_id = $1 AND block_type = $2 AND reference_id = $3
+DELETE FROM scheduling.court_blocks
+WHERE court_id = $1 AND block_type = $2 AND reference_id = $3
 `
 
 type DeleteTypedBlockParams struct {
-	ResourceID  uuid.UUID           `json:"resource_id"`
+	CourtID     uuid.UUID           `json:"court_id"`
 	BlockType   SchedulingBlockType `json:"block_type"`
 	ReferenceID *uuid.UUID          `json:"reference_id"`
 }
 
 func (q *Queries) DeleteTypedBlock(ctx context.Context, arg DeleteTypedBlockParams) error {
-	_, err := q.db.Exec(ctx, deleteTypedBlock, arg.ResourceID, arg.BlockType, arg.ReferenceID)
+	_, err := q.db.Exec(ctx, deleteTypedBlock, arg.CourtID, arg.BlockType, arg.ReferenceID)
 	return err
 }
 
 const findCourtForSync = `-- name: FindCourtForSync :one
-SELECT r.id, r.location_id, r.tenant_id, r.status::text AS status, r.court_type_id, r.public_id,
-       COALESCE(ct.slot_duration_minutes, 60)::int AS slot_duration_minutes
-FROM catalog.resources r
-LEFT JOIN catalog.resource_categories ct ON ct.id = r.court_type_id
+SELECT r.id, r.branch_id, r.tenant_id, r.status::text AS status, r.sport_id, r.public_id,
+       60::int AS slot_duration_minutes
+FROM catalog.courts r
 WHERE r.id = $1 AND r.resource_type = 'court' AND r.deleted_at IS NULL
 `
 
 type FindCourtForSyncRow struct {
-	ID                  uuid.UUID  `json:"id"`
-	LocationID          uuid.UUID  `json:"location_id"`
-	TenantID            uuid.UUID  `json:"tenant_id"`
-	Status              string     `json:"status"`
-	CourtTypeID         *uuid.UUID `json:"court_type_id"`
-	PublicID            string     `json:"public_id"`
-	SlotDurationMinutes int32      `json:"slot_duration_minutes"`
+	ID                  uuid.UUID `json:"id"`
+	BranchID            uuid.UUID `json:"branch_id"`
+	TenantID            uuid.UUID `json:"tenant_id"`
+	Status              string    `json:"status"`
+	SportID             uuid.UUID `json:"sport_id"`
+	PublicID            string    `json:"public_id"`
+	SlotDurationMinutes int32     `json:"slot_duration_minutes"`
 }
 
 func (q *Queries) FindCourtForSync(ctx context.Context, id uuid.UUID) (FindCourtForSyncRow, error) {
@@ -269,10 +268,10 @@ func (q *Queries) FindCourtForSync(ctx context.Context, id uuid.UUID) (FindCourt
 	var i FindCourtForSyncRow
 	err := row.Scan(
 		&i.ID,
-		&i.LocationID,
+		&i.BranchID,
 		&i.TenantID,
 		&i.Status,
-		&i.CourtTypeID,
+		&i.SportID,
 		&i.PublicID,
 		&i.SlotDurationMinutes,
 	)
@@ -281,8 +280,8 @@ func (q *Queries) FindCourtForSync(ctx context.Context, id uuid.UUID) (FindCourt
 
 const findOpenMaintenance = `-- name: FindOpenMaintenance :one
 SELECT id, started_at
-FROM catalog.resource_maintenances
-WHERE resource_id = $1 AND status = 'in_progress'
+FROM catalog.court_maintenances
+WHERE court_id = $1 AND status = 'in_progress'
 LIMIT 1
 `
 
@@ -291,28 +290,28 @@ type FindOpenMaintenanceRow struct {
 	StartedAt *time.Time `json:"started_at"`
 }
 
-func (q *Queries) FindOpenMaintenance(ctx context.Context, resourceID uuid.UUID) (FindOpenMaintenanceRow, error) {
-	row := q.db.QueryRow(ctx, findOpenMaintenance, resourceID)
+func (q *Queries) FindOpenMaintenance(ctx context.Context, courtID uuid.UUID) (FindOpenMaintenanceRow, error) {
+	row := q.db.QueryRow(ctx, findOpenMaintenance, courtID)
 	var i FindOpenMaintenanceRow
 	err := row.Scan(&i.ID, &i.StartedAt)
 	return i, err
 }
 
 const findResourceBlock = `-- name: FindResourceBlock :one
-SELECT id, resource_id, block_type, COALESCE(reference_type, '') AS reference_type, reference_id,
+SELECT id, court_id, block_type, COALESCE(reference_type, '') AS reference_type, reference_id,
        starts_at, ends_at, COALESCE(reason, '') AS reason, created_at
-FROM scheduling.resource_blocks
-WHERE resource_id = $1 AND id = $2
+FROM scheduling.court_blocks
+WHERE court_id = $1 AND id = $2
 `
 
 type FindResourceBlockParams struct {
-	ResourceID uuid.UUID `json:"resource_id"`
-	ID         uuid.UUID `json:"id"`
+	CourtID uuid.UUID `json:"court_id"`
+	ID      uuid.UUID `json:"id"`
 }
 
 type FindResourceBlockRow struct {
 	ID            uuid.UUID           `json:"id"`
-	ResourceID    uuid.UUID           `json:"resource_id"`
+	CourtID       uuid.UUID           `json:"court_id"`
 	BlockType     SchedulingBlockType `json:"block_type"`
 	ReferenceType string              `json:"reference_type"`
 	ReferenceID   *uuid.UUID          `json:"reference_id"`
@@ -323,11 +322,11 @@ type FindResourceBlockRow struct {
 }
 
 func (q *Queries) FindResourceBlock(ctx context.Context, arg FindResourceBlockParams) (FindResourceBlockRow, error) {
-	row := q.db.QueryRow(ctx, findResourceBlock, arg.ResourceID, arg.ID)
+	row := q.db.QueryRow(ctx, findResourceBlock, arg.CourtID, arg.ID)
 	var i FindResourceBlockRow
 	err := row.Scan(
 		&i.ID,
-		&i.ResourceID,
+		&i.CourtID,
 		&i.BlockType,
 		&i.ReferenceType,
 		&i.ReferenceID,
@@ -340,25 +339,25 @@ func (q *Queries) FindResourceBlock(ctx context.Context, arg FindResourceBlockPa
 }
 
 const insertBusinessHour = `-- name: InsertBusinessHour :exec
-INSERT INTO scheduling.business_hours (id, location_id, weekday, opens_at, closes_at, is_closed, created_at, updated_at)
+INSERT INTO scheduling.business_hours (id, branch_id, weekday, opens_at, closes_at, is_closed, created_at, updated_at)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 `
 
 type InsertBusinessHourParams struct {
-	ID         uuid.UUID   `json:"id"`
-	LocationID uuid.UUID   `json:"location_id"`
-	Weekday    int16       `json:"weekday"`
-	OpensAt    pgtype.Time `json:"opens_at"`
-	ClosesAt   pgtype.Time `json:"closes_at"`
-	IsClosed   bool        `json:"is_closed"`
-	CreatedAt  time.Time   `json:"created_at"`
-	UpdatedAt  time.Time   `json:"updated_at"`
+	ID        uuid.UUID   `json:"id"`
+	BranchID  uuid.UUID   `json:"branch_id"`
+	Weekday   int16       `json:"weekday"`
+	OpensAt   pgtype.Time `json:"opens_at"`
+	ClosesAt  pgtype.Time `json:"closes_at"`
+	IsClosed  bool        `json:"is_closed"`
+	CreatedAt time.Time   `json:"created_at"`
+	UpdatedAt time.Time   `json:"updated_at"`
 }
 
 func (q *Queries) InsertBusinessHour(ctx context.Context, arg InsertBusinessHourParams) error {
 	_, err := q.db.Exec(ctx, insertBusinessHour,
 		arg.ID,
-		arg.LocationID,
+		arg.BranchID,
 		arg.Weekday,
 		arg.OpensAt,
 		arg.ClosesAt,
@@ -371,9 +370,9 @@ func (q *Queries) InsertBusinessHour(ctx context.Context, arg InsertBusinessHour
 
 const insertTimeSlot = `-- name: InsertTimeSlot :exec
 INSERT INTO scheduling.time_slots (
-    id, resource_id, starts_at, ends_at, is_available, source, projection_id, generated_at
+    id, court_id, starts_at, ends_at, is_available, source, projection_id, generated_at
 ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-ON CONFLICT (resource_id, starts_at)
+ON CONFLICT (court_id, starts_at)
 DO UPDATE SET
     ends_at = EXCLUDED.ends_at,
     is_available = EXCLUDED.is_available,
@@ -384,7 +383,7 @@ DO UPDATE SET
 
 type InsertTimeSlotParams struct {
 	ID           uuid.UUID  `json:"id"`
-	ResourceID   uuid.UUID  `json:"resource_id"`
+	CourtID      uuid.UUID  `json:"court_id"`
 	StartsAt     time.Time  `json:"starts_at"`
 	EndsAt       time.Time  `json:"ends_at"`
 	IsAvailable  bool       `json:"is_available"`
@@ -396,7 +395,7 @@ type InsertTimeSlotParams struct {
 func (q *Queries) InsertTimeSlot(ctx context.Context, arg InsertTimeSlotParams) error {
 	_, err := q.db.Exec(ctx, insertTimeSlot,
 		arg.ID,
-		arg.ResourceID,
+		arg.CourtID,
 		arg.StartsAt,
 		arg.EndsAt,
 		arg.IsAvailable,
@@ -408,12 +407,12 @@ func (q *Queries) InsertTimeSlot(ctx context.Context, arg InsertTimeSlotParams) 
 }
 
 const listActiveCourtIDsByLocation = `-- name: ListActiveCourtIDsByLocation :many
-SELECT id FROM catalog.resources
-WHERE location_id = $1 AND resource_type = 'court' AND deleted_at IS NULL AND status <> 'archived'
+SELECT id FROM catalog.courts
+WHERE branch_id = $1 AND resource_type = 'court' AND deleted_at IS NULL AND status <> 'archived'
 `
 
-func (q *Queries) ListActiveCourtIDsByLocation(ctx context.Context, locationID uuid.UUID) ([]uuid.UUID, error) {
-	rows, err := q.db.Query(ctx, listActiveCourtIDsByLocation, locationID)
+func (q *Queries) ListActiveCourtIDsByLocation(ctx context.Context, branchID uuid.UUID) ([]uuid.UUID, error) {
+	rows, err := q.db.Query(ctx, listActiveCourtIDsByLocation, branchID)
 	if err != nil {
 		return nil, err
 	}
@@ -433,14 +432,14 @@ func (q *Queries) ListActiveCourtIDsByLocation(ctx context.Context, locationID u
 }
 
 const listBusinessHours = `-- name: ListBusinessHours :many
-SELECT id, location_id, weekday, opens_at, closes_at, is_closed, created_at, updated_at
+SELECT id, branch_id, weekday, opens_at, closes_at, is_closed, created_at, updated_at
 FROM scheduling.business_hours
-WHERE location_id = $1
+WHERE branch_id = $1
 ORDER BY weekday ASC
 `
 
-func (q *Queries) ListBusinessHours(ctx context.Context, locationID uuid.UUID) ([]SchedulingBusinessHour, error) {
-	rows, err := q.db.Query(ctx, listBusinessHours, locationID)
+func (q *Queries) ListBusinessHours(ctx context.Context, branchID uuid.UUID) ([]SchedulingBusinessHour, error) {
+	rows, err := q.db.Query(ctx, listBusinessHours, branchID)
 	if err != nil {
 		return nil, err
 	}
@@ -450,7 +449,7 @@ func (q *Queries) ListBusinessHours(ctx context.Context, locationID uuid.UUID) (
 		var i SchedulingBusinessHour
 		if err := rows.Scan(
 			&i.ID,
-			&i.LocationID,
+			&i.BranchID,
 			&i.Weekday,
 			&i.OpensAt,
 			&i.ClosesAt,
@@ -469,37 +468,37 @@ func (q *Queries) ListBusinessHours(ctx context.Context, locationID uuid.UUID) (
 }
 
 const listHolidaysOverlapping = `-- name: ListHolidaysOverlapping :many
-SELECT id, tenant_id, location_id, COALESCE(name_en, '') AS name_en, COALESCE(name_vi, '') AS name_vi,
+SELECT id, tenant_id, branch_id, COALESCE(name_en, '') AS name_en, COALESCE(name_vi, '') AS name_vi,
        starts_at, ends_at, is_closed, opens_at, closes_at, created_at
 FROM scheduling.calendar_holidays
-WHERE location_id = $1
+WHERE branch_id = $1
   AND starts_at < $2
   AND ends_at > $3
 ORDER BY starts_at ASC
 `
 
 type ListHolidaysOverlappingParams struct {
-	LocationID *uuid.UUID `json:"location_id"`
+	BranchID   *uuid.UUID `json:"branch_id"`
 	RangeEnd   time.Time  `json:"range_end"`
 	RangeStart time.Time  `json:"range_start"`
 }
 
 type ListHolidaysOverlappingRow struct {
-	ID         uuid.UUID   `json:"id"`
-	TenantID   uuid.UUID   `json:"tenant_id"`
-	LocationID *uuid.UUID  `json:"location_id"`
-	NameEn     string      `json:"name_en"`
-	NameVi     string      `json:"name_vi"`
-	StartsAt   time.Time   `json:"starts_at"`
-	EndsAt     time.Time   `json:"ends_at"`
-	IsClosed   bool        `json:"is_closed"`
-	OpensAt    pgtype.Time `json:"opens_at"`
-	ClosesAt   pgtype.Time `json:"closes_at"`
-	CreatedAt  time.Time   `json:"created_at"`
+	ID        uuid.UUID   `json:"id"`
+	TenantID  uuid.UUID   `json:"tenant_id"`
+	BranchID  *uuid.UUID  `json:"branch_id"`
+	NameEn    string      `json:"name_en"`
+	NameVi    string      `json:"name_vi"`
+	StartsAt  time.Time   `json:"starts_at"`
+	EndsAt    time.Time   `json:"ends_at"`
+	IsClosed  bool        `json:"is_closed"`
+	OpensAt   pgtype.Time `json:"opens_at"`
+	ClosesAt  pgtype.Time `json:"closes_at"`
+	CreatedAt time.Time   `json:"created_at"`
 }
 
 func (q *Queries) ListHolidaysOverlapping(ctx context.Context, arg ListHolidaysOverlappingParams) ([]ListHolidaysOverlappingRow, error) {
-	rows, err := q.db.Query(ctx, listHolidaysOverlapping, arg.LocationID, arg.RangeEnd, arg.RangeStart)
+	rows, err := q.db.Query(ctx, listHolidaysOverlapping, arg.BranchID, arg.RangeEnd, arg.RangeStart)
 	if err != nil {
 		return nil, err
 	}
@@ -510,7 +509,7 @@ func (q *Queries) ListHolidaysOverlapping(ctx context.Context, arg ListHolidaysO
 		if err := rows.Scan(
 			&i.ID,
 			&i.TenantID,
-			&i.LocationID,
+			&i.BranchID,
 			&i.NameEn,
 			&i.NameVi,
 			&i.StartsAt,
@@ -531,24 +530,24 @@ func (q *Queries) ListHolidaysOverlapping(ctx context.Context, arg ListHolidaysO
 }
 
 const listResourceBlocksOverlapping = `-- name: ListResourceBlocksOverlapping :many
-SELECT id, resource_id, block_type, COALESCE(reference_type, '') AS reference_type, reference_id,
+SELECT id, court_id, block_type, COALESCE(reference_type, '') AS reference_type, reference_id,
        starts_at, ends_at, COALESCE(reason, '') AS reason, created_at
-FROM scheduling.resource_blocks
-WHERE resource_id = $1
+FROM scheduling.court_blocks
+WHERE court_id = $1
   AND starts_at < $2
   AND ends_at > $3
 ORDER BY starts_at ASC
 `
 
 type ListResourceBlocksOverlappingParams struct {
-	ResourceID uuid.UUID `json:"resource_id"`
+	CourtID    uuid.UUID `json:"court_id"`
 	RangeEnd   time.Time `json:"range_end"`
 	RangeStart time.Time `json:"range_start"`
 }
 
 type ListResourceBlocksOverlappingRow struct {
 	ID            uuid.UUID           `json:"id"`
-	ResourceID    uuid.UUID           `json:"resource_id"`
+	CourtID       uuid.UUID           `json:"court_id"`
 	BlockType     SchedulingBlockType `json:"block_type"`
 	ReferenceType string              `json:"reference_type"`
 	ReferenceID   *uuid.UUID          `json:"reference_id"`
@@ -559,7 +558,7 @@ type ListResourceBlocksOverlappingRow struct {
 }
 
 func (q *Queries) ListResourceBlocksOverlapping(ctx context.Context, arg ListResourceBlocksOverlappingParams) ([]ListResourceBlocksOverlappingRow, error) {
-	rows, err := q.db.Query(ctx, listResourceBlocksOverlapping, arg.ResourceID, arg.RangeEnd, arg.RangeStart)
+	rows, err := q.db.Query(ctx, listResourceBlocksOverlapping, arg.CourtID, arg.RangeEnd, arg.RangeStart)
 	if err != nil {
 		return nil, err
 	}
@@ -569,7 +568,7 @@ func (q *Queries) ListResourceBlocksOverlapping(ctx context.Context, arg ListRes
 		var i ListResourceBlocksOverlappingRow
 		if err := rows.Scan(
 			&i.ID,
-			&i.ResourceID,
+			&i.CourtID,
 			&i.BlockType,
 			&i.ReferenceType,
 			&i.ReferenceID,
@@ -589,10 +588,10 @@ func (q *Queries) ListResourceBlocksOverlapping(ctx context.Context, arg ListRes
 }
 
 const listTimeSlots = `-- name: ListTimeSlots :many
-SELECT id, resource_id, starts_at, ends_at, is_available, COALESCE(source, '') AS source,
+SELECT id, court_id, starts_at, ends_at, is_available, COALESCE(source, '') AS source,
        projection_id, generated_at
 FROM scheduling.time_slots
-WHERE resource_id = $1
+WHERE court_id = $1
   AND starts_at >= $2
   AND starts_at < $3
   AND ($4::bool = false OR is_available = true)
@@ -600,7 +599,7 @@ ORDER BY starts_at ASC
 `
 
 type ListTimeSlotsParams struct {
-	ResourceID    uuid.UUID `json:"resource_id"`
+	CourtID       uuid.UUID `json:"court_id"`
 	RangeStart    time.Time `json:"range_start"`
 	RangeEnd      time.Time `json:"range_end"`
 	AvailableOnly bool      `json:"available_only"`
@@ -608,7 +607,7 @@ type ListTimeSlotsParams struct {
 
 type ListTimeSlotsRow struct {
 	ID           uuid.UUID  `json:"id"`
-	ResourceID   uuid.UUID  `json:"resource_id"`
+	CourtID      uuid.UUID  `json:"court_id"`
 	StartsAt     time.Time  `json:"starts_at"`
 	EndsAt       time.Time  `json:"ends_at"`
 	IsAvailable  bool       `json:"is_available"`
@@ -619,7 +618,7 @@ type ListTimeSlotsRow struct {
 
 func (q *Queries) ListTimeSlots(ctx context.Context, arg ListTimeSlotsParams) ([]ListTimeSlotsRow, error) {
 	rows, err := q.db.Query(ctx, listTimeSlots,
-		arg.ResourceID,
+		arg.CourtID,
 		arg.RangeStart,
 		arg.RangeEnd,
 		arg.AvailableOnly,
@@ -633,7 +632,7 @@ func (q *Queries) ListTimeSlots(ctx context.Context, arg ListTimeSlotsParams) ([
 		var i ListTimeSlotsRow
 		if err := rows.Scan(
 			&i.ID,
-			&i.ResourceID,
+			&i.CourtID,
 			&i.StartsAt,
 			&i.EndsAt,
 			&i.IsAvailable,
@@ -653,9 +652,9 @@ func (q *Queries) ListTimeSlots(ctx context.Context, arg ListTimeSlotsParams) ([
 
 const upsertAvailabilityProjection = `-- name: UpsertAvailabilityProjection :one
 INSERT INTO scheduling.availability_projections (
-    id, resource_id, projection_date, available_minutes, occupied_minutes, status, generated_at
+    id, court_id, projection_date, available_minutes, occupied_minutes, status, generated_at
 ) VALUES ($1, $2, $3, $4, $5, $6, $7)
-ON CONFLICT (resource_id, projection_date)
+ON CONFLICT (court_id, projection_date)
 DO UPDATE SET
     available_minutes = EXCLUDED.available_minutes,
     occupied_minutes = EXCLUDED.occupied_minutes,
@@ -666,7 +665,7 @@ RETURNING id
 
 type UpsertAvailabilityProjectionParams struct {
 	ID               uuid.UUID                  `json:"id"`
-	ResourceID       uuid.UUID                  `json:"resource_id"`
+	CourtID          uuid.UUID                  `json:"court_id"`
 	ProjectionDate   pgtype.Date                `json:"projection_date"`
 	AvailableMinutes int32                      `json:"available_minutes"`
 	OccupiedMinutes  int32                      `json:"occupied_minutes"`
@@ -677,7 +676,7 @@ type UpsertAvailabilityProjectionParams struct {
 func (q *Queries) UpsertAvailabilityProjection(ctx context.Context, arg UpsertAvailabilityProjectionParams) (uuid.UUID, error) {
 	row := q.db.QueryRow(ctx, upsertAvailabilityProjection,
 		arg.ID,
-		arg.ResourceID,
+		arg.CourtID,
 		arg.ProjectionDate,
 		arg.AvailableMinutes,
 		arg.OccupiedMinutes,
@@ -690,16 +689,16 @@ func (q *Queries) UpsertAvailabilityProjection(ctx context.Context, arg UpsertAv
 }
 
 const upsertBookingBlock = `-- name: UpsertBookingBlock :exec
-INSERT INTO scheduling.resource_blocks (
-    id, resource_id, block_type, reference_type, reference_id, starts_at, ends_at, reason, created_at
+INSERT INTO scheduling.court_blocks (
+    id, court_id, block_type, reference_type, reference_id, starts_at, ends_at, reason, created_at
 ) VALUES ($1, $2, 'booking', $3, $4, $5, $6, $7, $8)
-ON CONFLICT (resource_id, reference_id) WHERE block_type = 'booking' AND reference_id IS NOT NULL
+ON CONFLICT (court_id, reference_id) WHERE block_type = 'booking' AND reference_id IS NOT NULL
 DO UPDATE SET starts_at = EXCLUDED.starts_at, ends_at = EXCLUDED.ends_at, reason = EXCLUDED.reason
 `
 
 type UpsertBookingBlockParams struct {
 	ID            uuid.UUID  `json:"id"`
-	ResourceID    uuid.UUID  `json:"resource_id"`
+	CourtID       uuid.UUID  `json:"court_id"`
 	ReferenceType *string    `json:"reference_type"`
 	ReferenceID   *uuid.UUID `json:"reference_id"`
 	StartsAt      time.Time  `json:"starts_at"`
@@ -711,7 +710,7 @@ type UpsertBookingBlockParams struct {
 func (q *Queries) UpsertBookingBlock(ctx context.Context, arg UpsertBookingBlockParams) error {
 	_, err := q.db.Exec(ctx, upsertBookingBlock,
 		arg.ID,
-		arg.ResourceID,
+		arg.CourtID,
 		arg.ReferenceType,
 		arg.ReferenceID,
 		arg.StartsAt,
@@ -723,16 +722,16 @@ func (q *Queries) UpsertBookingBlock(ctx context.Context, arg UpsertBookingBlock
 }
 
 const upsertMaintenanceBlock = `-- name: UpsertMaintenanceBlock :exec
-INSERT INTO scheduling.resource_blocks (
-    id, resource_id, block_type, reference_type, reference_id, starts_at, ends_at, reason, created_at
+INSERT INTO scheduling.court_blocks (
+    id, court_id, block_type, reference_type, reference_id, starts_at, ends_at, reason, created_at
 ) VALUES ($1, $2, 'maintenance', $3, $4, $5, $6, $7, $8)
-ON CONFLICT (resource_id, reference_id) WHERE block_type = 'maintenance' AND reference_id IS NOT NULL
+ON CONFLICT (court_id, reference_id) WHERE block_type = 'maintenance' AND reference_id IS NOT NULL
 DO UPDATE SET starts_at = EXCLUDED.starts_at, ends_at = EXCLUDED.ends_at, reason = EXCLUDED.reason
 `
 
 type UpsertMaintenanceBlockParams struct {
 	ID            uuid.UUID  `json:"id"`
-	ResourceID    uuid.UUID  `json:"resource_id"`
+	CourtID       uuid.UUID  `json:"court_id"`
 	ReferenceType *string    `json:"reference_type"`
 	ReferenceID   *uuid.UUID `json:"reference_id"`
 	StartsAt      time.Time  `json:"starts_at"`
@@ -744,7 +743,7 @@ type UpsertMaintenanceBlockParams struct {
 func (q *Queries) UpsertMaintenanceBlock(ctx context.Context, arg UpsertMaintenanceBlockParams) error {
 	_, err := q.db.Exec(ctx, upsertMaintenanceBlock,
 		arg.ID,
-		arg.ResourceID,
+		arg.CourtID,
 		arg.ReferenceType,
 		arg.ReferenceID,
 		arg.StartsAt,
@@ -756,16 +755,16 @@ func (q *Queries) UpsertMaintenanceBlock(ctx context.Context, arg UpsertMaintena
 }
 
 const upsertReservationBlock = `-- name: UpsertReservationBlock :exec
-INSERT INTO scheduling.resource_blocks (
-    id, resource_id, block_type, reference_type, reference_id, starts_at, ends_at, reason, created_at
+INSERT INTO scheduling.court_blocks (
+    id, court_id, block_type, reference_type, reference_id, starts_at, ends_at, reason, created_at
 ) VALUES ($1, $2, 'reservation', $3, $4, $5, $6, $7, $8)
-ON CONFLICT (resource_id, reference_id) WHERE block_type = 'reservation' AND reference_id IS NOT NULL
+ON CONFLICT (court_id, reference_id) WHERE block_type = 'reservation' AND reference_id IS NOT NULL
 DO UPDATE SET starts_at = EXCLUDED.starts_at, ends_at = EXCLUDED.ends_at, reason = EXCLUDED.reason
 `
 
 type UpsertReservationBlockParams struct {
 	ID            uuid.UUID  `json:"id"`
-	ResourceID    uuid.UUID  `json:"resource_id"`
+	CourtID       uuid.UUID  `json:"court_id"`
 	ReferenceType *string    `json:"reference_type"`
 	ReferenceID   *uuid.UUID `json:"reference_id"`
 	StartsAt      time.Time  `json:"starts_at"`
@@ -777,7 +776,7 @@ type UpsertReservationBlockParams struct {
 func (q *Queries) UpsertReservationBlock(ctx context.Context, arg UpsertReservationBlockParams) error {
 	_, err := q.db.Exec(ctx, upsertReservationBlock,
 		arg.ID,
-		arg.ResourceID,
+		arg.CourtID,
 		arg.ReferenceType,
 		arg.ReferenceID,
 		arg.StartsAt,

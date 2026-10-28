@@ -3230,7 +3230,7 @@ export interface paths {
         put?: never;
         /**
          * Archive court type
-         * @description Blocked while non-archived courts still use the type. Emits CourtTypeArchived.
+         * @description Emits CourtTypeArchived. Courts no longer reference court types.
          */
         post: {
             parameters: {
@@ -3676,6 +3676,249 @@ export interface paths {
                 404: components["responses"]["Error"];
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/courts/{id}/gallery": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List court gallery images */
+        get: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                };
+                path: {
+                    id: components["parameters"]["CourtId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["CourtGalleryItem"][];
+                        };
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+            };
+        };
+        put?: never;
+        /** Upload a court gallery image */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                };
+                path: {
+                    id: components["parameters"]["CourtId"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "multipart/form-data": {
+                        /** Format: binary */
+                        file: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["CourtGalleryItem"];
+                        };
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/courts/{id}/gallery/{mediaId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a gallery image */
+        delete: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                };
+                path: {
+                    id: components["parameters"]["CourtId"];
+                    mediaId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Deleted */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+            };
+        };
+        options?: never;
+        head?: never;
+        /** Update gallery item caption, sort, or cover */
+        patch: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                };
+                path: {
+                    id: components["parameters"]["CourtId"];
+                    mediaId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateCourtGalleryItemRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["CourtGalleryItem"];
+                        };
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+            };
+        };
+        trace?: never;
+    };
+    "/api/v1/courts/{id}/amenities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List amenities assigned to a court */
+        get: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                };
+                path: {
+                    id: components["parameters"]["CourtId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["Amenity"][];
+                        };
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+            };
+        };
+        /** Replace court amenity set */
+        put: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                };
+                path: {
+                    id: components["parameters"]["CourtId"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["PutCourtAmenitiesRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["Amenity"][];
+                        };
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -4358,7 +4601,7 @@ export interface paths {
          * Calculate booking price quote
          * @description Public quote. No promo/membership. Side-effect free: BookingPriceCalculated is emitted
          *     when a hold or booking is created, not here.
-         *     Amounts are integer VND (half-up). Base rate is VND/hour by court type.
+         *     Amounts are integer VND (half-up). Base rate is VND/hour by sport.
          */
         post: {
             parameters: {
@@ -6806,7 +7049,7 @@ export interface components {
             user_id: string;
             title?: string;
             /** Format: uuid */
-            location_id?: string;
+            branch_id?: string;
             /** @enum {string} */
             status: "invited" | "active" | "suspended" | "resigned";
             roles: string[];
@@ -6824,7 +7067,7 @@ export interface components {
         UpdateStaffRequest: {
             title?: string;
             /** Format: uuid */
-            location_id?: string;
+            branch_id?: string;
         };
         AssignRoleRequest: {
             /** @enum {string} */
@@ -7151,14 +7394,24 @@ export interface components {
             code?: string;
             slot_duration_minutes?: number;
         };
+        /** @enum {string} */
+        CourtSurface: "unspecified" | "pvc" | "wood" | "hard_court" | "grass" | "artificial_turf" | "clay" | "rubber" | "other";
         Court: {
             /** Format: uuid */
             id: string;
             public_id: string;
+            /**
+             * Format: uuid
+             * @description Owning organization (from branch location)
+             */
+            organization_id?: string;
             /** Format: uuid */
             branch_id: string;
-            /** Format: uuid */
-            court_type_id: string;
+            /**
+             * Format: uuid
+             * @description Discipline played on this court (catalog.sports)
+             */
+            sport_id: string;
             code: string;
             /** @description Resolved from Accept-Language */
             name: string;
@@ -7169,31 +7422,77 @@ export interface components {
             is_bookable: boolean;
             /** @enum {string} */
             environment: "indoor" | "outdoor" | "unspecified";
+            surface: components["schemas"]["CourtSurface"];
+            /** @description Free text, e.g. 13.4 x 6.1 m */
+            dimensions?: string;
+            /** @description Resolved from Accept-Language (sanitized HTML) */
+            description?: string;
+            /** @description Sanitized HTML */
+            description_en?: string;
+            /** @description Sanitized HTML */
+            description_vi?: string;
+            amenity_ids: string[];
         };
-        /** @description At least one of name_en or name_vi is required. Initial status is inactive. */
+        /** @description At least one of name_en or name_vi is required. Initial status is inactive. description_* HTML is sanitized on write. amenity_ids must be active reference amenities. */
         CreateCourtRequest: {
             /** Format: uuid */
             branch_id: string;
             /** Format: uuid */
-            court_type_id: string;
+            sport_id: string;
             name_en?: string;
             name_vi?: string;
+            /**
+             * @deprecated
+             * @description Ignored on create — server generates CRT + 5-digit sequence per branch.
+             */
             code?: string;
             /**
              * @default unspecified
              * @enum {string}
              */
             environment: "indoor" | "outdoor" | "unspecified";
+            surface?: components["schemas"]["CourtSurface"];
+            dimensions?: string;
+            description_en?: string;
+            description_vi?: string;
+            amenity_ids?: string[];
         };
+        /** @description Omitted fields are unchanged. `amenity_ids`, when present, replaces the full amenity set. */
         UpdateCourtRequest: {
             name_en?: string;
             name_vi?: string;
             /** @description Immutable; sending a different value is rejected */
             code?: string;
             /** Format: uuid */
-            court_type_id?: string;
+            sport_id?: string;
             /** @enum {string} */
             environment?: "indoor" | "outdoor" | "unspecified";
+            surface?: components["schemas"]["CourtSurface"];
+            dimensions?: string;
+            description_en?: string;
+            description_vi?: string;
+            amenity_ids?: string[];
+        };
+        CourtGalleryItem: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            file_id: string;
+            caption_en?: string;
+            caption_vi?: string;
+            sort_order: number;
+            is_cover: boolean;
+            /** Format: date-time */
+            created_at?: string;
+        };
+        UpdateCourtGalleryItemRequest: {
+            caption_en?: string;
+            caption_vi?: string;
+            sort_order?: number;
+            is_cover?: boolean;
+        };
+        PutCourtAmenitiesRequest: {
+            amenity_ids: string[];
         };
         BranchGalleryItem: {
             /** Format: uuid */
@@ -7354,7 +7653,7 @@ export interface components {
         MarketplaceCourt: {
             public_id: string;
             /** Format: uuid */
-            court_type_id?: string;
+            sport_id?: string;
             code: string;
             name: string;
             name_en?: string;
@@ -7374,7 +7673,7 @@ export interface components {
         CreatePriceVersionRequest: {
             rates: {
                 /** Format: uuid */
-                court_type_id: string;
+                sport_id: string;
                 /** @description VND per hour */
                 amount: number;
             }[];
@@ -7407,7 +7706,7 @@ export interface components {
             published_at?: string;
             rates?: {
                 /** Format: uuid */
-                court_type_id: string;
+                sport_id: string;
                 amount: number;
             }[];
             time_rules?: {

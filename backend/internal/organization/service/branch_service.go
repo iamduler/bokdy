@@ -183,7 +183,7 @@ func (s *BranchService) Create(ctx context.Context, actor uuid.UUID, in CreateBr
 		GoogleMapsURL: strings.TrimSpace(in.GoogleMapsURL), FoundedYear: foundedYear,
 		ShortIntroEn: sanitizeShortIntro(in.ShortIntroEn), ShortIntroVi: sanitizeShortIntro(in.ShortIntroVi),
 		DescriptionEn: sanitizeDescriptionHTML(in.DescriptionEn), DescriptionVi: sanitizeDescriptionHTML(in.DescriptionVi),
-		Timezone: entity.DefaultBranchTimezone, Status: entity.LocationInactive, CreatedAt: now, UpdatedAt: now,
+		Timezone: entity.DefaultBranchTimezone, Status: entity.BranchInactive, CreatedAt: now, UpdatedAt: now,
 		SportIDs: sportIDs,
 	}
 	addrs, err := requireBranchAddresses(in.Addresses)
@@ -304,7 +304,7 @@ func (s *BranchService) Update(ctx context.Context, branchID, actor uuid.UUID, i
 	if branch == nil {
 		return nil, orgerrors.ErrBranchNotFound
 	}
-	if branch.Status == entity.LocationArchived {
+	if branch.Status == entity.BranchArchived {
 		return nil, orgerrors.ErrInvalidBranchStatus
 	}
 	if in.NameEn != nil {
@@ -542,7 +542,7 @@ func (s *BranchService) SaveImage(ctx context.Context, branchID, actor uuid.UUID
 	if branch == nil {
 		return nil, orgerrors.ErrBranchNotFound
 	}
-	if branch.Status == entity.LocationArchived {
+	if branch.Status == entity.BranchArchived {
 		return nil, orgerrors.ErrInvalidBranchStatus
 	}
 	ext := ".bin"
@@ -599,20 +599,20 @@ func (s *BranchService) fileDirOrDefault() string {
 
 func (s *BranchService) Open(ctx context.Context, branchID, actor uuid.UUID) error {
 	return s.transitionFrom(ctx, branchID, actor,
-		[]entity.LocationStatus{entity.LocationInactive, entity.LocationMaintenance},
-		entity.LocationActive, "BranchOpened")
+		[]entity.BranchStatus{entity.BranchInactive, entity.BranchMaintenance},
+		entity.BranchActive, "BranchOpened")
 }
 
 func (s *BranchService) Close(ctx context.Context, branchID, actor uuid.UUID) error {
 	return s.transitionFrom(ctx, branchID, actor,
-		[]entity.LocationStatus{entity.LocationActive, entity.LocationMaintenance},
-		entity.LocationInactive, "BranchClosed")
+		[]entity.BranchStatus{entity.BranchActive, entity.BranchMaintenance},
+		entity.BranchInactive, "BranchClosed")
 }
 
 func (s *BranchService) Maintenance(ctx context.Context, branchID, actor uuid.UUID) error {
 	return s.transitionFrom(ctx, branchID, actor,
-		[]entity.LocationStatus{entity.LocationActive, entity.LocationInactive},
-		entity.LocationMaintenance, "BranchMaintenanceStarted")
+		[]entity.BranchStatus{entity.BranchActive, entity.BranchInactive},
+		entity.BranchMaintenance, "BranchMaintenanceStarted")
 }
 
 func (s *BranchService) Archive(ctx context.Context, branchID, actor uuid.UUID) error {
@@ -634,13 +634,13 @@ func (s *BranchService) Archive(ctx context.Context, branchID, actor uuid.UUID) 
 	if branch == nil {
 		return orgerrors.ErrBranchNotFound
 	}
-	if branch.Status == entity.LocationArchived {
+	if branch.Status == entity.BranchArchived {
 		return orgerrors.ErrInvalidBranchStatus
 	}
 	now := time.Now().UTC()
 	var outboxID uuid.UUID
 	err = persistence.WithinTx(ctx, s.pool, func(tx pgx.Tx) error {
-		if err := s.branches.UpdateStatus(ctx, tx, orgID, branchID, entity.LocationArchived); err != nil {
+		if err := s.branches.UpdateStatus(ctx, tx, orgID, branchID, entity.BranchArchived); err != nil {
 			return err
 		}
 		oid, err := events.Append(ctx, tx, events.Event{
@@ -660,7 +660,7 @@ func (s *BranchService) Archive(ctx context.Context, branchID, actor uuid.UUID) 
 
 func (s *BranchService) transitionFrom(
 	ctx context.Context, branchID, actor uuid.UUID,
-	from []entity.LocationStatus, to entity.LocationStatus, eventType string,
+	from []entity.BranchStatus, to entity.BranchStatus, eventType string,
 ) error {
 	orgID, err := s.requireOrgHeader(ctx)
 	if err != nil {

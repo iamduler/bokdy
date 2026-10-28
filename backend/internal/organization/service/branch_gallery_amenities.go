@@ -31,7 +31,7 @@ func (s *BranchService) loadWritableBranch(ctx context.Context, orgID, branchID,
 	if branch == nil {
 		return nil, orgerrors.ErrBranchNotFound
 	}
-	if branch.Status == entity.LocationArchived {
+	if branch.Status == entity.BranchArchived {
 		return nil, orgerrors.ErrInvalidBranchStatus
 	}
 	return branch, nil
@@ -111,7 +111,7 @@ func (s *BranchService) AddGalleryImage(ctx context.Context, branchID, actor uui
 	}
 	now := time.Now().UTC()
 	item := &entity.LocationMedia{
-		ID: id.MustNewUUID(), LocationID: branch.ID, FileID: fileID,
+		ID: id.MustNewUUID(), BranchID: branch.ID, FileID: fileID,
 		SortOrder: maxSort + 1, IsCover: false, CreatedAt: now,
 	}
 	err = persistence.WithinTx(ctx, s.pool, func(tx pgx.Tx) error {

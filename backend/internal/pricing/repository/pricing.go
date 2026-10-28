@@ -27,5 +27,5 @@ type PricingRepository interface {
 	RetireDraftVersion(ctx context.Context, tx pgx.Tx, versionID uuid.UUID, at time.Time) error
 	FindCourt(ctx context.Context, courtID uuid.UUID) (*entity.CourtPricingRow, error)
 	FindCourtByPublicID(ctx context.Context, publicID string) (*entity.CourtPricingRow, error)
-	CategoryBelongsToTenant(ctx context.Context, categoryID, tenantID uuid.UUID) (bool, error)
+	SportExists(ctx context.Context, sportID uuid.UUID) (bool, error)
 }

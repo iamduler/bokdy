@@ -4,33 +4,49 @@ import (
 	"context"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"bokdy/internal/catalog/entity"
 	catalogerrors "bokdy/internal/catalog/errors"
 	"bokdy/internal/platform/apperr"
+	"bokdy/internal/platform/entitycode"
 	"bokdy/internal/platform/events"
 	"bokdy/internal/platform/id"
 	"bokdy/internal/platform/persistence"
+	"bokdy/internal/platform/requestctx"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 )
 
+const maxCourtDimensionsRunes = 100
+
 type CreateCourtInput struct {
-	BranchID    uuid.UUID
-	CourtTypeID uuid.UUID
-	NameEn      string
-	NameVi      string
-	Code        string
-	Environment string
+	BranchID      uuid.UUID
+	SportID       uuid.UUID
+	NameEn        string
+	NameVi        string
+	Code          string
+	Environment   string
+	Surface       string
+	Dimensions    string
+	DescriptionEn string
+	DescriptionVi string
+	AmenityIDs    []uuid.UUID
 }
 
 type UpdateCourtInput struct {
-	NameEn      *string
-	NameVi      *string
-	Code        *string
-	CourtTypeID *uuid.UUID
-	Environment *string
+	NameEn        *string
+	NameVi        *string
+	Code          *string
+	SportID       *uuid.UUID
+	Environment   *string
+	Surface       *string
+	Dimensions    *string
+	DescriptionEn *string
+	DescriptionVi *string
+	/** AmenityIDs nil = unchanged; non-nil (even empty) replaces the full set. */
+	AmenityIDs *[]uuid.UUID
 }
 
 type ScheduleMaintenanceInput struct {
@@ -51,27 +67,26 @@ func (s *CatalogService) CreateCourt(ctx context.Context, actor uuid.UUID, in Cr
 	if _, err := s.loadBranch(ctx, orgID, in.BranchID); err != nil {
 		return nil, err
 	}
-	ct, err := s.types.FindByID(ctx, tenantID, in.CourtTypeID)
+	if in.SportID == uuid.Nil {
+		return nil, catalogerrors.ErrSportRequired
+	}
+	if err := s.requireSport(ctx, in.SportID); err != nil {
+		return nil, err
+	}
+	dimensions, err := normalizeDimensions(in.Dimensions)
 	if err != nil {
-		return nil, apperr.Wrap(err, apperr.CodeInternal, "get court type")
+		return nil, err
 	}
-	if ct == nil {
-		return nil, catalogerrors.ErrCourtTypeNotFound
-	}
-	if ct.Status != entity.CategoryActive {
-		return nil, catalogerrors.ErrCourtTypeArchived
-	}
-	code := strings.TrimSpace(in.Code)
-	if code == "" {
-		code = slugify(displayBase(nameEn, nameVi))
-	}
-	taken, err := s.courts.CodeExists(ctx, in.BranchID, code, nil)
+	amenityIDs, err := s.resolveAmenityIDs(ctx, in.AmenityIDs)
 	if err != nil {
-		return nil, apperr.Wrap(err, apperr.CodeInternal, "check court code")
+		return nil, err
 	}
-	if taken {
-		return nil, catalogerrors.ErrCourtCodeTaken
+	// Server-generated CRT00001… — ignore client-supplied code.
+	maxSeq, err := s.courts.MaxCodeSeq(ctx, in.BranchID, entitycode.Court)
+	if err != nil {
+		return nil, apperr.Wrap(err, apperr.CodeInternal, "allocate court code")
 	}
+	code := entitycode.Format(entitycode.Court, maxSeq+1)
 	nameTaken, err := s.courts.NameExists(ctx, in.BranchID, nameEn, nameVi, nil)
 	if err != nil {
 		return nil, apperr.Wrap(err, apperr.CodeInternal, "check court name")
@@ -81,15 +96,21 @@ func (s *CatalogService) CreateCourt(ctx context.Context, actor uuid.UUID, in Cr
 	}
 	now := time.Now().UTC()
 	court := &entity.Court{
-		ID: id.MustNewUUID(), PublicID: id.MustNewPublicID(), TenantID: tenantID, LocationID: in.BranchID,
-		CourtTypeID: in.CourtTypeID, Code: code, NameEn: nameEn, NameVi: nameVi,
-		ResourceType: entity.ResourceTypeCourt, Status: entity.ResourceInactive, IsBookable: false,
+		ID: id.MustNewUUID(), PublicID: id.MustNewPublicID(), TenantID: tenantID, BranchID: in.BranchID,
+		OrganizationID: orgID, SportID: in.SportID, Code: code, NameEn: nameEn, NameVi: nameVi,
+		ResourceType: entity.ResourceTypeCourt, Status: entity.CourtInactive, IsBookable: false,
 		Environment: entity.ParseCourtEnvironment(in.Environment),
-		CreatedAt: now, UpdatedAt: now,
+		Surface:     entity.ParseCourtSurface(in.Surface), Dimensions: dimensions,
+		DescriptionEn: sanitizeDescriptionHTML(in.DescriptionEn), DescriptionVi: sanitizeDescriptionHTML(in.DescriptionVi),
+		AmenityIDs: amenityIDs,
+		CreatedAt:  now, UpdatedAt: now,
 	}
 	var outboxID uuid.UUID
 	err = persistence.WithinTx(ctx, s.pool, func(tx pgx.Tx) error {
 		if err := s.courts.Create(ctx, tx, court); err != nil {
+			return err
+		}
+		if err := s.courts.ReplaceAmenities(ctx, tx, court.ID, court.AmenityIDs); err != nil {
 			return err
 		}
 		oid, err := events.Append(ctx, tx, events.Event{
@@ -98,7 +119,7 @@ func (s *CatalogService) CreateCourt(ctx context.Context, actor uuid.UUID, in Cr
 			EntityType: "Court", EntityID: court.ID,
 			Payload: map[string]any{
 				"organization_id": orgID.String(), "branch_id": in.BranchID.String(),
-				"court_type_id": in.CourtTypeID.String(), "code": code, "status": string(entity.ResourceInactive),
+				"sport_id": in.SportID.String(), "code": code, "status": string(entity.CourtInactive),
 			},
 			OccurredAt: now,
 		})
@@ -130,11 +151,22 @@ func (s *CatalogService) ListCourts(ctx context.Context, actor uuid.UUID, branch
 }
 
 func (s *CatalogService) GetCourt(ctx context.Context, courtID, actor uuid.UUID) (*entity.Court, error) {
-	_, tenantID, err := s.requireStaffTenant(ctx, actor)
-	if err != nil {
-		return nil, err
+	_, hasOrg := requestctx.OrganizationID(ctx)
+	var court *entity.Court
+	var err error
+	if hasOrg {
+		_, tenantID, staffErr := s.requireStaffTenant(ctx, actor)
+		if staffErr != nil {
+			return nil, staffErr
+		}
+		court, err = s.courts.FindByID(ctx, tenantID, courtID)
+	} else {
+		// Top-level /courts/:id — system admin may load without X-Organization-ID.
+		if !requestctx.IsSystemAdmin(ctx) {
+			return nil, catalogerrors.ErrOrgHeaderRequired
+		}
+		court, err = s.courts.FindByResourceID(ctx, courtID)
 	}
-	court, err := s.courts.FindByID(ctx, tenantID, courtID)
 	if err != nil {
 		return nil, apperr.Wrap(err, apperr.CodeInternal, "get court")
 	}
@@ -168,23 +200,43 @@ func (s *CatalogService) UpdateCourt(ctx context.Context, courtID, actor uuid.UU
 	if err := requireName(court.NameEn, court.NameVi); err != nil {
 		return nil, err
 	}
-	if in.CourtTypeID != nil {
-		ct, err := s.types.FindByID(ctx, tenantID, *in.CourtTypeID)
-		if err != nil {
-			return nil, apperr.Wrap(err, apperr.CodeInternal, "get court type")
+	if in.SportID != nil {
+		if *in.SportID == uuid.Nil {
+			return nil, catalogerrors.ErrSportRequired
 		}
-		if ct == nil {
-			return nil, catalogerrors.ErrCourtTypeNotFound
+		if err := s.requireSport(ctx, *in.SportID); err != nil {
+			return nil, err
 		}
-		if ct.Status != entity.CategoryActive {
-			return nil, catalogerrors.ErrCourtTypeArchived
-		}
-		court.CourtTypeID = *in.CourtTypeID
+		court.SportID = *in.SportID
 	}
 	if in.Environment != nil {
 		court.Environment = entity.ParseCourtEnvironment(*in.Environment)
 	}
-	nameTaken, err := s.courts.NameExists(ctx, court.LocationID, court.NameEn, court.NameVi, &court.ID)
+	if in.Surface != nil {
+		court.Surface = entity.ParseCourtSurface(*in.Surface)
+	}
+	if in.Dimensions != nil {
+		dimensions, err := normalizeDimensions(*in.Dimensions)
+		if err != nil {
+			return nil, err
+		}
+		court.Dimensions = dimensions
+	}
+	if in.DescriptionEn != nil {
+		court.DescriptionEn = sanitizeDescriptionHTML(*in.DescriptionEn)
+	}
+	if in.DescriptionVi != nil {
+		court.DescriptionVi = sanitizeDescriptionHTML(*in.DescriptionVi)
+	}
+	replaceAmenities := in.AmenityIDs != nil
+	if replaceAmenities {
+		amenityIDs, err := s.resolveAmenityIDs(ctx, *in.AmenityIDs)
+		if err != nil {
+			return nil, err
+		}
+		court.AmenityIDs = amenityIDs
+	}
+	nameTaken, err := s.courts.NameExists(ctx, court.BranchID, court.NameEn, court.NameVi, &court.ID)
 	if err != nil {
 		return nil, apperr.Wrap(err, apperr.CodeInternal, "check court name")
 	}
@@ -197,6 +249,11 @@ func (s *CatalogService) UpdateCourt(ctx context.Context, courtID, actor uuid.UU
 	err = persistence.WithinTx(ctx, s.pool, func(tx pgx.Tx) error {
 		if err := s.courts.Update(ctx, tx, court); err != nil {
 			return err
+		}
+		if replaceAmenities {
+			if err := s.courts.ReplaceAmenities(ctx, tx, court.ID, court.AmenityIDs); err != nil {
+				return err
+			}
 		}
 		oid, err := events.Append(ctx, tx, events.Event{
 			Type: "CourtUpdated", AggregateType: "Court", AggregateID: court.ID,
@@ -216,7 +273,7 @@ func (s *CatalogService) UpdateCourt(ctx context.Context, courtID, actor uuid.UU
 }
 
 func (s *CatalogService) OpenCourt(ctx context.Context, courtID, actor uuid.UUID) error {
-	if err := s.transitionCourt(ctx, courtID, actor, entity.ResourceInactive, entity.ResourceActive, "CourtOpened", false); err != nil {
+	if err := s.transitionCourt(ctx, courtID, actor, entity.CourtInactive, entity.CourtActive, "CourtOpened", false); err != nil {
 		return err
 	}
 	s.enqueueAvailability(ctx, courtID)
@@ -224,7 +281,7 @@ func (s *CatalogService) OpenCourt(ctx context.Context, courtID, actor uuid.UUID
 }
 
 func (s *CatalogService) CloseCourt(ctx context.Context, courtID, actor uuid.UUID) error {
-	if err := s.transitionCourt(ctx, courtID, actor, entity.ResourceActive, entity.ResourceInactive, "CourtClosed", false); err != nil {
+	if err := s.transitionCourt(ctx, courtID, actor, entity.CourtActive, entity.CourtInactive, "CourtClosed", false); err != nil {
 		return err
 	}
 	s.enqueueAvailability(ctx, courtID)
@@ -243,7 +300,7 @@ func (s *CatalogService) ArchiveCourt(ctx context.Context, courtID, actor uuid.U
 	if court == nil {
 		return catalogerrors.ErrCourtNotFound
 	}
-	if court.Status != entity.ResourceInactive {
+	if court.Status != entity.CourtInactive {
 		return catalogerrors.ErrInvalidCourtStatus
 	}
 	now := time.Now().UTC()
@@ -282,7 +339,7 @@ func (s *CatalogService) ScheduleMaintenance(ctx context.Context, courtID, actor
 	if court == nil {
 		return catalogerrors.ErrCourtNotFound
 	}
-	if court.Status != entity.ResourceActive && court.Status != entity.ResourceInactive {
+	if court.Status != entity.CourtActive && court.Status != entity.CourtInactive {
 		return catalogerrors.ErrInvalidCourtStatus
 	}
 	open, err := s.courts.FindInProgressMaintenance(ctx, court.ID)
@@ -298,7 +355,7 @@ func (s *CatalogService) ScheduleMaintenance(ctx context.Context, courtID, actor
 		started = in.StartedAt.UTC()
 	}
 	m := &entity.CourtMaintenance{
-		ID: id.MustNewUUID(), ResourceID: court.ID, Status: entity.MaintenanceInProgress,
+		ID: id.MustNewUUID(), CourtID: court.ID, Status: entity.MaintenanceInProgress,
 		Title: strings.TrimSpace(in.Title), Description: strings.TrimSpace(in.Reason),
 		StartedAt: &started, CreatedAt: now, UpdatedAt: now,
 	}
@@ -307,7 +364,7 @@ func (s *CatalogService) ScheduleMaintenance(ctx context.Context, courtID, actor
 		if err := s.courts.CreateMaintenance(ctx, tx, m); err != nil {
 			return err
 		}
-		if err := s.courts.UpdateStatus(ctx, tx, tenantID, court.ID, entity.ResourceMaintenance, false); err != nil {
+		if err := s.courts.UpdateStatus(ctx, tx, tenantID, court.ID, entity.CourtInMaintenance, false); err != nil {
 			return err
 		}
 		payload := map[string]any{"organization_id": orgID.String(), "from": string(court.Status)}
@@ -345,7 +402,7 @@ func (s *CatalogService) CompleteMaintenance(ctx context.Context, courtID, actor
 	if court == nil {
 		return catalogerrors.ErrCourtNotFound
 	}
-	if court.Status != entity.ResourceMaintenance {
+	if court.Status != entity.CourtInMaintenance {
 		return catalogerrors.ErrInvalidCourtStatus
 	}
 	open, err := s.courts.FindInProgressMaintenance(ctx, court.ID)
@@ -361,7 +418,7 @@ func (s *CatalogService) CompleteMaintenance(ctx context.Context, courtID, actor
 		if err := s.courts.CompleteMaintenance(ctx, tx, open.ID); err != nil {
 			return err
 		}
-		if err := s.courts.UpdateStatus(ctx, tx, tenantID, court.ID, entity.ResourceActive, true); err != nil {
+		if err := s.courts.UpdateStatus(ctx, tx, tenantID, court.ID, entity.CourtActive, true); err != nil {
 			return err
 		}
 		oid, err := events.Append(ctx, tx, events.Event{
@@ -384,7 +441,7 @@ func (s *CatalogService) CompleteMaintenance(ctx context.Context, courtID, actor
 
 func (s *CatalogService) transitionCourt(
 	ctx context.Context, courtID, actor uuid.UUID,
-	from, to entity.ResourceStatus, eventType string, ownerOnly bool,
+	from, to entity.CourtStatus, eventType string, ownerOnly bool,
 ) error {
 	var orgID, tenantID uuid.UUID
 	var err error
@@ -427,4 +484,23 @@ func (s *CatalogService) transitionCourt(
 	}
 	events.AfterCommit(ctx, s.outbox, outboxID)
 	return nil
+}
+
+func (s *CatalogService) requireSport(ctx context.Context, sportID uuid.UUID) error {
+	found, err := s.sports.FindByIDs(ctx, []uuid.UUID{sportID})
+	if err != nil {
+		return apperr.Wrap(err, apperr.CodeInternal, "lookup sport")
+	}
+	if len(found) == 0 {
+		return catalogerrors.ErrSportNotFound
+	}
+	return nil
+}
+
+func normalizeDimensions(raw string) (string, error) {
+	v := strings.TrimSpace(raw)
+	if utf8.RuneCountInString(v) > maxCourtDimensionsRunes {
+		return "", catalogerrors.ErrDimensionsTooLong
+	}
+	return v, nil
 }

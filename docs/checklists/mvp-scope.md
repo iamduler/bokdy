@@ -46,7 +46,7 @@ Three audiences: Player, Owner (staff), Admin. Backend first. No FE wiring in W1
 - Implicit one `price_lists` row per tenant (`code=default`, currency `VND`). No price-list HTTP API.
 - Version status: `draft` → `active` (publish) → previous active `retired`. Archive API: `draft` → `retired` only. Event name `PricingVersionArchived`.
 - Create version = nested body: category (court type) base rates + time rules. Extra reads: `GET /price-versions`, `GET /price-versions/{id}`.
-- Base rate = VND **per hour** by `court_type_id` (`pricing.category_prices`). Time rules = weekday + clock window + surcharge/discount (fixed per hour or %). No taxes, services, formula DSL, full ERD rule-set stack.
+- Base rate = VND **per hour** by `sport_id` (`pricing.category_prices`). Time rules = weekday + clock window + surcharge/discount (fixed per hour or %). No taxes, services, formula DSL, full ERD rule-set stack.
 - `POST /pricing/calculate` is **public**; input `court_id` and/or `court_public_id` + `starts_at`/`ends_at`. Output amounts rounded half-up to integer VND. No promo/membership (DEF-20260808-03).
 - `BookingPriceCalculated` emitted on hold/booking create (not on public calculate). See Reservation + Booking freeze (W7).
 
@@ -54,7 +54,7 @@ Three audiences: Player, Owner (staff), Admin. Backend first. No FE wiring in W1
 
 - Full tracker W5: F-OWNER-VENUE-19–23, F-PLAYER-BOOK-01–03, F-OWNER-OPS-01–02. No FE. No pricing/booking.
 - Package `scheduling`; marketplace public routes live in the same module handlers.
-- Weekly hours = `scheduling.business_hours` (Branch/`location_id`). Special = `scheduling.calendar_holidays` with `is_closed` (default true) + optional `opens_at`/`closes_at`. No RRULE.
+- Weekly hours = `scheduling.business_hours` (Branch/`branch_id`). Special = `scheduling.calendar_holidays` with `is_closed` (default true) + optional `opens_at`/`closes_at`. No RRULE.
 - Events (checklist canonical): `WeeklyScheduleUpdated`, `SpecialScheduleUpdated`, `TimeBlocked`, `TimeUnblocked`, `AvailabilitySynchronized`.
 - Projection: Asynq `scheduling:availability_sync`; horizon **14 days**; slots from court type `slot_duration_minutes`; GET reads `time_slots`.
 - Occupied SoT = `resource_blocks`. Maintenance / reservation / booking blocks + sync. Availability subtracts hours + holidays + blocks.
@@ -66,15 +66,15 @@ Three audiences: Player, Owner (staff), Admin. Backend first. No FE wiring in W1
 ## Catalog freeze (W4, 2026-08-14)
 
 - Full F-OWNER-VENUE-08–18 in one wave (including maintenance). Schedule/pricing/media stay later waves.
-- Court Type = `catalog.resource_categories` (`resource_type=court`) plus W4 columns `status` (`active`/`archived`), `slot_duration_minutes`, `deleted_at`. No `catalog.sports` in W4.
-- Court = `catalog.resources` (`resource_type=court`). BR-004 via FK `court_type_id` (not M:N assignments).
+- Court Type = `catalog.court_types` (legacy API; not linked to Court after 00032).
+- Court = `catalog.courts` with required `sport_id`, optional surface/dimensions/description, `court_media`, `court_amenities`.
 - Create court → `inactive`; open → `active`; close → `inactive`; maintenance → `maintenance`; archive → `archived` + `deleted_at`.
 - Maintenance: status flip + `catalog.resource_maintenances` (`in_progress` → `completed`). No scheduling blocks in W4.
 - UC-COURT-001 “initialize availability” is a no-op until W5.
-- Court code/name unique **within branch** (`location_id`), not tenant-wide. DEF-20260814-01.
+- Court code/name unique **within branch** (`branch_id`), not tenant-wide. DEF-20260814-01.
 - Extra reads: `GET /court-types`, `GET /courts/{id}`. List courts: optional `branch_id`, exclude archived, limit 50.
 - Create court type: at least one of `name_en`/`name_vi`; `code` optional auto; `slot_duration_minutes` required (15–180, multiple of 15).
-- Create court: `branch_id`, `court_type_id`, at least one name; `code` optional. Court `code` immutable (BR-005).
+- Create court: `branch_id`, `sport_id`, at least one name; `code` server-generated CRT##### (immutable, BR-005).
 - Package `catalog`. Owner: create/update/archive type, create/archive court. Staff: list/get/update/open/close/maintenance.
 
 ## CRM freeze (W3, 2026-08-14)
@@ -120,7 +120,7 @@ Three audiences: Player, Owner (staff), Admin. Backend first. No FE wiring in W1
 | Staff + invitation | Invite, accept, reject, revoke, list, suspend, restore, remove; assign **seeded** roles |
 | Branch | Location aggregate; business name Branch |
 | CRM Customer | Guest, player-linked, update, blacklist, restore |
-| Catalog | Court type + Court (`catalog.resources` where `resource_type = court`) |
+| Catalog | Court (`catalog.courts` + sport/surface/gallery/amenities); Court Type API legacy |
 | Scheduling | Weekly/special hours, blocks, availability reads |
 | Pricing | Price version create/publish + calculate (no promotion/membership benefits) |
 | Reservation | Hold, cancel, expire, convert |
@@ -129,7 +129,7 @@ Three audiences: Player, Owner (staff), Admin. Backend first. No FE wiring in W1
 | Admin | Health; activate / suspend / restore organization |
 | Marketplace | Public search + branch profile + availability |
 
-DB names: Branch = `organization.locations`. Court = `catalog.resources`. Reservation and Booking stay separate aggregates.
+DB names: Branch = `organization.branches`. Court = `catalog.courts`. Reservation and Booking stay separate aggregates.
 
 ## Explicitly not MVP (still listed in post-MVP checklists)
 

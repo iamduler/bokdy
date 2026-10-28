@@ -62,7 +62,7 @@ type Reservation struct {
 	TenantID       uuid.UUID
 	ReservationNo  string
 	CustomerID     uuid.UUID
-	LocationID     uuid.UUID
+	BranchID       uuid.UUID
 	CourtID        uuid.UUID
 	Source         Source
 	Status         Status
@@ -109,12 +109,12 @@ type ReservationResource struct {
 // CourtRef is the read-only catalog projection a hold needs to resolve the
 // tenant, the branch, and whether the court accepts holds.
 type CourtRef struct {
-	ID          uuid.UUID
-	PublicID    string
-	TenantID    uuid.UUID
-	LocationID  uuid.UUID
-	CourtTypeID *uuid.UUID
-	Status      string
+	ID       uuid.UUID
+	PublicID string
+	TenantID uuid.UUID
+	BranchID uuid.UUID
+	SportID  uuid.UUID
+	Status   string
 }
 
 // AcceptsHolds reports whether the court is open for business.

@@ -12,12 +12,17 @@ import (
 type CourtRepository interface {
 	Create(ctx context.Context, tx pgx.Tx, court *entity.Court) error
 	FindByID(ctx context.Context, tenantID, id uuid.UUID) (*entity.Court, error)
+	/** FindByResourceID loads a court by id only (platform admin deep links). */
+	FindByResourceID(ctx context.Context, id uuid.UUID) (*entity.Court, error)
 	List(ctx context.Context, tenantID uuid.UUID, locationID *uuid.UUID, limit int) ([]entity.Court, error)
 	Update(ctx context.Context, tx pgx.Tx, court *entity.Court) error
-	UpdateStatus(ctx context.Context, tx pgx.Tx, tenantID, id uuid.UUID, status entity.ResourceStatus, bookable bool) error
+	UpdateStatus(ctx context.Context, tx pgx.Tx, tenantID, id uuid.UUID, status entity.CourtStatus, bookable bool) error
 	Archive(ctx context.Context, tx pgx.Tx, tenantID, id uuid.UUID) error
 	CodeExists(ctx context.Context, locationID uuid.UUID, code string, excludeID *uuid.UUID) (bool, error)
+	MaxCodeSeq(ctx context.Context, locationID uuid.UUID, prefix string) (int, error)
 	NameExists(ctx context.Context, locationID uuid.UUID, nameEn, nameVi string, excludeID *uuid.UUID) (bool, error)
+	ReplaceAmenities(ctx context.Context, tx pgx.Tx, courtID uuid.UUID, amenityIDs []uuid.UUID) error
+	ListAmenitiesByIDs(ctx context.Context, ids []uuid.UUID) ([]entity.Amenity, error)
 	CreateMaintenance(ctx context.Context, tx pgx.Tx, m *entity.CourtMaintenance) error
 	FindInProgressMaintenance(ctx context.Context, resourceID uuid.UUID) (*entity.CourtMaintenance, error)
 	CompleteMaintenance(ctx context.Context, tx pgx.Tx, id uuid.UUID) error

@@ -7,13 +7,15 @@ import { useLocale, useTranslations } from "next-intl";
 import { DataListEmpty } from "@/components/data-list";
 import { EntityDetailPanel } from "@/components/entity/detail-panel";
 import { EntityUnavailableButton } from "@/components/entity/unavailable";
-import { useBranchCourts, useCourtTypes } from "@/hooks/use-courts";
+import { sportLabel } from "@/components/branches/branch-sports-chips";
+import { useBranchCourts } from "@/hooks/use-courts";
 import { usePriceVersion, usePriceVersions } from "@/hooks/use-pricing";
+import { useSports } from "@/hooks/use-sports";
 
 import { useBranchDetail } from "./branch-detail-context";
 import { BranchTabBody, BranchTabError, BranchTabLoading } from "./branch-tab-state";
 
-/** Read-only: active org price version, filtered to court types used at this branch. */
+/** Read-only: active org price version, filtered to sports played on this branch's courts. */
 export function BranchPricingView() {
   const t = useTranslations("organization.branchDetail.pricing");
   const tw = useTranslations("organization.branchDetail.weekdaysShort");
@@ -24,19 +26,19 @@ export function BranchPricingView() {
   const activeId = versions.data?.find((version) => version.status === "active")?.id;
   const version = usePriceVersion(organizationId, activeId);
   const courts = useBranchCourts(organizationId, branchId);
-  const { data: courtTypes = [] } = useCourtTypes(organizationId);
+  const { data: sports = [] } = useSports();
 
   const money = new Intl.NumberFormat(locale, {
     style: "currency",
     currency: "VND",
     maximumFractionDigits: 0,
   });
-  const typeName = new Map(courtTypes.map((type) => [type.id, type.name]));
-  const branchTypeIds = new Set((courts.data ?? []).map((court) => court.court_type_id));
+  const sportName = new Map(sports.map((sport) => [sport.id, sportLabel(sport, locale)]));
+  const branchSportIds = new Set((courts.data ?? []).map((court) => court.sport_id));
   const allRates = version.data?.rates ?? [];
-  const scoped = branchTypeIds.size > 0;
+  const scoped = branchSportIds.size > 0;
   const rates = scoped
-    ? allRates.filter((rate) => branchTypeIds.has(rate.court_type_id))
+    ? allRates.filter((rate) => branchSportIds.has(rate.sport_id))
     : allRates;
   const rules = [...(version.data?.time_rules ?? [])].sort(
     (a, b) => (a.priority ?? 0) - (b.priority ?? 0),
@@ -89,11 +91,11 @@ export function BranchPricingView() {
               <ul className="divide-y divide-border/40">
                 {rates.map((rate) => (
                   <li
-                    key={rate.court_type_id}
+                    key={rate.sport_id}
                     className="flex items-center justify-between gap-3 py-2.5"
                   >
                     <span className="text-sm font-medium text-foreground">
-                      {typeName.get(rate.court_type_id) ?? t("emptyValue")}
+                      {sportName.get(rate.sport_id) ?? t("emptyValue")}
                     </span>
                     <span className="text-sm tabular-nums text-foreground">
                       {t("perHour", { amount: money.format(rate.amount) })}

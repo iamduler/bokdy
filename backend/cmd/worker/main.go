@@ -138,15 +138,15 @@ func main() {
 			return err
 		}
 		ctx = otelx.ExtractMap(ctx, p.Trace)
-		if p.ResourceID != "" {
-			id, err := uuid.Parse(p.ResourceID)
+		if p.CourtID != "" {
+			id, err := uuid.Parse(p.CourtID)
 			if err != nil {
 				return err
 			}
 			return syncSvc.SyncCourt(ctx, id)
 		}
-		if p.LocationID != "" {
-			id, err := uuid.Parse(p.LocationID)
+		if p.BranchID != "" {
+			id, err := uuid.Parse(p.BranchID)
 			if err != nil {
 				return err
 			}

@@ -283,7 +283,7 @@ func (s *BookingService) event(
 	}
 	payload["booking_no"] = b.BookingNo
 	payload["court_id"] = b.CourtID.String()
-	payload["branch_id"] = b.LocationID.String()
+	payload["branch_id"] = b.BranchID.String()
 	payload["customer_id"] = b.CustomerID.String()
 	tenantID := b.TenantID
 	ev := events.Event{

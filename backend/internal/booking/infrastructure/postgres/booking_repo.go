@@ -28,8 +28,8 @@ var _ repository.BookingRepository = (*BookingRepo)(nil)
 func (r *BookingRepo) Create(ctx context.Context, tx pgx.Tx, b *entity.Booking) error {
 	return r.q.WithTx(tx).CreateBooking(ctx, dbsqlc.CreateBookingParams{
 		ID: b.ID, PublicID: b.PublicID, TenantID: b.TenantID, BookingNo: b.BookingNo,
-		ReservationID: b.ReservationID, CustomerID: b.CustomerID, LocationID: b.LocationID,
-		ResourceID: b.CourtID, Status: dbsqlc.BookingBookingStatus(b.Status), Currency: b.Currency,
+		ReservationID: b.ReservationID, CustomerID: b.CustomerID, BranchID: b.BranchID,
+		CourtID: b.CourtID, Status: dbsqlc.BookingBookingStatus(b.Status), Currency: b.Currency,
 		Subtotal: toNumeric(b.Subtotal), DiscountAmount: toNumeric(b.DiscountAmount),
 		TaxAmount: toNumeric(b.TaxAmount), TotalAmount: toNumeric(b.TotalAmount),
 		PriceVersionID: b.PriceVersionID, StartsAt: b.StartsAt, EndsAt: b.EndsAt,
@@ -40,7 +40,7 @@ func (r *BookingRepo) Create(ctx context.Context, tx pgx.Tx, b *entity.Booking) 
 
 func (r *BookingRepo) CreateResource(ctx context.Context, tx pgx.Tx, res *entity.BookingResource) error {
 	return r.q.WithTx(tx).CreateBookingResource(ctx, dbsqlc.CreateBookingResourceParams{
-		ID: res.ID, BookingID: res.BookingID, ResourceID: res.CourtID,
+		ID: res.ID, BookingID: res.BookingID, CourtID: res.CourtID,
 		StartsAt: res.StartsAt, EndsAt: res.EndsAt, CreatedAt: res.CreatedAt,
 	})
 }
@@ -75,7 +75,7 @@ func (r *BookingRepo) LockByID(ctx context.Context, tx pgx.Tx, bookingID uuid.UU
 
 func (r *BookingRepo) ListByTenant(ctx context.Context, tenantID uuid.UUID, filter repository.ListFilter) ([]entity.Booking, error) {
 	params := dbsqlc.ListBookingsByTenantParams{
-		TenantID: tenantID, LocationID: filter.BranchID,
+		TenantID: tenantID, BranchID: filter.BranchID,
 		RangeStart: filter.From, RangeEnd: filter.To, RowLimit: int32(filter.Limit),
 	}
 	if filter.Status != nil {
@@ -143,7 +143,7 @@ func (r *BookingRepo) CreateCheckIn(ctx context.Context, tx pgx.Tx, c *entity.Ch
 
 func (r *BookingRepo) CountOverlapping(ctx context.Context, courtID, excludeBookingID uuid.UUID, starts, ends time.Time) (int64, error) {
 	return r.q.CountOverlappingBookings(ctx, dbsqlc.CountOverlappingBookingsParams{
-		ResourceID: courtID, ExcludeID: excludeBookingID, RangeStart: starts, RangeEnd: ends,
+		CourtID: courtID, ExcludeID: excludeBookingID, RangeStart: starts, RangeEnd: ends,
 	})
 }
 
@@ -157,7 +157,7 @@ func (r *BookingRepo) FindCourt(ctx context.Context, courtID uuid.UUID) (*entity
 	}
 	return &entity.CourtRef{
 		ID: row.ID, PublicID: row.PublicID, TenantID: row.TenantID,
-		LocationID: row.LocationID, CourtTypeID: row.CourtTypeID, Status: row.Status,
+		BranchID: row.BranchID, SportID: row.SportID, Status: row.Status,
 	}, nil
 }
 
@@ -172,8 +172,8 @@ func mapBookings(rows []dbsqlc.BookingBooking) []entity.Booking {
 func mapBooking(row dbsqlc.BookingBooking) *entity.Booking {
 	return &entity.Booking{
 		ID: row.ID, PublicID: row.PublicID, TenantID: row.TenantID, BookingNo: row.BookingNo,
-		ReservationID: row.ReservationID, CustomerID: row.CustomerID, LocationID: row.LocationID,
-		CourtID: row.ResourceID, Status: entity.Status(row.Status), Currency: row.Currency,
+		ReservationID: row.ReservationID, CustomerID: row.CustomerID, BranchID: row.BranchID,
+		CourtID: row.CourtID, Status: entity.Status(row.Status), Currency: row.Currency,
 		Subtotal: fromNumeric(row.Subtotal), DiscountAmount: fromNumeric(row.DiscountAmount),
 		TaxAmount: fromNumeric(row.TaxAmount), TotalAmount: fromNumeric(row.TotalAmount),
 		PriceVersionID: row.PriceVersionID, StartsAt: row.StartsAt, EndsAt: row.EndsAt,

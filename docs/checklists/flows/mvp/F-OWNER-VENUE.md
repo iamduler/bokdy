@@ -4,9 +4,9 @@ Audience: Owner, Staff
 Waves: W2 (branch), W4 (catalog), W5 (schedule), W6 (pricing)  
 Phase: mvp
 
-Business names: Branch, Court. Tables: `organization.locations`, `catalog.resources`.
+Tables: Branch = `organization.branches`, Court = `catalog.courts` (+ `court_media`, `court_amenities`). Sport = `catalog.sports`.
 
-W4 freeze (2026-08-14): Court Type = `resource_categories`; Court = `resources` + `court_type_id`; create court `inactive`; maintenance = status + `resource_maintenances`; availability init deferred; code unique per branch.
+W4 freeze (2026-08-14) originally used Court Type FK; migration `00032` drops `court_type_id` from Court, adds `sport_id` / surface / dimensions / description, and rekeys pricing rates to `sport_id`. Create court `inactive`; maintenance = status + `court_maintenances`; code unique per branch (CRT).
 
 | Done | ID | Step | UC | Phase | Gate | Proposed API | Events | Status | Notes |
 | :---: | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -19,9 +19,9 @@ W4 freeze (2026-08-14): Court Type = `resource_categories`; Court = `resources` 
 | [x] | F-OWNER-VENUE-07 | Archive branch | UC-BRANCH-005 | mvp | jwt+org Owner | `POST /api/v1/branches/{id}/archive` | BranchArchived | done | No booking check in W2. |
 | [x] | F-OWNER-VENUE-08 | Create court type | UC-COURT-TYPE-001 | mvp | jwt+org Owner | `POST /api/v1/court-types` | CourtTypeCreated | done | W4 catalog |
 | [x] | F-OWNER-VENUE-09 | Update court type | UC-COURT-TYPE-002 | mvp | jwt+org Owner | `PATCH /api/v1/court-types/{id}` | CourtTypeUpdated | done |  |
-| [x] | F-OWNER-VENUE-10 | Archive court type | UC-COURT-TYPE-003 | mvp | jwt+org Owner | `POST /api/v1/court-types/{id}/archive` | CourtTypeArchived | done | Blocked if courts still use type. |
-| [x] | F-OWNER-VENUE-11 | Create court | UC-COURT-001 | mvp | jwt+org Owner | `POST /api/v1/courts` | CourtCreated | done | Starts `inactive`. Availability deferred W5. |
-| [x] | F-OWNER-VENUE-12 | List courts | — | mvp | jwt+org Staff | `GET /api/v1/courts` | — | done | Optional `branch_id`; also `GET /courts/{id}`, `GET /court-types`. |
+| [x] | F-OWNER-VENUE-10 | Archive court type | UC-COURT-TYPE-003 | mvp | jwt+org Owner | `POST /api/v1/court-types/{id}/archive` | CourtTypeArchived | done | Court no longer references types (00032). |
+| [x] | F-OWNER-VENUE-11 | Create court | UC-COURT-001 | mvp | jwt+org Owner | `POST /api/v1/courts` | CourtCreated | done | Requires `sport_id`; starts `inactive`. Profile: surface/dimensions/description/amenities. |
+| [x] | F-OWNER-VENUE-12 | List courts | — | mvp | jwt+org Staff | `GET /api/v1/courts` | — | done | Optional `branch_id`; also `GET /courts/{id}`; gallery under `/courts/{id}/gallery`. |
 | [x] | F-OWNER-VENUE-13 | Update court | UC-COURT-002 | mvp | jwt+org Staff | `PATCH /api/v1/courts/{id}` | CourtUpdated | done | Code immutable. |
 | [x] | F-OWNER-VENUE-14 | Open court | UC-COURT-003 | mvp | jwt+org Staff | `POST /api/v1/courts/{id}/open` | CourtOpened | done | inactive → active |
 | [x] | F-OWNER-VENUE-15 | Close court | UC-COURT-004 | mvp | jwt+org Staff | `POST /api/v1/courts/{id}/close` | CourtClosed | done | active → inactive |
@@ -37,4 +37,4 @@ W4 freeze (2026-08-14): Court Type = `resource_categories`; Court = `resources` 
 | [x] | F-OWNER-VENUE-25 | Publish price version | UC-PRICING-003 | mvp | jwt+org Owner | `POST /api/v1/price-versions/{id}/publish` | PricingVersionPublished | done | Previous active → retired. |
 | [x] | F-OWNER-VENUE-26 | Archive price version | UC-PRICING-004 | mvp | jwt+org Owner | `POST /api/v1/price-versions/{id}/archive` | PricingVersionArchived | done | draft → retired only. |
 | [x] | F-OWNER-VENUE-27 | Calculate price | UC-PRICING-001 | mvp | public | `POST /api/v1/pricing/calculate` | — | done | No event on quote (DEF-20260814-05). No promo. |
-| — | F-OWNER-VENUE-28 | Upload court media gallery | UC-MEDIA-001 | post-mvp | jwt+org | `POST /api/v1/media` | MediaUploaded | deferred | DEF-20260808-08 → `F-MEDIA-01`. Logo file_id on org may be a later MVP slice if needed. |
+| [x] | F-OWNER-VENUE-28 | Upload court media gallery | UC-MEDIA-001 | mvp | jwt+org Staff | `POST /api/v1/courts/{id}/gallery` | — | done | `catalog.court_media` via platform.files (00032). |

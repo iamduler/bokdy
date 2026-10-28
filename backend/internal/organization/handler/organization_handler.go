@@ -76,8 +76,8 @@ type addStaffRequest struct {
 }
 
 type updateStaffRequest struct {
-	Title      *string `json:"title"`
-	LocationID *string `json:"location_id" binding:"omitempty,uuid"`
+	Title    *string `json:"title"`
+	BranchID *string `json:"branch_id" binding:"omitempty,uuid"`
 }
 
 type assignRoleRequest struct {
@@ -120,12 +120,12 @@ type formerDTO struct {
 }
 
 type staffDTO struct {
-	ID         string   `json:"id"`
-	UserID     string   `json:"user_id"`
-	Title      string   `json:"title,omitempty"`
-	LocationID string   `json:"location_id,omitempty"`
-	Status     string   `json:"status"`
-	Roles      []string `json:"roles"`
+	ID       string   `json:"id"`
+	UserID   string   `json:"user_id"`
+	Title    string   `json:"title,omitempty"`
+	BranchID string   `json:"branch_id,omitempty"`
+	Status   string   `json:"status"`
+	Roles    []string `json:"roles"`
 }
 
 type inviteDTO struct {
@@ -428,8 +428,8 @@ func toStaffDTO(row service.StaffWithRoles) staffDTO {
 	if dto.Roles == nil {
 		dto.Roles = []string{}
 	}
-	if row.Member.LocationID != nil {
-		dto.LocationID = row.Member.LocationID.String()
+	if row.Member.BranchID != nil {
+		dto.BranchID = row.Member.BranchID.String()
 	}
 	return dto
 }
@@ -593,13 +593,13 @@ func (h *OrganizationHandler) UpdateStaff(c *gin.Context) {
 		return
 	}
 	in := service.UpdateStaffInput{Title: req.Title}
-	if req.LocationID != nil {
-		loc, err := uuid.Parse(*req.LocationID)
+	if req.BranchID != nil {
+		loc, err := uuid.Parse(*req.BranchID)
 		if err != nil {
-			httpx.Error(c, apperr.New(apperr.CodeValidation, "invalid location_id"))
+			httpx.Error(c, apperr.New(apperr.CodeValidation, "invalid branch_id"))
 			return
 		}
-		in.LocationID = &loc
+		in.BranchID = &loc
 	}
 	row, err := h.orgs.UpdateStaff(c.Request.Context(), orgID, staffID, uid, in)
 	if err != nil {

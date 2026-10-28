@@ -66,7 +66,7 @@ type PriceVersion struct {
 type CategoryPrice struct {
 	ID             uuid.UUID
 	PriceVersionID uuid.UUID
-	CategoryID     uuid.UUID
+	SportID        uuid.UUID
 	Amount         float64 // VND per hour
 	CreatedAt      time.Time
 }
@@ -88,8 +88,8 @@ type CourtPricingRow struct {
 	ID                  uuid.UUID
 	PublicID            string
 	TenantID            uuid.UUID
-	LocationID          uuid.UUID
-	CourtTypeID         *uuid.UUID
+	BranchID            uuid.UUID
+	SportID             uuid.UUID
 	Status              string
 	SlotDurationMinutes int
 }

@@ -26,11 +26,11 @@ func NewAsynqSyncEnqueuer(client *asynq.Client) *AsynqSyncEnqueuer {
 }
 
 func (e *AsynqSyncEnqueuer) EnqueueBranch(ctx context.Context, locationID uuid.UUID) error {
-	return e.enqueue(ctx, queue.AvailabilitySyncPayload{LocationID: locationID.String()})
+	return e.enqueue(ctx, queue.AvailabilitySyncPayload{BranchID: locationID.String()})
 }
 
 func (e *AsynqSyncEnqueuer) EnqueueCourt(ctx context.Context, courtID uuid.UUID) error {
-	return e.enqueue(ctx, queue.AvailabilitySyncPayload{ResourceID: courtID.String()})
+	return e.enqueue(ctx, queue.AvailabilitySyncPayload{CourtID: courtID.String()})
 }
 
 func (e *AsynqSyncEnqueuer) enqueue(ctx context.Context, p queue.AvailabilitySyncPayload) error {

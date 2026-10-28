@@ -32,6 +32,7 @@ type CatalogService struct {
 	pool     *pgxpool.Pool
 	types    repository.CourtTypeRepository
 	courts   repository.CourtRepository
+	media    repository.CourtMediaRepository
 	sports   repository.SportRepository
 	orgs     orgrepository.OrganizationRepository
 	branches orgrepository.BranchRepository
@@ -49,6 +50,7 @@ func NewCatalogService(
 	pool *pgxpool.Pool,
 	types repository.CourtTypeRepository,
 	courts repository.CourtRepository,
+	media repository.CourtMediaRepository,
 	sports repository.SportRepository,
 	orgs orgrepository.OrganizationRepository,
 	branches orgrepository.BranchRepository,
@@ -57,7 +59,7 @@ func NewCatalogService(
 	avail CourtAvailabilitySync,
 ) *CatalogService {
 	return &CatalogService{
-		pool: pool, types: types, courts: courts, sports: sports, orgs: orgs, branches: branches, orgSvc: orgSvc, outbox: outbox, avail: avail,
+		pool: pool, types: types, courts: courts, media: media, sports: sports, orgs: orgs, branches: branches, orgSvc: orgSvc, outbox: outbox, avail: avail,
 	}
 }
 
@@ -100,7 +102,7 @@ func (s *CatalogService) requireOwnerTenant(ctx context.Context, actor uuid.UUID
 	if err != nil {
 		return uuid.Nil, uuid.Nil, err
 	}
-	if err := s.orgSvc.RequireOwner(ctx, orgID, actor); err != nil {
+	if err := s.orgSvc.RequireOwnerOrAdmin(ctx, orgID, actor); err != nil {
 		return uuid.Nil, uuid.Nil, err
 	}
 	tenantID, err = s.resolveTenant(ctx, orgID)
@@ -170,7 +172,7 @@ func (s *CatalogService) loadBranch(ctx context.Context, orgID, branchID uuid.UU
 	if err != nil {
 		return nil, apperr.Wrap(err, apperr.CodeInternal, "get branch")
 	}
-	if branch == nil || branch.Status == orgentity.LocationArchived {
+	if branch == nil || branch.Status == orgentity.BranchArchived {
 		return nil, catalogerrors.ErrBranchNotFound
 	}
 	return branch, nil

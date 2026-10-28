@@ -13,7 +13,7 @@ import (
 )
 
 const archiveCourtType = `-- name: ArchiveCourtType :exec
-UPDATE catalog.resource_categories
+UPDATE catalog.court_types
 SET status = 'archived', deleted_at = now(), updated_at = now()
 WHERE tenant_id = $1 AND id = $2 AND deleted_at IS NULL AND resource_type = 'court'
 `
@@ -28,28 +28,9 @@ func (q *Queries) ArchiveCourtType(ctx context.Context, arg ArchiveCourtTypePara
 	return err
 }
 
-const countNonArchivedCourtsByType = `-- name: CountNonArchivedCourtsByType :one
-SELECT COUNT(*)::bigint AS count
-FROM catalog.resources
-WHERE tenant_id = $1 AND court_type_id = $2 AND resource_type = 'court'
-  AND deleted_at IS NULL AND status <> 'archived'
-`
-
-type CountNonArchivedCourtsByTypeParams struct {
-	TenantID    uuid.UUID  `json:"tenant_id"`
-	CourtTypeID *uuid.UUID `json:"court_type_id"`
-}
-
-func (q *Queries) CountNonArchivedCourtsByType(ctx context.Context, arg CountNonArchivedCourtsByTypeParams) (int64, error) {
-	row := q.db.QueryRow(ctx, countNonArchivedCourtsByType, arg.TenantID, arg.CourtTypeID)
-	var count int64
-	err := row.Scan(&count)
-	return count, err
-}
-
 const courtTypeCodeExists = `-- name: CourtTypeCodeExists :one
 SELECT EXISTS(
-    SELECT 1 FROM catalog.resource_categories
+    SELECT 1 FROM catalog.court_types
     WHERE tenant_id = $1 AND code = $2 AND deleted_at IS NULL AND resource_type = 'court'
       AND ($3::uuid IS NULL OR id <> $3)
 ) AS exists
@@ -70,7 +51,7 @@ func (q *Queries) CourtTypeCodeExists(ctx context.Context, arg CourtTypeCodeExis
 
 const courtTypeNameExists = `-- name: CourtTypeNameExists :one
 SELECT EXISTS(
-    SELECT 1 FROM catalog.resource_categories
+    SELECT 1 FROM catalog.court_types
     WHERE tenant_id = $1
       AND deleted_at IS NULL
       AND resource_type = 'court'
@@ -102,22 +83,22 @@ func (q *Queries) CourtTypeNameExists(ctx context.Context, arg CourtTypeNameExis
 }
 
 const createCourtType = `-- name: CreateCourtType :exec
-INSERT INTO catalog.resource_categories (
+INSERT INTO catalog.court_types (
     id, tenant_id, code, name_en, name_vi, resource_type, status, slot_duration_minutes, created_at, updated_at
 ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 `
 
 type CreateCourtTypeParams struct {
-	ID                  uuid.UUID                     `json:"id"`
-	TenantID            uuid.UUID                     `json:"tenant_id"`
-	Code                string                        `json:"code"`
-	NameEn              *string                       `json:"name_en"`
-	NameVi              *string                       `json:"name_vi"`
-	ResourceType        CatalogResourceType           `json:"resource_type"`
-	Status              CatalogResourceCategoryStatus `json:"status"`
-	SlotDurationMinutes int32                         `json:"slot_duration_minutes"`
-	CreatedAt           time.Time                     `json:"created_at"`
-	UpdatedAt           time.Time                     `json:"updated_at"`
+	ID                  uuid.UUID              `json:"id"`
+	TenantID            uuid.UUID              `json:"tenant_id"`
+	Code                string                 `json:"code"`
+	NameEn              *string                `json:"name_en"`
+	NameVi              *string                `json:"name_vi"`
+	ResourceType        CatalogResourceType    `json:"resource_type"`
+	Status              CatalogCourtTypeStatus `json:"status"`
+	SlotDurationMinutes int32                  `json:"slot_duration_minutes"`
+	CreatedAt           time.Time              `json:"created_at"`
+	UpdatedAt           time.Time              `json:"updated_at"`
 }
 
 func (q *Queries) CreateCourtType(ctx context.Context, arg CreateCourtTypeParams) error {
@@ -136,10 +117,55 @@ func (q *Queries) CreateCourtType(ctx context.Context, arg CreateCourtTypeParams
 	return err
 }
 
+const findCourtTypeByCode = `-- name: FindCourtTypeByCode :one
+SELECT id, tenant_id, code, COALESCE(name_en, '') AS name_en, COALESCE(name_vi, '') AS name_vi,
+       resource_type, status, slot_duration_minutes, created_at, updated_at, deleted_at
+FROM catalog.court_types
+WHERE tenant_id = $1 AND code = $2 AND deleted_at IS NULL AND resource_type = 'court'
+`
+
+type FindCourtTypeByCodeParams struct {
+	TenantID uuid.UUID `json:"tenant_id"`
+	Code     string    `json:"code"`
+}
+
+type FindCourtTypeByCodeRow struct {
+	ID                  uuid.UUID              `json:"id"`
+	TenantID            uuid.UUID              `json:"tenant_id"`
+	Code                string                 `json:"code"`
+	NameEn              string                 `json:"name_en"`
+	NameVi              string                 `json:"name_vi"`
+	ResourceType        CatalogResourceType    `json:"resource_type"`
+	Status              CatalogCourtTypeStatus `json:"status"`
+	SlotDurationMinutes int32                  `json:"slot_duration_minutes"`
+	CreatedAt           time.Time              `json:"created_at"`
+	UpdatedAt           time.Time              `json:"updated_at"`
+	DeletedAt           *time.Time             `json:"deleted_at"`
+}
+
+func (q *Queries) FindCourtTypeByCode(ctx context.Context, arg FindCourtTypeByCodeParams) (FindCourtTypeByCodeRow, error) {
+	row := q.db.QueryRow(ctx, findCourtTypeByCode, arg.TenantID, arg.Code)
+	var i FindCourtTypeByCodeRow
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.Code,
+		&i.NameEn,
+		&i.NameVi,
+		&i.ResourceType,
+		&i.Status,
+		&i.SlotDurationMinutes,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
 const findCourtTypeByID = `-- name: FindCourtTypeByID :one
 SELECT id, tenant_id, code, COALESCE(name_en, '') AS name_en, COALESCE(name_vi, '') AS name_vi,
        resource_type, status, slot_duration_minutes, created_at, updated_at, deleted_at
-FROM catalog.resource_categories
+FROM catalog.court_types
 WHERE tenant_id = $1 AND id = $2 AND deleted_at IS NULL AND resource_type = 'court'
 `
 
@@ -149,17 +175,17 @@ type FindCourtTypeByIDParams struct {
 }
 
 type FindCourtTypeByIDRow struct {
-	ID                  uuid.UUID                     `json:"id"`
-	TenantID            uuid.UUID                     `json:"tenant_id"`
-	Code                string                        `json:"code"`
-	NameEn              string                        `json:"name_en"`
-	NameVi              string                        `json:"name_vi"`
-	ResourceType        CatalogResourceType           `json:"resource_type"`
-	Status              CatalogResourceCategoryStatus `json:"status"`
-	SlotDurationMinutes int32                         `json:"slot_duration_minutes"`
-	CreatedAt           time.Time                     `json:"created_at"`
-	UpdatedAt           time.Time                     `json:"updated_at"`
-	DeletedAt           *time.Time                    `json:"deleted_at"`
+	ID                  uuid.UUID              `json:"id"`
+	TenantID            uuid.UUID              `json:"tenant_id"`
+	Code                string                 `json:"code"`
+	NameEn              string                 `json:"name_en"`
+	NameVi              string                 `json:"name_vi"`
+	ResourceType        CatalogResourceType    `json:"resource_type"`
+	Status              CatalogCourtTypeStatus `json:"status"`
+	SlotDurationMinutes int32                  `json:"slot_duration_minutes"`
+	CreatedAt           time.Time              `json:"created_at"`
+	UpdatedAt           time.Time              `json:"updated_at"`
+	DeletedAt           *time.Time             `json:"deleted_at"`
 }
 
 func (q *Queries) FindCourtTypeByID(ctx context.Context, arg FindCourtTypeByIDParams) (FindCourtTypeByIDRow, error) {
@@ -184,12 +210,12 @@ func (q *Queries) FindCourtTypeByID(ctx context.Context, arg FindCourtTypeByIDPa
 const listCourtTypesByTenant = `-- name: ListCourtTypesByTenant :many
 SELECT id, tenant_id, code, COALESCE(name_en, '') AS name_en, COALESCE(name_vi, '') AS name_vi,
        resource_type, status, slot_duration_minutes, created_at, updated_at, deleted_at
-FROM catalog.resource_categories
+FROM catalog.court_types
 WHERE tenant_id = $1
   AND resource_type = 'court'
   AND deleted_at IS NULL
   AND (
-    $2::text IS NOT NULL AND status = $2::catalog.resource_category_status
+    $2::text IS NOT NULL AND status = $2::catalog.court_type_status
     OR $2::text IS NULL AND status <> 'archived'
   )
 ORDER BY created_at ASC
@@ -201,17 +227,17 @@ type ListCourtTypesByTenantParams struct {
 }
 
 type ListCourtTypesByTenantRow struct {
-	ID                  uuid.UUID                     `json:"id"`
-	TenantID            uuid.UUID                     `json:"tenant_id"`
-	Code                string                        `json:"code"`
-	NameEn              string                        `json:"name_en"`
-	NameVi              string                        `json:"name_vi"`
-	ResourceType        CatalogResourceType           `json:"resource_type"`
-	Status              CatalogResourceCategoryStatus `json:"status"`
-	SlotDurationMinutes int32                         `json:"slot_duration_minutes"`
-	CreatedAt           time.Time                     `json:"created_at"`
-	UpdatedAt           time.Time                     `json:"updated_at"`
-	DeletedAt           *time.Time                    `json:"deleted_at"`
+	ID                  uuid.UUID              `json:"id"`
+	TenantID            uuid.UUID              `json:"tenant_id"`
+	Code                string                 `json:"code"`
+	NameEn              string                 `json:"name_en"`
+	NameVi              string                 `json:"name_vi"`
+	ResourceType        CatalogResourceType    `json:"resource_type"`
+	Status              CatalogCourtTypeStatus `json:"status"`
+	SlotDurationMinutes int32                  `json:"slot_duration_minutes"`
+	CreatedAt           time.Time              `json:"created_at"`
+	UpdatedAt           time.Time              `json:"updated_at"`
+	DeletedAt           *time.Time             `json:"deleted_at"`
 }
 
 func (q *Queries) ListCourtTypesByTenant(ctx context.Context, arg ListCourtTypesByTenantParams) ([]ListCourtTypesByTenantRow, error) {
@@ -247,7 +273,7 @@ func (q *Queries) ListCourtTypesByTenant(ctx context.Context, arg ListCourtTypes
 }
 
 const updateCourtType = `-- name: UpdateCourtType :exec
-UPDATE catalog.resource_categories
+UPDATE catalog.court_types
 SET code = $3, name_en = $4, name_vi = $5, slot_duration_minutes = $6, updated_at = now()
 WHERE tenant_id = $1 AND id = $2 AND deleted_at IS NULL AND resource_type = 'court'
 `

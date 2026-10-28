@@ -40,8 +40,8 @@ func NewPricingService(
 }
 
 type CategoryRateInput struct {
-	CourtTypeID uuid.UUID
-	Amount      float64
+	SportID uuid.UUID
+	Amount  float64
 }
 
 type TimeRuleInput struct {
@@ -131,16 +131,16 @@ func (s *PricingService) CreateVersion(ctx context.Context, actor uuid.UUID, in 
 		if rate.Amount < 0 {
 			return nil, pricingerrors.ErrInvalidAmount
 		}
-		if seen[rate.CourtTypeID] {
-			return nil, pricingerrors.ErrDuplicateCategory
+		if seen[rate.SportID] {
+			return nil, pricingerrors.ErrDuplicateSport
 		}
-		seen[rate.CourtTypeID] = true
-		ok, err := s.repo.CategoryBelongsToTenant(ctx, rate.CourtTypeID, tenantID)
+		seen[rate.SportID] = true
+		ok, err := s.repo.SportExists(ctx, rate.SportID)
 		if err != nil {
-			return nil, apperr.Wrap(err, apperr.CodeInternal, "validate court type")
+			return nil, apperr.Wrap(err, apperr.CodeInternal, "validate sport")
 		}
 		if !ok {
-			return nil, pricingerrors.ErrCategoryNotFound
+			return nil, pricingerrors.ErrSportNotFound
 		}
 	}
 	rules := make([]entity.TimeRule, 0, len(in.TimeRules))
@@ -215,7 +215,7 @@ func (s *PricingService) CreateVersion(ctx context.Context, actor uuid.UUID, in 
 		rates := make([]entity.CategoryPrice, 0, len(in.Rates))
 		for _, rate := range in.Rates {
 			p := entity.CategoryPrice{
-				ID: id.MustNewUUID(), PriceVersionID: version.ID, CategoryID: rate.CourtTypeID,
+				ID: id.MustNewUUID(), PriceVersionID: version.ID, SportID: rate.SportID,
 				Amount: rate.Amount, CreatedAt: now,
 			}
 			if err := s.repo.InsertCategoryPrice(ctx, tx, &p); err != nil {
@@ -408,8 +408,8 @@ func (s *PricingService) Calculate(ctx context.Context, in CalculateInput) (*ent
 	if court == nil {
 		return nil, pricingerrors.ErrCourtNotFound
 	}
-	if court.CourtTypeID == nil {
-		return nil, pricingerrors.ErrCourtTypeRequired
+	if court.SportID == uuid.Nil {
+		return nil, pricingerrors.ErrSportRequired
 	}
 	version, err := s.repo.FindActiveVersion(ctx, court.TenantID)
 	if err != nil {
@@ -425,14 +425,14 @@ func (s *PricingService) Calculate(ctx context.Context, in CalculateInput) (*ent
 	var hourly float64
 	found := false
 	for _, r := range rates {
-		if r.CategoryID == *court.CourtTypeID {
+		if r.SportID == court.SportID {
 			hourly = r.Amount
 			found = true
 			break
 		}
 	}
 	if !found {
-		return nil, pricingerrors.ErrNoRateForCourtType
+		return nil, pricingerrors.ErrNoRateForSport
 	}
 	rules, err := s.repo.ListTimeRules(ctx, version.ID)
 	if err != nil {

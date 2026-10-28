@@ -6,13 +6,13 @@ import (
 	"github.com/google/uuid"
 )
 
-type ResourceStatus string
+type CourtStatus string
 
 const (
-	ResourceActive      ResourceStatus = "active"
-	ResourceInactive    ResourceStatus = "inactive"
-	ResourceMaintenance ResourceStatus = "maintenance"
-	ResourceArchived    ResourceStatus = "archived"
+	CourtActive        CourtStatus = "active"
+	CourtInactive      CourtStatus = "inactive"
+	CourtInMaintenance CourtStatus = "maintenance"
+	CourtArchived      CourtStatus = "archived"
 )
 
 type ResourceType string
@@ -66,27 +66,79 @@ func ParseCourtEnvironment(raw string) CourtEnvironment {
 	}
 }
 
+type CourtSurface string
+
+const (
+	CourtSurfaceUnspecified    CourtSurface = "unspecified"
+	CourtSurfacePVC            CourtSurface = "pvc"
+	CourtSurfaceWood           CourtSurface = "wood"
+	CourtSurfaceHardCourt      CourtSurface = "hard_court"
+	CourtSurfaceGrass          CourtSurface = "grass"
+	CourtSurfaceArtificialTurf CourtSurface = "artificial_turf"
+	CourtSurfaceClay           CourtSurface = "clay"
+	CourtSurfaceRubber         CourtSurface = "rubber"
+	CourtSurfaceOther          CourtSurface = "other"
+)
+
+func ParseCourtSurface(raw string) CourtSurface {
+	switch CourtSurface(raw) {
+	case CourtSurfacePVC, CourtSurfaceWood, CourtSurfaceHardCourt, CourtSurfaceGrass,
+		CourtSurfaceArtificialTurf, CourtSurfaceClay, CourtSurfaceRubber, CourtSurfaceOther:
+		return CourtSurface(raw)
+	default:
+		return CourtSurfaceUnspecified
+	}
+}
+
+// Amenity is a reference.amenities row assignable to a Court.
+type Amenity struct {
+	ID       uuid.UUID
+	Code     string
+	NameEn   string
+	NameVi   string
+	Icon     string
+	IsActive bool
+}
+
+// CourtMedia is one gallery image of a Court.
+type CourtMedia struct {
+	ID        uuid.UUID
+	CourtID   uuid.UUID
+	FileID    uuid.UUID
+	CaptionEn string
+	CaptionVi string
+	SortOrder int
+	IsCover   bool
+	CreatedAt time.Time
+}
+
 type Court struct {
-	ID           uuid.UUID
-	PublicID     string
-	TenantID     uuid.UUID
-	LocationID   uuid.UUID
-	CourtTypeID  uuid.UUID
-	Code         string
-	NameEn       string
-	NameVi       string
-	ResourceType ResourceType
-	Status       ResourceStatus
-	IsBookable   bool
-	Environment  CourtEnvironment
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
-	DeletedAt    *time.Time
+	ID             uuid.UUID
+	PublicID       string
+	TenantID       uuid.UUID
+	BranchID       uuid.UUID
+	OrganizationID uuid.UUID // from branch join; set on reads
+	SportID        uuid.UUID
+	Code           string
+	NameEn         string
+	NameVi         string
+	ResourceType   ResourceType
+	Status         CourtStatus
+	IsBookable     bool
+	Environment    CourtEnvironment
+	Surface        CourtSurface
+	Dimensions     string
+	DescriptionEn  string
+	DescriptionVi  string
+	AmenityIDs     []uuid.UUID
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	DeletedAt      *time.Time
 }
 
 type CourtMaintenance struct {
 	ID          uuid.UUID
-	ResourceID  uuid.UUID
+	CourtID     uuid.UUID
 	Status      MaintenanceStatus
 	Title       string
 	Description string
@@ -96,6 +148,6 @@ type CourtMaintenance struct {
 	UpdatedAt   time.Time
 }
 
-func (s ResourceStatus) IsBookable() bool {
-	return s == ResourceActive
+func (s CourtStatus) IsBookable() bool {
+	return s == CourtActive
 }

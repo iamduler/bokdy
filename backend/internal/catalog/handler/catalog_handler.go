@@ -39,20 +39,30 @@ type updateCourtTypeRequest struct {
 }
 
 type createCourtRequest struct {
-	BranchID    string `json:"branch_id" binding:"required,uuid"`
-	CourtTypeID string `json:"court_type_id" binding:"required,uuid"`
-	NameEn      string `json:"name_en"`
-	NameVi      string `json:"name_vi"`
-	Code        string `json:"code"`
-	Environment string `json:"environment"`
+	BranchID      string   `json:"branch_id" binding:"required,uuid"`
+	SportID       string   `json:"sport_id" binding:"required,uuid"`
+	NameEn        string   `json:"name_en"`
+	NameVi        string   `json:"name_vi"`
+	Code          string   `json:"code"`
+	Environment   string   `json:"environment"`
+	Surface       string   `json:"surface"`
+	Dimensions    string   `json:"dimensions"`
+	DescriptionEn string   `json:"description_en"`
+	DescriptionVi string   `json:"description_vi"`
+	AmenityIDs    []string `json:"amenity_ids"`
 }
 
 type updateCourtRequest struct {
-	NameEn      *string `json:"name_en"`
-	NameVi      *string `json:"name_vi"`
-	Code        *string `json:"code"`
-	CourtTypeID *string `json:"court_type_id" binding:"omitempty,uuid"`
-	Environment *string `json:"environment"`
+	NameEn        *string   `json:"name_en"`
+	NameVi        *string   `json:"name_vi"`
+	Code          *string   `json:"code"`
+	SportID       *string   `json:"sport_id" binding:"omitempty,uuid"`
+	Environment   *string   `json:"environment"`
+	Surface       *string   `json:"surface"`
+	Dimensions    *string   `json:"dimensions"`
+	DescriptionEn *string   `json:"description_en"`
+	DescriptionVi *string   `json:"description_vi"`
+	AmenityIDs    *[]string `json:"amenity_ids"`
 }
 
 type scheduleMaintenanceRequest struct {
@@ -72,17 +82,24 @@ type courtTypeDTO struct {
 }
 
 type courtDTO struct {
-	ID          string `json:"id"`
-	PublicID    string `json:"public_id"`
-	BranchID    string `json:"branch_id"`
-	CourtTypeID string `json:"court_type_id"`
-	Code        string `json:"code"`
-	Name        string `json:"name"`
-	NameEn      string `json:"name_en,omitempty"`
-	NameVi      string `json:"name_vi,omitempty"`
-	Status      string `json:"status"`
-	IsBookable  bool   `json:"is_bookable"`
-	Environment string `json:"environment"`
+	ID             string   `json:"id"`
+	PublicID       string   `json:"public_id"`
+	OrganizationID string   `json:"organization_id,omitempty"`
+	BranchID       string   `json:"branch_id"`
+	SportID        string   `json:"sport_id"`
+	Code           string   `json:"code"`
+	Name           string   `json:"name"`
+	NameEn         string   `json:"name_en,omitempty"`
+	NameVi         string   `json:"name_vi,omitempty"`
+	Status         string   `json:"status"`
+	IsBookable     bool     `json:"is_bookable"`
+	Environment    string   `json:"environment"`
+	Surface        string   `json:"surface"`
+	Dimensions     string   `json:"dimensions,omitempty"`
+	Description    string   `json:"description,omitempty"`
+	DescriptionEn  string   `json:"description_en,omitempty"`
+	DescriptionVi  string   `json:"description_vi,omitempty"`
+	AmenityIDs     []string `json:"amenity_ids"`
 }
 
 type sportDTO struct {
@@ -115,6 +132,12 @@ func (h *CatalogHandler) RegisterRoutes(rg *gin.RouterGroup, jwt gin.HandlerFunc
 		courts.POST("/:id/maintenance", h.ScheduleMaintenance)
 		courts.POST("/:id/maintenance/complete", h.CompleteMaintenance)
 		courts.POST("/:id/archive", h.ArchiveCourt)
+		courts.GET("/:id/gallery", h.ListCourtGallery)
+		courts.POST("/:id/gallery", h.UploadCourtGallery)
+		courts.PATCH("/:id/gallery/:mediaId", h.UpdateCourtGallery)
+		courts.DELETE("/:id/gallery/:mediaId", h.DeleteCourtGallery)
+		courts.GET("/:id/amenities", h.GetCourtAmenities)
+		courts.PUT("/:id/amenities", h.PutCourtAmenities)
 	}
 }
 
@@ -137,7 +160,7 @@ func (h *CatalogHandler) ListSports(c *gin.Context) {
 func toSportDTO(ctx context.Context, sport *entity.Sport) sportDTO {
 	return sportDTO{
 		ID: sport.ID.String(), Code: sport.Code,
-		Name: i18n.DisplayName(i18n.FromContext(ctx), sport.NameEn, sport.NameVi),
+		Name:   i18n.DisplayName(i18n.FromContext(ctx), sport.NameEn, sport.NameVi),
 		NameEn: sport.NameEn, NameVi: sport.NameVi, Icon: sport.Icon,
 	}
 }
@@ -241,14 +264,19 @@ func (h *CatalogHandler) CreateCourt(c *gin.Context) {
 		httpx.Error(c, apperr.New(apperr.CodeValidation, "invalid branch_id"))
 		return
 	}
-	typeID, err := uuid.Parse(req.CourtTypeID)
+	sportID, err := uuid.Parse(req.SportID)
 	if err != nil {
-		httpx.Error(c, apperr.New(apperr.CodeValidation, "invalid court_type_id"))
+		httpx.Error(c, apperr.New(apperr.CodeValidation, "invalid sport_id"))
+		return
+	}
+	amenityIDs, ok := parseUUIDList(c, req.AmenityIDs, "invalid amenity_ids")
+	if !ok {
 		return
 	}
 	court, err := h.catalog.CreateCourt(c.Request.Context(), uid, service.CreateCourtInput{
-		BranchID: branchID, CourtTypeID: typeID, NameEn: req.NameEn, NameVi: req.NameVi, Code: req.Code,
-		Environment: req.Environment,
+		BranchID: branchID, SportID: sportID, NameEn: req.NameEn, NameVi: req.NameVi, Code: req.Code,
+		Environment: req.Environment, Surface: req.Surface, Dimensions: req.Dimensions,
+		DescriptionEn: req.DescriptionEn, DescriptionVi: req.DescriptionVi, AmenityIDs: amenityIDs,
 	})
 	if err != nil {
 		httpx.Error(c, err)
@@ -305,14 +333,25 @@ func (h *CatalogHandler) UpdateCourt(c *gin.Context) {
 	if !httpx.BindJSON(c, &req) {
 		return
 	}
-	in := service.UpdateCourtInput{NameEn: req.NameEn, NameVi: req.NameVi, Code: req.Code, Environment: req.Environment}
-	if req.CourtTypeID != nil && *req.CourtTypeID != "" {
-		typeID, err := uuid.Parse(*req.CourtTypeID)
+	in := service.UpdateCourtInput{
+		NameEn: req.NameEn, NameVi: req.NameVi, Code: req.Code, Environment: req.Environment,
+		Surface: req.Surface, Dimensions: req.Dimensions,
+		DescriptionEn: req.DescriptionEn, DescriptionVi: req.DescriptionVi,
+	}
+	if req.SportID != nil && *req.SportID != "" {
+		sportID, err := uuid.Parse(*req.SportID)
 		if err != nil {
-			httpx.Error(c, apperr.New(apperr.CodeValidation, "invalid court_type_id"))
+			httpx.Error(c, apperr.New(apperr.CodeValidation, "invalid sport_id"))
 			return
 		}
-		in.CourtTypeID = &typeID
+		in.SportID = &sportID
+	}
+	if req.AmenityIDs != nil {
+		amenityIDs, ok := parseUUIDList(c, *req.AmenityIDs, "invalid amenity_ids")
+		if !ok {
+			return
+		}
+		in.AmenityIDs = &amenityIDs
 	}
 	court, err := h.catalog.UpdateCourt(c.Request.Context(), id, uid, in)
 	if err != nil {
@@ -409,11 +448,40 @@ func toCourtDTO(ctx context.Context, court *entity.Court) courtDTO {
 	if env == "" {
 		env = string(entity.CourtEnvironmentUnspecified)
 	}
-	return courtDTO{
-		ID: court.ID.String(), PublicID: court.PublicID, BranchID: court.LocationID.String(),
-		CourtTypeID: court.CourtTypeID.String(), Code: court.Code,
-		Name:   i18n.DisplayName(i18n.FromContext(ctx), court.NameEn, court.NameVi),
-		NameEn: court.NameEn, NameVi: court.NameVi, Status: string(court.Status), IsBookable: court.IsBookable,
-		Environment: env,
+	surface := string(court.Surface)
+	if surface == "" {
+		surface = string(entity.CourtSurfaceUnspecified)
 	}
+	amenityIDs := make([]string, 0, len(court.AmenityIDs))
+	for _, id := range court.AmenityIDs {
+		amenityIDs = append(amenityIDs, id.String())
+	}
+	locale := i18n.FromContext(ctx)
+	dto := courtDTO{
+		ID: court.ID.String(), PublicID: court.PublicID, BranchID: court.BranchID.String(),
+		SportID: court.SportID.String(), Code: court.Code,
+		Name:   i18n.DisplayName(locale, court.NameEn, court.NameVi),
+		NameEn: court.NameEn, NameVi: court.NameVi, Status: string(court.Status), IsBookable: court.IsBookable,
+		Environment: env, Surface: surface, Dimensions: court.Dimensions,
+		Description:   i18n.DisplayName(locale, court.DescriptionEn, court.DescriptionVi),
+		DescriptionEn: court.DescriptionEn, DescriptionVi: court.DescriptionVi,
+		AmenityIDs: amenityIDs,
+	}
+	if court.OrganizationID != uuid.Nil {
+		dto.OrganizationID = court.OrganizationID.String()
+	}
+	return dto
+}
+
+func parseUUIDList(c *gin.Context, raw []string, msg string) ([]uuid.UUID, bool) {
+	out := make([]uuid.UUID, 0, len(raw))
+	for _, v := range raw {
+		id, err := uuid.Parse(v)
+		if err != nil {
+			httpx.Error(c, apperr.New(apperr.CodeValidation, msg))
+			return nil, false
+		}
+		out = append(out, id)
+	}
+	return out, true
 }

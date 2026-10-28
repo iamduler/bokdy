@@ -28,9 +28,9 @@ type OutboxPayload struct {
 }
 
 type AvailabilitySyncPayload struct {
-	LocationID string            `json:"location_id,omitempty"`
-	ResourceID string            `json:"resource_id,omitempty"`
-	Trace      map[string]string `json:"trace,omitempty"`
+	BranchID string            `json:"branch_id,omitempty"`
+	CourtID  string            `json:"court_id,omitempty"`
+	Trace    map[string]string `json:"trace,omitempty"`
 }
 
 const DefaultQueue = "default"

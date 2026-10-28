@@ -19,7 +19,7 @@ Mock fixture (replace incrementally): `apps/admin-web/components/organizations/d
 | --- | --- | --- | --- |
 | Directory `/organizations` | done | partial | List, filters, KPIs, create; columns mostly unavailable |
 | Detail overview `/organizations/[id]` | done | partial | `branch_count` real; metrics/charts mock |
-| Branches / Courts / Team / Billing / Activity | done | mock | Preview data only |
+| Branches / Courts / Team / Billing / Activity | done | mixed | Branches + courts wired; team/billing/activity still mock |
 | Actions `/organizations/[id]/actions` | done | partial | Lifecycle wired; other actions disabled |
 | KYC / Audit / Export / Bulk | not started | blocked | Deferred modules |
 
@@ -89,9 +89,9 @@ Mock fixture (replace incrementally): `apps/admin-web/components/organizations/d
 
 | Done | ID | Maps | Step | App route | Go / BFF | lib/api | Phase | Status | Notes |
 | :---: | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| [x] | FE-ADMIN-ORG-CRT-01 | n/a | Court portfolio grid | `[id]/courts` | n/a | n/a | mvp | partial | Mock cards; sport filter client-side. |
-| [ ] | FE-ADMIN-ORG-CRT-02 | F-ADMIN-ORG-14 | List courts (admin aggregate) | `[id]/courts` | `GET …/courts` | `listAdminOrgCourts` | post-mvp | blocked | Cross-branch court read. |
-| [ ] | FE-ADMIN-ORG-CRT-03 | n/a | Export courts | `[id]/courts` | TBD | TBD | post-mvp | blocked | Toolbar disabled. |
+| [x] | FE-ADMIN-ORG-CRT-01 | n/a | Court portfolio grid | `[id]/courts` | `GET …/courts` | `listCourts` | mvp | done | Soft cards; branch/status/env/type filters; create sheet. |
+| [x] | FE-ADMIN-ORG-CRT-02 | F-ADMIN-ORG-14 | List courts (admin aggregate) | `[id]/courts` + `/courts/:id` | `GET …/courts` | `listCourts` / `getCourt` | mvp | done | Org-scoped list + top-level detail. |
+| [ ] | FE-ADMIN-ORG-CRT-03 | n/a | Export courts | `[id]/courts` | TBD | TBD | post-mvp | blocked | Toolbar deferred. |
 
 ---
 

@@ -20,7 +20,7 @@ INSERT INTO pricing.price_versions (
 ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);
 
 -- name: InsertCategoryPrice :exec
-INSERT INTO pricing.category_prices (id, price_version_id, category_id, amount, created_at)
+INSERT INTO pricing.category_prices (id, price_version_id, sport_id, amount, created_at)
 VALUES ($1, $2, $3, $4, $5);
 
 -- name: InsertTimeRule :exec
@@ -40,7 +40,7 @@ WHERE price_list_id = $1
 ORDER BY version DESC;
 
 -- name: ListCategoryPrices :many
-SELECT id, price_version_id, category_id, amount, created_at
+SELECT id, price_version_id, sport_id, amount, created_at
 FROM pricing.category_prices
 WHERE price_version_id = $1
 ORDER BY created_at ASC;
@@ -74,19 +74,16 @@ SET status = 'retired', updated_at = $2
 WHERE id = $1 AND status = 'draft';
 
 -- name: FindCourtForPricing :one
-SELECT r.id, r.public_id, r.tenant_id, r.location_id, r.court_type_id, r.status::text AS status,
-       COALESCE(ct.slot_duration_minutes, 60)::int AS slot_duration_minutes
-FROM catalog.resources r
-LEFT JOIN catalog.resource_categories ct ON ct.id = r.court_type_id
+SELECT r.id, r.public_id, r.tenant_id, r.branch_id, r.sport_id, r.status::text AS status,
+       60::int AS slot_duration_minutes
+FROM catalog.courts r
 WHERE r.id = $1 AND r.resource_type = 'court' AND r.deleted_at IS NULL;
 
 -- name: FindCourtForPricingByPublicID :one
-SELECT r.id, r.public_id, r.tenant_id, r.location_id, r.court_type_id, r.status::text AS status,
-       COALESCE(ct.slot_duration_minutes, 60)::int AS slot_duration_minutes
-FROM catalog.resources r
-LEFT JOIN catalog.resource_categories ct ON ct.id = r.court_type_id
+SELECT r.id, r.public_id, r.tenant_id, r.branch_id, r.sport_id, r.status::text AS status,
+       60::int AS slot_duration_minutes
+FROM catalog.courts r
 WHERE r.public_id = $1 AND r.resource_type = 'court' AND r.deleted_at IS NULL;
 
--- name: FindCategoryInTenant :one
-SELECT id FROM catalog.resource_categories
-WHERE id = $1 AND tenant_id = $2 AND resource_type = 'court' AND deleted_at IS NULL;
+-- name: FindSportByID :one
+SELECT id FROM catalog.sports WHERE id = $1;

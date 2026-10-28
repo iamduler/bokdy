@@ -1,13 +1,13 @@
 ---
-description: All frontend forms use React Hook Form + Zod for validation
+description: Frontend forms — RHF+Zod, required asterisks, WYSIWYG for description HTML
 globs:
-  - apps/**/components/**/*.tsx
-  - apps/**/app/**/*.tsx
-  - packages/ui/src/common/auth-*.tsx
-alwaysApply: false
+  - apps/**/components/**/*form*.tsx
+  - apps/**/components/**/*-fields*.tsx
+  - apps/**/lib/validation/**/*.ts
+alwaysApply: true
 ---
 
-# Forms: React Hook Form + Zod
+# Forms: React Hook Form + Zod + required markers + rich description
 
 Every user-editable `<form>` validates with **React Hook Form** + **Zod** (`zodResolver`). Do not use ad-hoc `useState` + `onSubmit` checks for field validation.
 
@@ -17,21 +17,37 @@ const [email, setEmail] = useState("");
 <form onSubmit={(e) => { e.preventDefault(); /* … */ }}>
 
 // ✅ GOOD
-const schema = useMemo(() => loginSchema({ … }), [te]);
-const { register, handleSubmit, formState: { errors } } = useForm({
+const schema = useMemo(() => featureSchema({ … }), [t]);
+const form = useForm({
   resolver: zodResolver(schema),
-  defaultValues: { email: "", password: "" },
+  defaultValues: emptyValues(),
 });
-<form onSubmit={handleSubmit(onSubmit)}>
-  <Input {...register("email")} />
-  {errors.email?.message ? <p>{errors.email.message}</p> : null}
+<form onSubmit={form.handleSubmit(onSubmit)}>
+  <FieldLabel required>{t("fieldName")}</FieldLabel>
+  <Input {...form.register("name_vi")} />
+  <FieldError>{form.formState.errors.name_vi?.message}</FieldError>
 ```
+
+## Required fields show an asterisk
+
+- Any field required by the Zod schema **must** use `<FieldLabel required>` (or equivalent `required` prop that renders `*`).
+- Do not put a literal `*` inside the i18n string; the `FieldLabel` `required` prop owns the marker.
+- Optional fields omit `required`.
+
+## Description / long HTML body = WYSIWYG
+
+- Fields that store sanitized HTML descriptions (`description_vi`, `description_en`, and similar) use **`RichTextEditor` from `@bokdy/ui`**, wired with RHF **`Controller`** (`value` / `onChange` / `onBlur`).
+- Do **not** use a plain `<Textarea>` for those HTML fields.
+- Do **not** derive `description_en` from Vietnamese via `toVietnameseASCII` (that corrupts HTML). Either edit both locales with RichTextEditor (Branch pattern) or send only the locale the user edited.
+- Read-only display uses **`RichTextView`** from `@bokdy/ui`.
+- Reuse toolbar i18n keys (e.g. `organization.branch.richText` or a local `richText` namespace).
 
 ## Conventions
 
 - Schemas live in `apps/<app>/lib/validation/<feature>.ts` (factory with i18n messages).
 - Wire fields with `register` or `Controller`; show `errors.<field>.message` via i18n strings.
 - Keep API / mutation errors separate from field errors (`AuthAlert` / toast).
-- Shared inputs that accept `register()` must `forwardRef` to the native control (`AuthField`, `AuthPasswordField`, `Input`).
+- Shared inputs that accept `register()` must `forwardRef` to the native control.
 
 Do not invent another form library. Full text: `docs/architecture/frontend-feature-playbook.md`.
+Reference: `apps/admin-web/components/branches/branch-content-fields.tsx`.

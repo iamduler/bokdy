@@ -53,7 +53,7 @@ func TestBuildDaySlotsBlocks(t *testing.T) {
 	blockStart := combine(day, time.Date(0, 1, 1, 9, 0, 0, 0, time.UTC))
 	blockEnd := combine(day, time.Date(0, 1, 1, 10, 0, 0, 0, time.UTC))
 	blocks := []entity.ResourceBlock{{
-		ResourceID: courtID, StartsAt: blockStart, EndsAt: blockEnd, BlockType: entity.BlockManual,
+		CourtID: courtID, StartsAt: blockStart, EndsAt: blockEnd, BlockType: entity.BlockManual,
 	}}
 	slots, avail, occ := buildDaySlots(day, hours, nil, blocks, courtID, 60, true, time.Now().UTC())
 	if len(slots) != 2 {

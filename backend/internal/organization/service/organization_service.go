@@ -101,8 +101,8 @@ type AddStaffInput struct {
 }
 
 type UpdateStaffInput struct {
-	Title      *string
-	LocationID *uuid.UUID
+	Title    *string
+	BranchID *uuid.UUID
 }
 
 type AssignRoleInput struct {
@@ -786,8 +786,8 @@ func (s *OrganizationService) UpdateStaff(ctx context.Context, orgID, staffID, a
 	if in.Title != nil {
 		member.Title = strings.TrimSpace(*in.Title)
 	}
-	if in.LocationID != nil {
-		member.LocationID = in.LocationID
+	if in.BranchID != nil {
+		member.BranchID = in.BranchID
 	}
 	now := time.Now().UTC()
 	member.UpdatedAt = now

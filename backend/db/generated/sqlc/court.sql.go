@@ -13,7 +13,7 @@ import (
 )
 
 const archiveCourt = `-- name: ArchiveCourt :exec
-UPDATE catalog.resources
+UPDATE catalog.courts
 SET status = 'archived', is_bookable = false, deleted_at = now(), updated_at = now()
 WHERE tenant_id = $1 AND id = $2 AND deleted_at IS NULL AND resource_type = 'court'
 `
@@ -29,7 +29,7 @@ func (q *Queries) ArchiveCourt(ctx context.Context, arg ArchiveCourtParams) erro
 }
 
 const completeResourceMaintenance = `-- name: CompleteResourceMaintenance :exec
-UPDATE catalog.resource_maintenances
+UPDATE catalog.court_maintenances
 SET status = 'completed', completed_at = now(), updated_at = now()
 WHERE id = $1 AND status = 'in_progress'
 `
@@ -41,20 +41,20 @@ func (q *Queries) CompleteResourceMaintenance(ctx context.Context, id uuid.UUID)
 
 const courtCodeExists = `-- name: CourtCodeExists :one
 SELECT EXISTS(
-    SELECT 1 FROM catalog.resources
-    WHERE location_id = $1 AND code = $2 AND deleted_at IS NULL AND resource_type = 'court'
+    SELECT 1 FROM catalog.courts
+    WHERE branch_id = $1 AND code = $2 AND deleted_at IS NULL AND resource_type = 'court'
       AND ($3::uuid IS NULL OR id <> $3)
 ) AS exists
 `
 
 type CourtCodeExistsParams struct {
-	LocationID uuid.UUID  `json:"location_id"`
-	Code       string     `json:"code"`
-	ExcludeID  *uuid.UUID `json:"exclude_id"`
+	BranchID  uuid.UUID  `json:"branch_id"`
+	Code      string     `json:"code"`
+	ExcludeID *uuid.UUID `json:"exclude_id"`
 }
 
 func (q *Queries) CourtCodeExists(ctx context.Context, arg CourtCodeExistsParams) (bool, error) {
-	row := q.db.QueryRow(ctx, courtCodeExists, arg.LocationID, arg.Code, arg.ExcludeID)
+	row := q.db.QueryRow(ctx, courtCodeExists, arg.BranchID, arg.Code, arg.ExcludeID)
 	var exists bool
 	err := row.Scan(&exists)
 	return exists, err
@@ -62,8 +62,8 @@ func (q *Queries) CourtCodeExists(ctx context.Context, arg CourtCodeExistsParams
 
 const courtNameExists = `-- name: CourtNameExists :one
 SELECT EXISTS(
-    SELECT 1 FROM catalog.resources
-    WHERE location_id = $1
+    SELECT 1 FROM catalog.courts
+    WHERE branch_id = $1
       AND deleted_at IS NULL
       AND resource_type = 'court'
       AND ($2::uuid IS NULL OR id <> $2)
@@ -75,15 +75,15 @@ SELECT EXISTS(
 `
 
 type CourtNameExistsParams struct {
-	LocationID uuid.UUID  `json:"location_id"`
-	ExcludeID  *uuid.UUID `json:"exclude_id"`
-	NameEn     string     `json:"name_en"`
-	NameVi     string     `json:"name_vi"`
+	BranchID  uuid.UUID  `json:"branch_id"`
+	ExcludeID *uuid.UUID `json:"exclude_id"`
+	NameEn    string     `json:"name_en"`
+	NameVi    string     `json:"name_vi"`
 }
 
 func (q *Queries) CourtNameExists(ctx context.Context, arg CourtNameExistsParams) (bool, error) {
 	row := q.db.QueryRow(ctx, courtNameExists,
-		arg.LocationID,
+		arg.BranchID,
 		arg.ExcludeID,
 		arg.NameEn,
 		arg.NameVi,
@@ -94,27 +94,32 @@ func (q *Queries) CourtNameExists(ctx context.Context, arg CourtNameExistsParams
 }
 
 const createCourt = `-- name: CreateCourt :exec
-INSERT INTO catalog.resources (
-    id, public_id, tenant_id, location_id, court_type_id, code, name_en, name_vi,
-    resource_type, status, is_bookable, environment, created_at, updated_at
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+INSERT INTO catalog.courts (
+    id, public_id, tenant_id, branch_id, sport_id, code, name_en, name_vi,
+    resource_type, status, is_bookable, environment, surface, dimensions,
+    description_en, description_vi, created_at, updated_at
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
 `
 
 type CreateCourtParams struct {
-	ID           uuid.UUID               `json:"id"`
-	PublicID     string                  `json:"public_id"`
-	TenantID     uuid.UUID               `json:"tenant_id"`
-	LocationID   uuid.UUID               `json:"location_id"`
-	CourtTypeID  *uuid.UUID              `json:"court_type_id"`
-	Code         string                  `json:"code"`
-	NameEn       *string                 `json:"name_en"`
-	NameVi       *string                 `json:"name_vi"`
-	ResourceType CatalogResourceType     `json:"resource_type"`
-	Status       CatalogResourceStatus   `json:"status"`
-	IsBookable   bool                    `json:"is_bookable"`
-	Environment  CatalogCourtEnvironment `json:"environment"`
-	CreatedAt    time.Time               `json:"created_at"`
-	UpdatedAt    time.Time               `json:"updated_at"`
+	ID            uuid.UUID               `json:"id"`
+	PublicID      string                  `json:"public_id"`
+	TenantID      uuid.UUID               `json:"tenant_id"`
+	BranchID      uuid.UUID               `json:"branch_id"`
+	SportID       uuid.UUID               `json:"sport_id"`
+	Code          string                  `json:"code"`
+	NameEn        *string                 `json:"name_en"`
+	NameVi        *string                 `json:"name_vi"`
+	ResourceType  CatalogResourceType     `json:"resource_type"`
+	Status        CatalogCourtStatus      `json:"status"`
+	IsBookable    bool                    `json:"is_bookable"`
+	Environment   CatalogCourtEnvironment `json:"environment"`
+	Surface       CatalogCourtSurface     `json:"surface"`
+	Dimensions    *string                 `json:"dimensions"`
+	DescriptionEn *string                 `json:"description_en"`
+	DescriptionVi *string                 `json:"description_vi"`
+	CreatedAt     time.Time               `json:"created_at"`
+	UpdatedAt     time.Time               `json:"updated_at"`
 }
 
 func (q *Queries) CreateCourt(ctx context.Context, arg CreateCourtParams) error {
@@ -122,8 +127,8 @@ func (q *Queries) CreateCourt(ctx context.Context, arg CreateCourtParams) error 
 		arg.ID,
 		arg.PublicID,
 		arg.TenantID,
-		arg.LocationID,
-		arg.CourtTypeID,
+		arg.BranchID,
+		arg.SportID,
 		arg.Code,
 		arg.NameEn,
 		arg.NameVi,
@@ -131,21 +136,41 @@ func (q *Queries) CreateCourt(ctx context.Context, arg CreateCourtParams) error 
 		arg.Status,
 		arg.IsBookable,
 		arg.Environment,
+		arg.Surface,
+		arg.Dimensions,
+		arg.DescriptionEn,
+		arg.DescriptionVi,
 		arg.CreatedAt,
 		arg.UpdatedAt,
 	)
 	return err
 }
 
+const createCourtAmenity = `-- name: CreateCourtAmenity :exec
+INSERT INTO catalog.court_amenities (court_id, amenity_id, created_at)
+VALUES ($1, $2, $3)
+`
+
+type CreateCourtAmenityParams struct {
+	CourtID   uuid.UUID `json:"court_id"`
+	AmenityID uuid.UUID `json:"amenity_id"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+func (q *Queries) CreateCourtAmenity(ctx context.Context, arg CreateCourtAmenityParams) error {
+	_, err := q.db.Exec(ctx, createCourtAmenity, arg.CourtID, arg.AmenityID, arg.CreatedAt)
+	return err
+}
+
 const createResourceMaintenance = `-- name: CreateResourceMaintenance :exec
-INSERT INTO catalog.resource_maintenances (
-    id, resource_id, status, title, description, started_at, created_at, updated_at
+INSERT INTO catalog.court_maintenances (
+    id, court_id, status, title, description, started_at, created_at, updated_at
 ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 `
 
 type CreateResourceMaintenanceParams struct {
 	ID          uuid.UUID                `json:"id"`
-	ResourceID  uuid.UUID                `json:"resource_id"`
+	CourtID     uuid.UUID                `json:"court_id"`
 	Status      CatalogMaintenanceStatus `json:"status"`
 	Title       *string                  `json:"title"`
 	Description *string                  `json:"description"`
@@ -157,7 +182,7 @@ type CreateResourceMaintenanceParams struct {
 func (q *Queries) CreateResourceMaintenance(ctx context.Context, arg CreateResourceMaintenanceParams) error {
 	_, err := q.db.Exec(ctx, createResourceMaintenance,
 		arg.ID,
-		arg.ResourceID,
+		arg.CourtID,
 		arg.Status,
 		arg.Title,
 		arg.Description,
@@ -168,12 +193,25 @@ func (q *Queries) CreateResourceMaintenance(ctx context.Context, arg CreateResou
 	return err
 }
 
+const deleteCourtAmenities = `-- name: DeleteCourtAmenities :exec
+DELETE FROM catalog.court_amenities WHERE court_id = $1
+`
+
+func (q *Queries) DeleteCourtAmenities(ctx context.Context, courtID uuid.UUID) error {
+	_, err := q.db.Exec(ctx, deleteCourtAmenities, courtID)
+	return err
+}
+
 const findCourtByID = `-- name: FindCourtByID :one
-SELECT id, public_id, tenant_id, location_id, court_type_id, code,
-       COALESCE(name_en, '') AS name_en, COALESCE(name_vi, '') AS name_vi,
-       resource_type, status, is_bookable, environment, created_at, updated_at, deleted_at
-FROM catalog.resources
-WHERE tenant_id = $1 AND id = $2 AND deleted_at IS NULL AND resource_type = 'court'
+SELECT r.id, r.public_id, r.tenant_id, r.branch_id, l.organization_id, r.sport_id, r.code,
+       COALESCE(r.name_en, '') AS name_en, COALESCE(r.name_vi, '') AS name_vi,
+       r.resource_type, r.status, r.is_bookable, r.environment, r.surface,
+       COALESCE(r.dimensions, '') AS dimensions,
+       COALESCE(r.description_en, '') AS description_en, COALESCE(r.description_vi, '') AS description_vi,
+       r.created_at, r.updated_at, r.deleted_at
+FROM catalog.courts r
+INNER JOIN organization.branches l ON l.id = r.branch_id AND l.deleted_at IS NULL
+WHERE r.tenant_id = $1 AND r.id = $2 AND r.deleted_at IS NULL AND r.resource_type = 'court'
 `
 
 type FindCourtByIDParams struct {
@@ -182,21 +220,26 @@ type FindCourtByIDParams struct {
 }
 
 type FindCourtByIDRow struct {
-	ID           uuid.UUID               `json:"id"`
-	PublicID     string                  `json:"public_id"`
-	TenantID     uuid.UUID               `json:"tenant_id"`
-	LocationID   uuid.UUID               `json:"location_id"`
-	CourtTypeID  *uuid.UUID              `json:"court_type_id"`
-	Code         string                  `json:"code"`
-	NameEn       string                  `json:"name_en"`
-	NameVi       string                  `json:"name_vi"`
-	ResourceType CatalogResourceType     `json:"resource_type"`
-	Status       CatalogResourceStatus   `json:"status"`
-	IsBookable   bool                    `json:"is_bookable"`
-	Environment  CatalogCourtEnvironment `json:"environment"`
-	CreatedAt    time.Time               `json:"created_at"`
-	UpdatedAt    time.Time               `json:"updated_at"`
-	DeletedAt    *time.Time              `json:"deleted_at"`
+	ID             uuid.UUID               `json:"id"`
+	PublicID       string                  `json:"public_id"`
+	TenantID       uuid.UUID               `json:"tenant_id"`
+	BranchID       uuid.UUID               `json:"branch_id"`
+	OrganizationID uuid.UUID               `json:"organization_id"`
+	SportID        uuid.UUID               `json:"sport_id"`
+	Code           string                  `json:"code"`
+	NameEn         string                  `json:"name_en"`
+	NameVi         string                  `json:"name_vi"`
+	ResourceType   CatalogResourceType     `json:"resource_type"`
+	Status         CatalogCourtStatus      `json:"status"`
+	IsBookable     bool                    `json:"is_bookable"`
+	Environment    CatalogCourtEnvironment `json:"environment"`
+	Surface        CatalogCourtSurface     `json:"surface"`
+	Dimensions     string                  `json:"dimensions"`
+	DescriptionEn  string                  `json:"description_en"`
+	DescriptionVi  string                  `json:"description_vi"`
+	CreatedAt      time.Time               `json:"created_at"`
+	UpdatedAt      time.Time               `json:"updated_at"`
+	DeletedAt      *time.Time              `json:"deleted_at"`
 }
 
 func (q *Queries) FindCourtByID(ctx context.Context, arg FindCourtByIDParams) (FindCourtByIDRow, error) {
@@ -206,8 +249,9 @@ func (q *Queries) FindCourtByID(ctx context.Context, arg FindCourtByIDParams) (F
 		&i.ID,
 		&i.PublicID,
 		&i.TenantID,
-		&i.LocationID,
-		&i.CourtTypeID,
+		&i.BranchID,
+		&i.OrganizationID,
+		&i.SportID,
 		&i.Code,
 		&i.NameEn,
 		&i.NameVi,
@@ -215,6 +259,73 @@ func (q *Queries) FindCourtByID(ctx context.Context, arg FindCourtByIDParams) (F
 		&i.Status,
 		&i.IsBookable,
 		&i.Environment,
+		&i.Surface,
+		&i.Dimensions,
+		&i.DescriptionEn,
+		&i.DescriptionVi,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const findCourtByResourceID = `-- name: FindCourtByResourceID :one
+SELECT r.id, r.public_id, r.tenant_id, r.branch_id, l.organization_id, r.sport_id, r.code,
+       COALESCE(r.name_en, '') AS name_en, COALESCE(r.name_vi, '') AS name_vi,
+       r.resource_type, r.status, r.is_bookable, r.environment, r.surface,
+       COALESCE(r.dimensions, '') AS dimensions,
+       COALESCE(r.description_en, '') AS description_en, COALESCE(r.description_vi, '') AS description_vi,
+       r.created_at, r.updated_at, r.deleted_at
+FROM catalog.courts r
+INNER JOIN organization.branches l ON l.id = r.branch_id AND l.deleted_at IS NULL
+WHERE r.id = $1 AND r.deleted_at IS NULL AND r.resource_type = 'court'
+`
+
+type FindCourtByResourceIDRow struct {
+	ID             uuid.UUID               `json:"id"`
+	PublicID       string                  `json:"public_id"`
+	TenantID       uuid.UUID               `json:"tenant_id"`
+	BranchID       uuid.UUID               `json:"branch_id"`
+	OrganizationID uuid.UUID               `json:"organization_id"`
+	SportID        uuid.UUID               `json:"sport_id"`
+	Code           string                  `json:"code"`
+	NameEn         string                  `json:"name_en"`
+	NameVi         string                  `json:"name_vi"`
+	ResourceType   CatalogResourceType     `json:"resource_type"`
+	Status         CatalogCourtStatus      `json:"status"`
+	IsBookable     bool                    `json:"is_bookable"`
+	Environment    CatalogCourtEnvironment `json:"environment"`
+	Surface        CatalogCourtSurface     `json:"surface"`
+	Dimensions     string                  `json:"dimensions"`
+	DescriptionEn  string                  `json:"description_en"`
+	DescriptionVi  string                  `json:"description_vi"`
+	CreatedAt      time.Time               `json:"created_at"`
+	UpdatedAt      time.Time               `json:"updated_at"`
+	DeletedAt      *time.Time              `json:"deleted_at"`
+}
+
+func (q *Queries) FindCourtByResourceID(ctx context.Context, id uuid.UUID) (FindCourtByResourceIDRow, error) {
+	row := q.db.QueryRow(ctx, findCourtByResourceID, id)
+	var i FindCourtByResourceIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.PublicID,
+		&i.TenantID,
+		&i.BranchID,
+		&i.OrganizationID,
+		&i.SportID,
+		&i.Code,
+		&i.NameEn,
+		&i.NameVi,
+		&i.ResourceType,
+		&i.Status,
+		&i.IsBookable,
+		&i.Environment,
+		&i.Surface,
+		&i.Dimensions,
+		&i.DescriptionEn,
+		&i.DescriptionVi,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
@@ -223,15 +334,15 @@ func (q *Queries) FindCourtByID(ctx context.Context, arg FindCourtByIDParams) (F
 }
 
 const findInProgressMaintenance = `-- name: FindInProgressMaintenance :one
-SELECT id, resource_id, status, COALESCE(title, '') AS title, COALESCE(description, '') AS description,
+SELECT id, court_id, status, COALESCE(title, '') AS title, COALESCE(description, '') AS description,
        started_at, completed_at, created_at, updated_at
-FROM catalog.resource_maintenances
-WHERE resource_id = $1 AND status = 'in_progress'
+FROM catalog.court_maintenances
+WHERE court_id = $1 AND status = 'in_progress'
 `
 
 type FindInProgressMaintenanceRow struct {
 	ID          uuid.UUID                `json:"id"`
-	ResourceID  uuid.UUID                `json:"resource_id"`
+	CourtID     uuid.UUID                `json:"court_id"`
 	Status      CatalogMaintenanceStatus `json:"status"`
 	Title       string                   `json:"title"`
 	Description string                   `json:"description"`
@@ -241,12 +352,12 @@ type FindInProgressMaintenanceRow struct {
 	UpdatedAt   time.Time                `json:"updated_at"`
 }
 
-func (q *Queries) FindInProgressMaintenance(ctx context.Context, resourceID uuid.UUID) (FindInProgressMaintenanceRow, error) {
-	row := q.db.QueryRow(ctx, findInProgressMaintenance, resourceID)
+func (q *Queries) FindInProgressMaintenance(ctx context.Context, courtID uuid.UUID) (FindInProgressMaintenanceRow, error) {
+	row := q.db.QueryRow(ctx, findInProgressMaintenance, courtID)
 	var i FindInProgressMaintenanceRow
 	err := row.Scan(
 		&i.ID,
-		&i.ResourceID,
+		&i.CourtID,
 		&i.Status,
 		&i.Title,
 		&i.Description,
@@ -258,46 +369,112 @@ func (q *Queries) FindInProgressMaintenance(ctx context.Context, resourceID uuid
 	return i, err
 }
 
+const listCourtAmenityIDs = `-- name: ListCourtAmenityIDs :many
+SELECT amenity_id FROM catalog.court_amenities
+WHERE court_id = $1
+ORDER BY amenity_id ASC
+`
+
+func (q *Queries) ListCourtAmenityIDs(ctx context.Context, courtID uuid.UUID) ([]uuid.UUID, error) {
+	rows, err := q.db.Query(ctx, listCourtAmenityIDs, courtID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []uuid.UUID{}
+	for rows.Next() {
+		var amenity_id uuid.UUID
+		if err := rows.Scan(&amenity_id); err != nil {
+			return nil, err
+		}
+		items = append(items, amenity_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listCourtAmenityLinksByCourtIDs = `-- name: ListCourtAmenityLinksByCourtIDs :many
+SELECT court_id, amenity_id FROM catalog.court_amenities
+WHERE court_id = ANY($1::uuid[])
+ORDER BY court_id ASC, amenity_id ASC
+`
+
+type ListCourtAmenityLinksByCourtIDsRow struct {
+	CourtID   uuid.UUID `json:"court_id"`
+	AmenityID uuid.UUID `json:"amenity_id"`
+}
+
+func (q *Queries) ListCourtAmenityLinksByCourtIDs(ctx context.Context, courtIds []uuid.UUID) ([]ListCourtAmenityLinksByCourtIDsRow, error) {
+	rows, err := q.db.Query(ctx, listCourtAmenityLinksByCourtIDs, courtIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListCourtAmenityLinksByCourtIDsRow{}
+	for rows.Next() {
+		var i ListCourtAmenityLinksByCourtIDsRow
+		if err := rows.Scan(&i.CourtID, &i.AmenityID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listCourts = `-- name: ListCourts :many
-SELECT id, public_id, tenant_id, location_id, court_type_id, code,
-       COALESCE(name_en, '') AS name_en, COALESCE(name_vi, '') AS name_vi,
-       resource_type, status, is_bookable, environment, created_at, updated_at, deleted_at
-FROM catalog.resources
-WHERE tenant_id = $1
-  AND resource_type = 'court'
-  AND deleted_at IS NULL
-  AND status <> 'archived'
-  AND ($2::uuid IS NULL OR location_id = $2)
-ORDER BY created_at ASC
+SELECT r.id, r.public_id, r.tenant_id, r.branch_id, l.organization_id, r.sport_id, r.code,
+       COALESCE(r.name_en, '') AS name_en, COALESCE(r.name_vi, '') AS name_vi,
+       r.resource_type, r.status, r.is_bookable, r.environment, r.surface,
+       COALESCE(r.dimensions, '') AS dimensions,
+       COALESCE(r.description_en, '') AS description_en, COALESCE(r.description_vi, '') AS description_vi,
+       r.created_at, r.updated_at, r.deleted_at
+FROM catalog.courts r
+INNER JOIN organization.branches l ON l.id = r.branch_id AND l.deleted_at IS NULL
+WHERE r.tenant_id = $1
+  AND r.resource_type = 'court'
+  AND r.deleted_at IS NULL
+  AND r.status <> 'archived'
+  AND ($2::uuid IS NULL OR r.branch_id = $2)
+ORDER BY r.created_at ASC
 LIMIT $3
 `
 
 type ListCourtsParams struct {
-	TenantID   uuid.UUID  `json:"tenant_id"`
-	LocationID *uuid.UUID `json:"location_id"`
-	RowLimit   int32      `json:"row_limit"`
+	TenantID uuid.UUID  `json:"tenant_id"`
+	BranchID *uuid.UUID `json:"branch_id"`
+	RowLimit int32      `json:"row_limit"`
 }
 
 type ListCourtsRow struct {
-	ID           uuid.UUID               `json:"id"`
-	PublicID     string                  `json:"public_id"`
-	TenantID     uuid.UUID               `json:"tenant_id"`
-	LocationID   uuid.UUID               `json:"location_id"`
-	CourtTypeID  *uuid.UUID              `json:"court_type_id"`
-	Code         string                  `json:"code"`
-	NameEn       string                  `json:"name_en"`
-	NameVi       string                  `json:"name_vi"`
-	ResourceType CatalogResourceType     `json:"resource_type"`
-	Status       CatalogResourceStatus   `json:"status"`
-	IsBookable   bool                    `json:"is_bookable"`
-	Environment  CatalogCourtEnvironment `json:"environment"`
-	CreatedAt    time.Time               `json:"created_at"`
-	UpdatedAt    time.Time               `json:"updated_at"`
-	DeletedAt    *time.Time              `json:"deleted_at"`
+	ID             uuid.UUID               `json:"id"`
+	PublicID       string                  `json:"public_id"`
+	TenantID       uuid.UUID               `json:"tenant_id"`
+	BranchID       uuid.UUID               `json:"branch_id"`
+	OrganizationID uuid.UUID               `json:"organization_id"`
+	SportID        uuid.UUID               `json:"sport_id"`
+	Code           string                  `json:"code"`
+	NameEn         string                  `json:"name_en"`
+	NameVi         string                  `json:"name_vi"`
+	ResourceType   CatalogResourceType     `json:"resource_type"`
+	Status         CatalogCourtStatus      `json:"status"`
+	IsBookable     bool                    `json:"is_bookable"`
+	Environment    CatalogCourtEnvironment `json:"environment"`
+	Surface        CatalogCourtSurface     `json:"surface"`
+	Dimensions     string                  `json:"dimensions"`
+	DescriptionEn  string                  `json:"description_en"`
+	DescriptionVi  string                  `json:"description_vi"`
+	CreatedAt      time.Time               `json:"created_at"`
+	UpdatedAt      time.Time               `json:"updated_at"`
+	DeletedAt      *time.Time              `json:"deleted_at"`
 }
 
 func (q *Queries) ListCourts(ctx context.Context, arg ListCourtsParams) ([]ListCourtsRow, error) {
-	rows, err := q.db.Query(ctx, listCourts, arg.TenantID, arg.LocationID, arg.RowLimit)
+	rows, err := q.db.Query(ctx, listCourts, arg.TenantID, arg.BranchID, arg.RowLimit)
 	if err != nil {
 		return nil, err
 	}
@@ -309,8 +486,9 @@ func (q *Queries) ListCourts(ctx context.Context, arg ListCourtsParams) ([]ListC
 			&i.ID,
 			&i.PublicID,
 			&i.TenantID,
-			&i.LocationID,
-			&i.CourtTypeID,
+			&i.BranchID,
+			&i.OrganizationID,
+			&i.SportID,
 			&i.Code,
 			&i.NameEn,
 			&i.NameVi,
@@ -318,6 +496,10 @@ func (q *Queries) ListCourts(ctx context.Context, arg ListCourtsParams) ([]ListC
 			&i.Status,
 			&i.IsBookable,
 			&i.Environment,
+			&i.Surface,
+			&i.Dimensions,
+			&i.DescriptionEn,
+			&i.DescriptionVi,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.DeletedAt,
@@ -332,19 +514,51 @@ func (q *Queries) ListCourts(ctx context.Context, arg ListCourtsParams) ([]ListC
 	return items, nil
 }
 
+const maxCourtCodeSeq = `-- name: MaxCourtCodeSeq :one
+SELECT COALESCE(MAX(
+    CASE
+        WHEN code ~ ('^' || $1::text || '[0-9]+$')
+        THEN SUBSTRING(code FROM LENGTH($1::text) + 1)::int
+        ELSE NULL
+    END
+), 0)::int AS max_seq
+FROM catalog.courts
+WHERE branch_id = $2
+  AND resource_type = 'court'
+  AND deleted_at IS NULL
+`
+
+type MaxCourtCodeSeqParams struct {
+	Prefix   string    `json:"prefix"`
+	BranchID uuid.UUID `json:"branch_id"`
+}
+
+// Highest numeric suffix for PREFIX + digits within a branch (location).
+func (q *Queries) MaxCourtCodeSeq(ctx context.Context, arg MaxCourtCodeSeqParams) (int32, error) {
+	row := q.db.QueryRow(ctx, maxCourtCodeSeq, arg.Prefix, arg.BranchID)
+	var max_seq int32
+	err := row.Scan(&max_seq)
+	return max_seq, err
+}
+
 const updateCourt = `-- name: UpdateCourt :exec
-UPDATE catalog.resources
-SET name_en = $3, name_vi = $4, court_type_id = $5, environment = $6, updated_at = now()
+UPDATE catalog.courts
+SET name_en = $3, name_vi = $4, sport_id = $5, environment = $6, surface = $7, dimensions = $8,
+    description_en = $9, description_vi = $10, updated_at = now()
 WHERE tenant_id = $1 AND id = $2 AND deleted_at IS NULL AND resource_type = 'court'
 `
 
 type UpdateCourtParams struct {
-	TenantID    uuid.UUID               `json:"tenant_id"`
-	ID          uuid.UUID               `json:"id"`
-	NameEn      *string                 `json:"name_en"`
-	NameVi      *string                 `json:"name_vi"`
-	CourtTypeID *uuid.UUID              `json:"court_type_id"`
-	Environment CatalogCourtEnvironment `json:"environment"`
+	TenantID      uuid.UUID               `json:"tenant_id"`
+	ID            uuid.UUID               `json:"id"`
+	NameEn        *string                 `json:"name_en"`
+	NameVi        *string                 `json:"name_vi"`
+	SportID       uuid.UUID               `json:"sport_id"`
+	Environment   CatalogCourtEnvironment `json:"environment"`
+	Surface       CatalogCourtSurface     `json:"surface"`
+	Dimensions    *string                 `json:"dimensions"`
+	DescriptionEn *string                 `json:"description_en"`
+	DescriptionVi *string                 `json:"description_vi"`
 }
 
 func (q *Queries) UpdateCourt(ctx context.Context, arg UpdateCourtParams) error {
@@ -353,23 +567,27 @@ func (q *Queries) UpdateCourt(ctx context.Context, arg UpdateCourtParams) error 
 		arg.ID,
 		arg.NameEn,
 		arg.NameVi,
-		arg.CourtTypeID,
+		arg.SportID,
 		arg.Environment,
+		arg.Surface,
+		arg.Dimensions,
+		arg.DescriptionEn,
+		arg.DescriptionVi,
 	)
 	return err
 }
 
 const updateCourtStatus = `-- name: UpdateCourtStatus :exec
-UPDATE catalog.resources
+UPDATE catalog.courts
 SET status = $3, is_bookable = $4, updated_at = now()
 WHERE tenant_id = $1 AND id = $2 AND deleted_at IS NULL AND resource_type = 'court'
 `
 
 type UpdateCourtStatusParams struct {
-	TenantID   uuid.UUID             `json:"tenant_id"`
-	ID         uuid.UUID             `json:"id"`
-	Status     CatalogResourceStatus `json:"status"`
-	IsBookable bool                  `json:"is_bookable"`
+	TenantID   uuid.UUID          `json:"tenant_id"`
+	ID         uuid.UUID          `json:"id"`
+	Status     CatalogCourtStatus `json:"status"`
+	IsBookable bool               `json:"is_bookable"`
 }
 
 func (q *Queries) UpdateCourtStatus(ctx context.Context, arg UpdateCourtStatusParams) error {

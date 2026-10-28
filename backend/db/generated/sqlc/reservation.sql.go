@@ -47,7 +47,7 @@ func (q *Queries) ConvertReservation(ctx context.Context, arg ConvertReservation
 
 const createReservation = `-- name: CreateReservation :exec
 INSERT INTO reservation.reservations (
-    id, public_id, tenant_id, reservation_no, customer_id, location_id, resource_id,
+    id, public_id, tenant_id, reservation_no, customer_id, branch_id, court_id,
     source, status, currency, subtotal, discount_amount, tax_amount, total_amount,
     price_version_id, starts_at, ends_at, expires_at, created_by, created_at, updated_at
 ) VALUES (
@@ -63,8 +63,8 @@ type CreateReservationParams struct {
 	TenantID       uuid.UUID                    `json:"tenant_id"`
 	ReservationNo  string                       `json:"reservation_no"`
 	CustomerID     uuid.UUID                    `json:"customer_id"`
-	LocationID     uuid.UUID                    `json:"location_id"`
-	ResourceID     uuid.UUID                    `json:"resource_id"`
+	BranchID       uuid.UUID                    `json:"branch_id"`
+	CourtID        uuid.UUID                    `json:"court_id"`
 	Source         ReservationReservationSource `json:"source"`
 	Status         ReservationReservationStatus `json:"status"`
 	Currency       string                       `json:"currency"`
@@ -88,8 +88,8 @@ func (q *Queries) CreateReservation(ctx context.Context, arg CreateReservationPa
 		arg.TenantID,
 		arg.ReservationNo,
 		arg.CustomerID,
-		arg.LocationID,
-		arg.ResourceID,
+		arg.BranchID,
+		arg.CourtID,
 		arg.Source,
 		arg.Status,
 		arg.Currency,
@@ -109,15 +109,15 @@ func (q *Queries) CreateReservation(ctx context.Context, arg CreateReservationPa
 }
 
 const createReservationResource = `-- name: CreateReservationResource :exec
-INSERT INTO reservation.reservation_resources (
-    id, reservation_id, resource_id, starts_at, ends_at, created_at
+INSERT INTO reservation.reservation_courts (
+    id, reservation_id, court_id, starts_at, ends_at, created_at
 ) VALUES ($1, $2, $3, $4, $5, $6)
 `
 
 type CreateReservationResourceParams struct {
 	ID            uuid.UUID `json:"id"`
 	ReservationID uuid.UUID `json:"reservation_id"`
-	ResourceID    uuid.UUID `json:"resource_id"`
+	CourtID       uuid.UUID `json:"court_id"`
 	StartsAt      time.Time `json:"starts_at"`
 	EndsAt        time.Time `json:"ends_at"`
 	CreatedAt     time.Time `json:"created_at"`
@@ -127,7 +127,7 @@ func (q *Queries) CreateReservationResource(ctx context.Context, arg CreateReser
 	_, err := q.db.Exec(ctx, createReservationResource,
 		arg.ID,
 		arg.ReservationID,
-		arg.ResourceID,
+		arg.CourtID,
 		arg.StartsAt,
 		arg.EndsAt,
 		arg.CreatedAt,
@@ -152,18 +152,18 @@ func (q *Queries) ExpireReservation(ctx context.Context, arg ExpireReservationPa
 }
 
 const findCourtForReservation = `-- name: FindCourtForReservation :one
-SELECT r.id, r.public_id, r.tenant_id, r.location_id, r.court_type_id, r.status::text AS status
-FROM catalog.resources r
+SELECT r.id, r.public_id, r.tenant_id, r.branch_id, r.sport_id, r.status::text AS status
+FROM catalog.courts r
 WHERE r.id = $1 AND r.resource_type = 'court' AND r.deleted_at IS NULL
 `
 
 type FindCourtForReservationRow struct {
-	ID          uuid.UUID  `json:"id"`
-	PublicID    string     `json:"public_id"`
-	TenantID    uuid.UUID  `json:"tenant_id"`
-	LocationID  uuid.UUID  `json:"location_id"`
-	CourtTypeID *uuid.UUID `json:"court_type_id"`
-	Status      string     `json:"status"`
+	ID       uuid.UUID `json:"id"`
+	PublicID string    `json:"public_id"`
+	TenantID uuid.UUID `json:"tenant_id"`
+	BranchID uuid.UUID `json:"branch_id"`
+	SportID  uuid.UUID `json:"sport_id"`
+	Status   string    `json:"status"`
 }
 
 func (q *Queries) FindCourtForReservation(ctx context.Context, id uuid.UUID) (FindCourtForReservationRow, error) {
@@ -173,15 +173,15 @@ func (q *Queries) FindCourtForReservation(ctx context.Context, id uuid.UUID) (Fi
 		&i.ID,
 		&i.PublicID,
 		&i.TenantID,
-		&i.LocationID,
-		&i.CourtTypeID,
+		&i.BranchID,
+		&i.SportID,
 		&i.Status,
 	)
 	return i, err
 }
 
 const findReservation = `-- name: FindReservation :one
-SELECT id, public_id, tenant_id, reservation_no, customer_id, location_id, resource_id,
+SELECT id, public_id, tenant_id, reservation_no, customer_id, branch_id, court_id,
        source, status, currency, subtotal, discount_amount, tax_amount, total_amount,
        price_version_id, starts_at, ends_at, expires_at, canceled_at, converted_at,
        created_by, created_at, updated_at
@@ -198,8 +198,8 @@ func (q *Queries) FindReservation(ctx context.Context, id uuid.UUID) (Reservatio
 		&i.TenantID,
 		&i.ReservationNo,
 		&i.CustomerID,
-		&i.LocationID,
-		&i.ResourceID,
+		&i.BranchID,
+		&i.CourtID,
 		&i.Source,
 		&i.Status,
 		&i.Currency,
@@ -221,7 +221,7 @@ func (q *Queries) FindReservation(ctx context.Context, id uuid.UUID) (Reservatio
 }
 
 const findReservationForUpdate = `-- name: FindReservationForUpdate :one
-SELECT id, public_id, tenant_id, reservation_no, customer_id, location_id, resource_id,
+SELECT id, public_id, tenant_id, reservation_no, customer_id, branch_id, court_id,
        source, status, currency, subtotal, discount_amount, tax_amount, total_amount,
        price_version_id, starts_at, ends_at, expires_at, canceled_at, converted_at,
        created_by, created_at, updated_at
@@ -239,8 +239,8 @@ func (q *Queries) FindReservationForUpdate(ctx context.Context, id uuid.UUID) (R
 		&i.TenantID,
 		&i.ReservationNo,
 		&i.CustomerID,
-		&i.LocationID,
-		&i.ResourceID,
+		&i.BranchID,
+		&i.CourtID,
 		&i.Source,
 		&i.Status,
 		&i.Currency,
@@ -262,7 +262,7 @@ func (q *Queries) FindReservationForUpdate(ctx context.Context, id uuid.UUID) (R
 }
 
 const listExpiredPendingReservations = `-- name: ListExpiredPendingReservations :many
-SELECT id, public_id, tenant_id, reservation_no, customer_id, location_id, resource_id,
+SELECT id, public_id, tenant_id, reservation_no, customer_id, branch_id, court_id,
        source, status, currency, subtotal, discount_amount, tax_amount, total_amount,
        price_version_id, starts_at, ends_at, expires_at, canceled_at, converted_at,
        created_by, created_at, updated_at
@@ -292,8 +292,8 @@ func (q *Queries) ListExpiredPendingReservations(ctx context.Context, arg ListEx
 			&i.TenantID,
 			&i.ReservationNo,
 			&i.CustomerID,
-			&i.LocationID,
-			&i.ResourceID,
+			&i.BranchID,
+			&i.CourtID,
 			&i.Source,
 			&i.Status,
 			&i.Currency,

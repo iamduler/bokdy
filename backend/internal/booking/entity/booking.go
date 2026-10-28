@@ -52,7 +52,7 @@ type Booking struct {
 	BookingNo      string
 	ReservationID  *uuid.UUID
 	CustomerID     uuid.UUID
-	LocationID     uuid.UUID
+	BranchID       uuid.UUID
 	CourtID        uuid.UUID
 	Status         Status
 	Currency       string
@@ -139,12 +139,12 @@ type CheckIn struct {
 // CourtRef is the read-only catalog projection a booking needs to resolve the
 // tenant, the branch, and whether the court is open for business.
 type CourtRef struct {
-	ID          uuid.UUID
-	PublicID    string
-	TenantID    uuid.UUID
-	LocationID  uuid.UUID
-	CourtTypeID *uuid.UUID
-	Status      string
+	ID       uuid.UUID
+	PublicID string
+	TenantID uuid.UUID
+	BranchID uuid.UUID
+	SportID  uuid.UUID
+	Status   string
 }
 
 // AcceptsBookings reports whether the court is open for business.

@@ -87,8 +87,9 @@ func RegisterRoutes(api *gin.RouterGroup, app *server.Application) {
 
 	courtTypeRepo := catalogpg.NewCourtTypeRepo(app.DB.Pool)
 	courtRepo := catalogpg.NewCourtRepo(app.DB.Pool)
+	courtMediaRepo := catalogpg.NewCourtMediaRepo(app.DB.Pool)
 	catalogSvc := catalogservice.NewCatalogService(
-		app.DB.Pool, courtTypeRepo, courtRepo, sportRepo, orgRepo, branchRepo, orgSvc, outbox, syncEnqueuer,
+		app.DB.Pool, courtTypeRepo, courtRepo, courtMediaRepo, sportRepo, orgRepo, branchRepo, orgSvc, outbox, syncEnqueuer,
 	)
 	catalogHandler := cataloghandler.NewCatalogHandler(catalogSvc)
 

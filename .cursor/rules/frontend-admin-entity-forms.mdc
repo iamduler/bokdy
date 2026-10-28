@@ -1,0 +1,78 @@
+---
+description: Soft admin entity forms use EntityFormFrame + EntityMetadataForm (Branch/Org pattern)
+globs:
+  - apps/admin-web/components/**/*form*.tsx
+  - apps/admin-web/components/**/*-fields*.tsx
+  - apps/admin-web/components/**/*form-sheet*.tsx
+alwaysApply: true
+---
+
+# Soft admin entity forms (Branch / Org / Court)
+
+Golden paths:
+
+- [`apps/admin-web/components/branches/branch-form.tsx`](apps/admin-web/components/branches/branch-form.tsx)
+- [`apps/admin-web/components/organizations/organization-form.tsx`](apps/admin-web/components/organizations/organization-form.tsx)
+- [`apps/admin-web/components/courts/court-form.tsx`](apps/admin-web/components/courts/court-form.tsx)
+
+## Required stack
+
+New or edited Soft admin entity create/edit forms **must** use:
+
+1. **`FormProvider`** (react-hook-form) around the form tree
+2. **`EntityFormFrame`** — cancel/submit chrome (`actionsPlacement: "inline"` in sheets, `"shell"` on full pages)
+3. **`EntityMetadataForm`** + `EntityFormBlock[]` for standard text / select / multi-select fields
+4. **`EntityFormSection`** (or `*ContentFields` modules) for complex controls under the same frame
+
+```tsx
+// ❌ BAD — hand-rolled sheet form chrome
+<form>
+  <FieldGroup>{/* manual Field stack */}</FieldGroup>
+  <div className="border-t …">
+    <Button variant="outline" className={softDirectorySecondaryBtn} />
+    <Button className={softDirectoryPrimaryBtn} />
+  </div>
+</form>
+
+// ✅ GOOD
+<FormProvider {...form}>
+  <EntityFormFrame
+    cancelLabel={…}
+    submitLabel={…}
+    onCancel={…}
+    pending={pending}
+    onSubmit={form.handleSubmit(onSubmit)}
+    actionsPlacement={layout === "sheet" ? "inline" : "shell"}
+  >
+    <EntityMetadataForm blocks={blocks} />
+    <EntitySpecialContentFields />
+  </EntityFormFrame>
+</FormProvider>
+```
+
+## Sheets
+
+Sheet wrappers mirror Branch: `SheetContent` + header + form with `layout="sheet"`. See `branch-form-sheet.tsx` / `court-form-sheet.tsx`.
+
+## Escape hatches (still inside the frame)
+
+Use dedicated sections — **not** a parallel form footer/layout — for:
+
+- WYSIWYG description → `RichTextEditor` + RHF `Controller` (see `BranchContentFields`, `CourtContentFields`)
+- Gallery / file upload
+- Maps / address pickers
+- Image crop / cover
+
+## Do not
+
+- Reinvent cancel/submit footers with `softDirectoryPrimaryBtn` on entity forms (Frame owns actions)
+- Flat `FieldGroup` without `EntityFormSection` soft cards for multi-field Soft forms
+- Put `*` inside i18n strings — use `required: true` on blocks / `FieldLabel required`
+
+## Related rules
+
+- `.cursor/rules/frontend-forms-rhf.mdc` — RHF + Zod, required asterisks, RichText for HTML
+- `.cursor/rules/frontend-admin-detail-urls.mdc` — top-level detail URLs
+- `.cursor/rules/frontend-detail-fields-visible.mdc` — always show profile fields
+
+Skill workflow: `.cursor/skills/admin-entity-form/SKILL.md`
