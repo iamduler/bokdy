@@ -5733,6 +5733,9 @@ export interface paths {
                     q?: string;
                     status?: "active" | "inactive" | "suspended" | "archived";
                     limit?: number;
+                    offset?: components["parameters"]["AdminListOffset"];
+                    sort?: "created_at" | "name" | "status" | "branch_count" | "court_count";
+                    order?: components["parameters"]["AdminListOrder"];
                     /** @description Filter orgs with at least one branch in this province (current_v2 address) */
                     province_id?: string;
                 };
@@ -5748,7 +5751,52 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["AdminOrganization"][];
+                        "application/json": components["schemas"]["AdminOrganizationPage"];
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/organizations/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Organization directory statistics
+         * @description Counts ignore status so directory tabs stay stable. Search and province filters still apply.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    q?: string;
+                    province_id?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Directory stats */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminOrganizationDirectoryStats"];
                     };
                 };
                 401: components["responses"]["Error"];
@@ -5968,6 +6016,9 @@ export interface paths {
                     status?: components["parameters"]["AdminUserStatus"];
                     email_verified?: boolean;
                     limit?: components["parameters"]["AdminUserLimit"];
+                    offset?: components["parameters"]["AdminListOffset"];
+                    sort?: components["parameters"]["AdminUserSort"];
+                    order?: components["parameters"]["AdminListOrder"];
                 };
                 header?: never;
                 path?: never;
@@ -5981,7 +6032,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["AdminPlayerUser"][];
+                        "application/json": components["schemas"]["AdminPlayerPage"];
                     };
                 };
                 401: components["responses"]["Error"];
@@ -6137,6 +6188,9 @@ export interface paths {
                     staff_role?: "org_owner" | "org_staff";
                     organization_id?: string;
                     limit?: components["parameters"]["AdminUserLimit"];
+                    offset?: components["parameters"]["AdminListOffset"];
+                    sort?: components["parameters"]["AdminUserSort"];
+                    order?: components["parameters"]["AdminListOrder"];
                 };
                 header?: never;
                 path?: never;
@@ -6150,7 +6204,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["AdminOwnerUser"][];
+                        "application/json": components["schemas"]["AdminOwnerPage"];
                     };
                 };
                 401: components["responses"]["Error"];
@@ -6301,6 +6355,9 @@ export interface paths {
                     q?: components["parameters"]["AdminUserSearch"];
                     status?: components["parameters"]["AdminUserStatus"];
                     limit?: components["parameters"]["AdminUserLimit"];
+                    offset?: components["parameters"]["AdminListOffset"];
+                    sort?: components["parameters"]["AdminUserSort"];
+                    order?: components["parameters"]["AdminListOrder"];
                 };
                 header?: never;
                 path?: never;
@@ -6314,7 +6371,7 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["AdminSystemUser"][];
+                        "application/json": components["schemas"]["AdminSystemUserPage"];
                     };
                 };
                 401: components["responses"]["Error"];
@@ -6914,6 +6971,27 @@ export interface components {
             tenant_status: "trial" | "active" | "suspended" | "canceled";
             /** @description Non-archived branch (location) count */
             branch_count: number;
+            /** @description Non-archived courts on the organization's branches */
+            court_count: number;
+            /** @description Display name of the earliest active org owner. Null when none. */
+            owner_display_name: string | null;
+            /** @description Sport name for the request locale. Most courts, else most branch sports. Null when none. */
+            primary_sport: string | null;
+        };
+        AdminListPage: {
+            total: number;
+            limit: number;
+            offset: number;
+        };
+        AdminOrganizationPage: components["schemas"]["AdminListPage"] & {
+            items: components["schemas"]["AdminOrganization"][];
+        };
+        AdminOrganizationDirectoryStats: {
+            total: number;
+            active: number;
+            inactive: number;
+            suspended: number;
+            branch_total: number;
         };
         SuspendOrganizationRequest: {
             reason: string;
@@ -6960,7 +7038,16 @@ export interface components {
             staff_status?: "invited" | "active" | "suspended" | "resigned";
             primary_organization?: components["schemas"]["AdminUserOrganizationRef"];
         };
+        AdminPlayerPage: components["schemas"]["AdminListPage"] & {
+            items: components["schemas"]["AdminPlayerUser"][];
+        };
+        AdminOwnerPage: components["schemas"]["AdminListPage"] & {
+            items: components["schemas"]["AdminOwnerUser"][];
+        };
         AdminSystemUser: components["schemas"]["AdminUser"];
+        AdminSystemUserPage: components["schemas"]["AdminListPage"] & {
+            items: components["schemas"]["AdminSystemUser"][];
+        };
         AdminUserOrganizationRef: {
             /** Format: uuid */
             id: string;
@@ -8190,6 +8277,9 @@ export interface components {
         AdminUserSearch: string;
         AdminUserStatus: "pending" | "active" | "suspended" | "locked";
         AdminUserLimit: number;
+        AdminListOffset: number;
+        AdminListOrder: "asc" | "desc";
+        AdminUserSort: "created_at" | "name" | "status" | "last_login";
         StaffId: string;
         BranchId: string;
         CustomerId: string;

@@ -614,7 +614,9 @@
       "paymentStatusLabels": {
         "paid": "Đã thanh toán",
         "failed": "Thất bại"
-      }
+      },
+      "empty": "Chưa có dữ liệu thuê bao",
+      "emptyHint": "Gói, mức dùng và hóa đơn sẽ hiện ở đây khi có thanh toán thuê bao."
     },
     "detailActivity": {
       "title": "Activity — {name}",
@@ -636,7 +638,9 @@
         "event3Detail": "Bởi quản lý chi nhánh · Q.1",
         "event4": "Tổ chức được xác minh bởi Admin",
         "event4Detail": "Xác minh giấy phép và thông tin pháp lý"
-      }
+      },
+      "empty": "Chưa có hoạt động",
+      "emptyHint": "Thay đổi của tổ chức sẽ hiện ở đây khi có nhật ký kiểm tra."
     },
     "detailActions": {
       "title": "Hành động — {name}",
@@ -1040,6 +1044,13 @@
       "roles": "Vai trò được gán",
       "loadError": "Không tải được phân quyền.",
       "empty": "Chưa có vai trò.",
+      "systemScope": "Hệ thống",
+      "roleLabel": {
+        "system_admin": "Quản trị hệ thống",
+        "org_owner": "Chủ tổ chức",
+        "org_staff": "Nhân viên",
+        "player": "Người chơi"
+      },
       "matrixPreview": "Ma trận quyền (xem trước)",
       "group": {
         "booking": "Đặt sân"

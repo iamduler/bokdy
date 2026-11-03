@@ -1,6 +1,7 @@
 import type { components } from "@bokdy/sdk/schema";
 
 import { apiGo } from "@/lib/api/client";
+import { appendListPageQuery, type ListPageParams } from "@/lib/api/list-page";
 
 export type AdminUser = components["schemas"]["AdminUser"];
 export type AdminPlayerUser = components["schemas"]["AdminPlayerUser"];
@@ -17,13 +18,16 @@ export type UserStatus = "pending" | "active" | "suspended" | "locked" | "delete
 
 export type UserAudience = "players" | "owners" | "admins";
 
-export type AdminUserListParams = {
+export type AdminPlayerPage = components["schemas"]["AdminPlayerPage"];
+export type AdminOwnerPage = components["schemas"]["AdminOwnerPage"];
+export type AdminSystemUserPage = components["schemas"]["AdminSystemUserPage"];
+
+export type AdminUserListParams = ListPageParams & {
   q?: string;
   status?: UserStatus;
   email_verified?: boolean;
   staff_role?: "org_owner" | "org_staff";
   organization_id?: string;
-  limit?: number;
 };
 
 function buildQuery(params: AdminUserListParams): string {
@@ -33,21 +37,21 @@ function buildQuery(params: AdminUserListParams): string {
   if (params.email_verified != null) qs.set("email_verified", String(params.email_verified));
   if (params.staff_role) qs.set("staff_role", params.staff_role);
   if (params.organization_id) qs.set("organization_id", params.organization_id);
-  if (params.limit != null) qs.set("limit", String(params.limit));
+  appendListPageQuery(qs, params);
   const s = qs.toString();
   return s ? `?${s}` : "";
 }
 
 export function listPlayers(params: AdminUserListParams = {}) {
-  return apiGo<AdminPlayerUser[]>(`admin/users/players${buildQuery(params)}`);
+  return apiGo<AdminPlayerPage>(`admin/users/players${buildQuery(params)}`);
 }
 
 export function listOwners(params: AdminUserListParams = {}) {
-  return apiGo<AdminOwnerUser[]>(`admin/users/owners${buildQuery(params)}`);
+  return apiGo<AdminOwnerPage>(`admin/users/owners${buildQuery(params)}`);
 }
 
 export function listAdmins(params: AdminUserListParams = {}) {
-  return apiGo<AdminSystemUser[]>(`admin/users/admins${buildQuery(params)}`);
+  return apiGo<AdminSystemUserPage>(`admin/users/admins${buildQuery(params)}`);
 }
 
 export function getPlayerStats() {

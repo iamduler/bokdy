@@ -14,6 +14,8 @@ import (
 type Querier interface {
 	AddInvoiceRefundedAmount(ctx context.Context, arg AddInvoiceRefundedAmountParams) error
 	AddStaffMember(ctx context.Context, arg AddStaffMemberParams) error
+	AdminOrganizationDirectory(ctx context.Context, id uuid.UUID) (AdminOrganizationDirectoryRow, error)
+	AdminOrganizationDirectoryStats(ctx context.Context, arg AdminOrganizationDirectoryStatsParams) (AdminOrganizationDirectoryStatsRow, error)
 	ArchiveCourt(ctx context.Context, arg ArchiveCourtParams) error
 	ArchiveCourtType(ctx context.Context, arg ArchiveCourtTypeParams) error
 	AssignUserRole(ctx context.Context, arg AssignUserRoleParams) error
@@ -33,14 +35,18 @@ type Querier interface {
 	ConvertReservation(ctx context.Context, arg ConvertReservationParams) error
 	CountAdminOwners(ctx context.Context) (int32, error)
 	CountAdminOwnersByStatus(ctx context.Context) (CountAdminOwnersByStatusRow, error)
+	CountAdminOwnersList(ctx context.Context, arg CountAdminOwnersListParams) (int32, error)
 	CountAdminPlayers(ctx context.Context) (int32, error)
 	CountAdminPlayersByStatus(ctx context.Context) (CountAdminPlayersByStatusRow, error)
+	CountAdminPlayersList(ctx context.Context, arg CountAdminPlayersListParams) (int32, error)
 	CountAdminSystemUsers(ctx context.Context) (int32, error)
 	CountAdminSystemUsersByStatus(ctx context.Context) (CountAdminSystemUsersByStatusRow, error)
+	CountAdminSystemUsersList(ctx context.Context, arg CountAdminSystemUsersListParams) (int32, error)
 	CountBookingsByUser(ctx context.Context, userID *uuid.UUID) (int32, error)
 	CountBranchesByOrganization(ctx context.Context, organizationID uuid.UUID) (int32, error)
 	CountConflictingBlocks(ctx context.Context, arg CountConflictingBlocksParams) (int64, error)
 	CountCourtsByLocationIDs(ctx context.Context, branchIds []uuid.UUID) ([]CountCourtsByLocationIDsRow, error)
+	CountOrganizationsAdmin(ctx context.Context, arg CountOrganizationsAdminParams) (int32, error)
 	CountOverlappingBlocks(ctx context.Context, arg CountOverlappingBlocksParams) (int64, error)
 	CountOverlappingBlocksExcludingReference(ctx context.Context, arg CountOverlappingBlocksExcludingReferenceParams) (int64, error)
 	CountOverlappingBookings(ctx context.Context, arg CountOverlappingBookingsParams) (int64, error)

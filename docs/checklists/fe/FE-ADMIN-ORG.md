@@ -9,7 +9,7 @@ Phase: mvp UI scaffold + post-mvp API wiring
 
 Parent: [FE-ADMIN.md](FE-ADMIN.md). Tick rows here when FE DoD is met for that step. Do not invent HTTP paths.
 
-Mock fixture (replace incrementally): `apps/admin-web/components/organizations/detail/shared/detail-mock-data.ts`
+Org billing and activity no longer use a mock fixture. Remaining unavailable columns stay as badges until their APIs exist.
 
 ---
 
@@ -19,7 +19,7 @@ Mock fixture (replace incrementally): `apps/admin-web/components/organizations/d
 | --- | --- | --- | --- |
 | Directory `/organizations` | done | partial | List, filters, KPIs, create; columns mostly unavailable |
 | Detail overview `/organizations/[id]` | done | partial | `branch_count` real; metrics/charts mock |
-| Branches / Courts / Team / Billing / Activity | done | mixed | Branches + courts wired; team/billing/activity still mock |
+| Branches / Courts / Team / Billing / Activity | done | mixed | Branches, courts, and team wired. Billing and activity are empty states (no mock figures). |
 | Actions `/organizations/[id]/actions` | done | partial | Lifecycle wired; other actions disabled |
 | KYC / Audit / Export / Bulk | not started | blocked | Deferred modules |
 
@@ -37,8 +37,8 @@ Mock fixture (replace incrementally): `apps/admin-web/components/organizations/d
 | [ ] | FE-ADMIN-ORG-DIR-06 | F-ADMIN-ORG-01 | Plan filter | `/organizations` | TBD subscription/plan | TBD | post-mvp | blocked | Combobox disabled until API. |
 | [ ] | FE-ADMIN-ORG-DIR-07 | F-ADMIN-ORG-02 | Directory export CSV | `/organizations` | TBD | TBD | post-mvp | blocked | Header button disabled + tooltip. |
 | [ ] | FE-ADMIN-ORG-DIR-08 | F-ADMIN-ORG-03 | Bulk actions | `/organizations` | TBD | TBD | post-mvp | blocked | Select rows, assign reviewer, suspend batch. |
-| [ ] | FE-ADMIN-ORG-DIR-09 | F-ADMIN-ORG-04 | Table columns (real data) | `/organizations` | list enrich or aggregate | `listOrganizations` | post-mvp | partial | Sport, courts, plan, revenue, health, risk, owner — currently `UnavailableBadge`. |
-| [ ] | FE-ADMIN-ORG-DIR-10 | F-ADMIN-ORG-05 | Pagination | `/organizations` | cursor / offset | `listOrganizations` | mvp | partial | `limit` 1–100 only; no UI pages. |
+| [ ] | FE-ADMIN-ORG-DIR-09 | F-ADMIN-ORG-04 | Table columns (real data) | `/organizations` | list enrich | `listOrganizations` | post-mvp | partial | Owner, courts, sport from the list. Plan stays `UnavailableBadge`. Revenue, health, risk are not directory columns. |
+| [x] | FE-ADMIN-ORG-DIR-10 | F-ADMIN-ORG-05 | Pagination | `/organizations` | offset + total | `listOrganizations` | mvp | done | Server page, size 20. Footer `from–to / total`. Sort resets offset. |
 | [ ] | FE-ADMIN-ORG-DIR-11 | n/a | Row menu (⋯) | `/organizations` | n/a | n/a | post-mvp | partial | Icon only; actions unavailable. |
 
 ---
@@ -110,7 +110,7 @@ Mock fixture (replace incrementally): `apps/admin-web/components/organizations/d
 
 | Done | ID | Maps | Step | App route | Go / BFF | lib/api | Phase | Status | Notes |
 | :---: | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| [x] | FE-ADMIN-ORG-BIL-01 | n/a | Plan card + usage + history | `[id]/billing` | n/a | n/a | mvp | partial | Mock subscription UI. |
+| [x] | FE-ADMIN-ORG-BIL-01 | n/a | Plan card + usage + history | `[id]/billing` | n/a | n/a | mvp | partial | Empty state. Upgrade and invoices stay disabled. No mock amounts. |
 | [ ] | FE-ADMIN-ORG-BIL-02 | F-SUBSCRIPTION-* | Current plan + renewal | `[id]/billing` | subscription API | TBD | post-mvp | deferred | See `F-SUBSCRIPTION.md`. |
 | [ ] | FE-ADMIN-ORG-BIL-03 | F-SUBSCRIPTION-* | Usage quotas | `[id]/billing` | subscription API | TBD | post-mvp | deferred | Branches, courts, seats, API calls. |
 | [ ] | FE-ADMIN-ORG-BIL-04 | F-ADMIN-08 | Upgrade plan | `[id]/billing` | `POST /api/v1/admin/subscriptions` | TBD | post-mvp | deferred | CTA disabled. |
@@ -122,7 +122,7 @@ Mock fixture (replace incrementally): `apps/admin-web/components/organizations/d
 
 | Done | ID | Maps | Step | App route | Go / BFF | lib/api | Phase | Status | Notes |
 | :---: | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| [x] | FE-ADMIN-ORG-ACT-01 | n/a | Activity timeline | `[id]/activity` | n/a | n/a | mvp | partial | Mock events; category filter client-side. |
+| [x] | FE-ADMIN-ORG-ACT-01 | n/a | Activity timeline | `[id]/activity` | n/a | n/a | mvp | partial | Empty state. Export stays disabled. No mock events. |
 | [ ] | FE-ADMIN-ORG-ACT-02 | F-ADMIN-ORG-16 | Org activity feed | `[id]/activity` | `GET …/activity` | `listAdminOrgActivity` | post-mvp | blocked | Domain events / audit slice. |
 | [ ] | FE-ADMIN-ORG-ACT-03 | n/a | Export timeline | `[id]/activity` | TBD | TBD | post-mvp | blocked | Toolbar disabled. |
 
@@ -154,7 +154,7 @@ Mock fixture (replace incrementally): `apps/admin-web/components/organizations/d
 
 | Done | ID | Step | Phase | Status | Notes |
 | :---: | --- | --- | --- | --- | --- |
-| [ ] | FE-ADMIN-ORG-X-01 | Remove `detail-mock-data.ts` as APIs land | post-mvp | ready | One screen at a time. |
+| [x] | FE-ADMIN-ORG-X-01 | Remove `detail-mock-data.ts` as APIs land | post-mvp | done | Fixture removed. Billing and activity use empty states. |
 | [ ] | FE-ADMIN-ORG-X-02 | Loading skeletons per screen | mvp | partial | List has loading; detail sub-screens minimal. |
 | [ ] | FE-ADMIN-ORG-X-03 | E2E smoke: directory → all sub-routes → lifecycle | mvp | ready | Manual checklist below. |
 | [ ] | FE-ADMIN-ORG-X-04 | OpenAPI + SDK sync for each new admin org route | post-mvp | ready | Regenerate `@bokdy/sdk`. |
@@ -191,4 +191,4 @@ Mock fixture (replace incrementally): `apps/admin-web/components/organizations/d
 | `apps/admin-web/app/[locale]/(shell)/organizations/[id]/` | Detail layout + nested pages |
 | `apps/admin-web/components/organizations/detail/` | Detail UI components |
 | `apps/admin-web/components/organizations/organization-list.tsx` | Directory table |
-| `apps/admin-web/components/organizations/detail/shared/detail-mock-data.ts` | Preview fixture (@todo remove) |
+| `apps/admin-web/components/organizations/detail/billing/organization-billing-view.tsx` | Billing empty state |

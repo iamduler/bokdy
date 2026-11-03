@@ -12,6 +12,7 @@ import (
 	"bokdy/internal/platform/apperr"
 	"bokdy/internal/platform/httpx"
 	"bokdy/internal/platform/i18n"
+	"bokdy/internal/platform/listpage"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -66,10 +67,10 @@ type adminUserDTO struct {
 
 type adminOwnerUserDTO struct {
 	adminUserDTO
-	StaffRole    string                   `json:"staff_role,omitempty"`
-	StaffTitle   string                   `json:"staff_title,omitempty"`
-	StaffStatus  string                   `json:"staff_status,omitempty"`
-	PrimaryOrg   *adminUserOrganizationRef `json:"primary_organization,omitempty"`
+	StaffRole   string                    `json:"staff_role,omitempty"`
+	StaffTitle  string                    `json:"staff_title,omitempty"`
+	StaffStatus string                    `json:"staff_status,omitempty"`
+	PrimaryOrg  *adminUserOrganizationRef `json:"primary_organization,omitempty"`
 }
 
 type adminUserOrganizationRef struct {
@@ -135,17 +136,16 @@ func (h *AdminUserHandler) ListPlayers(c *gin.Context) {
 	if !ok {
 		return
 	}
-	emailVerified := parseBoolQuery(c, "email_verified")
-	items, err := h.admin.ListPlayers(c.Request.Context(), c.Query("q"), status, emailVerified, parseUserLimit(c))
+	page, err := h.admin.ListPlayers(c.Request.Context(), adminUserListQuery(c, status, parseBoolQuery(c, "email_verified"), nil, nil))
 	if err != nil {
 		httpx.Error(c, err)
 		return
 	}
-	out := make([]adminUserDTO, 0, len(items))
-	for i := range items {
-		out = append(out, toAdminUserDTO(items[i]))
+	out := make([]adminUserDTO, 0, len(page.Items))
+	for i := range page.Items {
+		out = append(out, toAdminUserDTO(page.Items[i]))
 	}
-	httpx.OK(c, out)
+	httpx.OK(c, listpage.New(out, page.Total, page.Limit, page.Offset))
 }
 
 func (h *AdminUserHandler) ListOwners(c *gin.Context) {
@@ -166,16 +166,16 @@ func (h *AdminUserHandler) ListOwners(c *gin.Context) {
 		}
 		orgID = &id
 	}
-	items, err := h.admin.ListOwners(c.Request.Context(), c.Query("q"), status, staffRole, orgID, parseUserLimit(c))
+	page, err := h.admin.ListOwners(c.Request.Context(), adminUserListQuery(c, status, nil, staffRole, orgID))
 	if err != nil {
 		httpx.Error(c, err)
 		return
 	}
-	out := make([]adminOwnerUserDTO, 0, len(items))
-	for i := range items {
-		out = append(out, toAdminOwnerUserDTO(c, items[i]))
+	out := make([]adminOwnerUserDTO, 0, len(page.Items))
+	for i := range page.Items {
+		out = append(out, toAdminOwnerUserDTO(c, page.Items[i]))
 	}
-	httpx.OK(c, out)
+	httpx.OK(c, listpage.New(out, page.Total, page.Limit, page.Offset))
 }
 
 func (h *AdminUserHandler) ListAdmins(c *gin.Context) {
@@ -183,16 +183,16 @@ func (h *AdminUserHandler) ListAdmins(c *gin.Context) {
 	if !ok {
 		return
 	}
-	items, err := h.admin.ListAdmins(c.Request.Context(), c.Query("q"), status, parseUserLimit(c))
+	page, err := h.admin.ListAdmins(c.Request.Context(), adminUserListQuery(c, status, nil, nil, nil))
 	if err != nil {
 		httpx.Error(c, err)
 		return
 	}
-	out := make([]adminUserDTO, 0, len(items))
-	for i := range items {
-		out = append(out, toAdminUserDTO(items[i]))
+	out := make([]adminUserDTO, 0, len(page.Items))
+	for i := range page.Items {
+		out = append(out, toAdminUserDTO(page.Items[i]))
 	}
-	httpx.OK(c, out)
+	httpx.OK(c, listpage.New(out, page.Total, page.Limit, page.Offset))
 }
 
 func (h *AdminUserHandler) PlayerStats(c *gin.Context) {
@@ -476,10 +476,17 @@ func parseUserLimit(c *gin.Context) int {
 		return 0
 	}
 	limit, err := strconv.Atoi(raw)
-	if err != nil {
+	if err != nil || limit < 0 {
 		return 0
 	}
 	return limit
+}
+
+func adminUserListQuery(c *gin.Context, status *entity.UserStatus, emailVerified *bool, staffRole *string, orgID *uuid.UUID) service.AdminUserListQuery {
+	return service.AdminUserListQuery{
+		Q: c.Query("q"), Status: status, EmailVerified: emailVerified, StaffRole: staffRole, OrganizationID: orgID,
+		LimitRaw: c.Query("limit"), OffsetRaw: c.Query("offset"), Sort: c.Query("sort"), Order: c.Query("order"),
+	}
 }
 
 func parseUserStatusQuery(c *gin.Context) (*entity.UserStatus, bool) {
@@ -533,7 +540,7 @@ func toAdminOwnerUserDTO(c *gin.Context, row repository.AdminOwnerRow) adminOwne
 		loc := i18n.FromContext(c.Request.Context())
 		d.PrimaryOrg = &adminUserOrganizationRef{
 			ID: row.PrimaryOrgID.String(), Code: row.PrimaryOrgCode,
-			Name: i18n.DisplayName(loc, row.PrimaryOrgNameEn, row.PrimaryOrgNameVi),
+			Name:   i18n.DisplayName(loc, row.PrimaryOrgNameEn, row.PrimaryOrgNameVi),
 			NameEn: row.PrimaryOrgNameEn, NameVi: row.PrimaryOrgNameVi,
 		}
 	}

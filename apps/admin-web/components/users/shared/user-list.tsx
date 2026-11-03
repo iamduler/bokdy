@@ -1,13 +1,9 @@
 "use client";
 
 import { Card, CardContent } from "@bokdy/ui";
-import type {
-  PaginationState,
-  RowSelectionState,
-  SortingState,
-} from "@tanstack/react-table";
+import type { OnChangeFn, PaginationState, RowSelectionState, SortingState } from "@tanstack/react-table";
 import { useTranslations } from "next-intl";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import { DATA_LIST_PAGE_SIZE, DataTable } from "@/components/data-list";
 import {
@@ -22,6 +18,11 @@ import type { UserAudience } from "@/lib/api/admin-users";
 type UserListProps = {
   audience: UserAudience;
   users: UserRow[];
+  total: number;
+  pageIndex: number;
+  sorting: SortingState;
+  onSortingChange: OnChangeFn<SortingState>;
+  onPaginationChange: OnChangeFn<PaginationState>;
   hasFilters: boolean;
   isLoading: boolean;
   isError: boolean;
@@ -32,6 +33,11 @@ type UserListProps = {
 export function UserList({
   audience,
   users,
+  total,
+  pageIndex,
+  sorting,
+  onSortingChange,
+  onPaginationChange,
   hasFilters,
   isLoading,
   isError,
@@ -43,39 +49,7 @@ export function UserList({
   const td = useTranslations("dataList");
   const columns = useUserColumns(audience);
   const base = `/users/${audience}`;
-
-  const [sorting, setSorting] = useState<SortingState>([]);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
-  const [pagination, setPagination] = useState<PaginationState>({
-    pageIndex: 0,
-    pageSize: DATA_LIST_PAGE_SIZE,
-  });
-
-  const sortedForMobile = useMemo(() => {
-    const sort = sorting[0];
-    if (!sort) return users;
-    const dir = sort.desc ? -1 : 1;
-    return [...users].sort((a, b) => {
-      if (sort.id === "user") {
-        return displayName(a).localeCompare(displayName(b)) * dir;
-      }
-      if (sort.id === "status") {
-        return a.status.localeCompare(b.status) * dir;
-      }
-      if (sort.id === "last_login") {
-        return (
-          ((a.last_login_at ?? "").localeCompare(b.last_login_at ?? "") || 0) *
-          dir
-        );
-      }
-      return 0;
-    });
-  }, [users, sorting]);
-
-  const pageUsers = useMemo(() => {
-    const start = pagination.pageIndex * pagination.pageSize;
-    return sortedForMobile.slice(start, start + pagination.pageSize);
-  }, [sortedForMobile, pagination]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -84,12 +58,15 @@ export function UserList({
         data={users}
         getRowId={(row) => row.id}
         sorting={sorting}
-        onSortingChange={setSorting}
+        onSortingChange={onSortingChange}
         rowSelection={rowSelection}
         onRowSelectionChange={setRowSelection}
-        pagination={pagination}
-        onPaginationChange={setPagination}
+        pagination={{ pageIndex, pageSize: DATA_LIST_PAGE_SIZE }}
+        onPaginationChange={onPaginationChange}
         pageSize={DATA_LIST_PAGE_SIZE}
+        manualPagination
+        manualSorting
+        rowCount={total}
         paginationLabels={{
           previous: td("previousPage"),
           next: td("nextPage"),
@@ -102,11 +79,13 @@ export function UserList({
         retryLabel={isFetching ? tc("loading") : tc("retry")}
         emptyTitle={hasFilters ? t("emptyFilter") : t("emptyNone")}
         mobileList={
-          <div className="space-y-3 p-4">
-            {pageUsers.map((user) => (
-              <UserCard key={user.id} user={user} href={`${base}/${user.id}`} />
-            ))}
-          </div>
+          users.length === 0 ? undefined : (
+            <div className="space-y-3 p-4">
+              {users.map((user) => (
+                <UserCard key={user.id} user={user} href={`${base}/${user.id}`} />
+              ))}
+            </div>
+          )
         }
       />
     </div>

@@ -75,6 +75,7 @@ export function useUserColumns(audience: UserAudience) {
           id: "staff_role",
           accessorFn: (row) => (row as AdminOwnerUser).staff_role ?? "",
           header: t("columns.staffRole"),
+          enableSorting: false,
           size: 120,
           cell: ({ row }) => (
             <span className="text-sm">
@@ -87,6 +88,7 @@ export function useUserColumns(audience: UserAudience) {
           accessorFn: (row) =>
             (row as AdminOwnerUser).primary_organization?.name ?? "",
           header: t("columns.organization"),
+          enableSorting: false,
           size: 160,
           cell: ({ row }) => (
             <span className="text-sm">
@@ -111,6 +113,7 @@ export function useUserColumns(audience: UserAudience) {
         id: "email_verified",
         accessorFn: (row) => row.email_verified_at ?? "",
         header: t("columns.emailVerified"),
+        enableSorting: false,
         size: 120,
         cell: ({ row }) => (
           <span className="text-sm">

@@ -37,7 +37,7 @@ export function useOrganizationColumns() {
                   {org.code}
                   {" · "}
                   <span className="text-muted-foreground/80">
-                    {t("ownerUnavailable")}
+                    {org.owner_display_name || t("emptyValue")}
                   </span>
                 </p>
               </div>
@@ -47,10 +47,15 @@ export function useOrganizationColumns() {
       },
       {
         id: "sport",
+        accessorFn: (row) => row.primary_sport ?? "",
         header: t("columns.sport"),
         enableSorting: false,
         size: 110,
-        cell: () => <EntityUnavailableBadge label={t("unavailable")} />,
+        cell: ({ row }) => (
+          <span className="text-foreground/80">
+            {row.original.primary_sport || t("emptyValue")}
+          </span>
+        ),
       },
       {
         id: "branches",
@@ -65,10 +70,14 @@ export function useOrganizationColumns() {
       },
       {
         id: "courts",
+        accessorFn: (row) => row.court_count ?? 0,
         header: t("columns.courts"),
-        enableSorting: false,
         size: 90,
-        cell: () => <EntityUnavailableBadge label={t("unavailable")} />,
+        cell: ({ getValue }) => (
+          <span className="tabular-nums text-foreground/80">
+            {String(getValue())}
+          </span>
+        ),
       },
       {
         id: "plan",
@@ -90,6 +99,7 @@ export function useOrganizationColumns() {
         id: "tenant_status",
         accessorKey: "tenant_status",
         header: t("columns.tenantStatus"),
+        enableSorting: false,
         size: 120,
         cell: ({ row }) => (
           <OrganizationStatusBadge

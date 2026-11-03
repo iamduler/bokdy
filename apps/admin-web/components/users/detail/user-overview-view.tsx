@@ -3,7 +3,6 @@
 import { useTranslations } from "next-intl";
 
 import { useUserDetail } from "@/components/users/detail/user-detail-context";
-import { USER_DETAIL_MOCK } from "@/components/users/shared/user-detail-mock-data";
 import { UserUnavailableBadge } from "@/components/users/shared/user-unavailable-badge";
 import { usePlayerSummary } from "@/hooks/use-admin-users";
 
@@ -22,7 +21,7 @@ export function UserOverviewView() {
   ];
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-auto soft-scrollbar p-4 md:flex-row md:p-6">
+    <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-auto soft-scrollbar p-4 md:p-6">
       <div className="min-w-0 flex-1 space-y-4">
         {user.status === "suspended" ? (
           <div className="rounded-lg border border-red-500/30 bg-red-500/5 p-4 text-sm">
@@ -60,13 +59,6 @@ export function UserOverviewView() {
           </div>
         ) : null}
       </div>
-      <aside className="w-full shrink-0 space-y-4 md:w-72">
-        <div className="rounded-md border border-border bg-card/60 p-4">
-          <p className="text-xs font-bold uppercase text-muted-foreground">{t("riskScore")}</p>
-          <p className="text-4xl font-semibold text-red-600">{USER_DETAIL_MOCK.riskScore}</p>
-          <UserUnavailableBadge />
-        </div>
-      </aside>
     </div>
   );
 }

@@ -124,27 +124,72 @@ func (r *OrgRepo) ListByUser(ctx context.Context, userID uuid.UUID) ([]entity.Or
 	return out, nil
 }
 
-func (r *OrgRepo) ListAdmin(ctx context.Context, filter repository.AdminListFilter) ([]repository.AdminOrganization, error) {
+func (r *OrgRepo) ListAdmin(ctx context.Context, filter repository.AdminListFilter) ([]repository.AdminOrganization, int, error) {
 	var statusFilter *string
 	if filter.Status != nil {
 		s := string(*filter.Status)
 		statusFilter = &s
 	}
 	rows, err := r.q.ListOrganizationsAdmin(ctx, dbsqlc.ListOrganizationsAdminParams{
-		StatusFilter: statusFilter, Q: filter.Q, ProvinceID: filter.ProvinceID, RowLimit: int32(filter.Limit),
+		StatusFilter: statusFilter,
+		Q:            filter.Q,
+		ProvinceID:   filter.ProvinceID,
+		SortKey:      filter.Sort,
+		SortDesc:     filter.Desc,
+		RowOffset:    int32(filter.Offset),
+		RowLimit:     int32(filter.Limit),
 	})
 	if err != nil {
-		return nil, err
+		return nil, 0, err
+	}
+	total, err := r.q.CountOrganizationsAdmin(ctx, dbsqlc.CountOrganizationsAdminParams{
+		StatusFilter: statusFilter, Q: filter.Q, ProvinceID: filter.ProvinceID,
+	})
+	if err != nil {
+		return nil, 0, err
 	}
 	out := make([]repository.AdminOrganization, 0, len(rows))
 	for _, row := range rows {
 		out = append(out, repository.AdminOrganization{
-			Organization: *mapOrg(row.ID, row.PublicID, row.TenantID, row.Code, row.NameEn, row.NameVi, row.LegalName, row.OrganizationType, row.TaxCode, row.Phone, row.Email, row.Website, row.LogoFileID, row.BannerFileID, row.Slug, row.Status, row.CreatedAt, row.UpdatedAt),
-			TenantStatus: entity.TenantStatus(row.TenantStatus),
-			BranchCount:  int(row.BranchCount),
+			Organization:       *mapOrg(row.ID, row.PublicID, row.TenantID, row.Code, row.NameEn, row.NameVi, row.LegalName, row.OrganizationType, row.TaxCode, row.Phone, row.Email, row.Website, row.LogoFileID, row.BannerFileID, row.Slug, row.Status, row.CreatedAt, row.UpdatedAt),
+			TenantStatus:       entity.TenantStatus(row.TenantStatus),
+			BranchCount:        int(row.BranchCount),
+			CourtCount:         int(row.CourtCount),
+			OwnerDisplayName:   row.OwnerDisplayName,
+			PrimarySportNameEn: row.PrimarySportNameEn,
+			PrimarySportNameVi: row.PrimarySportNameVi,
 		})
 	}
-	return out, nil
+	return out, int(total), nil
+}
+
+func (r *OrgRepo) Directory(ctx context.Context, orgID uuid.UUID) (repository.AdminDirectory, error) {
+	row, err := r.q.AdminOrganizationDirectory(ctx, orgID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return repository.AdminDirectory{}, nil
+		}
+		return repository.AdminDirectory{}, err
+	}
+	return repository.AdminDirectory{
+		CourtCount:         int(row.CourtCount),
+		OwnerDisplayName:   row.OwnerDisplayName,
+		PrimarySportNameEn: row.PrimarySportNameEn,
+		PrimarySportNameVi: row.PrimarySportNameVi,
+	}, nil
+}
+
+func (r *OrgRepo) DirectoryStats(ctx context.Context, q string, provinceID *uuid.UUID) (repository.AdminDirectoryStats, error) {
+	row, err := r.q.AdminOrganizationDirectoryStats(ctx, dbsqlc.AdminOrganizationDirectoryStatsParams{
+		Q: q, ProvinceID: provinceID,
+	})
+	if err != nil {
+		return repository.AdminDirectoryStats{}, err
+	}
+	return repository.AdminDirectoryStats{
+		Total: int(row.Total), Active: int(row.Active), Inactive: int(row.Inactive),
+		Suspended: int(row.Suspended), BranchTotal: int(row.BranchTotal),
+	}, nil
 }
 
 func (r *OrgRepo) CountBranches(ctx context.Context, orgID uuid.UUID) (int, error) {

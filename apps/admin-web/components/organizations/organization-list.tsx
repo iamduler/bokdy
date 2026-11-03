@@ -1,9 +1,9 @@
 "use client";
 
 import { Button, Card, CardContent } from "@bokdy/ui";
-import type { PaginationState, RowSelectionState, SortingState } from "@tanstack/react-table";
+import type { OnChangeFn, PaginationState, RowSelectionState, SortingState } from "@tanstack/react-table";
 import { useTranslations } from "next-intl";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import {
   DATA_LIST_PAGE_SIZE,
@@ -11,7 +11,6 @@ import {
   softDirectoryPrimaryBtn,
 } from "@/components/data-list";
 import { EntityAvatar } from "@/components/entity/avatar";
-import { EntityUnavailableBadge } from "@/components/entity/unavailable";
 import { useOrganizationColumns } from "@/components/organizations/organization-columns";
 import { OrganizationStatusBadge } from "@/components/organizations/organization-status-badge";
 import { Link } from "@/i18n/navigation";
@@ -19,6 +18,11 @@ import type { AdminOrganization } from "@/lib/api/admin";
 
 type OrganizationListProps = {
   orgs: AdminOrganization[];
+  total: number;
+  pageIndex: number;
+  sorting: SortingState;
+  onSortingChange: OnChangeFn<SortingState>;
+  onPaginationChange: OnChangeFn<PaginationState>;
   hasFilters: boolean;
   isLoading: boolean;
   isError: boolean;
@@ -29,6 +33,11 @@ type OrganizationListProps = {
 
 export function OrganizationList({
   orgs,
+  total,
+  pageIndex,
+  sorting,
+  onSortingChange,
+  onPaginationChange,
   hasFilters,
   isLoading,
   isError,
@@ -40,32 +49,7 @@ export function OrganizationList({
   const tc = useTranslations("common");
   const td = useTranslations("dataList");
   const columns = useOrganizationColumns();
-
-  const [sorting, setSorting] = useState<SortingState>([]);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
-  const [pagination, setPagination] = useState<PaginationState>({
-    pageIndex: 0,
-    pageSize: DATA_LIST_PAGE_SIZE,
-  });
-
-  const sortedForMobile = useMemo(() => {
-    const sort = sorting[0];
-    if (!sort) return orgs;
-    const dir = sort.desc ? -1 : 1;
-    return [...orgs].sort((a, b) => {
-      if (sort.id === "name") return a.name.localeCompare(b.name) * dir;
-      if (sort.id === "branches") {
-        return ((a.branch_count ?? 0) - (b.branch_count ?? 0)) * dir;
-      }
-      if (sort.id === "status") return a.status.localeCompare(b.status) * dir;
-      return 0;
-    });
-  }, [orgs, sorting]);
-
-  const pageOrgs = useMemo(() => {
-    const start = pagination.pageIndex * pagination.pageSize;
-    return sortedForMobile.slice(start, start + pagination.pageSize);
-  }, [sortedForMobile, pagination]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -74,12 +58,15 @@ export function OrganizationList({
         data={orgs}
         getRowId={(row) => row.id}
         sorting={sorting}
-        onSortingChange={setSorting}
+        onSortingChange={onSortingChange}
         rowSelection={rowSelection}
         onRowSelectionChange={setRowSelection}
-        pagination={pagination}
-        onPaginationChange={setPagination}
+        pagination={{ pageIndex, pageSize: DATA_LIST_PAGE_SIZE }}
+        onPaginationChange={onPaginationChange}
         pageSize={DATA_LIST_PAGE_SIZE}
+        manualPagination
+        manualSorting
+        rowCount={total}
         paginationLabels={{
           previous: td("previousPage"),
           next: td("nextPage"),
@@ -104,11 +91,13 @@ export function OrganizationList({
           ) : null
         }
         mobileList={
-          <div className="space-y-3 p-4">
-            {pageOrgs.map((org) => (
-              <OrganizationCard key={org.id} org={org} />
-            ))}
-          </div>
+          orgs.length === 0 ? undefined : (
+            <div className="space-y-3 p-4">
+              {orgs.map((org) => (
+                <OrganizationCard key={org.id} org={org} />
+              ))}
+            </div>
+          )
         }
       />
     </div>
@@ -126,7 +115,11 @@ function OrganizationCard({ org }: { org: AdminOrganization }) {
             <EntityAvatar name={org.name} size="sm" />
             <div className="min-w-0 flex-1">
               <p className="font-semibold text-foreground">{org.name}</p>
-              <p className="text-xs text-muted-foreground">{org.code}</p>
+              <p className="text-xs text-muted-foreground">
+                {org.code}
+                {" · "}
+                {org.owner_display_name || t("emptyValue")}
+              </p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -137,7 +130,12 @@ function OrganizationCard({ org }: { org: AdminOrganization }) {
             <span>
               {t("columns.branches")}: {org.branch_count ?? 0}
             </span>
-            <EntityUnavailableBadge label={t("unavailable")} />
+            <span>
+              {t("columns.courts")}: {org.court_count ?? 0}
+            </span>
+            <span>
+              {t("columns.sport")}: {org.primary_sport || t("emptyValue")}
+            </span>
           </div>
         </CardContent>
       </Card>

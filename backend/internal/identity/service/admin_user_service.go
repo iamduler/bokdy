@@ -6,10 +6,11 @@ import (
 	"strings"
 	"time"
 
-	identityerrors "bokdy/internal/identity/errors"
 	"bokdy/internal/identity/entity"
+	identityerrors "bokdy/internal/identity/errors"
 	"bokdy/internal/identity/repository"
 	"bokdy/internal/platform/apperr"
+	"bokdy/internal/platform/listpage"
 	"bokdy/internal/platform/persistence"
 
 	"github.com/google/uuid"
@@ -17,10 +18,19 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-const (
-	adminUserListDefault = 50
-	adminUserListMax     = 100
-)
+var adminUserSorts = []string{"created_at", "name", "status", "last_login"}
+
+type AdminUserListQuery struct {
+	Q              string
+	Status         *entity.UserStatus
+	EmailVerified  *bool
+	StaffRole      *string
+	OrganizationID *uuid.UUID
+	LimitRaw       string
+	OffsetRaw      string
+	Sort           string
+	Order          string
+}
 
 type AdminUserService struct {
 	pool     *pgxpool.Pool
@@ -44,42 +54,57 @@ func NewAdminUserService(
 	}
 }
 
-func (s *AdminUserService) normalizeLimit(limit int) int {
-	if limit <= 0 {
-		return adminUserListDefault
-	}
-	if limit > adminUserListMax {
-		return adminUserListMax
-	}
-	return limit
-}
-
-func (s *AdminUserService) listFilter(q string, status *entity.UserStatus, limit int) repository.AdminUserListFilter {
+func (s *AdminUserService) listFilter(query AdminUserListQuery, page listpage.Query) repository.AdminUserListFilter {
 	var st *string
-	if status != nil {
-		v := string(*status)
+	if query.Status != nil {
+		v := string(*query.Status)
 		st = &v
 	}
 	return repository.AdminUserListFilter{
-		Q: strings.TrimSpace(q), Status: st, Limit: s.normalizeLimit(limit),
+		Q: strings.TrimSpace(query.Q), Status: st, EmailVerified: query.EmailVerified,
+		StaffRole: query.StaffRole, OrganizationID: query.OrganizationID,
+		Limit: page.Limit, Offset: page.Offset, Sort: page.Sort, Desc: page.Desc,
 	}
 }
 
-func (s *AdminUserService) ListPlayers(ctx context.Context, q string, status *entity.UserStatus, emailVerified *bool, limit int) ([]repository.AdminUserRow, error) {
-	f := s.listFilter(q, status, limit)
-	f.EmailVerified = emailVerified
-	return s.admin.ListPlayers(ctx, f)
+func (s *AdminUserService) parseUserList(query AdminUserListQuery) (listpage.Query, error) {
+	return listpage.Parse(query.LimitRaw, query.OffsetRaw, query.Sort, query.Order, adminUserSorts, "created_at")
 }
 
-func (s *AdminUserService) ListOwners(ctx context.Context, q string, status *entity.UserStatus, staffRole *string, orgID *uuid.UUID, limit int) ([]repository.AdminOwnerRow, error) {
-	f := s.listFilter(q, status, limit)
-	f.StaffRole = staffRole
-	f.OrganizationID = orgID
-	return s.admin.ListOwners(ctx, f)
+func (s *AdminUserService) ListPlayers(ctx context.Context, query AdminUserListQuery) (listpage.Page[repository.AdminUserRow], error) {
+	page, err := s.parseUserList(query)
+	if err != nil {
+		return listpage.Page[repository.AdminUserRow]{}, err
+	}
+	rows, total, err := s.admin.ListPlayers(ctx, s.listFilter(query, page))
+	if err != nil {
+		return listpage.Page[repository.AdminUserRow]{}, err
+	}
+	return listpage.New(rows, total, page.Limit, page.Offset), nil
 }
 
-func (s *AdminUserService) ListAdmins(ctx context.Context, q string, status *entity.UserStatus, limit int) ([]repository.AdminUserRow, error) {
-	return s.admin.ListAdmins(ctx, s.listFilter(q, status, limit))
+func (s *AdminUserService) ListOwners(ctx context.Context, query AdminUserListQuery) (listpage.Page[repository.AdminOwnerRow], error) {
+	page, err := s.parseUserList(query)
+	if err != nil {
+		return listpage.Page[repository.AdminOwnerRow]{}, err
+	}
+	rows, total, err := s.admin.ListOwners(ctx, s.listFilter(query, page))
+	if err != nil {
+		return listpage.Page[repository.AdminOwnerRow]{}, err
+	}
+	return listpage.New(rows, total, page.Limit, page.Offset), nil
+}
+
+func (s *AdminUserService) ListAdmins(ctx context.Context, query AdminUserListQuery) (listpage.Page[repository.AdminUserRow], error) {
+	page, err := s.parseUserList(query)
+	if err != nil {
+		return listpage.Page[repository.AdminUserRow]{}, err
+	}
+	rows, total, err := s.admin.ListAdmins(ctx, s.listFilter(query, page))
+	if err != nil {
+		return listpage.Page[repository.AdminUserRow]{}, err
+	}
+	return listpage.New(rows, total, page.Limit, page.Offset), nil
 }
 
 func (s *AdminUserService) PlayerStats(ctx context.Context) (repository.AdminUserDirectoryStats, error) {
@@ -332,10 +357,10 @@ func (s *AdminUserService) ListActivity(ctx context.Context, userID uuid.UUID, l
 		return nil, err
 	}
 	if limit <= 0 {
-		limit = adminUserListDefault
+		limit = listpage.DefaultLimit
 	}
-	if limit > adminUserListMax {
-		limit = adminUserListMax
+	if limit > listpage.MaxLimit {
+		limit = listpage.MaxLimit
 	}
 	return s.admin.ListActivity(ctx, userID, limit)
 }

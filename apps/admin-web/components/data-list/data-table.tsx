@@ -69,6 +69,10 @@ type DataTableProps<TData> = {
   pagination: PaginationState;
   onPaginationChange: OnChangeFn<PaginationState>;
   pageSize?: number;
+  /** Server already returned one page. `rowCount` is the full total. */
+  manualPagination?: boolean;
+  manualSorting?: boolean;
+  rowCount?: number;
   paginationLabels: {
     previous: string;
     next: string;
@@ -109,6 +113,9 @@ export function DataTable<TData>({
   pagination,
   onPaginationChange,
   pageSize = 20,
+  manualPagination = false,
+  manualSorting = false,
+  rowCount,
   paginationLabels,
   isLoading,
   isError,
@@ -132,8 +139,11 @@ export function DataTable<TData>({
     onRowSelectionChange,
     onPaginationChange,
     getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    ...(manualSorting ? {} : { getSortedRowModel: getSortedRowModel() }),
+    ...(manualPagination ? {} : { getPaginationRowModel: getPaginationRowModel() }),
+    manualPagination,
+    manualSorting,
+    rowCount: manualPagination ? rowCount : undefined,
     getRowId: (row) => getRowId(row),
     enableRowSelection: true,
     enableColumnResizing,
@@ -291,7 +301,7 @@ export function DataTable<TData>({
         pageIndex={table.getState().pagination.pageIndex}
         pageCount={table.getPageCount()}
         pageSize={pageSize}
-        totalRows={data.length}
+        totalRows={manualPagination ? (rowCount ?? 0) : data.length}
         canPreviousPage={table.getCanPreviousPage()}
         canNextPage={table.getCanNextPage()}
         onPreviousPage={() => table.previousPage()}

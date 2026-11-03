@@ -614,7 +614,9 @@
       "paymentStatusLabels": {
         "paid": "Paid",
         "failed": "Failed"
-      }
+      },
+      "empty": "No subscription data",
+      "emptyHint": "Plan, usage, and invoices appear here when subscription billing is available."
     },
     "detailActivity": {
       "title": "Activity — {name}",
@@ -636,7 +638,9 @@
         "event3Detail": "By branch manager · District 1 branch",
         "event4": "Organization verified by admin",
         "event4Detail": "License and legal information verified"
-      }
+      },
+      "empty": "No activity yet",
+      "emptyHint": "Organization changes appear here when the audit feed is available."
     },
     "detailActions": {
       "title": "Actions — {name}",
@@ -1040,6 +1044,13 @@
       "roles": "Assigned roles",
       "loadError": "Could not load permissions.",
       "empty": "No roles assigned.",
+      "systemScope": "System",
+      "roleLabel": {
+        "system_admin": "System admin",
+        "org_owner": "Organization owner",
+        "org_staff": "Staff",
+        "player": "Player"
+      },
       "matrixPreview": "Permission matrix (preview)",
       "group": {
         "booking": "Booking"

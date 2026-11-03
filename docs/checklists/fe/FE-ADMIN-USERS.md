@@ -8,7 +8,7 @@ Phase: mvp UI scaffold + mvp API wiring
 
 Parent: [FE-ADMIN.md](FE-ADMIN.md). **Three separate directories** — do not combine player/owner/admin in one list.
 
-Mock fixture: `apps/admin-web/components/users/shared/user-detail-mock-data.ts`
+User detail no longer uses a mock fixture. MFA, spend, refunds, and transactions stay unavailable.
 
 ---
 
@@ -20,7 +20,7 @@ Mock fixture: `apps/admin-web/components/users/shared/user-detail-mock-data.ts`
 | Directory `/users/players` | done | done | List, filters, KPIs |
 | Directory `/users/owners` | done | done | Staff role column |
 | Directory `/users/admins` | done | done | |
-| Detail shells + tabs | done | partial | Lifecycle + sessions wired; risk/MFA N/A |
+| Detail shells + tabs | done | partial | Lifecycle + sessions + role list wired. MFA and spend stay unavailable. No mock risk score. |
 
 ---
 
@@ -96,10 +96,10 @@ Mock fixture: `apps/admin-web/components/users/shared/user-detail-mock-data.ts`
 
 | Done | ID | Maps | Tab | Players | Owners | Admins | Phase | Status |
 | :---: | --- | --- | --- | :---: | :---: | :---: | --- | --- |
-| [ ] | FE-ADMIN-USERS-TAB-OVR | F-ADMIN-USERS-19 | Overview | yes | yes | yes | mvp | partial — player summary mock |
+| [ ] | FE-ADMIN-USERS-TAB-OVR | F-ADMIN-USERS-19 | Overview | yes | yes | yes | mvp | partial — booking_count real; spend/refunds/MFA unavailable; no risk score |
 | [ ] | FE-ADMIN-USERS-TAB-SES | F-ADMIN-USERS-10..12 | Sessions | yes | yes | yes | mvp | partial — wired |
 | [ ] | FE-ADMIN-USERS-TAB-ORG | F-ADMIN-USERS-16 | Organizations | — | yes | — | post-mvp | partial — mock |
-| [ ] | FE-ADMIN-USERS-TAB-PER | F-ADMIN-USERS-17 | Permissions | — | yes | yes | post-mvp | partial — mock |
+| [ ] | FE-ADMIN-USERS-TAB-PER | F-ADMIN-USERS-17 | Permissions | — | yes | yes | post-mvp | partial — role list from API; no permission matrix |
 | [ ] | FE-ADMIN-USERS-TAB-ACT | F-ADMIN-USERS-18 | Activity | yes | yes | yes | post-mvp | partial — mock/wire |
 | [ ] | FE-ADMIN-USERS-TAB-SEC | F-ADMIN-USERS-20..22 | Security | yes | yes | yes | post-mvp | partial — reset pwd wired; MFA disabled |
 

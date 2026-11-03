@@ -15,6 +15,24 @@ type AdminListFilter struct {
 	Status     *entity.OrganizationStatus
 	ProvinceID *uuid.UUID
 	Limit      int
+	Offset     int
+	Sort       string
+	Desc       bool
+}
+
+type AdminDirectory struct {
+	CourtCount         int
+	OwnerDisplayName   string
+	PrimarySportNameEn string
+	PrimarySportNameVi string
+}
+
+type AdminDirectoryStats struct {
+	Total       int
+	Active      int
+	Inactive    int
+	Suspended   int
+	BranchTotal int
 }
 
 type OrganizationRepository interface {
@@ -25,7 +43,9 @@ type OrganizationRepository interface {
 	LockByID(ctx context.Context, tx pgx.Tx, id uuid.UUID) (*entity.Organization, error)
 	LockTenantByID(ctx context.Context, tx pgx.Tx, tenantID uuid.UUID) (*entity.Tenant, error)
 	ListByUser(ctx context.Context, userID uuid.UUID) ([]entity.Organization, error)
-	ListAdmin(ctx context.Context, filter AdminListFilter) ([]AdminOrganization, error)
+	ListAdmin(ctx context.Context, filter AdminListFilter) ([]AdminOrganization, int, error)
+	Directory(ctx context.Context, orgID uuid.UUID) (AdminDirectory, error)
+	DirectoryStats(ctx context.Context, q string, provinceID *uuid.UUID) (AdminDirectoryStats, error)
 	CountBranches(ctx context.Context, orgID uuid.UUID) (int, error)
 	Update(ctx context.Context, tx pgx.Tx, org *entity.Organization) error
 	UpdateStatus(ctx context.Context, tx pgx.Tx, orgID uuid.UUID, status entity.OrganizationStatus, at time.Time) error
@@ -65,7 +85,11 @@ type FormerWardRef struct {
 }
 
 type AdminOrganization struct {
-	Organization entity.Organization
-	TenantStatus entity.TenantStatus
-	BranchCount  int
+	Organization       entity.Organization
+	TenantStatus       entity.TenantStatus
+	BranchCount        int
+	CourtCount         int
+	OwnerDisplayName   string
+	PrimarySportNameEn string
+	PrimarySportNameVi string
 }

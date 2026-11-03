@@ -1,17 +1,25 @@
 import type { components } from "@bokdy/sdk/schema";
 
 import { apiGo } from "@/lib/api/client";
+import { appendListPageQuery, type ListPageParams } from "@/lib/api/list-page";
 
 export type AdminOrganization = components["schemas"]["AdminOrganization"];
+export type AdminOrganizationPage = components["schemas"]["AdminOrganizationPage"];
+export type AdminOrganizationDirectoryStats =
+  components["schemas"]["AdminOrganizationDirectoryStats"];
 
 export type OrgStatus = AdminOrganization["status"];
 export type TenantStatus = AdminOrganization["tenant_status"];
 
-export type AdminOrgListParams = {
+export type AdminOrgListParams = ListPageParams & {
   q?: string;
   status?: OrgStatus;
   province_id?: string;
-  limit?: number;
+};
+
+export type AdminOrgStatsParams = {
+  q?: string;
+  province_id?: string;
 };
 
 function buildQuery(params: AdminOrgListParams): string {
@@ -20,13 +28,24 @@ function buildQuery(params: AdminOrgListParams): string {
   if (q) qs.set("q", q);
   if (params.status) qs.set("status", params.status);
   if (params.province_id) qs.set("province_id", params.province_id);
-  if (params.limit != null) qs.set("limit", String(params.limit));
+  appendListPageQuery(qs, params);
   const s = qs.toString();
   return s ? `?${s}` : "";
 }
 
 export function listOrganizations(params: AdminOrgListParams = {}) {
-  return apiGo<AdminOrganization[]>(`admin/organizations${buildQuery(params)}`);
+  return apiGo<AdminOrganizationPage>(`admin/organizations${buildQuery(params)}`);
+}
+
+export function organizationDirectoryStats(params: AdminOrgStatsParams = {}) {
+  const qs = new URLSearchParams();
+  const q = params.q?.trim();
+  if (q) qs.set("q", q);
+  if (params.province_id) qs.set("province_id", params.province_id);
+  const s = qs.toString();
+  return apiGo<AdminOrganizationDirectoryStats>(
+    `admin/organizations/stats${s ? `?${s}` : ""}`,
+  );
 }
 
 export function getOrganization(id: string) {

@@ -57,6 +57,49 @@ func (q *Queries) CountAdminOwnersByStatus(ctx context.Context) (CountAdminOwner
 	return i, err
 }
 
+const countAdminOwnersList = `-- name: CountAdminOwnersList :one
+SELECT COUNT(DISTINCT u.id)::int AS total
+FROM identity.users u
+JOIN organization.staff_members sm ON sm.user_id = u.id
+JOIN organization.organizations o ON o.id = sm.organization_id
+LEFT JOIN identity.user_roles ur ON ur.user_id = u.id AND ur.tenant_id = o.tenant_id
+LEFT JOIN identity.roles r ON r.id = ur.role_id AND r.code IN ('org_owner', 'org_staff')
+LEFT JOIN identity.identities i ON i.user_id = u.id AND i.is_primary = true
+LEFT JOIN identity.user_profiles p ON p.user_id = u.id
+WHERE u.deleted_at IS NULL
+  AND u.is_system_admin = false
+  AND ($1::identity.user_status IS NULL OR u.status = $1)
+  AND ($2::text IS NULL OR COALESCE(r.code, 'org_staff') = $2)
+  AND ($3::uuid IS NULL OR sm.organization_id = $3)
+  AND (
+      $4::text IS NULL OR btrim($4::text) = ''
+      OR lower(COALESCE(i.email, '')) LIKE '%' || lower(btrim($4::text)) || '%'
+      OR lower(COALESCE(p.full_name, '')) LIKE '%' || lower(btrim($4::text)) || '%'
+      OR lower(COALESCE(p.display_name, '')) LIKE '%' || lower(btrim($4::text)) || '%'
+      OR lower(o.name_en) LIKE '%' || lower(btrim($4::text)) || '%'
+      OR lower(o.name_vi) LIKE '%' || lower(btrim($4::text)) || '%'
+  )
+`
+
+type CountAdminOwnersListParams struct {
+	StatusFilter         *IdentityUserStatus `json:"status_filter"`
+	StaffRoleFilter      *string             `json:"staff_role_filter"`
+	OrganizationIDFilter *uuid.UUID          `json:"organization_id_filter"`
+	Q                    *string             `json:"q"`
+}
+
+func (q *Queries) CountAdminOwnersList(ctx context.Context, arg CountAdminOwnersListParams) (int32, error) {
+	row := q.db.QueryRow(ctx, countAdminOwnersList,
+		arg.StatusFilter,
+		arg.StaffRoleFilter,
+		arg.OrganizationIDFilter,
+		arg.Q,
+	)
+	var total int32
+	err := row.Scan(&total)
+	return total, err
+}
+
 const countAdminPlayers = `-- name: CountAdminPlayers :one
 SELECT COUNT(*)::int AS count
 FROM identity.users u
@@ -111,6 +154,44 @@ func (q *Queries) CountAdminPlayersByStatus(ctx context.Context) (CountAdminPlay
 	return i, err
 }
 
+const countAdminPlayersList = `-- name: CountAdminPlayersList :one
+SELECT COUNT(*)::int AS total
+FROM identity.users u
+LEFT JOIN identity.identities i ON i.user_id = u.id AND i.is_primary = true
+LEFT JOIN identity.user_profiles p ON p.user_id = u.id
+WHERE u.deleted_at IS NULL
+  AND u.is_system_admin = false
+  AND NOT EXISTS (
+      SELECT 1 FROM organization.staff_members sm
+      WHERE sm.user_id = u.id AND sm.status = 'active'
+  )
+  AND ($1::identity.user_status IS NULL OR u.status = $1)
+  AND (
+      $2::boolean IS NULL
+      OR ($2 = true AND u.email_verified_at IS NOT NULL)
+      OR ($2 = false AND u.email_verified_at IS NULL)
+  )
+  AND (
+      $3::text IS NULL OR btrim($3::text) = ''
+      OR lower(COALESCE(i.email, '')) LIKE '%' || lower(btrim($3::text)) || '%'
+      OR lower(COALESCE(p.full_name, '')) LIKE '%' || lower(btrim($3::text)) || '%'
+      OR lower(COALESCE(p.display_name, '')) LIKE '%' || lower(btrim($3::text)) || '%'
+  )
+`
+
+type CountAdminPlayersListParams struct {
+	StatusFilter        *IdentityUserStatus `json:"status_filter"`
+	EmailVerifiedFilter *bool               `json:"email_verified_filter"`
+	Q                   *string             `json:"q"`
+}
+
+func (q *Queries) CountAdminPlayersList(ctx context.Context, arg CountAdminPlayersListParams) (int32, error) {
+	row := q.db.QueryRow(ctx, countAdminPlayersList, arg.StatusFilter, arg.EmailVerifiedFilter, arg.Q)
+	var total int32
+	err := row.Scan(&total)
+	return total, err
+}
+
 const countAdminSystemUsers = `-- name: CountAdminSystemUsers :one
 SELECT COUNT(*)::int AS count
 FROM identity.users u
@@ -151,6 +232,34 @@ func (q *Queries) CountAdminSystemUsersByStatus(ctx context.Context) (CountAdmin
 		&i.NewThisWeek,
 	)
 	return i, err
+}
+
+const countAdminSystemUsersList = `-- name: CountAdminSystemUsersList :one
+SELECT COUNT(*)::int AS total
+FROM identity.users u
+LEFT JOIN identity.identities i ON i.user_id = u.id AND i.is_primary = true
+LEFT JOIN identity.user_profiles p ON p.user_id = u.id
+WHERE u.deleted_at IS NULL
+  AND u.is_system_admin = true
+  AND ($1::identity.user_status IS NULL OR u.status = $1)
+  AND (
+      $2::text IS NULL OR btrim($2::text) = ''
+      OR lower(COALESCE(i.email, '')) LIKE '%' || lower(btrim($2::text)) || '%'
+      OR lower(COALESCE(p.full_name, '')) LIKE '%' || lower(btrim($2::text)) || '%'
+      OR lower(COALESCE(p.display_name, '')) LIKE '%' || lower(btrim($2::text)) || '%'
+  )
+`
+
+type CountAdminSystemUsersListParams struct {
+	StatusFilter *IdentityUserStatus `json:"status_filter"`
+	Q            *string             `json:"q"`
+}
+
+func (q *Queries) CountAdminSystemUsersList(ctx context.Context, arg CountAdminSystemUsersListParams) (int32, error) {
+	row := q.db.QueryRow(ctx, countAdminSystemUsersList, arg.StatusFilter, arg.Q)
+	var total int32
+	err := row.Scan(&total)
+	return total, err
 }
 
 const countBookingsByUser = `-- name: CountBookingsByUser :one
@@ -283,6 +392,8 @@ func (q *Queries) HasActiveStaffMembership(ctx context.Context, userID uuid.UUID
 }
 
 const listAdminOwners = `-- name: ListAdminOwners :many
+SELECT id, public_id, status, is_system_admin, last_login_at, email_verified_at, phone_verified_at, created_at, updated_at, email, display_name, full_name, phone, staff_role, staff_title, staff_status, primary_org_id, primary_org_code, primary_org_name_en, primary_org_name_vi
+FROM (
 SELECT DISTINCT ON (u.id)
     u.id,
     u.public_id,
@@ -325,7 +436,21 @@ WHERE u.deleted_at IS NULL
       OR lower(o.name_vi) LIKE '%' || lower(btrim($4::text)) || '%'
   )
 ORDER BY u.id, sm.created_at ASC
-LIMIT $5
+) owners
+ORDER BY
+  CASE WHEN $5::text = 'name' AND NOT $6::bool
+    THEN lower(COALESCE(NULLIF(owners.display_name, ''), NULLIF(owners.full_name, ''), owners.email, '')) END ASC,
+  CASE WHEN $5::text = 'name' AND $6::bool
+    THEN lower(COALESCE(NULLIF(owners.display_name, ''), NULLIF(owners.full_name, ''), owners.email, '')) END DESC,
+  CASE WHEN $5::text = 'status' AND NOT $6::bool THEN owners.status::text END ASC,
+  CASE WHEN $5::text = 'status' AND $6::bool THEN owners.status::text END DESC,
+  CASE WHEN $5::text = 'last_login' AND NOT $6::bool THEN owners.last_login_at END ASC,
+  CASE WHEN $5::text = 'last_login' AND $6::bool THEN owners.last_login_at END DESC,
+  CASE WHEN $5::text = 'created_at' AND NOT $6::bool THEN owners.created_at END ASC,
+  CASE WHEN $5::text = 'created_at' AND $6::bool THEN owners.created_at END DESC,
+  owners.id DESC
+OFFSET $7
+LIMIT $8
 `
 
 type ListAdminOwnersParams struct {
@@ -333,6 +458,9 @@ type ListAdminOwnersParams struct {
 	StaffRoleFilter      *string             `json:"staff_role_filter"`
 	OrganizationIDFilter *uuid.UUID          `json:"organization_id_filter"`
 	Q                    *string             `json:"q"`
+	SortKey              string              `json:"sort_key"`
+	SortDesc             bool                `json:"sort_desc"`
+	RowOffset            int32               `json:"row_offset"`
 	RowLimit             int32               `json:"row_limit"`
 }
 
@@ -365,6 +493,9 @@ func (q *Queries) ListAdminOwners(ctx context.Context, arg ListAdminOwnersParams
 		arg.StaffRoleFilter,
 		arg.OrganizationIDFilter,
 		arg.Q,
+		arg.SortKey,
+		arg.SortDesc,
+		arg.RowOffset,
 		arg.RowLimit,
 	)
 	if err != nil {
@@ -442,14 +573,29 @@ WHERE u.deleted_at IS NULL
       OR lower(COALESCE(p.full_name, '')) LIKE '%' || lower(btrim($3::text)) || '%'
       OR lower(COALESCE(p.display_name, '')) LIKE '%' || lower(btrim($3::text)) || '%'
   )
-ORDER BY u.created_at DESC
-LIMIT $4
+ORDER BY
+  CASE WHEN $4::text = 'name' AND NOT $5::bool
+    THEN lower(COALESCE(NULLIF(p.display_name, ''), NULLIF(p.full_name, ''), i.email, '')) END ASC,
+  CASE WHEN $4::text = 'name' AND $5::bool
+    THEN lower(COALESCE(NULLIF(p.display_name, ''), NULLIF(p.full_name, ''), i.email, '')) END DESC,
+  CASE WHEN $4::text = 'status' AND NOT $5::bool THEN u.status::text END ASC,
+  CASE WHEN $4::text = 'status' AND $5::bool THEN u.status::text END DESC,
+  CASE WHEN $4::text = 'last_login' AND NOT $5::bool THEN u.last_login_at END ASC,
+  CASE WHEN $4::text = 'last_login' AND $5::bool THEN u.last_login_at END DESC,
+  CASE WHEN $4::text = 'created_at' AND NOT $5::bool THEN u.created_at END ASC,
+  CASE WHEN $4::text = 'created_at' AND $5::bool THEN u.created_at END DESC,
+  u.id DESC
+OFFSET $6
+LIMIT $7
 `
 
 type ListAdminPlayersParams struct {
 	StatusFilter        *IdentityUserStatus `json:"status_filter"`
 	EmailVerifiedFilter *bool               `json:"email_verified_filter"`
 	Q                   *string             `json:"q"`
+	SortKey             string              `json:"sort_key"`
+	SortDesc            bool                `json:"sort_desc"`
+	RowOffset           int32               `json:"row_offset"`
 	RowLimit            int32               `json:"row_limit"`
 }
 
@@ -474,6 +620,9 @@ func (q *Queries) ListAdminPlayers(ctx context.Context, arg ListAdminPlayersPara
 		arg.StatusFilter,
 		arg.EmailVerifiedFilter,
 		arg.Q,
+		arg.SortKey,
+		arg.SortDesc,
+		arg.RowOffset,
 		arg.RowLimit,
 	)
 	if err != nil {
@@ -535,13 +684,28 @@ WHERE u.deleted_at IS NULL
       OR lower(COALESCE(p.full_name, '')) LIKE '%' || lower(btrim($2::text)) || '%'
       OR lower(COALESCE(p.display_name, '')) LIKE '%' || lower(btrim($2::text)) || '%'
   )
-ORDER BY u.created_at DESC
-LIMIT $3
+ORDER BY
+  CASE WHEN $3::text = 'name' AND NOT $4::bool
+    THEN lower(COALESCE(NULLIF(p.display_name, ''), NULLIF(p.full_name, ''), i.email, '')) END ASC,
+  CASE WHEN $3::text = 'name' AND $4::bool
+    THEN lower(COALESCE(NULLIF(p.display_name, ''), NULLIF(p.full_name, ''), i.email, '')) END DESC,
+  CASE WHEN $3::text = 'status' AND NOT $4::bool THEN u.status::text END ASC,
+  CASE WHEN $3::text = 'status' AND $4::bool THEN u.status::text END DESC,
+  CASE WHEN $3::text = 'last_login' AND NOT $4::bool THEN u.last_login_at END ASC,
+  CASE WHEN $3::text = 'last_login' AND $4::bool THEN u.last_login_at END DESC,
+  CASE WHEN $3::text = 'created_at' AND NOT $4::bool THEN u.created_at END ASC,
+  CASE WHEN $3::text = 'created_at' AND $4::bool THEN u.created_at END DESC,
+  u.id DESC
+OFFSET $5
+LIMIT $6
 `
 
 type ListAdminSystemUsersParams struct {
 	StatusFilter *IdentityUserStatus `json:"status_filter"`
 	Q            *string             `json:"q"`
+	SortKey      string              `json:"sort_key"`
+	SortDesc     bool                `json:"sort_desc"`
+	RowOffset    int32               `json:"row_offset"`
 	RowLimit     int32               `json:"row_limit"`
 }
 
@@ -562,7 +726,14 @@ type ListAdminSystemUsersRow struct {
 }
 
 func (q *Queries) ListAdminSystemUsers(ctx context.Context, arg ListAdminSystemUsersParams) ([]ListAdminSystemUsersRow, error) {
-	rows, err := q.db.Query(ctx, listAdminSystemUsers, arg.StatusFilter, arg.Q, arg.RowLimit)
+	rows, err := q.db.Query(ctx, listAdminSystemUsers,
+		arg.StatusFilter,
+		arg.Q,
+		arg.SortKey,
+		arg.SortDesc,
+		arg.RowOffset,
+		arg.RowLimit,
+	)
 	if err != nil {
 		return nil, err
 	}

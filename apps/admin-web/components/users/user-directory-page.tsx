@@ -1,15 +1,23 @@
 "use client";
 
+import type { OnChangeFn, PaginationState, SortingState } from "@tanstack/react-table";
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useState } from "react";
 
+import { DATA_LIST_PAGE_SIZE } from "@/components/data-list";
 import { usePageShellTitle } from "@/components/shell/shell-title";
 import { UserDirectoryToolbar } from "@/components/users/user-directory-toolbar";
 import { UserList } from "@/components/users/shared/user-list";
 import { useAdminUserList, useAdminUserStats } from "@/hooks/use-admin-users";
 import { useRouter } from "@/i18n/navigation";
 import type { UserAudience, UserStatus } from "@/lib/api/admin-users";
+import {
+  applySearchUpdates,
+  queryFromSorting,
+  readListPage,
+  sortingFromQuery,
+} from "@/lib/api/list-page";
 
 const USER_STATUSES = new Set<UserStatus>([
   "active",
@@ -22,6 +30,20 @@ function parseStatus(raw: string | null): UserStatus | "" {
   if (!raw) return "";
   return USER_STATUSES.has(raw as UserStatus) ? (raw as UserStatus) : "";
 }
+
+const USER_SORTS = new Set(["created_at", "name", "status", "last_login"]);
+
+const USER_SORT_BY_COLUMN: Record<string, string> = {
+  user: "name",
+  status: "status",
+  last_login: "last_login",
+};
+
+const USER_COLUMN_BY_SORT: Record<string, string> = {
+  name: "user",
+  status: "status",
+  last_login: "last_login",
+};
 
 const PAGE_TITLE_KEY: Record<
   UserAudience,
@@ -53,13 +75,8 @@ function UserDirectoryPageContent({ audience }: { audience: UserAudience }) {
   }, [q]);
 
   const replaceParams = useCallback(
-    (updates: Record<string, string | undefined>) => {
-      const params = new URLSearchParams(searchParams.toString());
-      for (const [key, value] of Object.entries(updates)) {
-        if (value) params.set(key, value);
-        else params.delete(key);
-      }
-      const qs = params.toString();
+    (updates: Record<string, string | undefined>, resetOffset = true) => {
+      const qs = applySearchUpdates(searchParams, updates, resetOffset);
       router.replace(qs ? `/users/${audience}?${qs}` : `/users/${audience}`);
     },
     [audience, router, searchParams],
@@ -74,6 +91,11 @@ function UserDirectoryPageContent({ audience }: { audience: UserAudience }) {
     return () => window.clearTimeout(timer);
   }, [search, q, replaceParams]);
 
+  const page = readListPage(searchParams, DATA_LIST_PAGE_SIZE);
+  const sort = USER_SORTS.has(page.sort) ? page.sort : undefined;
+  const order = sort ? (page.order ?? "desc") : undefined;
+  const sorting = sortingFromQuery(sort ?? "", order, USER_COLUMN_BY_SORT);
+
   const listParams = {
     q: q.trim() || undefined,
     status: status || undefined,
@@ -84,7 +106,10 @@ function UserDirectoryPageContent({ audience }: { audience: UserAudience }) {
           ? false
           : undefined,
     staff_role: staffRole || undefined,
-    limit: 50,
+    limit: DATA_LIST_PAGE_SIZE,
+    offset: page.offset,
+    sort,
+    order,
   };
 
   const hasFilters = Boolean(q.trim() || status || emailVerifiedRaw || staffRole);
@@ -94,7 +119,23 @@ function UserDirectoryPageContent({ audience }: { audience: UserAudience }) {
     listParams,
   );
   const statsQuery = useAdminUserStats(audience);
-  const users = data ?? [];
+  const users = data?.items ?? [];
+  const total = data?.total ?? 0;
+
+  const onSortingChange: OnChangeFn<SortingState> = (updater) => {
+    const next = typeof updater === "function" ? updater(sorting) : updater;
+    const query = queryFromSorting(next, USER_SORT_BY_COLUMN);
+    replaceParams({ sort: query.sort, order: query.order }, true);
+  };
+
+  const onPaginationChange: OnChangeFn<PaginationState> = (updater) => {
+    const next =
+      typeof updater === "function"
+        ? updater({ pageIndex: page.pageIndex, pageSize: DATA_LIST_PAGE_SIZE })
+        : updater;
+    const offset = next.pageIndex * DATA_LIST_PAGE_SIZE;
+    replaceParams({ offset: offset > 0 ? String(offset) : undefined }, false);
+  };
 
   return (
     <div className="flex min-h-full flex-col overflow-hidden">
@@ -112,6 +153,11 @@ function UserDirectoryPageContent({ audience }: { audience: UserAudience }) {
         <UserList
           audience={audience}
           users={users}
+          total={total}
+          pageIndex={page.pageIndex}
+          sorting={sorting}
+          onSortingChange={onSortingChange}
+          onPaginationChange={onPaginationChange}
           hasFilters={hasFilters}
           isLoading={isLoading}
           isError={isError}

@@ -19,8 +19,8 @@ This file tracks **additional** admin org APIs needed for Figma OrgDirectory dir
 | — | F-ADMIN-ORG-01 | Filter by plan | UC-SUBSCRIPTION-002 | post-mvp | admin | TBD `?plan=` | — | deferred | → [F-SUBSCRIPTION.md](../post-mvp/F-SUBSCRIPTION.md) |
 | — | F-ADMIN-ORG-02 | Export organizations CSV | — | post-mvp | admin | TBD export endpoint | — | deferred | |
 | — | F-ADMIN-ORG-03 | Bulk lifecycle / assign | — | post-mvp | admin | TBD batch endpoints | — | deferred | |
-| — | F-ADMIN-ORG-04 | List aggregate columns | — | post-mvp | admin | extend list response or `GET …/directory-stats` | — | ready | sport, courts, plan, revenue, health, risk, owner |
-| — | F-ADMIN-ORG-05 | Cursor pagination | — | mvp | admin | extend list `cursor` / `offset` | — | ready | Today: `limit` 1–100 only. |
+| — | F-ADMIN-ORG-04 | List aggregate columns | — | post-mvp | admin | list fields + `GET …/organizations/stats` | — | partial | Owner, `court_count`, `primary_sport` on list and get. Plan, revenue, health, risk still deferred. |
+| [x] | F-ADMIN-ORG-05 | Offset pagination | — | mvp | admin | list `{items,total,limit,offset}` | — | done | Offset + total and sort allowlist. Same page on the three user lists. Admin UI page size 20. |
 
 ---
 

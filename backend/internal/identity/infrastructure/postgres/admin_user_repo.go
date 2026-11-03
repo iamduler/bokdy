@@ -24,15 +24,25 @@ func NewAdminUserRepo(pool *pgxpool.Pool) *AdminUserRepo {
 
 var _ repository.AdminUserRepository = (*AdminUserRepo)(nil)
 
-func (r *AdminUserRepo) ListPlayers(ctx context.Context, filter repository.AdminUserListFilter) ([]repository.AdminUserRow, error) {
-	rows, err := r.q.ListAdminPlayers(ctx, dbsqlc.ListAdminPlayersParams{
-		StatusFilter:       statusFilter(filter.Status),
+func (r *AdminUserRepo) ListPlayers(ctx context.Context, filter repository.AdminUserListFilter) ([]repository.AdminUserRow, int, error) {
+	params := dbsqlc.ListAdminPlayersParams{
+		StatusFilter:        statusFilter(filter.Status),
 		EmailVerifiedFilter: emailVerifiedFilter(filter.EmailVerified),
-		Q:                  qFilter(filter.Q),
-		RowLimit:           int32(filter.Limit),
+		Q:                   qFilter(filter.Q),
+		SortKey:             filter.Sort,
+		SortDesc:            filter.Desc,
+		RowOffset:           int32(filter.Offset),
+		RowLimit:            int32(filter.Limit),
+	}
+	rows, err := r.q.ListAdminPlayers(ctx, params)
+	if err != nil {
+		return nil, 0, err
+	}
+	total, err := r.q.CountAdminPlayersList(ctx, dbsqlc.CountAdminPlayersListParams{
+		StatusFilter: params.StatusFilter, EmailVerifiedFilter: params.EmailVerifiedFilter, Q: params.Q,
 	})
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	out := make([]repository.AdminUserRow, 0, len(rows))
 	for _, row := range rows {
@@ -40,19 +50,30 @@ func (r *AdminUserRepo) ListPlayers(ctx context.Context, filter repository.Admin
 			row.LastLoginAt, row.EmailVerifiedAt, row.PhoneVerifiedAt, row.CreatedAt,
 			row.Email, row.DisplayName, row.FullName, row.Phone))
 	}
-	return out, nil
+	return out, int(total), nil
 }
 
-func (r *AdminUserRepo) ListOwners(ctx context.Context, filter repository.AdminUserListFilter) ([]repository.AdminOwnerRow, error) {
-	rows, err := r.q.ListAdminOwners(ctx, dbsqlc.ListAdminOwnersParams{
+func (r *AdminUserRepo) ListOwners(ctx context.Context, filter repository.AdminUserListFilter) ([]repository.AdminOwnerRow, int, error) {
+	params := dbsqlc.ListAdminOwnersParams{
 		StatusFilter:         statusFilter(filter.Status),
 		StaffRoleFilter:      staffRoleFilter(filter.StaffRole),
 		OrganizationIDFilter: filter.OrganizationID,
 		Q:                    qFilter(filter.Q),
+		SortKey:              filter.Sort,
+		SortDesc:             filter.Desc,
+		RowOffset:            int32(filter.Offset),
 		RowLimit:             int32(filter.Limit),
+	}
+	rows, err := r.q.ListAdminOwners(ctx, params)
+	if err != nil {
+		return nil, 0, err
+	}
+	total, err := r.q.CountAdminOwnersList(ctx, dbsqlc.CountAdminOwnersListParams{
+		StatusFilter: params.StatusFilter, StaffRoleFilter: params.StaffRoleFilter,
+		OrganizationIDFilter: params.OrganizationIDFilter, Q: params.Q,
 	})
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	out := make([]repository.AdminOwnerRow, 0, len(rows))
 	for _, row := range rows {
@@ -70,17 +91,27 @@ func (r *AdminUserRepo) ListOwners(ctx context.Context, filter repository.AdminU
 			PrimaryOrgNameVi: derefStr(row.PrimaryOrgNameVi),
 		})
 	}
-	return out, nil
+	return out, int(total), nil
 }
 
-func (r *AdminUserRepo) ListAdmins(ctx context.Context, filter repository.AdminUserListFilter) ([]repository.AdminUserRow, error) {
-	rows, err := r.q.ListAdminSystemUsers(ctx, dbsqlc.ListAdminSystemUsersParams{
+func (r *AdminUserRepo) ListAdmins(ctx context.Context, filter repository.AdminUserListFilter) ([]repository.AdminUserRow, int, error) {
+	params := dbsqlc.ListAdminSystemUsersParams{
 		StatusFilter: statusFilter(filter.Status),
 		Q:            qFilter(filter.Q),
+		SortKey:      filter.Sort,
+		SortDesc:     filter.Desc,
+		RowOffset:    int32(filter.Offset),
 		RowLimit:     int32(filter.Limit),
+	}
+	rows, err := r.q.ListAdminSystemUsers(ctx, params)
+	if err != nil {
+		return nil, 0, err
+	}
+	total, err := r.q.CountAdminSystemUsersList(ctx, dbsqlc.CountAdminSystemUsersListParams{
+		StatusFilter: params.StatusFilter, Q: params.Q,
 	})
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	out := make([]repository.AdminUserRow, 0, len(rows))
 	for _, row := range rows {
@@ -88,7 +119,7 @@ func (r *AdminUserRepo) ListAdmins(ctx context.Context, filter repository.AdminU
 			row.LastLoginAt, row.EmailVerifiedAt, row.PhoneVerifiedAt, row.CreatedAt,
 			row.Email, row.DisplayName, row.FullName, row.Phone))
 	}
-	return out, nil
+	return out, int(total), nil
 }
 
 func (r *AdminUserRepo) GetByID(ctx context.Context, id uuid.UUID) (*repository.AdminUserRow, error) {

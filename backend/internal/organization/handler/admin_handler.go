@@ -1,13 +1,14 @@
 package handler
 
 import (
-	"strconv"
 	"strings"
 
 	"bokdy/internal/organization/entity"
 	"bokdy/internal/organization/service"
 	"bokdy/internal/platform/apperr"
 	"bokdy/internal/platform/httpx"
+	"bokdy/internal/platform/i18n"
+	"bokdy/internal/platform/listpage"
 	"bokdy/internal/platform/requestctx"
 
 	"github.com/gin-gonic/gin"
@@ -20,13 +21,25 @@ type suspendOrgRequest struct {
 
 type adminOrgDTO struct {
 	orgDTO
-	TenantStatus string `json:"tenant_status"`
-	BranchCount  int    `json:"branch_count"`
+	TenantStatus     string  `json:"tenant_status"`
+	BranchCount      int     `json:"branch_count"`
+	CourtCount       int     `json:"court_count"`
+	OwnerDisplayName *string `json:"owner_display_name"`
+	PrimarySport     *string `json:"primary_sport"`
+}
+
+type adminDirectoryStatsDTO struct {
+	Total       int `json:"total"`
+	Active      int `json:"active"`
+	Inactive    int `json:"inactive"`
+	Suspended   int `json:"suspended"`
+	BranchTotal int `json:"branch_total"`
 }
 
 func (h *OrganizationHandler) RegisterAdminRoutes(admin *gin.RouterGroup) {
 	admin.GET("/health", h.AdminHealth)
 	admin.GET("/organizations", h.AdminList)
+	admin.GET("/organizations/stats", h.AdminDirectoryStats)
 	admin.GET("/organizations/:id", h.AdminGet)
 	admin.POST("/organizations/:id/activate", h.AdminActivate)
 	admin.POST("/organizations/:id/suspend", h.AdminSuspend)
@@ -38,37 +51,52 @@ func (h *OrganizationHandler) AdminHealth(c *gin.Context) {
 }
 
 func (h *OrganizationHandler) AdminList(c *gin.Context) {
-	filter := service.AdminListFilter{Q: strings.TrimSpace(c.Query("q")), Limit: parseAdminLimit(c)}
+	query := service.AdminListQuery{
+		Q:         strings.TrimSpace(c.Query("q")),
+		LimitRaw:  c.Query("limit"),
+		OffsetRaw: c.Query("offset"),
+		Sort:      c.Query("sort"),
+		Order:     c.Query("order"),
+	}
 	if raw := c.Query("status"); raw != "" {
 		status, ok := entity.ParseOrganizationStatus(raw)
 		if !ok {
 			httpx.Fail(c, apperr.CodeValidation, "invalid status")
 			return
 		}
-		filter.Status = &status
+		query.Status = &status
 	}
-	if raw := strings.TrimSpace(c.Query("province_id")); raw != "" {
-		provinceID, err := uuid.Parse(raw)
-		if err != nil {
-			httpx.Fail(c, apperr.CodeValidation, "invalid province_id")
-			return
-		}
-		filter.ProvinceID = &provinceID
+	provinceID, ok := parseProvinceID(c)
+	if !ok {
+		return
 	}
-	items, err := h.orgs.AdminList(c.Request.Context(), filter)
+	query.ProvinceID = provinceID
+	page, err := h.orgs.AdminList(c.Request.Context(), query)
 	if err != nil {
 		httpx.Error(c, err)
 		return
 	}
-	out := make([]adminOrgDTO, 0, len(items))
-	for i := range items {
-		out = append(out, adminOrgDTO{
-			orgDTO:       toOrgDTO(c.Request.Context(), items[i].Organization),
-			TenantStatus: string(items[i].TenantStatus),
-			BranchCount:  items[i].BranchCount,
-		})
+	out := make([]adminOrgDTO, 0, len(page.Items))
+	for i := range page.Items {
+		out = append(out, toAdminListOrgDTO(c, page.Items[i]))
 	}
-	httpx.OK(c, out)
+	httpx.OK(c, listpage.New(out, page.Total, page.Limit, page.Offset))
+}
+
+func (h *OrganizationHandler) AdminDirectoryStats(c *gin.Context) {
+	provinceID, ok := parseProvinceID(c)
+	if !ok {
+		return
+	}
+	stats, err := h.orgs.AdminDirectoryStats(c.Request.Context(), c.Query("q"), provinceID)
+	if err != nil {
+		httpx.Error(c, err)
+		return
+	}
+	httpx.OK(c, adminDirectoryStatsDTO{
+		Total: stats.Total, Active: stats.Active, Inactive: stats.Inactive,
+		Suspended: stats.Suspended, BranchTotal: stats.BranchTotal,
+	})
 }
 
 func (h *OrganizationHandler) AdminGet(c *gin.Context) {
@@ -169,16 +197,17 @@ func adminUserAndOrg(c *gin.Context) (uuid.UUID, uuid.UUID, bool) {
 	return uid, orgID, true
 }
 
-func parseAdminLimit(c *gin.Context) int {
-	raw := c.Query("limit")
+func parseProvinceID(c *gin.Context) (*uuid.UUID, bool) {
+	raw := strings.TrimSpace(c.Query("province_id"))
 	if raw == "" {
-		return 0
+		return nil, true
 	}
-	limit, err := strconv.Atoi(raw)
+	provinceID, err := uuid.Parse(raw)
 	if err != nil {
-		return 0
+		httpx.Fail(c, apperr.CodeValidation, "invalid province_id")
+		return nil, false
 	}
-	return limit
+	return &provinceID, true
 }
 
 func (h *OrganizationHandler) toAdminOrgDTO(c *gin.Context, row service.AdminOrganization) (adminOrgDTO, error) {
@@ -186,9 +215,32 @@ func (h *OrganizationHandler) toAdminOrgDTO(c *gin.Context, row service.AdminOrg
 	if err != nil {
 		return adminOrgDTO{}, err
 	}
-	return adminOrgDTO{
+	return applyDirectory(c, adminOrgDTO{
 		orgDTO:       dto,
 		TenantStatus: string(row.TenantStatus),
 		BranchCount:  row.BranchCount,
-	}, nil
+	}, row), nil
+}
+
+func toAdminListOrgDTO(c *gin.Context, row service.AdminOrganization) adminOrgDTO {
+	return applyDirectory(c, adminOrgDTO{
+		orgDTO:       toOrgDTO(c.Request.Context(), row.Organization),
+		TenantStatus: string(row.TenantStatus),
+		BranchCount:  row.BranchCount,
+	}, row)
+}
+
+func applyDirectory(c *gin.Context, dto adminOrgDTO, row service.AdminOrganization) adminOrgDTO {
+	dto.CourtCount = row.CourtCount
+	dto.OwnerDisplayName = optionalText(row.OwnerDisplayName)
+	dto.PrimarySport = optionalText(i18n.DisplayName(i18n.FromContext(c.Request.Context()), row.PrimarySportNameEn, row.PrimarySportNameVi))
+	return dto
+}
+
+func optionalText(value string) *string {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return nil
+	}
+	return &value
 }

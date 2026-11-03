@@ -11,28 +11,41 @@ import (
 	"bokdy/internal/organization/repository"
 	"bokdy/internal/platform/apperr"
 	"bokdy/internal/platform/events"
+	"bokdy/internal/platform/listpage"
 	"bokdy/internal/platform/persistence"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 )
 
-const (
-	adminListDefault = 50
-	adminListMax     = 100
-)
+var organizationSorts = []string{"created_at", "name", "status", "branch_count", "court_count"}
 
 type AdminOrganization struct {
-	Organization *entity.Organization
-	TenantStatus entity.TenantStatus
-	BranchCount  int
+	Organization       *entity.Organization
+	TenantStatus       entity.TenantStatus
+	BranchCount        int
+	CourtCount         int
+	OwnerDisplayName   string
+	PrimarySportNameEn string
+	PrimarySportNameVi string
 }
 
-type AdminListFilter struct {
+type AdminListQuery struct {
 	Q          string
 	Status     *entity.OrganizationStatus
 	ProvinceID *uuid.UUID
-	Limit      int
+	LimitRaw   string
+	OffsetRaw  string
+	Sort       string
+	Order      string
+}
+
+type AdminDirectoryStats struct {
+	Total       int
+	Active      int
+	Inactive    int
+	Suspended   int
+	BranchTotal int
 }
 
 func (s *OrganizationService) AssertOperable(ctx context.Context, orgID uuid.UUID) error {
@@ -71,30 +84,40 @@ func (s *OrganizationService) assertPairOperable(ctx context.Context, org *entit
 	return nil
 }
 
-func (s *OrganizationService) AdminList(ctx context.Context, filter AdminListFilter) ([]AdminOrganization, error) {
-	limit := filter.Limit
-	if limit <= 0 {
-		limit = adminListDefault
+func (s *OrganizationService) AdminList(ctx context.Context, query AdminListQuery) (listpage.Page[AdminOrganization], error) {
+	page, err := listpage.Parse(query.LimitRaw, query.OffsetRaw, query.Sort, query.Order, organizationSorts, "created_at")
+	if err != nil {
+		return listpage.Page[AdminOrganization]{}, err
 	}
-	if limit > adminListMax {
-		limit = adminListMax
-	}
-	rows, err := s.orgs.ListAdmin(ctx, repository.AdminListFilter{
-		Q: strings.TrimSpace(filter.Q), Status: filter.Status, ProvinceID: filter.ProvinceID, Limit: limit,
+	rows, total, err := s.orgs.ListAdmin(ctx, repository.AdminListFilter{
+		Q:          strings.TrimSpace(query.Q),
+		Status:     query.Status,
+		ProvinceID: query.ProvinceID,
+		Limit:      page.Limit,
+		Offset:     page.Offset,
+		Sort:       page.Sort,
+		Desc:       page.Desc,
 	})
 	if err != nil {
-		return nil, apperr.Wrap(err, apperr.CodeInternal, "list organizations")
+		return listpage.Page[AdminOrganization]{}, apperr.Wrap(err, apperr.CodeInternal, "list organizations")
 	}
 	out := make([]AdminOrganization, 0, len(rows))
 	for i := range rows {
 		org := rows[i].Organization
-		out = append(out, AdminOrganization{
-			Organization: &org,
-			TenantStatus: rows[i].TenantStatus,
-			BranchCount:  rows[i].BranchCount,
-		})
+		out = append(out, mapAdminOrganization(&org, rows[i].TenantStatus, rows[i].BranchCount, rows[i].CourtCount, rows[i].OwnerDisplayName, rows[i].PrimarySportNameEn, rows[i].PrimarySportNameVi))
 	}
-	return out, nil
+	return listpage.New(out, total, page.Limit, page.Offset), nil
+}
+
+func (s *OrganizationService) AdminDirectoryStats(ctx context.Context, q string, provinceID *uuid.UUID) (AdminDirectoryStats, error) {
+	stats, err := s.orgs.DirectoryStats(ctx, strings.TrimSpace(q), provinceID)
+	if err != nil {
+		return AdminDirectoryStats{}, apperr.Wrap(err, apperr.CodeInternal, "organization directory stats")
+	}
+	return AdminDirectoryStats{
+		Total: stats.Total, Active: stats.Active, Inactive: stats.Inactive,
+		Suspended: stats.Suspended, BranchTotal: stats.BranchTotal,
+	}, nil
 }
 
 func (s *OrganizationService) AdminGet(ctx context.Context, orgID uuid.UUID) (*AdminOrganization, error) {
@@ -261,7 +284,29 @@ func (s *OrganizationService) adminResult(
 	if err != nil {
 		return nil, apperr.Wrap(err, apperr.CodeInternal, "count branches")
 	}
-	return &AdminOrganization{Organization: org, TenantStatus: tenantStatus, BranchCount: branchCount}, nil
+	dir, err := s.orgs.Directory(ctx, org.ID)
+	if err != nil {
+		return nil, apperr.Wrap(err, apperr.CodeInternal, "organization directory")
+	}
+	result := mapAdminOrganization(org, tenantStatus, branchCount, dir.CourtCount, dir.OwnerDisplayName, dir.PrimarySportNameEn, dir.PrimarySportNameVi)
+	return &result, nil
+}
+
+func mapAdminOrganization(
+	org *entity.Organization,
+	tenantStatus entity.TenantStatus,
+	branchCount, courtCount int,
+	owner, sportEn, sportVi string,
+) AdminOrganization {
+	return AdminOrganization{
+		Organization:       org,
+		TenantStatus:       tenantStatus,
+		BranchCount:        branchCount,
+		CourtCount:         courtCount,
+		OwnerDisplayName:   owner,
+		PrimarySportNameEn: sportEn,
+		PrimarySportNameVi: sportVi,
+	}
 }
 
 func (s *OrganizationService) loadOrgTenant(ctx context.Context, orgID uuid.UUID) (*entity.Organization, *entity.Tenant, error) {

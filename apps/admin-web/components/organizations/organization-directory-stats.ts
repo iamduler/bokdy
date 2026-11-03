@@ -1,4 +1,4 @@
-import type { AdminOrganization } from "@/lib/api/admin";
+import type { AdminOrganizationDirectoryStats } from "@/lib/api/admin";
 
 export type OrganizationDirectoryStats = {
   total: number;
@@ -8,15 +8,14 @@ export type OrganizationDirectoryStats = {
   branchTotal: number;
 };
 
-export function deriveOrganizationDirectoryStats(
-  orgs: AdminOrganization[] | undefined,
+export function organizationDirectoryStatsFromApi(
+  stats: AdminOrganizationDirectoryStats | undefined,
 ): OrganizationDirectoryStats {
-  const list = orgs ?? [];
   return {
-    total: list.length,
-    active: list.filter((o) => o.status === "active").length,
-    inactive: list.filter((o) => o.status === "inactive").length,
-    suspended: list.filter((o) => o.status === "suspended").length,
-    branchTotal: list.reduce((sum, o) => sum + (o.branch_count ?? 0), 0),
+    total: stats?.total ?? 0,
+    active: stats?.active ?? 0,
+    inactive: stats?.inactive ?? 0,
+    suspended: stats?.suspended ?? 0,
+    branchTotal: stats?.branch_total ?? 0,
   };
 }

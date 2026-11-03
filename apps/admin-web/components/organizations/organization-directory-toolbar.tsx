@@ -85,6 +85,7 @@ export function OrganizationDirectoryToolbar({
         if (value) params.set(key, value);
         else params.delete(key);
       }
+      params.delete("offset");
       const qs = params.toString();
       router.replace(qs ? `/organizations?${qs}` : "/organizations");
     },

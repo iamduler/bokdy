@@ -34,8 +34,44 @@ WHERE u.deleted_at IS NULL
       OR lower(COALESCE(p.full_name, '')) LIKE '%' || lower(btrim(sqlc.narg(q)::text)) || '%'
       OR lower(COALESCE(p.display_name, '')) LIKE '%' || lower(btrim(sqlc.narg(q)::text)) || '%'
   )
-ORDER BY u.created_at DESC
+ORDER BY
+  CASE WHEN sqlc.arg(sort_key)::text = 'name' AND NOT sqlc.arg(sort_desc)::bool
+    THEN lower(COALESCE(NULLIF(p.display_name, ''), NULLIF(p.full_name, ''), i.email, '')) END ASC,
+  CASE WHEN sqlc.arg(sort_key)::text = 'name' AND sqlc.arg(sort_desc)::bool
+    THEN lower(COALESCE(NULLIF(p.display_name, ''), NULLIF(p.full_name, ''), i.email, '')) END DESC,
+  CASE WHEN sqlc.arg(sort_key)::text = 'status' AND NOT sqlc.arg(sort_desc)::bool THEN u.status::text END ASC,
+  CASE WHEN sqlc.arg(sort_key)::text = 'status' AND sqlc.arg(sort_desc)::bool THEN u.status::text END DESC,
+  CASE WHEN sqlc.arg(sort_key)::text = 'last_login' AND NOT sqlc.arg(sort_desc)::bool THEN u.last_login_at END ASC,
+  CASE WHEN sqlc.arg(sort_key)::text = 'last_login' AND sqlc.arg(sort_desc)::bool THEN u.last_login_at END DESC,
+  CASE WHEN sqlc.arg(sort_key)::text = 'created_at' AND NOT sqlc.arg(sort_desc)::bool THEN u.created_at END ASC,
+  CASE WHEN sqlc.arg(sort_key)::text = 'created_at' AND sqlc.arg(sort_desc)::bool THEN u.created_at END DESC,
+  u.id DESC
+OFFSET sqlc.arg(row_offset)
 LIMIT sqlc.arg(row_limit);
+
+-- name: CountAdminPlayersList :one
+SELECT COUNT(*)::int AS total
+FROM identity.users u
+LEFT JOIN identity.identities i ON i.user_id = u.id AND i.is_primary = true
+LEFT JOIN identity.user_profiles p ON p.user_id = u.id
+WHERE u.deleted_at IS NULL
+  AND u.is_system_admin = false
+  AND NOT EXISTS (
+      SELECT 1 FROM organization.staff_members sm
+      WHERE sm.user_id = u.id AND sm.status = 'active'
+  )
+  AND (sqlc.narg(status_filter)::identity.user_status IS NULL OR u.status = sqlc.narg(status_filter))
+  AND (
+      sqlc.narg(email_verified_filter)::boolean IS NULL
+      OR (sqlc.narg(email_verified_filter) = true AND u.email_verified_at IS NOT NULL)
+      OR (sqlc.narg(email_verified_filter) = false AND u.email_verified_at IS NULL)
+  )
+  AND (
+      sqlc.narg(q)::text IS NULL OR btrim(sqlc.narg(q)::text) = ''
+      OR lower(COALESCE(i.email, '')) LIKE '%' || lower(btrim(sqlc.narg(q)::text)) || '%'
+      OR lower(COALESCE(p.full_name, '')) LIKE '%' || lower(btrim(sqlc.narg(q)::text)) || '%'
+      OR lower(COALESCE(p.display_name, '')) LIKE '%' || lower(btrim(sqlc.narg(q)::text)) || '%'
+  );
 
 -- name: CountAdminPlayers :one
 SELECT COUNT(*)::int AS count
@@ -64,6 +100,8 @@ WHERE u.deleted_at IS NULL
   );
 
 -- name: ListAdminOwners :many
+SELECT *
+FROM (
 SELECT DISTINCT ON (u.id)
     u.id,
     u.public_id,
@@ -106,7 +144,44 @@ WHERE u.deleted_at IS NULL
       OR lower(o.name_vi) LIKE '%' || lower(btrim(sqlc.narg(q)::text)) || '%'
   )
 ORDER BY u.id, sm.created_at ASC
+) owners
+ORDER BY
+  CASE WHEN sqlc.arg(sort_key)::text = 'name' AND NOT sqlc.arg(sort_desc)::bool
+    THEN lower(COALESCE(NULLIF(owners.display_name, ''), NULLIF(owners.full_name, ''), owners.email, '')) END ASC,
+  CASE WHEN sqlc.arg(sort_key)::text = 'name' AND sqlc.arg(sort_desc)::bool
+    THEN lower(COALESCE(NULLIF(owners.display_name, ''), NULLIF(owners.full_name, ''), owners.email, '')) END DESC,
+  CASE WHEN sqlc.arg(sort_key)::text = 'status' AND NOT sqlc.arg(sort_desc)::bool THEN owners.status::text END ASC,
+  CASE WHEN sqlc.arg(sort_key)::text = 'status' AND sqlc.arg(sort_desc)::bool THEN owners.status::text END DESC,
+  CASE WHEN sqlc.arg(sort_key)::text = 'last_login' AND NOT sqlc.arg(sort_desc)::bool THEN owners.last_login_at END ASC,
+  CASE WHEN sqlc.arg(sort_key)::text = 'last_login' AND sqlc.arg(sort_desc)::bool THEN owners.last_login_at END DESC,
+  CASE WHEN sqlc.arg(sort_key)::text = 'created_at' AND NOT sqlc.arg(sort_desc)::bool THEN owners.created_at END ASC,
+  CASE WHEN sqlc.arg(sort_key)::text = 'created_at' AND sqlc.arg(sort_desc)::bool THEN owners.created_at END DESC,
+  owners.id DESC
+OFFSET sqlc.arg(row_offset)
 LIMIT sqlc.arg(row_limit);
+
+-- name: CountAdminOwnersList :one
+SELECT COUNT(DISTINCT u.id)::int AS total
+FROM identity.users u
+JOIN organization.staff_members sm ON sm.user_id = u.id
+JOIN organization.organizations o ON o.id = sm.organization_id
+LEFT JOIN identity.user_roles ur ON ur.user_id = u.id AND ur.tenant_id = o.tenant_id
+LEFT JOIN identity.roles r ON r.id = ur.role_id AND r.code IN ('org_owner', 'org_staff')
+LEFT JOIN identity.identities i ON i.user_id = u.id AND i.is_primary = true
+LEFT JOIN identity.user_profiles p ON p.user_id = u.id
+WHERE u.deleted_at IS NULL
+  AND u.is_system_admin = false
+  AND (sqlc.narg(status_filter)::identity.user_status IS NULL OR u.status = sqlc.narg(status_filter))
+  AND (sqlc.narg(staff_role_filter)::text IS NULL OR COALESCE(r.code, 'org_staff') = sqlc.narg(staff_role_filter))
+  AND (sqlc.narg(organization_id_filter)::uuid IS NULL OR sm.organization_id = sqlc.narg(organization_id_filter))
+  AND (
+      sqlc.narg(q)::text IS NULL OR btrim(sqlc.narg(q)::text) = ''
+      OR lower(COALESCE(i.email, '')) LIKE '%' || lower(btrim(sqlc.narg(q)::text)) || '%'
+      OR lower(COALESCE(p.full_name, '')) LIKE '%' || lower(btrim(sqlc.narg(q)::text)) || '%'
+      OR lower(COALESCE(p.display_name, '')) LIKE '%' || lower(btrim(sqlc.narg(q)::text)) || '%'
+      OR lower(o.name_en) LIKE '%' || lower(btrim(sqlc.narg(q)::text)) || '%'
+      OR lower(o.name_vi) LIKE '%' || lower(btrim(sqlc.narg(q)::text)) || '%'
+  );
 
 -- name: CountAdminOwners :one
 SELECT COUNT(DISTINCT u.id)::int AS count
@@ -151,8 +226,35 @@ WHERE u.deleted_at IS NULL
       OR lower(COALESCE(p.full_name, '')) LIKE '%' || lower(btrim(sqlc.narg(q)::text)) || '%'
       OR lower(COALESCE(p.display_name, '')) LIKE '%' || lower(btrim(sqlc.narg(q)::text)) || '%'
   )
-ORDER BY u.created_at DESC
+ORDER BY
+  CASE WHEN sqlc.arg(sort_key)::text = 'name' AND NOT sqlc.arg(sort_desc)::bool
+    THEN lower(COALESCE(NULLIF(p.display_name, ''), NULLIF(p.full_name, ''), i.email, '')) END ASC,
+  CASE WHEN sqlc.arg(sort_key)::text = 'name' AND sqlc.arg(sort_desc)::bool
+    THEN lower(COALESCE(NULLIF(p.display_name, ''), NULLIF(p.full_name, ''), i.email, '')) END DESC,
+  CASE WHEN sqlc.arg(sort_key)::text = 'status' AND NOT sqlc.arg(sort_desc)::bool THEN u.status::text END ASC,
+  CASE WHEN sqlc.arg(sort_key)::text = 'status' AND sqlc.arg(sort_desc)::bool THEN u.status::text END DESC,
+  CASE WHEN sqlc.arg(sort_key)::text = 'last_login' AND NOT sqlc.arg(sort_desc)::bool THEN u.last_login_at END ASC,
+  CASE WHEN sqlc.arg(sort_key)::text = 'last_login' AND sqlc.arg(sort_desc)::bool THEN u.last_login_at END DESC,
+  CASE WHEN sqlc.arg(sort_key)::text = 'created_at' AND NOT sqlc.arg(sort_desc)::bool THEN u.created_at END ASC,
+  CASE WHEN sqlc.arg(sort_key)::text = 'created_at' AND sqlc.arg(sort_desc)::bool THEN u.created_at END DESC,
+  u.id DESC
+OFFSET sqlc.arg(row_offset)
 LIMIT sqlc.arg(row_limit);
+
+-- name: CountAdminSystemUsersList :one
+SELECT COUNT(*)::int AS total
+FROM identity.users u
+LEFT JOIN identity.identities i ON i.user_id = u.id AND i.is_primary = true
+LEFT JOIN identity.user_profiles p ON p.user_id = u.id
+WHERE u.deleted_at IS NULL
+  AND u.is_system_admin = true
+  AND (sqlc.narg(status_filter)::identity.user_status IS NULL OR u.status = sqlc.narg(status_filter))
+  AND (
+      sqlc.narg(q)::text IS NULL OR btrim(sqlc.narg(q)::text) = ''
+      OR lower(COALESCE(i.email, '')) LIKE '%' || lower(btrim(sqlc.narg(q)::text)) || '%'
+      OR lower(COALESCE(p.full_name, '')) LIKE '%' || lower(btrim(sqlc.narg(q)::text)) || '%'
+      OR lower(COALESCE(p.display_name, '')) LIKE '%' || lower(btrim(sqlc.narg(q)::text)) || '%'
+  );
 
 -- name: CountAdminSystemUsers :one
 SELECT COUNT(*)::int AS count

@@ -23,13 +23,13 @@ type AdminUserRow struct {
 
 type AdminOwnerRow struct {
 	AdminUserRow
-	StaffRole         string
-	StaffTitle        string
-	StaffStatus       string
-	PrimaryOrgID      uuid.UUID
-	PrimaryOrgCode    string
-	PrimaryOrgNameEn  string
-	PrimaryOrgNameVi  string
+	StaffRole        string
+	StaffTitle       string
+	StaffStatus      string
+	PrimaryOrgID     uuid.UUID
+	PrimaryOrgCode   string
+	PrimaryOrgNameEn string
+	PrimaryOrgNameVi string
 }
 
 type AdminUserOrgRow struct {
@@ -66,18 +66,21 @@ type AdminPlayerSummary struct {
 }
 
 type AdminUserListFilter struct {
-	Q             string
-	Status        *string
-	EmailVerified *bool
-	StaffRole     *string
+	Q              string
+	Status         *string
+	EmailVerified  *bool
+	StaffRole      *string
 	OrganizationID *uuid.UUID
-	Limit         int
+	Limit          int
+	Offset         int
+	Sort           string
+	Desc           bool
 }
 
 type AdminUserRepository interface {
-	ListPlayers(ctx context.Context, filter AdminUserListFilter) ([]AdminUserRow, error)
-	ListOwners(ctx context.Context, filter AdminUserListFilter) ([]AdminOwnerRow, error)
-	ListAdmins(ctx context.Context, filter AdminUserListFilter) ([]AdminUserRow, error)
+	ListPlayers(ctx context.Context, filter AdminUserListFilter) ([]AdminUserRow, int, error)
+	ListOwners(ctx context.Context, filter AdminUserListFilter) ([]AdminOwnerRow, int, error)
+	ListAdmins(ctx context.Context, filter AdminUserListFilter) ([]AdminUserRow, int, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*AdminUserRow, error)
 	GetOwnerPrimaryStaff(ctx context.Context, userID uuid.UUID) (*AdminOwnerRow, error)
 	HasActiveStaff(ctx context.Context, userID uuid.UUID) (bool, error)

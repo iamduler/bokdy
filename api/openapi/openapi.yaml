@@ -3519,6 +3519,14 @@ paths:
         - name: limit
           in: query
           schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
+        - $ref: "#/components/parameters/AdminListOffset"
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [created_at, name, status, branch_count, court_count]
+            default: created_at
+        - $ref: "#/components/parameters/AdminListOrder"
         - name: province_id
           in: query
           schema: { type: string, format: uuid }
@@ -3529,9 +3537,34 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/AdminOrganization"
+                $ref: "#/components/schemas/AdminOrganizationPage"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /api/v1/admin/organizations/stats:
+    get:
+      tags: [Admin]
+      summary: Organization directory statistics
+      description: Counts ignore status so directory tabs stay stable. Search and province filters still apply.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: q
+          in: query
+          schema: { type: string }
+        - name: province_id
+          in: query
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Directory stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminOrganizationDirectoryStats"
         "401":
           $ref: "#/components/responses/Error"
         "403":
@@ -3659,15 +3692,16 @@ paths:
           in: query
           schema: { type: boolean }
         - $ref: "#/components/parameters/AdminUserLimit"
+        - $ref: "#/components/parameters/AdminListOffset"
+        - $ref: "#/components/parameters/AdminUserSort"
+        - $ref: "#/components/parameters/AdminListOrder"
       responses:
         "200":
           description: Player users
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/AdminPlayerUser"
+                $ref: "#/components/schemas/AdminPlayerPage"
         "401":
           $ref: "#/components/responses/Error"
         "403":
@@ -3752,15 +3786,16 @@ paths:
           in: query
           schema: { type: string, format: uuid }
         - $ref: "#/components/parameters/AdminUserLimit"
+        - $ref: "#/components/parameters/AdminListOffset"
+        - $ref: "#/components/parameters/AdminUserSort"
+        - $ref: "#/components/parameters/AdminListOrder"
       responses:
         "200":
           description: Owner-portal users
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/AdminOwnerUser"
+                $ref: "#/components/schemas/AdminOwnerPage"
         "401":
           $ref: "#/components/responses/Error"
         "403":
@@ -3838,15 +3873,16 @@ paths:
         - $ref: "#/components/parameters/AdminUserSearch"
         - $ref: "#/components/parameters/AdminUserStatus"
         - $ref: "#/components/parameters/AdminUserLimit"
+        - $ref: "#/components/parameters/AdminListOffset"
+        - $ref: "#/components/parameters/AdminUserSort"
+        - $ref: "#/components/parameters/AdminListOrder"
       responses:
         "200":
           description: System admins
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/AdminSystemUser"
+                $ref: "#/components/schemas/AdminSystemUserPage"
         "401":
           $ref: "#/components/responses/Error"
         "403":
@@ -4158,6 +4194,24 @@ components:
       name: limit
       in: query
       schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
+    AdminListOffset:
+      name: offset
+      in: query
+      schema: { type: integer, minimum: 0, default: 0 }
+    AdminListOrder:
+      name: order
+      in: query
+      schema:
+        type: string
+        enum: [asc, desc]
+        default: desc
+    AdminUserSort:
+      name: sort
+      in: query
+      schema:
+        type: string
+        enum: [created_at, name, status, last_login]
+        default: created_at
     StaffId:
       name: staffId
       in: path
@@ -4434,10 +4488,45 @@ components:
       allOf:
         - $ref: "#/components/schemas/Organization"
         - type: object
-          required: [tenant_status, branch_count]
+          required: [tenant_status, branch_count, court_count, owner_display_name, primary_sport]
           properties:
             tenant_status: { type: string, enum: [trial, active, suspended, canceled] }
             branch_count: { type: integer, minimum: 0, description: Non-archived branch (location) count }
+            court_count: { type: integer, minimum: 0, description: Non-archived courts on the organization's branches }
+            owner_display_name:
+              type: string
+              nullable: true
+              description: Display name of the earliest active org owner. Null when none.
+            primary_sport:
+              type: string
+              nullable: true
+              description: Sport name for the request locale. Most courts, else most branch sports. Null when none.
+    AdminListPage:
+      type: object
+      required: [items, total, limit, offset]
+      properties:
+        total: { type: integer, minimum: 0 }
+        limit: { type: integer, minimum: 1, maximum: 100 }
+        offset: { type: integer, minimum: 0 }
+    AdminOrganizationPage:
+      allOf:
+        - $ref: "#/components/schemas/AdminListPage"
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/AdminOrganization"
+    AdminOrganizationDirectoryStats:
+      type: object
+      required: [total, active, inactive, suspended, branch_total]
+      properties:
+        total: { type: integer, minimum: 0 }
+        active: { type: integer, minimum: 0 }
+        inactive: { type: integer, minimum: 0 }
+        suspended: { type: integer, minimum: 0 }
+        branch_total: { type: integer, minimum: 0 }
     SuspendOrganizationRequest:
       type: object
       required: [reason]
@@ -4472,9 +4561,39 @@ components:
             staff_status: { type: string, enum: [invited, active, suspended, resigned] }
             primary_organization:
               $ref: "#/components/schemas/AdminUserOrganizationRef"
+    AdminPlayerPage:
+      allOf:
+        - $ref: "#/components/schemas/AdminListPage"
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/AdminPlayerUser"
+    AdminOwnerPage:
+      allOf:
+        - $ref: "#/components/schemas/AdminListPage"
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/AdminOwnerUser"
     AdminSystemUser:
       allOf:
         - $ref: "#/components/schemas/AdminUser"
+    AdminSystemUserPage:
+      allOf:
+        - $ref: "#/components/schemas/AdminListPage"
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/AdminSystemUser"
     AdminUserOrganizationRef:
       type: object
       required: [id]
