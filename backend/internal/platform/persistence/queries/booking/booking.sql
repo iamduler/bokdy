@@ -110,6 +110,86 @@ WHERE court_id = sqlc.arg(court_id)
   AND starts_at < sqlc.arg(range_end)
   AND ends_at > sqlc.arg(range_start);
 
+-- name: ListAdminBookings :many
+SELECT b.id, b.public_id, b.tenant_id, b.booking_no, b.reservation_id, b.customer_id, b.branch_id, b.court_id,
+       b.status, b.currency, b.subtotal, b.discount_amount, b.tax_amount, b.total_amount, b.price_version_id,
+       b.starts_at, b.ends_at, b.expires_at, b.confirmed_at, b.canceled_at, b.completed_at, b.checked_in_at,
+       b.created_by, b.created_at, b.updated_at,
+       o.id AS organization_id,
+       COALESCE(o.name_en, '') AS organization_name_en,
+       COALESCE(o.name_vi, '') AS organization_name_vi,
+       COALESCE(NULLIF(btrim(p.full_name), ''), NULLIF(btrim(c.organization_name), ''), '')::text AS customer_name,
+       COALESCE(email.value, '') AS customer_email,
+       COALESCE(br.name_en, '') AS branch_name_en,
+       COALESCE(br.name_vi, '') AS branch_name_vi,
+       COALESCE(ct.name_en, '') AS court_name_en,
+       COALESCE(ct.name_vi, '') AS court_name_vi
+FROM booking.bookings b
+JOIN organization.organizations o ON o.tenant_id = b.tenant_id AND o.deleted_at IS NULL
+LEFT JOIN crm.customers c ON c.id = b.customer_id
+LEFT JOIN crm.customer_profiles p ON p.customer_id = c.id
+LEFT JOIN LATERAL (
+  SELECT cc.value
+  FROM crm.customer_contacts cc
+  WHERE cc.customer_id = c.id AND cc.contact_type = 'email'
+  ORDER BY cc.is_primary DESC, cc.created_at ASC
+  LIMIT 1
+) email ON true
+LEFT JOIN organization.branches br ON br.id = b.branch_id
+LEFT JOIN catalog.courts ct ON ct.id = b.court_id
+WHERE (sqlc.narg(booking_id)::uuid IS NULL OR b.id = sqlc.narg(booking_id)::uuid)
+  AND (sqlc.narg(tenant_id)::uuid IS NULL OR b.tenant_id = sqlc.narg(tenant_id)::uuid)
+  AND (sqlc.narg(user_id)::uuid IS NULL OR c.user_id = sqlc.narg(user_id)::uuid)
+  AND (sqlc.narg(status_filter)::text IS NULL OR b.status = sqlc.narg(status_filter)::booking.booking_status)
+  AND (sqlc.narg(range_start)::timestamptz IS NULL OR b.starts_at >= sqlc.narg(range_start)::timestamptz)
+  AND (sqlc.narg(range_end)::timestamptz IS NULL OR b.starts_at < sqlc.narg(range_end)::timestamptz)
+  AND (
+    sqlc.arg(q)::text = ''
+    OR lower(b.booking_no) LIKE '%' || lower(sqlc.arg(q)::text) || '%'
+    OR lower(COALESCE(p.full_name, '')) LIKE '%' || lower(sqlc.arg(q)::text) || '%'
+    OR lower(COALESCE(c.organization_name, '')) LIKE '%' || lower(sqlc.arg(q)::text) || '%'
+    OR lower(COALESCE(email.value, '')) LIKE '%' || lower(sqlc.arg(q)::text) || '%'
+  )
+ORDER BY
+  CASE WHEN sqlc.arg(sort_key)::text = 'starts_at' AND NOT sqlc.arg(sort_desc)::bool THEN b.starts_at END ASC,
+  CASE WHEN sqlc.arg(sort_key)::text = 'starts_at' AND sqlc.arg(sort_desc)::bool THEN b.starts_at END DESC,
+  CASE WHEN sqlc.arg(sort_key)::text = 'status' AND NOT sqlc.arg(sort_desc)::bool THEN b.status::text END ASC,
+  CASE WHEN sqlc.arg(sort_key)::text = 'status' AND sqlc.arg(sort_desc)::bool THEN b.status::text END DESC,
+  CASE WHEN sqlc.arg(sort_key)::text = 'created_at' AND NOT sqlc.arg(sort_desc)::bool THEN b.created_at END ASC,
+  CASE WHEN sqlc.arg(sort_key)::text = 'created_at' AND sqlc.arg(sort_desc)::bool THEN b.created_at END DESC,
+  CASE WHEN sqlc.arg(sort_key)::text = 'total_amount' AND NOT sqlc.arg(sort_desc)::bool THEN b.total_amount END ASC,
+  CASE WHEN sqlc.arg(sort_key)::text = 'total_amount' AND sqlc.arg(sort_desc)::bool THEN b.total_amount END DESC,
+  b.id DESC
+OFFSET sqlc.arg(row_offset)
+LIMIT sqlc.arg(row_limit);
+
+-- name: CountAdminBookings :one
+SELECT COUNT(*)::int AS total
+FROM booking.bookings b
+JOIN organization.organizations o ON o.tenant_id = b.tenant_id AND o.deleted_at IS NULL
+LEFT JOIN crm.customers c ON c.id = b.customer_id
+LEFT JOIN crm.customer_profiles p ON p.customer_id = c.id
+LEFT JOIN LATERAL (
+  SELECT cc.value
+  FROM crm.customer_contacts cc
+  WHERE cc.customer_id = c.id AND cc.contact_type = 'email'
+  ORDER BY cc.is_primary DESC, cc.created_at ASC
+  LIMIT 1
+) email ON true
+WHERE (sqlc.narg(booking_id)::uuid IS NULL OR b.id = sqlc.narg(booking_id)::uuid)
+  AND (sqlc.narg(tenant_id)::uuid IS NULL OR b.tenant_id = sqlc.narg(tenant_id)::uuid)
+  AND (sqlc.narg(user_id)::uuid IS NULL OR c.user_id = sqlc.narg(user_id)::uuid)
+  AND (sqlc.narg(status_filter)::text IS NULL OR b.status = sqlc.narg(status_filter)::booking.booking_status)
+  AND (sqlc.narg(range_start)::timestamptz IS NULL OR b.starts_at >= sqlc.narg(range_start)::timestamptz)
+  AND (sqlc.narg(range_end)::timestamptz IS NULL OR b.starts_at < sqlc.narg(range_end)::timestamptz)
+  AND (
+    sqlc.arg(q)::text = ''
+    OR lower(b.booking_no) LIKE '%' || lower(sqlc.arg(q)::text) || '%'
+    OR lower(COALESCE(p.full_name, '')) LIKE '%' || lower(sqlc.arg(q)::text) || '%'
+    OR lower(COALESCE(c.organization_name, '')) LIKE '%' || lower(sqlc.arg(q)::text) || '%'
+    OR lower(COALESCE(email.value, '')) LIKE '%' || lower(sqlc.arg(q)::text) || '%'
+  );
+
 -- name: FindCourtForBooking :one
 SELECT r.id, r.public_id, r.tenant_id, r.branch_id, r.sport_id, r.status::text AS status
 FROM catalog.courts r

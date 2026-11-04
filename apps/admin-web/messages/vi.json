@@ -342,7 +342,8 @@
       "billing": "Thuê bao",
       "activity": "Hoạt động",
       "actions": "Hành động",
-      "audit": "Audit"
+      "audit": "Audit",
+      "bookings": "Đặt sân"
     },
     "detailSubnav": {
       "organizations": "Tổ chức",
@@ -352,6 +353,7 @@
       "crumbBilling": "Thuê bao",
       "crumbActivity": "Hoạt động",
       "crumbActions": "Hành động",
+      "crumbBookings": "Đặt sân",
       "pill": {
         "branches": "Chi nhánh",
         "team": "Nhân sự",
@@ -983,7 +985,8 @@
       "organizations": "Tổ chức",
       "permissions": "Phân quyền",
       "activity": "Lịch sử hoạt động",
-      "security": "Bảo mật"
+      "security": "Bảo mật",
+      "bookings": "Đặt sân"
     },
     "detail": {
       "activate": "Kích hoạt",
@@ -1162,6 +1165,72 @@
       "active": "Đang hoạt động",
       "suspended": "Tạm khóa",
       "pending": "Lời mời chờ"
+    }
+  },
+  "adminBookings": {
+    "search": "Mã đặt, khách, hoặc email",
+    "status": "Trạng thái",
+    "statusAll": "Mọi trạng thái",
+    "from": "Từ ngày",
+    "to": "Đến ngày",
+    "empty": "Chưa có đặt sân",
+    "loadError": "Không tải được danh sách đặt sân",
+    "back": "Về danh sách đặt sân",
+    "invoice": "Hóa đơn",
+    "payment": "Thanh toán",
+    "none": "—",
+    "columns": {
+      "bookingNo": "Mã đặt",
+      "customer": "Khách",
+      "when": "Bắt đầu",
+      "court": "Sân",
+      "branch": "Chi nhánh",
+      "organization": "Tổ chức",
+      "status": "Trạng thái",
+      "total": "Tổng"
+    },
+    "fields": {
+      "bookingNo": "Mã đặt sân",
+      "status": "Trạng thái",
+      "customer": "Khách",
+      "email": "Email",
+      "organization": "Tổ chức",
+      "branch": "Chi nhánh",
+      "court": "Sân",
+      "starts": "Bắt đầu",
+      "ends": "Kết thúc",
+      "total": "Tổng",
+      "invoiceNo": "Số hóa đơn",
+      "invoiceStatus": "Trạng thái hóa đơn",
+      "method": "Phương thức",
+      "paymentStatus": "Trạng thái thanh toán",
+      "amount": "Số tiền"
+    },
+    "statusLabel": {
+      "pending": "Chờ xác nhận",
+      "confirmed": "Đã xác nhận",
+      "checked_in": "Đã check-in",
+      "in_progress": "Đang chơi",
+      "completed": "Hoàn tất",
+      "canceled": "Đã hủy"
+    },
+    "invoiceStatus": {
+      "draft": "Nháp",
+      "issued": "Đã phát hành",
+      "partially_paid": "Thanh toán một phần",
+      "paid": "Đã thanh toán",
+      "void": "Vô hiệu",
+      "canceled": "Đã hủy"
+    },
+    "paymentStatus": {
+      "pending": "Chờ thanh toán",
+      "succeeded": "Thành công",
+      "failed": "Thất bại",
+      "expired": "Hết hạn"
+    },
+    "method": {
+      "cash": "Tiền mặt",
+      "mock": "Mock"
     }
   }
 }

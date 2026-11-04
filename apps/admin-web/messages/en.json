@@ -342,7 +342,8 @@
       "billing": "Billing",
       "activity": "Activity",
       "actions": "Actions",
-      "audit": "Audit"
+      "audit": "Audit",
+      "bookings": "Bookings"
     },
     "detailSubnav": {
       "organizations": "Organizations",
@@ -352,6 +353,7 @@
       "crumbBilling": "Billing",
       "crumbActivity": "Activity",
       "crumbActions": "Actions",
+      "crumbBookings": "Bookings",
       "pill": {
         "branches": "Branches",
         "team": "Team",
@@ -983,7 +985,8 @@
       "organizations": "Organizations",
       "permissions": "Permissions",
       "activity": "Activity",
-      "security": "Security"
+      "security": "Security",
+      "bookings": "Bookings"
     },
     "detail": {
       "activate": "Activate",
@@ -1162,6 +1165,72 @@
       "active": "Active",
       "suspended": "Suspended",
       "pending": "Pending invites"
+    }
+  },
+  "adminBookings": {
+    "search": "Booking no, customer, or email",
+    "status": "Status",
+    "statusAll": "All statuses",
+    "from": "From",
+    "to": "To",
+    "empty": "No bookings",
+    "loadError": "Could not load bookings",
+    "back": "Back to bookings",
+    "invoice": "Invoice",
+    "payment": "Payment",
+    "none": "—",
+    "columns": {
+      "bookingNo": "Booking",
+      "customer": "Customer",
+      "when": "Start",
+      "court": "Court",
+      "branch": "Branch",
+      "organization": "Organization",
+      "status": "Status",
+      "total": "Total"
+    },
+    "fields": {
+      "bookingNo": "Booking number",
+      "status": "Status",
+      "customer": "Customer",
+      "email": "Email",
+      "organization": "Organization",
+      "branch": "Branch",
+      "court": "Court",
+      "starts": "Starts",
+      "ends": "Ends",
+      "total": "Total",
+      "invoiceNo": "Invoice number",
+      "invoiceStatus": "Invoice status",
+      "method": "Method",
+      "paymentStatus": "Payment status",
+      "amount": "Amount"
+    },
+    "statusLabel": {
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "checked_in": "Checked in",
+      "in_progress": "In progress",
+      "completed": "Completed",
+      "canceled": "Canceled"
+    },
+    "invoiceStatus": {
+      "draft": "Draft",
+      "issued": "Issued",
+      "partially_paid": "Partially paid",
+      "paid": "Paid",
+      "void": "Void",
+      "canceled": "Canceled"
+    },
+    "paymentStatus": {
+      "pending": "Pending",
+      "succeeded": "Succeeded",
+      "failed": "Failed",
+      "expired": "Expired"
+    },
+    "method": {
+      "cash": "Cash",
+      "mock": "Mock"
     }
   }
 }

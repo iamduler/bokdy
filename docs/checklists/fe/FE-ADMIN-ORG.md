@@ -17,8 +17,9 @@ Org billing and activity no longer use a mock fixture. Remaining unavailable col
 
 | Area | UI (Figma) | API wired | Notes |
 | --- | --- | --- | --- |
-| Directory `/organizations` | done | partial | List, filters, KPIs, create; columns mostly unavailable |
-| Detail overview `/organizations/[id]` | done | partial | `branch_count` real; metrics/charts mock |
+| Directory `/organizations` | done | partial | Server page of 20. Owner, `court_count`, `primary_sport` are real. Plan stays a badge. |
+| Detail overview `/organizations/[id]` | done | partial | Counts, owner, and sport are real. No mock risk score. Revenue and health are not on this screen. |
+| Bookings `/organizations/[id]/bookings` | done | done | Read-only list and detail. Invoice plus latest payment intent. No confirm, cancel, or refund. |
 | Branches / Courts / Team / Billing / Activity | done | mixed | Branches, courts, and team wired. Billing and activity are empty states (no mock figures). |
 | Actions `/organizations/[id]/actions` | done | partial | Lifecycle wired; other actions disabled |
 | KYC / Audit / Export / Bulk | not started | blocked | Deferred modules |

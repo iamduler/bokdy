@@ -1,12 +1,21 @@
 # Admin ops — việc để sau
 
-Ngày: 2026-11-03  
-Nguồn: plan vận hành admin (phase 1 đã ship).  
+Ngày: 2026-11-04  
+Nguồn: plan vận hành admin. Phase 1, 2, 3 đã ship. Tiếp theo là phase 5 (số liệu đã có) rồi phase 4 (chờ audit worker).  
 Checklist gốc: [F-ADMIN-ORG.md](flows/mvp/F-ADMIN-ORG.md), [F-ADMIN-USERS.md](flows/mvp/F-ADMIN-USERS.md), [F-ADMIN-PLUS.md](flows/post-mvp/F-ADMIN-PLUS.md), [FE-ADMIN.md](fe/FE-ADMIN.md).
 
 Không mở KYC, gói SaaS, GMV, ticket, fraud. Các mục đó nằm ở mục “Không làm trong đợt này”.
 
-## Đã xong — phase 1 và phase 2
+## Đã xong — phase 1, phase 2, phase 3
+
+Phase 3
+
+- `GET /api/v1/admin/organizations/{id}/bookings` và `GET /api/v1/admin/users/players/{id}/bookings` dùng cùng trang `{ items, total, limit, offset }`. `sort` lạ, `offset` âm, status lạ, hoặc `to` không sau `from` là 422.
+- Chi tiết booking trả invoice và payment intent mới nhất (`cash` / `mock`, kể cả failed và expired). Route admin không có confirm, cancel, refund (404).
+- Tab Đặt sân trên tổ chức và trên player. Overview player chỉ link khi `booking_count` > 0. Giao dịch, hoàn tiền, tổng chi tiêu vẫn là badge.
+- UI list nằm trong `apps/admin-web/components/bookings/`: cột, bộ lọc (`InputGroup`), `DataTable`, controller URL, và một screen dùng chung. View tổ chức và player chỉ chọn hook. Format tiền và ngày dùng `booking-format.ts`.
+
+Đăng ký user local cần migration `00034_password_credentials_id.sql` (cùng kiểu `00009` / `00033`: bảng đã apply trước khi `00002` thêm cột `id`).
 
 Phase 2
 
@@ -27,11 +36,12 @@ Việc tiếp theo thay empty state bằng dữ liệu thật, không đưa số
 
 ## Thứ tự triển khai
 
-Phase 2 đã xong. Phase 5 dùng `GET /api/v1/admin/organizations/stats`. Phase 4 cần worker audit đã ghi `platform.audit_logs`.
+Phase 1–3 đã xong. Phase 5 làm được ngay: `GET /api/v1/admin/organizations/stats` và stats của ba nhóm user đã có. Phase 4 chờ worker audit ghi `platform.audit_logs`.
 
 ```text
-phase 3 bookings ── phase 5 dashboard
-phase 4 activity (sau audit worker)
+phase 1 mock  →  phase 2 directory  →  phase 3 bookings   (đã xong)
+phase 5 dashboard   (làm tiếp)
+phase 4 activity    (sau audit worker)
 ```
 
 ---
@@ -44,31 +54,16 @@ phase 4 activity (sau audit worker)
 
 ## Phase 3 — Tra cứu booking (read-only)
 
-Chưa có row checklist. Permission matrix: SystemAdmin không confirm, cancel, refund.
+Đã ship. Chưa có row checklist. Permission matrix: SystemAdmin không confirm, cancel, refund.
 
-Không đi `BookingService.requireStaff`. System admin đã bỏ qua membership khi có `X-Organization-ID`, nên route staff hiện tại cũng cho admin ghi booking. Route mới chỉ đọc.
+Đọc nằm trong module booking. Không gọi `requireStaff`. Handler user chỉ mở list sau `GetPlayer`, nên admin và staff trả 404. DTO và query dùng chung. UI không thêm package admin: `components/bookings/` giữ cột, filter, bảng, controller URL và screen chung; `DataTable` với `lib/api/list-page.ts`. Chi tiết vẫn dưới `organizations/detail/bookings/`.
 
-Backend
-
-- `GET /api/v1/admin/organizations/{id}/bookings` — lọc `q`, `status`, `from`, `to`.
-- `GET /api/v1/admin/organizations/{id}/bookings/{bookingId}` — booking + invoice + payment intent (`cash` / `mock`, status).
-- Gate `RequireSystemAdmin`. Đọc theo tenant của tổ chức.
-
-Frontend
-
-- Trang hoặc tab dưới org detail.
-- Từ overview player, link sang booking của user khi `booking_count` đã có.
-- Không nút confirm, cancel, refund.
+QA 2026-11-04 trên QA Directory, booking `BKG-NTKQN3BD0G`: lọc status và ngày, chi tiết hiện hóa đơn đã thanh toán và intent `cash` / `succeeded`. Player overview link số 1 vào list có cột tổ chức. Owner không có tab đặt sân. `POST` confirm/refund trên route admin trả 404.
 
 Để sau phase 3
 
 - Tìm toàn sàn theo mã booking khi chưa biết tổ chức.
-- Thay badge giao dịch / hoàn tiền / tổng chi tiêu trên overview player bằng số thật. Database local 2026-11-03 không có player nên hàng này chưa được nhìn trên UI.
-
-Xong khi
-
-- Mở một tổ chức, lọc booking theo status và khoảng ngày, mở một booking thấy invoice và intent.
-- Gọi confirm hoặc refund bằng route admin trả 404 hoặc không có route.
+- Thay badge giao dịch / hoàn tiền / tổng chi tiêu trên overview player bằng số thật. Badge vẫn hiện “chưa có”.
 
 ---
 
@@ -98,7 +93,7 @@ Xong khi
 File: [dashboard/page.tsx](../../apps/admin-web/app/[locale]/(shell)/dashboard/page.tsx).
 
 - Thay lời chào bằng số đếm: tổ chức theo `status`, user theo audience và status.
-- Stats user đã có (`GET /api/v1/admin/users/{players|owners|admins}/stats`). Stats tổ chức thêm endpoint mỏng nếu list chưa trả count.
+- Stats đã có: `GET /api/v1/admin/organizations/stats` và `GET /api/v1/admin/users/{players|owners|admins}/stats`. Dashboard chưa đọc các endpoint này.
 - Không biểu đồ GMV. Không bật nav command center, revenue, support, risk, platform trong [admin-nav.ts](../../apps/admin-web/lib/admin-nav.ts).
 
 Xong khi

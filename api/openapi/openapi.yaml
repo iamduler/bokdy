@@ -3592,6 +3592,81 @@ paths:
           $ref: "#/components/responses/Error"
         "404":
           $ref: "#/components/responses/Error"
+  /api/v1/admin/organizations/{id}/bookings:
+    get:
+      tags: [Admin]
+      summary: List bookings for an organization
+      description: Read-only. Filters starts_at with from inclusive and to exclusive. q matches booking number, customer name, or primary email.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - name: q
+          in: query
+          schema: { type: string }
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, confirmed, checked_in, in_progress, completed, canceled]
+        - name: from
+          in: query
+          schema: { type: string, format: date-time }
+        - name: to
+          in: query
+          schema: { type: string, format: date-time }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
+        - $ref: "#/components/parameters/AdminListOffset"
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [starts_at, status, created_at, total_amount]
+            default: starts_at
+        - $ref: "#/components/parameters/AdminListOrder"
+      responses:
+        "200":
+          description: Bookings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminBookingPage"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /api/v1/admin/organizations/{id}/bookings/{bookingId}:
+    get:
+      tags: [Admin]
+      summary: Get a booking with its invoice and latest payment intent
+      description: Read-only. Payment is the latest intent for the invoice, including failed and expired.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - name: bookingId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Booking detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminBookingDetail"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
   /api/v1/admin/organizations/{id}/activate:
     post:
       tags: [Admin]
@@ -3746,6 +3821,55 @@ paths:
           $ref: "#/components/responses/Error"
         "404":
           $ref: "#/components/responses/Error"
+  /api/v1/admin/users/players/{id}/bookings:
+    get:
+      tags: [Admin]
+      summary: List bookings for a player
+      description: Read-only. 404 when the user is not a player. Same filters as the organization booking list.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+        - name: q
+          in: query
+          schema: { type: string }
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, confirmed, checked_in, in_progress, completed, canceled]
+        - name: from
+          in: query
+          schema: { type: string, format: date-time }
+        - name: to
+          in: query
+          schema: { type: string, format: date-time }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
+        - $ref: "#/components/parameters/AdminListOffset"
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [starts_at, status, created_at, total_amount]
+            default: starts_at
+        - $ref: "#/components/parameters/AdminListOrder"
+      responses:
+        "200":
+          description: Bookings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminBookingPage"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
   /api/v1/admin/users/players/{id}/summary:
     get:
       tags: [Admin]
@@ -4518,6 +4642,52 @@ components:
               type: array
               items:
                 $ref: "#/components/schemas/AdminOrganization"
+    AdminBooking:
+      allOf:
+        - $ref: "#/components/schemas/Booking"
+        - type: object
+          required: [organization_id, organization_name, customer_name, customer_email, branch_name, court_name]
+          properties:
+            organization_id: { type: string, format: uuid }
+            organization_name: { type: string }
+            customer_name: { type: string, nullable: true }
+            customer_email: { type: string, nullable: true }
+            branch_name: { type: string, nullable: true }
+            court_name: { type: string, nullable: true }
+    AdminBookingPage:
+      allOf:
+        - $ref: "#/components/schemas/AdminListPage"
+        - type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items:
+                $ref: "#/components/schemas/AdminBooking"
+    AdminBookingPayment:
+      type: object
+      required: [id, method, status, amount, currency, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        method: { type: string, enum: [cash, mock] }
+        status: { type: string, enum: [pending, succeeded, failed, expired] }
+        amount: { type: number }
+        currency: { type: string, example: VND }
+        created_at: { type: string, format: date-time }
+    AdminBookingDetail:
+      type: object
+      required: [booking, invoice, payment]
+      properties:
+        booking:
+          $ref: "#/components/schemas/AdminBooking"
+        invoice:
+          allOf:
+            - $ref: "#/components/schemas/BookingInvoice"
+          nullable: true
+        payment:
+          allOf:
+            - $ref: "#/components/schemas/AdminBookingPayment"
+          nullable: true
     AdminOrganizationDirectoryStats:
       type: object
       required: [total, active, inactive, suspended, branch_total]

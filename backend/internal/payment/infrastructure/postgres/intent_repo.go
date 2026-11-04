@@ -67,6 +67,17 @@ func (r *IntentRepo) FindOpenByInvoice(ctx context.Context, invoiceID uuid.UUID)
 	return mapIntent(row), nil
 }
 
+func (r *IntentRepo) FindLatestByInvoice(ctx context.Context, invoiceID uuid.UUID) (*entity.Intent, error) {
+	row, err := r.q.FindLatestPaymentIntentByInvoice(ctx, invoiceID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return mapIntent(row), nil
+}
+
 func (r *IntentRepo) ListExpiredPending(ctx context.Context, before time.Time, limit int) ([]entity.Intent, error) {
 	rows, err := r.q.ListExpiredPendingIntents(ctx, dbsqlc.ListExpiredPendingIntentsParams{
 		ExpiresAt: &before, Limit: int32(limit),

@@ -33,6 +33,7 @@ type Querier interface {
 	ConfirmBooking(ctx context.Context, arg ConfirmBookingParams) error
 	ConsumePasswordResetToken(ctx context.Context, id uuid.UUID) error
 	ConvertReservation(ctx context.Context, arg ConvertReservationParams) error
+	CountAdminBookings(ctx context.Context, arg CountAdminBookingsParams) (int32, error)
 	CountAdminOwners(ctx context.Context) (int32, error)
 	CountAdminOwnersByStatus(ctx context.Context) (CountAdminOwnersByStatusRow, error)
 	CountAdminOwnersList(ctx context.Context, arg CountAdminOwnersListParams) (int32, error)
@@ -145,6 +146,7 @@ type Querier interface {
 	FindInvitationByToken(ctx context.Context, invitationToken string) (OrganizationStaffInvitation, error)
 	FindInvoiceByBooking(ctx context.Context, bookingID uuid.UUID) (FindInvoiceByBookingRow, error)
 	FindInvoiceByID(ctx context.Context, id uuid.UUID) (FindInvoiceByIDRow, error)
+	FindLatestPaymentIntentByInvoice(ctx context.Context, invoiceID uuid.UUID) (PaymentPaymentIntent, error)
 	FindLocalIdentityByEmail(ctx context.Context, lower string) (FindLocalIdentityByEmailRow, error)
 	FindMarketplaceBranchByPublicID(ctx context.Context, publicID string) (FindMarketplaceBranchByPublicIDRow, error)
 	FindMarketplaceCourtByPublicID(ctx context.Context, publicID string) (FindMarketplaceCourtByPublicIDRow, error)
@@ -188,6 +190,7 @@ type Querier interface {
 	ListActiveAmenities(ctx context.Context) ([]ListActiveAmenitiesRow, error)
 	ListActiveCourtIDsByLocation(ctx context.Context, branchID uuid.UUID) ([]uuid.UUID, error)
 	ListActiveLocales(ctx context.Context) ([]ListActiveLocalesRow, error)
+	ListAdminBookings(ctx context.Context, arg ListAdminBookingsParams) ([]ListAdminBookingsRow, error)
 	ListAdminOwners(ctx context.Context, arg ListAdminOwnersParams) ([]ListAdminOwnersRow, error)
 	ListAdminPlayers(ctx context.Context, arg ListAdminPlayersParams) ([]ListAdminPlayersRow, error)
 	ListAdminSystemUsers(ctx context.Context, arg ListAdminSystemUsersParams) ([]ListAdminSystemUsersRow, error)

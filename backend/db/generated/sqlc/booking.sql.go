@@ -77,6 +77,59 @@ func (q *Queries) ConfirmBooking(ctx context.Context, arg ConfirmBookingParams) 
 	return err
 }
 
+const countAdminBookings = `-- name: CountAdminBookings :one
+SELECT COUNT(*)::int AS total
+FROM booking.bookings b
+JOIN organization.organizations o ON o.tenant_id = b.tenant_id AND o.deleted_at IS NULL
+LEFT JOIN crm.customers c ON c.id = b.customer_id
+LEFT JOIN crm.customer_profiles p ON p.customer_id = c.id
+LEFT JOIN LATERAL (
+  SELECT cc.value
+  FROM crm.customer_contacts cc
+  WHERE cc.customer_id = c.id AND cc.contact_type = 'email'
+  ORDER BY cc.is_primary DESC, cc.created_at ASC
+  LIMIT 1
+) email ON true
+WHERE ($1::uuid IS NULL OR b.id = $1::uuid)
+  AND ($2::uuid IS NULL OR b.tenant_id = $2::uuid)
+  AND ($3::uuid IS NULL OR c.user_id = $3::uuid)
+  AND ($4::text IS NULL OR b.status = $4::booking.booking_status)
+  AND ($5::timestamptz IS NULL OR b.starts_at >= $5::timestamptz)
+  AND ($6::timestamptz IS NULL OR b.starts_at < $6::timestamptz)
+  AND (
+    $7::text = ''
+    OR lower(b.booking_no) LIKE '%' || lower($7::text) || '%'
+    OR lower(COALESCE(p.full_name, '')) LIKE '%' || lower($7::text) || '%'
+    OR lower(COALESCE(c.organization_name, '')) LIKE '%' || lower($7::text) || '%'
+    OR lower(COALESCE(email.value, '')) LIKE '%' || lower($7::text) || '%'
+  )
+`
+
+type CountAdminBookingsParams struct {
+	BookingID    *uuid.UUID `json:"booking_id"`
+	TenantID     *uuid.UUID `json:"tenant_id"`
+	UserID       *uuid.UUID `json:"user_id"`
+	StatusFilter *string    `json:"status_filter"`
+	RangeStart   *time.Time `json:"range_start"`
+	RangeEnd     *time.Time `json:"range_end"`
+	Q            string     `json:"q"`
+}
+
+func (q *Queries) CountAdminBookings(ctx context.Context, arg CountAdminBookingsParams) (int32, error) {
+	row := q.db.QueryRow(ctx, countAdminBookings,
+		arg.BookingID,
+		arg.TenantID,
+		arg.UserID,
+		arg.StatusFilter,
+		arg.RangeStart,
+		arg.RangeEnd,
+		arg.Q,
+	)
+	var total int32
+	err := row.Scan(&total)
+	return total, err
+}
+
 const countOverlappingBookings = `-- name: CountOverlappingBookings :one
 SELECT COUNT(*)
 FROM booking.bookings
@@ -335,6 +388,178 @@ func (q *Queries) FindCourtForBooking(ctx context.Context, id uuid.UUID) (FindCo
 		&i.Status,
 	)
 	return i, err
+}
+
+const listAdminBookings = `-- name: ListAdminBookings :many
+SELECT b.id, b.public_id, b.tenant_id, b.booking_no, b.reservation_id, b.customer_id, b.branch_id, b.court_id,
+       b.status, b.currency, b.subtotal, b.discount_amount, b.tax_amount, b.total_amount, b.price_version_id,
+       b.starts_at, b.ends_at, b.expires_at, b.confirmed_at, b.canceled_at, b.completed_at, b.checked_in_at,
+       b.created_by, b.created_at, b.updated_at,
+       o.id AS organization_id,
+       COALESCE(o.name_en, '') AS organization_name_en,
+       COALESCE(o.name_vi, '') AS organization_name_vi,
+       COALESCE(NULLIF(btrim(p.full_name), ''), NULLIF(btrim(c.organization_name), ''), '')::text AS customer_name,
+       COALESCE(email.value, '') AS customer_email,
+       COALESCE(br.name_en, '') AS branch_name_en,
+       COALESCE(br.name_vi, '') AS branch_name_vi,
+       COALESCE(ct.name_en, '') AS court_name_en,
+       COALESCE(ct.name_vi, '') AS court_name_vi
+FROM booking.bookings b
+JOIN organization.organizations o ON o.tenant_id = b.tenant_id AND o.deleted_at IS NULL
+LEFT JOIN crm.customers c ON c.id = b.customer_id
+LEFT JOIN crm.customer_profiles p ON p.customer_id = c.id
+LEFT JOIN LATERAL (
+  SELECT cc.value
+  FROM crm.customer_contacts cc
+  WHERE cc.customer_id = c.id AND cc.contact_type = 'email'
+  ORDER BY cc.is_primary DESC, cc.created_at ASC
+  LIMIT 1
+) email ON true
+LEFT JOIN organization.branches br ON br.id = b.branch_id
+LEFT JOIN catalog.courts ct ON ct.id = b.court_id
+WHERE ($1::uuid IS NULL OR b.id = $1::uuid)
+  AND ($2::uuid IS NULL OR b.tenant_id = $2::uuid)
+  AND ($3::uuid IS NULL OR c.user_id = $3::uuid)
+  AND ($4::text IS NULL OR b.status = $4::booking.booking_status)
+  AND ($5::timestamptz IS NULL OR b.starts_at >= $5::timestamptz)
+  AND ($6::timestamptz IS NULL OR b.starts_at < $6::timestamptz)
+  AND (
+    $7::text = ''
+    OR lower(b.booking_no) LIKE '%' || lower($7::text) || '%'
+    OR lower(COALESCE(p.full_name, '')) LIKE '%' || lower($7::text) || '%'
+    OR lower(COALESCE(c.organization_name, '')) LIKE '%' || lower($7::text) || '%'
+    OR lower(COALESCE(email.value, '')) LIKE '%' || lower($7::text) || '%'
+  )
+ORDER BY
+  CASE WHEN $8::text = 'starts_at' AND NOT $9::bool THEN b.starts_at END ASC,
+  CASE WHEN $8::text = 'starts_at' AND $9::bool THEN b.starts_at END DESC,
+  CASE WHEN $8::text = 'status' AND NOT $9::bool THEN b.status::text END ASC,
+  CASE WHEN $8::text = 'status' AND $9::bool THEN b.status::text END DESC,
+  CASE WHEN $8::text = 'created_at' AND NOT $9::bool THEN b.created_at END ASC,
+  CASE WHEN $8::text = 'created_at' AND $9::bool THEN b.created_at END DESC,
+  CASE WHEN $8::text = 'total_amount' AND NOT $9::bool THEN b.total_amount END ASC,
+  CASE WHEN $8::text = 'total_amount' AND $9::bool THEN b.total_amount END DESC,
+  b.id DESC
+OFFSET $10
+LIMIT $11
+`
+
+type ListAdminBookingsParams struct {
+	BookingID    *uuid.UUID `json:"booking_id"`
+	TenantID     *uuid.UUID `json:"tenant_id"`
+	UserID       *uuid.UUID `json:"user_id"`
+	StatusFilter *string    `json:"status_filter"`
+	RangeStart   *time.Time `json:"range_start"`
+	RangeEnd     *time.Time `json:"range_end"`
+	Q            string     `json:"q"`
+	SortKey      string     `json:"sort_key"`
+	SortDesc     bool       `json:"sort_desc"`
+	RowOffset    int32      `json:"row_offset"`
+	RowLimit     int32      `json:"row_limit"`
+}
+
+type ListAdminBookingsRow struct {
+	ID                 uuid.UUID            `json:"id"`
+	PublicID           string               `json:"public_id"`
+	TenantID           uuid.UUID            `json:"tenant_id"`
+	BookingNo          string               `json:"booking_no"`
+	ReservationID      *uuid.UUID           `json:"reservation_id"`
+	CustomerID         uuid.UUID            `json:"customer_id"`
+	BranchID           uuid.UUID            `json:"branch_id"`
+	CourtID            uuid.UUID            `json:"court_id"`
+	Status             BookingBookingStatus `json:"status"`
+	Currency           string               `json:"currency"`
+	Subtotal           pgtype.Numeric       `json:"subtotal"`
+	DiscountAmount     pgtype.Numeric       `json:"discount_amount"`
+	TaxAmount          pgtype.Numeric       `json:"tax_amount"`
+	TotalAmount        pgtype.Numeric       `json:"total_amount"`
+	PriceVersionID     *uuid.UUID           `json:"price_version_id"`
+	StartsAt           time.Time            `json:"starts_at"`
+	EndsAt             time.Time            `json:"ends_at"`
+	ExpiresAt          *time.Time           `json:"expires_at"`
+	ConfirmedAt        *time.Time           `json:"confirmed_at"`
+	CanceledAt         *time.Time           `json:"canceled_at"`
+	CompletedAt        *time.Time           `json:"completed_at"`
+	CheckedInAt        *time.Time           `json:"checked_in_at"`
+	CreatedBy          *uuid.UUID           `json:"created_by"`
+	CreatedAt          time.Time            `json:"created_at"`
+	UpdatedAt          time.Time            `json:"updated_at"`
+	OrganizationID     uuid.UUID            `json:"organization_id"`
+	OrganizationNameEn string               `json:"organization_name_en"`
+	OrganizationNameVi string               `json:"organization_name_vi"`
+	CustomerName       string               `json:"customer_name"`
+	CustomerEmail      string               `json:"customer_email"`
+	BranchNameEn       string               `json:"branch_name_en"`
+	BranchNameVi       string               `json:"branch_name_vi"`
+	CourtNameEn        string               `json:"court_name_en"`
+	CourtNameVi        string               `json:"court_name_vi"`
+}
+
+func (q *Queries) ListAdminBookings(ctx context.Context, arg ListAdminBookingsParams) ([]ListAdminBookingsRow, error) {
+	rows, err := q.db.Query(ctx, listAdminBookings,
+		arg.BookingID,
+		arg.TenantID,
+		arg.UserID,
+		arg.StatusFilter,
+		arg.RangeStart,
+		arg.RangeEnd,
+		arg.Q,
+		arg.SortKey,
+		arg.SortDesc,
+		arg.RowOffset,
+		arg.RowLimit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListAdminBookingsRow{}
+	for rows.Next() {
+		var i ListAdminBookingsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.PublicID,
+			&i.TenantID,
+			&i.BookingNo,
+			&i.ReservationID,
+			&i.CustomerID,
+			&i.BranchID,
+			&i.CourtID,
+			&i.Status,
+			&i.Currency,
+			&i.Subtotal,
+			&i.DiscountAmount,
+			&i.TaxAmount,
+			&i.TotalAmount,
+			&i.PriceVersionID,
+			&i.StartsAt,
+			&i.EndsAt,
+			&i.ExpiresAt,
+			&i.ConfirmedAt,
+			&i.CanceledAt,
+			&i.CompletedAt,
+			&i.CheckedInAt,
+			&i.CreatedBy,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.OrganizationID,
+			&i.OrganizationNameEn,
+			&i.OrganizationNameVi,
+			&i.CustomerName,
+			&i.CustomerEmail,
+			&i.BranchNameEn,
+			&i.BranchNameVi,
+			&i.CourtNameEn,
+			&i.CourtNameVi,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listBookingsByCustomers = `-- name: ListBookingsByCustomers :many

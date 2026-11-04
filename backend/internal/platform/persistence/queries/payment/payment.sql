@@ -28,6 +28,14 @@ WHERE invoice_id = $1 AND status IN ('pending', 'succeeded')
 ORDER BY created_at DESC
 LIMIT 1;
 
+-- name: FindLatestPaymentIntentByInvoice :one
+SELECT id, tenant_id, invoice_id, customer_id, amount, currency, status, method_type,
+       expires_at, succeeded_at, created_by, created_at, updated_at
+FROM payment.payment_intents
+WHERE invoice_id = $1
+ORDER BY created_at DESC
+LIMIT 1;
+
 -- name: ListExpiredPendingIntents :many
 SELECT id, tenant_id, invoice_id, customer_id, amount, currency, status, method_type,
        expires_at, succeeded_at, created_by, created_at, updated_at

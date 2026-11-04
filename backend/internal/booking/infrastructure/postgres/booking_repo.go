@@ -89,6 +89,54 @@ func (r *BookingRepo) ListByTenant(ctx context.Context, tenantID uuid.UUID, filt
 	return mapBookings(rows), nil
 }
 
+func (r *BookingRepo) ListAdmin(ctx context.Context, filter repository.AdminBookingFilter) ([]repository.AdminBooking, int, error) {
+	var status *string
+	if filter.Status != nil {
+		s := string(*filter.Status)
+		status = &s
+	}
+	params := dbsqlc.ListAdminBookingsParams{
+		BookingID: filter.BookingID,
+		TenantID:  filter.TenantID, UserID: filter.UserID, StatusFilter: status,
+		RangeStart: filter.From, RangeEnd: filter.To, Q: filter.Q,
+		SortKey: filter.Sort, SortDesc: filter.Desc,
+		RowOffset: int32(filter.Offset), RowLimit: int32(filter.Limit),
+	}
+	rows, err := r.q.ListAdminBookings(ctx, params)
+	if err != nil {
+		return nil, 0, err
+	}
+	total, err := r.q.CountAdminBookings(ctx, dbsqlc.CountAdminBookingsParams{
+		BookingID: params.BookingID,
+		TenantID:  params.TenantID, UserID: params.UserID, StatusFilter: params.StatusFilter,
+		RangeStart: params.RangeStart, RangeEnd: params.RangeEnd, Q: params.Q,
+	})
+	if err != nil {
+		return nil, 0, err
+	}
+	out := make([]repository.AdminBooking, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, repository.AdminBooking{
+			Booking: entity.Booking{
+				ID: row.ID, PublicID: row.PublicID, TenantID: row.TenantID, BookingNo: row.BookingNo,
+				ReservationID: row.ReservationID, CustomerID: row.CustomerID, BranchID: row.BranchID,
+				CourtID: row.CourtID, Status: entity.Status(row.Status), Currency: row.Currency,
+				Subtotal: fromNumeric(row.Subtotal), DiscountAmount: fromNumeric(row.DiscountAmount),
+				TaxAmount: fromNumeric(row.TaxAmount), TotalAmount: fromNumeric(row.TotalAmount),
+				PriceVersionID: row.PriceVersionID, StartsAt: row.StartsAt, EndsAt: row.EndsAt,
+				ExpiresAt: row.ExpiresAt, ConfirmedAt: row.ConfirmedAt, CanceledAt: row.CanceledAt,
+				CompletedAt: row.CompletedAt, CheckedInAt: row.CheckedInAt,
+				CreatedBy: row.CreatedBy, CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
+			},
+			OrganizationID: row.OrganizationID, OrganizationNameEn: row.OrganizationNameEn, OrganizationNameVi: row.OrganizationNameVi,
+			CustomerName: row.CustomerName, CustomerEmail: row.CustomerEmail,
+			BranchNameEn: row.BranchNameEn, BranchNameVi: row.BranchNameVi,
+			CourtNameEn: row.CourtNameEn, CourtNameVi: row.CourtNameVi,
+		})
+	}
+	return out, int(total), nil
+}
+
 func (r *BookingRepo) ListByCustomers(ctx context.Context, customerIDs []uuid.UUID, limit int) ([]entity.Booking, error) {
 	rows, err := r.q.ListBookingsByCustomers(ctx, dbsqlc.ListBookingsByCustomersParams{
 		CustomerIds: customerIDs, RowLimit: int32(limit),

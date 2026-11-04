@@ -121,11 +121,14 @@ func RegisterRoutes(api *gin.RouterGroup, app *server.Application) {
 	pricingHandler.RegisterRoutes(api, jwt)
 
 	occupancySvc := schedservice.NewOccupancyService(schedRepo, syncEnqueuer)
+	intentRepo := paymentpg.NewIntentRepo(app.DB.Pool)
 	bookingSvc := bookingservice.NewBookingService(
 		app.DB.Pool, bookingpg.NewBookingRepo(app.DB.Pool), bookingpg.NewInvoiceRepo(app.DB.Pool),
+		intentRepo,
 		customerRepo, orgRepo, orgSvc, occupancySvc, pricingSvc, outbox,
 	)
-	bookinghandler.NewBookingHandler(bookingSvc).RegisterRoutes(api, jwt)
+	bookingHandler := bookinghandler.NewBookingHandler(bookingSvc)
+	bookingHandler.RegisterRoutes(api, jwt)
 
 	reservationSvc := reservationservice.NewReservationService(
 		app.DB.Pool, reservationpg.NewReservationRepo(app.DB.Pool),
@@ -136,7 +139,7 @@ func RegisterRoutes(api *gin.RouterGroup, app *server.Application) {
 	paymentSvc := paymentservice.NewPaymentService(
 		app.DB.Pool,
 		paymentpg.NewInvoiceRepo(app.DB.Pool),
-		paymentpg.NewIntentRepo(app.DB.Pool),
+		intentRepo,
 		paymentpg.NewRefundRepo(app.DB.Pool),
 		bookingpg.NewBookingRepo(app.DB.Pool),
 		customerRepo, orgRepo, orgSvc, bookingSvc, outbox,
@@ -145,9 +148,10 @@ func RegisterRoutes(api *gin.RouterGroup, app *server.Application) {
 
 	admin := api.Group("/admin", jwt, middleware.RequireSystemAdmin())
 	orgHandler.RegisterAdminRoutes(admin)
+	bookingHandler.RegisterAdminRoutes(admin)
 	adminUserRepo := identitypg.NewAdminUserRepo(app.DB.Pool)
 	adminUserSvc := identityservice.NewAdminUserService(
 		app.DB.Pool, userRepo, adminUserRepo, sessionRepo, roleRepo, authSvc,
 	)
-	identityhandler.NewAdminUserHandler(adminUserSvc).RegisterAdminRoutes(admin)
+	identityhandler.NewAdminUserHandler(adminUserSvc, bookingHandler).RegisterAdminRoutes(admin)
 }

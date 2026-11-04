@@ -16,6 +16,7 @@ const TABS = [
   { id: "branches", href: "/branches", labelKey: "branches" },
   { id: "courts", href: "/courts", labelKey: "courts" },
   { id: "team", href: "/team", labelKey: "team" },
+  { id: "bookings", href: "/bookings", labelKey: "bookings" },
   { id: "billing", href: "/billing", labelKey: "billing" },
   { id: "activity", href: "/activity", labelKey: "activity" },
   { id: "actions", href: "/actions", labelKey: "actions" },

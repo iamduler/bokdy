@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useUserDetail } from "@/components/users/detail/user-detail-context";
 import { UserUnavailableBadge } from "@/components/users/shared/user-unavailable-badge";
 import { usePlayerSummary } from "@/hooks/use-admin-users";
+import { Link } from "@/i18n/navigation";
 
 export function UserOverviewView() {
   const t = useTranslations("users.overview");
@@ -44,16 +45,29 @@ export function UserOverviewView() {
         {audience === "players" ? (
           <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
             {[
-              { label: t("bookings"), value: summary.data?.booking_count },
-              { label: t("transactions"), value: undefined },
-              { label: t("refunds"), value: undefined },
-              { label: t("spend"), value: undefined },
+              {
+                label: t("bookings"),
+                value: summary.data?.booking_count,
+                href:
+                  summary.data?.booking_count && summary.data.booking_count > 0
+                    ? `/users/players/${userId}/bookings`
+                    : undefined,
+              },
+              { label: t("transactions"), value: undefined, href: undefined },
+              { label: t("refunds"), value: undefined, href: undefined },
+              { label: t("spend"), value: undefined, href: undefined },
             ].map((s) => (
               <div key={s.label} className="rounded-lg border border-border bg-card/60 p-3">
                 <p className="text-[10px] font-bold uppercase text-muted-foreground">{s.label}</p>
-                <p className="text-xl font-bold">
-                  {s.value != null ? s.value : <UserUnavailableBadge />}
-                </p>
+                {s.href && s.value != null ? (
+                  <Link href={s.href} className="text-xl font-bold text-primary underline-offset-4 hover:underline">
+                    {s.value}
+                  </Link>
+                ) : (
+                  <p className="text-xl font-bold">
+                    {s.value != null ? s.value : <UserUnavailableBadge />}
+                  </p>
+                )}
               </div>
             ))}
           </div>

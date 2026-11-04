@@ -152,6 +152,36 @@ func (q *Queries) FindCompletedRefundByIntent(ctx context.Context, paymentIntent
 	return i, err
 }
 
+const findLatestPaymentIntentByInvoice = `-- name: FindLatestPaymentIntentByInvoice :one
+SELECT id, tenant_id, invoice_id, customer_id, amount, currency, status, method_type,
+       expires_at, succeeded_at, created_by, created_at, updated_at
+FROM payment.payment_intents
+WHERE invoice_id = $1
+ORDER BY created_at DESC
+LIMIT 1
+`
+
+func (q *Queries) FindLatestPaymentIntentByInvoice(ctx context.Context, invoiceID uuid.UUID) (PaymentPaymentIntent, error) {
+	row := q.db.QueryRow(ctx, findLatestPaymentIntentByInvoice, invoiceID)
+	var i PaymentPaymentIntent
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.InvoiceID,
+		&i.CustomerID,
+		&i.Amount,
+		&i.Currency,
+		&i.Status,
+		&i.MethodType,
+		&i.ExpiresAt,
+		&i.SucceededAt,
+		&i.CreatedBy,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const findOpenPaymentIntentByInvoice = `-- name: FindOpenPaymentIntentByInvoice :one
 SELECT id, tenant_id, invoice_id, customer_id, amount, currency, status, method_type,
        expires_at, succeeded_at, created_by, created_at, updated_at

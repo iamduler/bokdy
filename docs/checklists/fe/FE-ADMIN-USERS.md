@@ -96,7 +96,7 @@ User detail no longer uses a mock fixture. MFA, spend, refunds, and transactions
 
 | Done | ID | Maps | Tab | Players | Owners | Admins | Phase | Status |
 | :---: | --- | --- | --- | :---: | :---: | :---: | --- | --- |
-| [ ] | FE-ADMIN-USERS-TAB-OVR | F-ADMIN-USERS-19 | Overview | yes | yes | yes | mvp | partial — booking_count real; spend/refunds/MFA unavailable; no risk score |
+| [ ] | FE-ADMIN-USERS-TAB-OVR | F-ADMIN-USERS-19 | Overview | yes | yes | yes | mvp | partial — `booking_count` real and links to the player bookings list when greater than 0; spend/refunds/MFA unavailable; no risk score |
 | [ ] | FE-ADMIN-USERS-TAB-SES | F-ADMIN-USERS-10..12 | Sessions | yes | yes | yes | mvp | partial — wired |
 | [ ] | FE-ADMIN-USERS-TAB-ORG | F-ADMIN-USERS-16 | Organizations | — | yes | — | post-mvp | partial — mock |
 | [ ] | FE-ADMIN-USERS-TAB-PER | F-ADMIN-USERS-17 | Permissions | — | yes | yes | post-mvp | partial — role list from API; no permission matrix |

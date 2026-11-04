@@ -13,6 +13,7 @@ export type DetailView =
   | "branches"
   | "courts"
   | "team"
+  | "bookings"
   | "billing"
   | "activity"
   | "actions";
@@ -23,6 +24,7 @@ function resolveDetailView(pathname: string, orgId: string): DetailView {
   if (pathname.includes("/branches")) return "branches";
   if (pathname.includes("/courts")) return "courts";
   if (pathname.includes("/team")) return "team";
+  if (pathname.includes("/bookings")) return "bookings";
   if (pathname.includes("/billing")) return "billing";
   if (pathname.includes("/activity")) return "activity";
   if (pathname.includes("/actions")) return "actions";
@@ -45,6 +47,7 @@ export function OrganizationDetailSubnav() {
       branches: t("crumbBranches"),
       courts: t("crumbCourts"),
       team: t("crumbTeam"),
+      bookings: t("crumbBookings"),
       billing: t("crumbBilling"),
       activity: t("crumbActivity"),
       actions: t("crumbActions"),

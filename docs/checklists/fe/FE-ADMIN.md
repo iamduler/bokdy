@@ -9,7 +9,7 @@ Parent checklist: [FE-ADMIN.md](FE-ADMIN.md). **Org directory + detail (Figma):*
 
 Implement **this file first** among the three audiences (after FE-SHARED client on admin-web).
 
-Envelope: `{ data: ... }`. List organizations = `{ data: AdminOrganization[] }`. Path `{id}` is **UUID**, not `public_id`. Admin org APIs do not require `X-Organization-ID`.
+Envelope: `{ data: ... }`. Admin directory lists put `{ items, total, limit, offset }` inside `data`. Path `{id}` is **UUID**, not `public_id`. Admin org APIs do not require `X-Organization-ID`.
 
 Admins are seeded. `X-Client: admin` register is forbidden — hide/remove register.
 

@@ -5853,6 +5853,105 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/organizations/{id}/bookings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List bookings for an organization
+         * @description Read-only. Filters starts_at with from inclusive and to exclusive. q matches booking number, customer name, or primary email.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    q?: string;
+                    status?: "pending" | "confirmed" | "checked_in" | "in_progress" | "completed" | "canceled";
+                    from?: string;
+                    to?: string;
+                    limit?: number;
+                    offset?: components["parameters"]["AdminListOffset"];
+                    sort?: "starts_at" | "status" | "created_at" | "total_amount";
+                    order?: components["parameters"]["AdminListOrder"];
+                };
+                header?: never;
+                path: {
+                    id: components["parameters"]["OrganizationId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Bookings */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminBookingPage"];
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/organizations/{id}/bookings/{bookingId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a booking with its invoice and latest payment intent
+         * @description Read-only. Payment is the latest intent for the invoice, including failed and expired.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["parameters"]["OrganizationId"];
+                    bookingId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Booking detail */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminBookingDetail"];
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/organizations/{id}/activate": {
         parameters: {
             query?: never;
@@ -6117,6 +6216,60 @@ export interface paths {
                 401: components["responses"]["Error"];
                 403: components["responses"]["Error"];
                 404: components["responses"]["Error"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/users/players/{id}/bookings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List bookings for a player
+         * @description Read-only. 404 when the user is not a player. Same filters as the organization booking list.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    q?: string;
+                    status?: "pending" | "confirmed" | "checked_in" | "in_progress" | "completed" | "canceled";
+                    from?: string;
+                    to?: string;
+                    limit?: number;
+                    offset?: components["parameters"]["AdminListOffset"];
+                    sort?: "starts_at" | "status" | "created_at" | "total_amount";
+                    order?: components["parameters"]["AdminListOrder"];
+                };
+                header?: never;
+                path: {
+                    id: components["parameters"]["UserId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Bookings */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminBookingPage"];
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
             };
         };
         put?: never;
@@ -6985,6 +7138,36 @@ export interface components {
         };
         AdminOrganizationPage: components["schemas"]["AdminListPage"] & {
             items: components["schemas"]["AdminOrganization"][];
+        };
+        AdminBooking: components["schemas"]["Booking"] & {
+            /** Format: uuid */
+            organization_id: string;
+            organization_name: string;
+            customer_name: string | null;
+            customer_email: string | null;
+            branch_name: string | null;
+            court_name: string | null;
+        };
+        AdminBookingPage: components["schemas"]["AdminListPage"] & {
+            items: components["schemas"]["AdminBooking"][];
+        };
+        AdminBookingPayment: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            method: "cash" | "mock";
+            /** @enum {string} */
+            status: "pending" | "succeeded" | "failed" | "expired";
+            amount: number;
+            /** @example VND */
+            currency: string;
+            /** Format: date-time */
+            created_at: string;
+        };
+        AdminBookingDetail: {
+            booking: components["schemas"]["AdminBooking"];
+            invoice: components["schemas"]["BookingInvoice"] | null;
+            payment: components["schemas"]["AdminBookingPayment"] | null;
         };
         AdminOrganizationDirectoryStats: {
             total: number;

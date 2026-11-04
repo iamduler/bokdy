@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	bookinghandler "bokdy/internal/booking/handler"
 	"bokdy/internal/identity/dto"
 	"bokdy/internal/identity/entity"
 	"bokdy/internal/identity/repository"
@@ -19,11 +20,12 @@ import (
 )
 
 type AdminUserHandler struct {
-	admin *service.AdminUserService
+	admin    *service.AdminUserService
+	bookings *bookinghandler.BookingHandler
 }
 
-func NewAdminUserHandler(admin *service.AdminUserService) *AdminUserHandler {
-	return &AdminUserHandler{admin: admin}
+func NewAdminUserHandler(admin *service.AdminUserService, bookings *bookinghandler.BookingHandler) *AdminUserHandler {
+	return &AdminUserHandler{admin: admin, bookings: bookings}
 }
 
 func (h *AdminUserHandler) RegisterAdminRoutes(admin *gin.RouterGroup) {
@@ -31,6 +33,7 @@ func (h *AdminUserHandler) RegisterAdminRoutes(admin *gin.RouterGroup) {
 	admin.GET("/users/players/stats", h.PlayerStats)
 	admin.GET("/users/players/:id", h.GetPlayer)
 	admin.GET("/users/players/:id/summary", h.PlayerSummary)
+	admin.GET("/users/players/:id/bookings", h.ListPlayerBookings)
 	admin.GET("/users/owners", h.ListOwners)
 	admin.GET("/users/owners/stats", h.OwnerStats)
 	admin.GET("/users/owners/:id", h.GetOwner)
@@ -233,6 +236,18 @@ func (h *AdminUserHandler) GetPlayer(c *gin.Context) {
 		return
 	}
 	httpx.OK(c, toAdminUserDTO(*row))
+}
+
+func (h *AdminUserHandler) ListPlayerBookings(c *gin.Context) {
+	id, ok := parseUserID(c)
+	if !ok {
+		return
+	}
+	if _, err := h.admin.GetPlayer(c.Request.Context(), id); err != nil {
+		httpx.Error(c, err)
+		return
+	}
+	h.bookings.AdminListForUser(c, id)
 }
 
 func (h *AdminUserHandler) GetOwner(c *gin.Context) {

@@ -11,6 +11,7 @@ import type { UserAudience } from "@/lib/api/admin-users";
 const TAB_CONFIG: Record<UserAudience, { id: string; suffix: string }[]> = {
   players: [
     { id: "overview", suffix: "" },
+    { id: "bookings", suffix: "/bookings" },
     { id: "sessions", suffix: "/sessions" },
     { id: "activity", suffix: "/activity" },
     { id: "security", suffix: "/security" },

@@ -12,6 +12,7 @@ import (
 	crmrepository "bokdy/internal/crm/repository"
 	orgrepository "bokdy/internal/organization/repository"
 	orgservice "bokdy/internal/organization/service"
+	paymentrepository "bokdy/internal/payment/repository"
 	"bokdy/internal/platform/apperr"
 	"bokdy/internal/platform/events"
 	"bokdy/internal/platform/requestctx"
@@ -35,6 +36,7 @@ type BookingService struct {
 	pool      *pgxpool.Pool
 	repo      repository.BookingRepository
 	invoices  repository.InvoiceRepository
+	intents   paymentrepository.IntentRepository
 	customers crmrepository.CustomerRepository
 	orgs      orgrepository.OrganizationRepository
 	orgSvc    *orgservice.OrganizationService
@@ -47,6 +49,7 @@ func NewBookingService(
 	pool *pgxpool.Pool,
 	repo repository.BookingRepository,
 	invoices repository.InvoiceRepository,
+	intents paymentrepository.IntentRepository,
 	customers crmrepository.CustomerRepository,
 	orgs orgrepository.OrganizationRepository,
 	orgSvc *orgservice.OrganizationService,
@@ -55,7 +58,7 @@ func NewBookingService(
 	outbox events.Enqueuer,
 ) *BookingService {
 	return &BookingService{
-		pool: pool, repo: repo, invoices: invoices, customers: customers, orgs: orgs,
+		pool: pool, repo: repo, invoices: invoices, intents: intents, customers: customers, orgs: orgs,
 		orgSvc: orgSvc, occupancy: occupancy, prices: prices, outbox: outbox,
 	}
 }

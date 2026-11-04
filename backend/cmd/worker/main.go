@@ -104,8 +104,9 @@ func main() {
 	customerRepo := crmpg.NewCustomerRepo(pool)
 	orgRepo := orgpg.NewOrgRepo(pool)
 	pricingSvc := pricingservice.NewPricingService(pool, pricingpg.NewPricingRepo(pool), orgRepo, orgSvc, outbox)
+	intentRepo := paymentpg.NewIntentRepo(pool)
 	bookingSvc := bookingservice.NewBookingService(
-		pool, bookingpg.NewBookingRepo(pool), bookingpg.NewInvoiceRepo(pool),
+		pool, bookingpg.NewBookingRepo(pool), bookingpg.NewInvoiceRepo(pool), intentRepo,
 		customerRepo, orgRepo, orgSvc, occupancySvc, pricingSvc, outbox,
 	)
 	reservationSvc := reservationservice.NewReservationService(
@@ -113,7 +114,7 @@ func main() {
 		customerRepo, orgRepo, orgSvc, occupancySvc, pricingSvc, bookingSvc, outbox,
 	)
 	paymentSvc := paymentservice.NewPaymentService(
-		pool, paymentpg.NewInvoiceRepo(pool), paymentpg.NewIntentRepo(pool),
+		pool, paymentpg.NewInvoiceRepo(pool), intentRepo,
 		paymentpg.NewRefundRepo(pool), bookingpg.NewBookingRepo(pool),
 		customerRepo, orgRepo, orgSvc, bookingSvc, outbox,
 	)

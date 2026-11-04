@@ -15,6 +15,7 @@ type IntentRepository interface {
 	FindByID(ctx context.Context, intentID uuid.UUID) (*entity.Intent, error)
 	LockByID(ctx context.Context, tx pgx.Tx, intentID uuid.UUID) (*entity.Intent, error)
 	FindOpenByInvoice(ctx context.Context, invoiceID uuid.UUID) (*entity.Intent, error)
+	FindLatestByInvoice(ctx context.Context, invoiceID uuid.UUID) (*entity.Intent, error)
 	ListExpiredPending(ctx context.Context, before time.Time, limit int) ([]entity.Intent, error)
 	Succeed(ctx context.Context, tx pgx.Tx, intentID uuid.UUID, at time.Time) error
 	Fail(ctx context.Context, tx pgx.Tx, intentID uuid.UUID, at time.Time) error

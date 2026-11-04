@@ -37186,3 +37186,33 @@ INSERT INTO reference.amenities (id, code, name_en, name_vi, icon, is_active, cr
     ('a1000000-0000-4000-8000-000000000007', 'rest_seats', 'Rest seats', 'Ghế nghỉ', 'chair', true, now(), now());
 
 
+-- >>> 00033_organization_settings_id.sql
+-- Applied 00003 used organization_id as PK. Later 00003 and CreateOrganizationSettings use a separate uuid id.
+-- +goose StatementBegin
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'organization'
+          AND table_name = 'organization_settings'
+          AND column_name = 'id'
+    ) THEN
+        ALTER TABLE organization.organization_settings ADD COLUMN id uuid;
+        UPDATE organization.organization_settings SET id = gen_random_uuid() WHERE id IS NULL;
+        ALTER TABLE organization.organization_settings ALTER COLUMN id SET NOT NULL;
+
+        ALTER TABLE organization.organization_settings DROP CONSTRAINT organization_settings_pkey;
+        ALTER TABLE organization.organization_settings ADD PRIMARY KEY (id);
+
+        IF NOT EXISTS (
+            SELECT 1 FROM pg_constraint
+            WHERE conname = 'organization_settings_organization_id_key'
+        ) THEN
+            ALTER TABLE organization.organization_settings
+                ADD CONSTRAINT organization_settings_organization_id_key UNIQUE (organization_id);
+        END IF;
+    END IF;
+END $$;
+-- +goose StatementEnd
+
+
