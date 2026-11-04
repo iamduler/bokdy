@@ -40,6 +40,7 @@ type amenityDTO struct {
 	NameEn   string `json:"name_en"`
 	NameVi   string `json:"name_vi"`
 	Icon     string `json:"icon,omitempty"`
+	Scope    string `json:"scope"`
 	IsActive bool   `json:"is_active,omitempty"`
 }
 
@@ -158,7 +159,7 @@ func (h *BranchHandler) DeleteGallery(c *gin.Context) {
 }
 
 func (h *BranchHandler) ListAmenities(c *gin.Context) {
-	items, err := h.branches.ListAmenities(c.Request.Context())
+	items, err := h.branches.ListAmenities(c.Request.Context(), c.Query("scope"))
 	if err != nil {
 		httpx.Error(c, err)
 		return
@@ -241,7 +242,7 @@ func toGalleryDTO(item *entity.LocationMedia) galleryItemDTO {
 func toAmenityDTO(c *gin.Context, a *entity.Amenity) amenityDTO {
 	return amenityDTO{
 		ID: a.ID.String(), Code: a.Code,
-		Name: i18n.DisplayName(i18n.FromContext(c.Request.Context()), a.NameEn, a.NameVi),
-		NameEn: a.NameEn, NameVi: a.NameVi, Icon: a.Icon, IsActive: a.IsActive,
+		Name:   i18n.DisplayName(i18n.FromContext(c.Request.Context()), a.NameEn, a.NameVi),
+		NameEn: a.NameEn, NameVi: a.NameVi, Icon: a.Icon, Scope: a.Scope, IsActive: a.IsActive,
 	}
 }

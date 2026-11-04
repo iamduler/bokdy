@@ -253,6 +253,11 @@ func (s *CatalogService) resolveAmenityIDs(ctx context.Context, ids []uuid.UUID)
 	if len(found) != len(unique) {
 		return nil, catalogerrors.ErrUnknownAmenity
 	}
+	for _, amenity := range found {
+		if amenity.Scope != entity.AmenityScopeCourt {
+			return nil, catalogerrors.ErrAmenityScope
+		}
+	}
 	return unique, nil
 }
 

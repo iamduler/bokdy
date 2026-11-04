@@ -194,7 +194,8 @@ export function CourtForm(props: CourtFormProps) {
       (amenityCatalog.data ?? [])
         .filter(
           (amenity) =>
-            amenity.is_active !== false || amenityIds.includes(amenity.id),
+            amenity.scope === "court" &&
+            (amenity.is_active !== false || amenityIds.includes(amenity.id)),
         )
         .map((amenity) => ({
           value: amenity.id,

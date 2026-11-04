@@ -12,6 +12,7 @@ export type Amenity = {
   name_en: string;
   name_vi: string;
   icon?: string;
+  scope: "court" | "branch";
   is_active?: boolean;
 };
 

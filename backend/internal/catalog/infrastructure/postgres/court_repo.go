@@ -185,7 +185,7 @@ func (r *CourtRepo) ListAmenitiesByIDs(ctx context.Context, ids []uuid.UUID) ([]
 	for _, row := range rows {
 		out = append(out, entity.Amenity{
 			ID: row.ID, Code: row.Code, NameEn: row.NameEn, NameVi: row.NameVi,
-			Icon: row.Icon, IsActive: row.IsActive,
+			Icon: row.Icon, Scope: row.Scope, IsActive: row.IsActive,
 		})
 	}
 	return out, nil

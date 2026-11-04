@@ -90,13 +90,19 @@ func ParseCourtSurface(raw string) CourtSurface {
 	}
 }
 
-// Amenity is a reference.amenities row assignable to a Court.
+const (
+	AmenityScopeCourt  = "court"
+	AmenityScopeBranch = "branch"
+)
+
+// Amenity is a reference.amenities row. Scope court is assignable to a Court.
 type Amenity struct {
 	ID       uuid.UUID
 	Code     string
 	NameEn   string
 	NameVi   string
 	Icon     string
+	Scope    string
 	IsActive bool
 }
 

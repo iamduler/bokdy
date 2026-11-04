@@ -270,12 +270,18 @@ type LocationMedia struct {
 	CreatedAt time.Time
 }
 
+const (
+	AmenityScopeCourt  = "court"
+	AmenityScopeBranch = "branch"
+)
+
 type Amenity struct {
 	ID        uuid.UUID
 	Code      string
 	NameEn    string
 	NameVi    string
 	Icon      string
+	Scope     string
 	IsActive  bool
 	CreatedAt time.Time
 	UpdatedAt time.Time

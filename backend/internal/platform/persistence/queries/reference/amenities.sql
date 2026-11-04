@@ -1,11 +1,11 @@
 -- name: ListActiveAmenities :many
-SELECT id, code, name_en, name_vi, COALESCE(icon, '') AS icon, is_active, created_at, updated_at
+SELECT id, code, name_en, name_vi, COALESCE(icon, '') AS icon, scope, is_active, created_at, updated_at
 FROM reference.amenities
 WHERE is_active = true
 ORDER BY code ASC;
 
 -- name: ListAmenitiesByIDs :many
-SELECT id, code, name_en, name_vi, COALESCE(icon, '') AS icon, is_active, created_at, updated_at
+SELECT id, code, name_en, name_vi, COALESCE(icon, '') AS icon, scope, is_active, created_at, updated_at
 FROM reference.amenities
 WHERE id = ANY(sqlc.arg(ids)::uuid[]) AND is_active = true;
 

@@ -34,7 +34,7 @@ func (r *BranchRepo) Create(ctx context.Context, tx pgx.Tx, branch *entity.Branc
 		Code: branch.Code, Slug: branch.Slug, NameEn: nullStr(branch.NameEn), NameVi: nullStr(branch.NameVi),
 		Phone: nullStr(branch.Phone), Email: nullStr(branch.Email), Timezone: nullStr(branch.Timezone),
 		Website: nullStr(branch.Website), FacebookUrl: nullStr(branch.FacebookURL), GoogleMapsUrl: nullStr(branch.GoogleMapsURL),
-		FoundedYear: toInt32Ptr(branch.FoundedYear),
+		FoundedYear:  toInt32Ptr(branch.FoundedYear),
 		ShortIntroEn: nullStr(branch.ShortIntroEn), ShortIntroVi: nullStr(branch.ShortIntroVi),
 		DescriptionEn: nullStr(branch.DescriptionEn), DescriptionVi: nullStr(branch.DescriptionVi),
 		Status: dbsqlc.OrganizationBranchStatus(branch.Status), CreatedAt: branch.CreatedAt, UpdatedAt: branch.UpdatedAt,
@@ -120,7 +120,7 @@ func (r *BranchRepo) Update(ctx context.Context, tx pgx.Tx, branch *entity.Branc
 		NameEn: nullStr(branch.NameEn), NameVi: nullStr(branch.NameVi), Phone: nullStr(branch.Phone),
 		Email: nullStr(branch.Email), Timezone: nullStr(branch.Timezone),
 		Website: nullStr(branch.Website), FacebookUrl: nullStr(branch.FacebookURL), GoogleMapsUrl: nullStr(branch.GoogleMapsURL),
-		FoundedYear: toInt32Ptr(branch.FoundedYear),
+		FoundedYear:  toInt32Ptr(branch.FoundedYear),
 		ShortIntroEn: nullStr(branch.ShortIntroEn), ShortIntroVi: nullStr(branch.ShortIntroVi),
 		DescriptionEn: nullStr(branch.DescriptionEn), DescriptionVi: nullStr(branch.DescriptionVi),
 	}); err != nil {
@@ -328,7 +328,8 @@ func (r *BranchRepo) ListActiveAmenities(ctx context.Context) ([]entity.Amenity,
 	for _, row := range rows {
 		out = append(out, entity.Amenity{
 			ID: row.ID, Code: row.Code, NameEn: row.NameEn, NameVi: row.NameVi,
-			Icon: row.Icon, IsActive: row.IsActive, CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
+			Icon: row.Icon, Scope: row.Scope, IsActive: row.IsActive,
+			CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
 		})
 	}
 	return out, nil
@@ -346,7 +347,8 @@ func (r *BranchRepo) ListAmenitiesByIDs(ctx context.Context, ids []uuid.UUID) ([
 	for _, row := range rows {
 		out = append(out, entity.Amenity{
 			ID: row.ID, Code: row.Code, NameEn: row.NameEn, NameVi: row.NameVi,
-			Icon: row.Icon, IsActive: row.IsActive, CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
+			Icon: row.Icon, Scope: row.Scope, IsActive: row.IsActive,
+			CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
 		})
 	}
 	return out, nil
@@ -390,7 +392,7 @@ func (r *BranchRepo) ReplaceAmenities(ctx context.Context, tx pgx.Tx, locationID
 func toCreateAddressParams(locationID uuid.UUID, addr entity.BranchAddress) dbsqlc.CreateLocationAddressParams {
 	return dbsqlc.CreateLocationAddressParams{
 		ID:               id.MustNewUUID(),
-		BranchID:       locationID,
+		BranchID:         locationID,
 		DivisionScheme:   dbsqlc.ReferenceAdminDivisionScheme(addr.DivisionScheme),
 		CountryID:        addr.CountryID,
 		ProvinceFormerID: addr.ProvinceFormerID,
@@ -410,7 +412,7 @@ func toBranchFromFind(row dbsqlc.FindBranchByIDRow) *entity.Branch {
 		ID: row.ID, PublicID: row.PublicID, BusinessUnitID: row.BusinessUnitID, OrganizationID: row.OrganizationID,
 		Code: row.Code, Slug: row.Slug, NameEn: row.NameEn, NameVi: row.NameVi, Phone: row.Phone, Email: row.Email,
 		Timezone: row.Timezone, Website: row.Website, FacebookURL: row.FacebookUrl, GoogleMapsURL: row.GoogleMapsUrl,
-		FoundedYear: fromInt32Ptr(row.FoundedYear),
+		FoundedYear:  fromInt32Ptr(row.FoundedYear),
 		ShortIntroEn: row.ShortIntroEn, ShortIntroVi: row.ShortIntroVi,
 		DescriptionEn: row.DescriptionEn, DescriptionVi: row.DescriptionVi,
 		LogoFileID: row.LogoFileID, BannerFileID: row.BannerFileID,
@@ -438,7 +440,7 @@ func toBranchFromLocationID(row dbsqlc.FindBranchByLocationIDRow) *entity.Branch
 		CurrentAddressLine1: row.CurrentAddressLine1, CurrentAddressLine2: row.CurrentAddressLine2,
 		CurrentLatitude: row.CurrentLatitude, CurrentLongitude: row.CurrentLongitude,
 		CurrentAddressUpdatedAt: row.CurrentAddressUpdatedAt,
-		FormerAddressID: row.FormerAddressID, FormerCountryID: row.FormerCountryID,
+		FormerAddressID:         row.FormerAddressID, FormerCountryID: row.FormerCountryID,
 		ProvinceFormerID: row.ProvinceFormerID, DistrictFormerID: row.DistrictFormerID, WardFormerID: row.WardFormerID,
 		FormerAddressLine1: row.FormerAddressLine1, FormerAddressLine2: row.FormerAddressLine2,
 		FormerLatitude: row.FormerLatitude, FormerLongitude: row.FormerLongitude,
@@ -451,7 +453,7 @@ func toBranchFromList(row dbsqlc.ListBranchesByOrgRow) *entity.Branch {
 		ID: row.ID, PublicID: row.PublicID, BusinessUnitID: row.BusinessUnitID, OrganizationID: row.OrganizationID,
 		Code: row.Code, Slug: row.Slug, NameEn: row.NameEn, NameVi: row.NameVi, Phone: row.Phone, Email: row.Email,
 		Timezone: row.Timezone, Website: row.Website, FacebookURL: row.FacebookUrl, GoogleMapsURL: row.GoogleMapsUrl,
-		FoundedYear: fromInt32Ptr(row.FoundedYear),
+		FoundedYear:  fromInt32Ptr(row.FoundedYear),
 		ShortIntroEn: row.ShortIntroEn, ShortIntroVi: row.ShortIntroVi,
 		DescriptionEn: row.DescriptionEn, DescriptionVi: row.DescriptionVi,
 		LogoFileID: row.LogoFileID, BannerFileID: row.BannerFileID,

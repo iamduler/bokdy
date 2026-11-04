@@ -38,7 +38,7 @@ func (q *Queries) DeleteLocationAmenities(ctx context.Context, branchID uuid.UUI
 }
 
 const listActiveAmenities = `-- name: ListActiveAmenities :many
-SELECT id, code, name_en, name_vi, COALESCE(icon, '') AS icon, is_active, created_at, updated_at
+SELECT id, code, name_en, name_vi, COALESCE(icon, '') AS icon, scope, is_active, created_at, updated_at
 FROM reference.amenities
 WHERE is_active = true
 ORDER BY code ASC
@@ -50,6 +50,7 @@ type ListActiveAmenitiesRow struct {
 	NameEn    string    `json:"name_en"`
 	NameVi    string    `json:"name_vi"`
 	Icon      string    `json:"icon"`
+	Scope     string    `json:"scope"`
 	IsActive  bool      `json:"is_active"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
@@ -70,6 +71,7 @@ func (q *Queries) ListActiveAmenities(ctx context.Context) ([]ListActiveAmenitie
 			&i.NameEn,
 			&i.NameVi,
 			&i.Icon,
+			&i.Scope,
 			&i.IsActive,
 			&i.CreatedAt,
 			&i.UpdatedAt,
@@ -85,7 +87,7 @@ func (q *Queries) ListActiveAmenities(ctx context.Context) ([]ListActiveAmenitie
 }
 
 const listAmenitiesByIDs = `-- name: ListAmenitiesByIDs :many
-SELECT id, code, name_en, name_vi, COALESCE(icon, '') AS icon, is_active, created_at, updated_at
+SELECT id, code, name_en, name_vi, COALESCE(icon, '') AS icon, scope, is_active, created_at, updated_at
 FROM reference.amenities
 WHERE id = ANY($1::uuid[]) AND is_active = true
 `
@@ -96,6 +98,7 @@ type ListAmenitiesByIDsRow struct {
 	NameEn    string    `json:"name_en"`
 	NameVi    string    `json:"name_vi"`
 	Icon      string    `json:"icon"`
+	Scope     string    `json:"scope"`
 	IsActive  bool      `json:"is_active"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
@@ -116,6 +119,7 @@ func (q *Queries) ListAmenitiesByIDs(ctx context.Context, ids []uuid.UUID) ([]Li
 			&i.NameEn,
 			&i.NameVi,
 			&i.Icon,
+			&i.Scope,
 			&i.IsActive,
 			&i.CreatedAt,
 			&i.UpdatedAt,

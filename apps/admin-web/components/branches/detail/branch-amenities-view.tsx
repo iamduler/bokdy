@@ -39,7 +39,11 @@ export function BranchAmenitiesView() {
   const dirty = draft !== null && !sameSet(draft, savedIds);
 
   const options = (catalog.data ?? [])
-    .filter((amenity) => amenity.is_active !== false || selected.includes(amenity.id))
+    .filter(
+      (amenity) =>
+        amenity.scope === "branch" &&
+        (amenity.is_active !== false || selected.includes(amenity.id)),
+    )
     .map((amenity) => ({
       value: amenity.id,
       label: amenityLabel(amenity, locale),

@@ -1526,8 +1526,16 @@ paths:
     get:
       tags: [Reference]
       summary: List active amenity catalog
+      description: Optional `scope` limits the catalog to court amenities or branch amenities. Omit it to return both.
       security:
         - bearerAuth: []
+      parameters:
+        - name: scope
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [court, branch]
       responses:
         "200":
           description: OK
@@ -5377,7 +5385,7 @@ components:
         is_cover: { type: boolean }
     Amenity:
       type: object
-      required: [id, code, name, name_en, name_vi]
+      required: [id, code, name, name_en, name_vi, scope]
       properties:
         id: { type: string, format: uuid }
         code: { type: string }
@@ -5385,6 +5393,10 @@ components:
         name_en: { type: string }
         name_vi: { type: string }
         icon: { type: string }
+        scope:
+          type: string
+          enum: [court, branch]
+          description: court amenities attach to a Court; branch amenities attach to a Branch.
         is_active: { type: boolean }
     PutBranchAmenitiesRequest:
       type: object

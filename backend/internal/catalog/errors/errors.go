@@ -23,6 +23,7 @@ var (
 	ErrSportNotFound          = apperr.New(apperr.CodeValidation, "sport not found")
 	ErrDimensionsTooLong      = apperr.New(apperr.CodeValidation, "dimensions must be at most 100 characters")
 	ErrUnknownAmenity         = apperr.New(apperr.CodeValidation, "unknown amenity id")
+	ErrAmenityScope           = apperr.New(apperr.CodeValidation, "amenity scope mismatch")
 	ErrGalleryItemNotFound    = apperr.New(apperr.CodeNotFound, "gallery item not found")
 	ErrCodeImmutable          = apperr.New(apperr.CodeValidation, "court code is immutable")
 )

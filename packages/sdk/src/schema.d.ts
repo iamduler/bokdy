@@ -2447,10 +2447,15 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List active amenity catalog */
+        /**
+         * List active amenity catalog
+         * @description Optional `scope` limits the catalog to court amenities or branch amenities. Omit it to return both.
+         */
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    scope?: "court" | "branch";
+                };
                 header?: never;
                 path?: never;
                 cookie?: never;
@@ -7858,6 +7863,11 @@ export interface components {
             name_en: string;
             name_vi: string;
             icon?: string;
+            /**
+             * @description court amenities attach to a Court; branch amenities attach to a Branch.
+             * @enum {string}
+             */
+            scope: "court" | "branch";
             is_active?: boolean;
         };
         PutBranchAmenitiesRequest: {

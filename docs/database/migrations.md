@@ -20,6 +20,7 @@ Foundation sequence:
 | `00010_organization_w2_branch_staff.sql` | business_units, locations(+address/settings), invitation rejected, default BU backfill |
 | `00031_rename_location_resource_to_branch_court.sql` | Rename locations→branches, resources→courts, resource_categories→court_types; location_id→branch_id; resource_id→court_id |
 | `00032_court_profile_and_drop_type.sql` | Drop courts.court_type_id; add sport_id/surface/dimensions/description; court_media; court_amenities; pricing category_prices → sport_id |
+| `00035_amenity_scope.sql` | reference.amenities.scope (`court` \| `branch`); court vs branch catalog seed |
 | `00011_crm_w3_customers.sql` | crm.customers, customer_profiles, customer_contacts |
 | `00017_locales_emoji.sql` | locales.emoji; en native_name → English |
 

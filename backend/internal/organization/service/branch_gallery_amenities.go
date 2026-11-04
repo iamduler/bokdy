@@ -201,12 +201,24 @@ func (s *BranchService) DeleteGalleryItem(ctx context.Context, branchID, mediaID
 	return nil
 }
 
-func (s *BranchService) ListAmenities(ctx context.Context) ([]entity.Amenity, error) {
+func (s *BranchService) ListAmenities(ctx context.Context, scope string) ([]entity.Amenity, error) {
+	if scope != "" && scope != entity.AmenityScopeCourt && scope != entity.AmenityScopeBranch {
+		return nil, apperr.New(apperr.CodeValidation, "invalid scope")
+	}
 	items, err := s.branches.ListActiveAmenities(ctx)
 	if err != nil {
 		return nil, apperr.Wrap(err, apperr.CodeInternal, "list amenities")
 	}
-	return items, nil
+	if scope == "" {
+		return items, nil
+	}
+	out := make([]entity.Amenity, 0, len(items))
+	for _, item := range items {
+		if item.Scope == scope {
+			out = append(out, item)
+		}
+	}
+	return out, nil
 }
 
 func (s *BranchService) GetBranchAmenities(ctx context.Context, branchID, actor uuid.UUID) ([]entity.Amenity, error) {
@@ -257,6 +269,9 @@ func (s *BranchService) ReplaceBranchAmenities(ctx context.Context, branchID, ac
 		}
 		amenityIDs = make([]uuid.UUID, 0, len(resolved))
 		for _, a := range resolved {
+			if a.Scope != entity.AmenityScopeBranch {
+				return nil, apperr.New(apperr.CodeValidation, "amenity scope mismatch")
+			}
 			amenityIDs = append(amenityIDs, a.ID)
 		}
 	}

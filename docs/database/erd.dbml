@@ -1436,13 +1436,15 @@ Table reference.amenities {
 
   icon varchar(50)
 
+  scope varchar(20) [not null, note: 'court or branch']
+
   is_active boolean [not null, default: true]
 
   created_at timestamptz [not null]
 
   updated_at timestamptz [not null]
 
-  Note: 'Amenity catalog (wifi, parking, shower, shop, …).'
+  Note: 'Amenity catalog. scope=court is assignable to a Court; scope=branch is assignable to a Branch.'
 }
 
 Table organization.branch_addresses {

@@ -125,6 +125,7 @@ Each Branch has
 - Address
 - Timezone
 - Courts
+- Branch amenities (parking, Wi‑Fi, restroom, …) — `reference.amenities` where `scope=branch`
 - Staff
 - Inventory
 - Cashiers
@@ -207,7 +208,7 @@ Each Court has
 - Dimensions (optional free text)
 - Description (optional sanitized HTML)
 - Gallery images
-- Court amenities (lights, AC, seating, …)
+- Court amenities (lights, AC, seating, …) — `reference.amenities` where `scope=court`. Court and branch amenities are two scopes of the same catalog.
 
 Court is not linked to Court Type. Pricing base rates key off Sport.
 

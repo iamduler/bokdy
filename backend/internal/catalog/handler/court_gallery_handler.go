@@ -45,6 +45,7 @@ type amenityDTO struct {
 	NameEn   string `json:"name_en"`
 	NameVi   string `json:"name_vi"`
 	Icon     string `json:"icon,omitempty"`
+	Scope    string `json:"scope"`
 	IsActive bool   `json:"is_active,omitempty"`
 }
 
@@ -185,7 +186,7 @@ func toAmenityDTOs(c *gin.Context, items []entity.Amenity) []amenityDTO {
 		a := &items[i]
 		out = append(out, amenityDTO{
 			ID: a.ID.String(), Code: a.Code, Name: i18n.DisplayName(locale, a.NameEn, a.NameVi),
-			NameEn: a.NameEn, NameVi: a.NameVi, Icon: a.Icon, IsActive: a.IsActive,
+			NameEn: a.NameEn, NameVi: a.NameVi, Icon: a.Icon, Scope: a.Scope, IsActive: a.IsActive,
 		})
 	}
 	return out
