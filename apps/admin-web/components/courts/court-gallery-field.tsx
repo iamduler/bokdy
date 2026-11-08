@@ -9,6 +9,7 @@ import {
   MediaLightbox,
   type MediaPreviewItem,
 } from "@/components/entity/media-lightbox";
+import { InfoHint } from "@/components/info-hint";
 import { useCourtGallery } from "@/hooks/use-courts";
 import { courtGalleryFileSrc } from "@/lib/api/courts";
 import {
@@ -71,23 +72,25 @@ export function CourtPendingImages({ files, onChange, disabled }: PendingProps) 
 
   return (
     <div className="space-y-3">
-      <Input
-        type="file"
-        multiple
-        accept={COURT_IMAGE_ACCEPT}
-        disabled={disabled}
-        aria-label={t("upload")}
-        onChange={(event) => {
-          const added = filterCourtImages(event.target.files, () =>
-            toast.error(t("invalidType")),
-          );
-          if (added.length) onChange([...files, ...added]);
-          event.target.value = "";
-        }}
-      />
-      {previews.length === 0 ? (
-        <p className="text-xs text-muted-foreground">{t("pendingHint")}</p>
-      ) : (
+      <div className="flex items-center gap-2">
+        <Input
+          className="min-w-0 flex-1"
+          type="file"
+          multiple
+          accept={COURT_IMAGE_ACCEPT}
+          disabled={disabled}
+          aria-label={t("upload")}
+          onChange={(event) => {
+            const added = filterCourtImages(event.target.files, () =>
+              toast.error(t("invalidType")),
+            );
+            if (added.length) onChange([...files, ...added]);
+            event.target.value = "";
+          }}
+        />
+        <InfoHint text={t("pendingHint")} />
+      </div>
+      {previews.length === 0 ? null : (
         <ul className="grid grid-cols-3 gap-2">
           {previews.map((preview, index) => (
             <li
@@ -207,21 +210,24 @@ export function CourtGalleryManager({
 
   return (
     <div className="space-y-3">
-      <Input
-        type="file"
-        multiple
-        accept={COURT_IMAGE_ACCEPT}
-        disabled={disabled}
-        aria-label={t("upload")}
-        onChange={(event) => {
-          const added = filterCourtImages(event.target.files, () =>
-            toast.error(t("invalidType")),
-          );
-          if (added.length) onPendingFilesChange([...pendingFiles, ...added]);
-          event.target.value = "";
-        }}
-      />
-      <p className="text-xs text-muted-foreground">{t("editDraftHint")}</p>
+      <div className="flex items-center gap-2">
+        <Input
+          className="min-w-0 flex-1"
+          type="file"
+          multiple
+          accept={COURT_IMAGE_ACCEPT}
+          disabled={disabled}
+          aria-label={t("upload")}
+          onChange={(event) => {
+            const added = filterCourtImages(event.target.files, () =>
+              toast.error(t("invalidType")),
+            );
+            if (added.length) onPendingFilesChange([...pendingFiles, ...added]);
+            event.target.value = "";
+          }}
+        />
+        <InfoHint text={t("editDraftHint")} />
+      </div>
       {gallery.isLoading ? (
         <p className="text-xs text-muted-foreground">{t("loading")}</p>
       ) : gallery.isError ? (

@@ -37276,3 +37276,214 @@ INSERT INTO reference.amenities (id, code, name_en, name_vi, icon, is_active, sc
     ('a1000000-0000-4000-8000-00000000000f', 'reception', 'Reception desk', 'Quầy lễ tân', 'concierge-bell', true, 'branch', now(), now());
 
 
+-- >>> 00036_pricing_profiles.sql
+CREATE TABLE pricing.profiles (
+    id                 uuid PRIMARY KEY,
+    tenant_id          uuid NOT NULL REFERENCES organization.tenants (id),
+    branch_id          uuid NOT NULL REFERENCES organization.branches (id),
+    sport_id           uuid NOT NULL REFERENCES catalog.sports (id),
+    slot_unit_minutes  int NOT NULL,
+    currency           varchar(10) NOT NULL DEFAULT 'VND',
+    created_at         timestamptz NOT NULL,
+    updated_at         timestamptz NOT NULL,
+    CONSTRAINT profiles_slot_unit_chk CHECK (
+        slot_unit_minutes BETWEEN 15 AND 180 AND slot_unit_minutes % 15 = 0
+    )
+);
+
+CREATE UNIQUE INDEX profiles_branch_sport_uidx ON pricing.profiles (branch_id, sport_id);
+CREATE INDEX profiles_tenant_id_idx ON pricing.profiles (tenant_id);
+
+CREATE TABLE pricing.profile_durations (
+    profile_id uuid NOT NULL REFERENCES pricing.profiles (id) ON DELETE CASCADE,
+    minutes    int NOT NULL,
+    PRIMARY KEY (profile_id, minutes),
+    CONSTRAINT profile_durations_minutes_chk CHECK (minutes > 0 AND minutes <= 1440)
+);
+
+ALTER TABLE pricing.price_versions
+    ADD COLUMN profile_id uuid REFERENCES pricing.profiles (id);
+
+CREATE INDEX price_versions_profile_id_idx ON pricing.price_versions (profile_id);
+
+ALTER TABLE pricing.time_rules
+    ADD COLUMN slot_amount numeric(18, 2);
+
+ALTER TABLE booking.bookings
+    ADD COLUMN pricing_snapshot jsonb;
+
+ALTER TABLE reservation.reservations
+    ADD COLUMN pricing_snapshot jsonb;
+
+
+-- >>> 00037_pricing_profile_names.sql
+ALTER TABLE pricing.profiles
+    ADD COLUMN name varchar(80);
+
+UPDATE pricing.profiles SET name = 'Mặc định' WHERE name IS NULL;
+
+ALTER TABLE pricing.profiles
+    ALTER COLUMN name SET NOT NULL;
+
+DROP INDEX IF EXISTS pricing.profiles_branch_sport_uidx;
+
+CREATE UNIQUE INDEX profiles_branch_sport_name_uidx
+    ON pricing.profiles (branch_id, sport_id, name);
+
+ALTER TABLE pricing.price_versions
+    ADD COLUMN slot_unit_minutes int;
+
+ALTER TABLE pricing.price_versions
+    ADD CONSTRAINT price_versions_slot_unit_chk CHECK (
+        slot_unit_minutes IS NULL
+        OR (slot_unit_minutes BETWEEN 15 AND 180 AND slot_unit_minutes % 15 = 0)
+    );
+
+CREATE TABLE pricing.version_durations (
+    price_version_id uuid NOT NULL REFERENCES pricing.price_versions (id) ON DELETE CASCADE,
+    minutes          int NOT NULL,
+    PRIMARY KEY (price_version_id, minutes),
+    CONSTRAINT version_durations_minutes_chk CHECK (minutes > 0 AND minutes <= 1440)
+);
+
+UPDATE pricing.price_versions v
+SET slot_unit_minutes = p.slot_unit_minutes
+FROM pricing.profiles p
+WHERE v.profile_id = p.id
+  AND v.slot_unit_minutes IS NULL;
+
+INSERT INTO pricing.version_durations (price_version_id, minutes)
+SELECT v.id, d.minutes
+FROM pricing.price_versions v
+JOIN pricing.profile_durations d ON d.profile_id = v.profile_id
+WHERE v.profile_id IS NOT NULL
+ON CONFLICT DO NOTHING;
+
+
+-- >>> 00038_pricing_profile_audience.sql
+ALTER TABLE pricing.profiles
+    ADD COLUMN code varchar(16),
+    ADD COLUMN customer_type varchar(16) NOT NULL DEFAULT 'walk_in',
+    ADD COLUMN unlimited_duration boolean NOT NULL DEFAULT false;
+
+ALTER TABLE pricing.profiles
+    ADD CONSTRAINT profiles_customer_type_chk CHECK (customer_type IN ('walk_in', 'member', 'vip'));
+
+WITH numbered AS (
+    SELECT id,
+           row_number() OVER (PARTITION BY branch_id ORDER BY created_at, id) AS seq
+    FROM pricing.profiles
+)
+UPDATE pricing.profiles p
+SET code = 'PRC' || lpad(n.seq::text, 5, '0')
+FROM numbered n
+WHERE p.id = n.id
+  AND p.code IS NULL;
+
+ALTER TABLE pricing.profiles
+    ALTER COLUMN code SET NOT NULL;
+
+DROP INDEX IF EXISTS pricing.profiles_branch_sport_name_uidx;
+
+CREATE UNIQUE INDEX profiles_branch_code_uidx
+    ON pricing.profiles (branch_id, code);
+
+CREATE UNIQUE INDEX profiles_branch_sport_audience_name_uidx
+    ON pricing.profiles (branch_id, sport_id, customer_type, name);
+
+ALTER TABLE pricing.price_versions
+    ADD COLUMN unlimited_duration boolean NOT NULL DEFAULT false;
+
+CREATE TABLE pricing.day_groups (
+    id               uuid PRIMARY KEY,
+    price_version_id uuid NOT NULL REFERENCES pricing.price_versions (id) ON DELETE CASCADE,
+    name             varchar(80) NOT NULL,
+    weekdays         smallint[] NOT NULL,
+    position         int NOT NULL DEFAULT 0,
+    created_at       timestamptz NOT NULL
+);
+
+CREATE INDEX day_groups_price_version_id_idx ON pricing.day_groups (price_version_id);
+
+CREATE TABLE pricing.holiday_windows (
+    id               uuid PRIMARY KEY,
+    price_version_id uuid NOT NULL REFERENCES pricing.price_versions (id) ON DELETE CASCADE,
+    name             varchar(80) NOT NULL,
+    starts_at        time NOT NULL,
+    ends_at          time NOT NULL,
+    amount           numeric(18, 2) NOT NULL,
+    position         int NOT NULL DEFAULT 0,
+    created_at       timestamptz NOT NULL,
+    CONSTRAINT holiday_windows_amount_chk CHECK (amount >= 0)
+);
+
+CREATE INDEX holiday_windows_price_version_id_idx ON pricing.holiday_windows (price_version_id);
+
+CREATE TABLE pricing.branch_holidays (
+    id          uuid PRIMARY KEY,
+    branch_id   uuid NOT NULL REFERENCES organization.branches (id),
+    holiday_on  date NOT NULL,
+    name        varchar(80) NOT NULL,
+    created_at  timestamptz NOT NULL,
+    CONSTRAINT branch_holidays_branch_date_uidx UNIQUE (branch_id, holiday_on)
+);
+
+ALTER TABLE pricing.time_rules
+    ADD COLUMN name varchar(80) NOT NULL DEFAULT '',
+    ADD COLUMN day_group_id uuid REFERENCES pricing.day_groups (id) ON DELETE CASCADE;
+
+INSERT INTO pricing.day_groups (id, price_version_id, name, weekdays, position, created_at)
+SELECT tr.id, tr.price_version_id, '', tr.weekdays, 0, tr.created_at
+FROM pricing.time_rules tr
+JOIN pricing.price_versions v ON v.id = tr.price_version_id
+WHERE v.profile_id IS NOT NULL;
+
+UPDATE pricing.time_rules tr
+SET day_group_id = tr.id
+FROM pricing.price_versions v
+WHERE v.id = tr.price_version_id
+  AND v.profile_id IS NOT NULL
+  AND tr.day_group_id IS NULL;
+
+
+-- >>> 00039_pricing_active_per_audience.sql
+DROP INDEX IF EXISTS pricing.price_versions_one_active_uidx;
+
+CREATE UNIQUE INDEX price_versions_one_org_active_uidx
+    ON pricing.price_versions (price_list_id)
+    WHERE status = 'active' AND profile_id IS NULL;
+
+CREATE UNIQUE INDEX price_versions_one_profile_active_uidx
+    ON pricing.price_versions (profile_id)
+    WHERE status = 'active' AND profile_id IS NOT NULL;
+
+
+-- >>> 00040_pricing_holiday_layers.sql
+CREATE TABLE pricing.calendar_holidays (
+    id          uuid PRIMARY KEY,
+    holiday_on  date NOT NULL,
+    name        varchar(80) NOT NULL,
+    created_at  timestamptz NOT NULL,
+    CONSTRAINT calendar_holidays_date_uidx UNIQUE (holiday_on),
+    CONSTRAINT calendar_holidays_name_chk CHECK (char_length(name) > 0)
+);
+
+CREATE TABLE pricing.organization_holidays (
+    id              uuid PRIMARY KEY,
+    organization_id uuid NOT NULL,
+    holiday_on      date NOT NULL,
+    name            varchar(80) NOT NULL,
+    effect          varchar(16) NOT NULL,
+    created_at      timestamptz NOT NULL,
+    CONSTRAINT organization_holidays_effect_chk CHECK (effect IN ('include', 'exclude')),
+    CONSTRAINT organization_holidays_org_date_uidx UNIQUE (organization_id, holiday_on),
+    CONSTRAINT organization_holidays_name_chk CHECK (char_length(name) > 0)
+);
+
+ALTER TABLE pricing.branch_holidays
+    ADD COLUMN effect varchar(16) NOT NULL DEFAULT 'include';
+
+ALTER TABLE pricing.branch_holidays
+    ADD CONSTRAINT branch_holidays_effect_chk CHECK (effect IN ('include', 'exclude'));
+
+

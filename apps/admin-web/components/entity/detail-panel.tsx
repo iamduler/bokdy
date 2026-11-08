@@ -12,6 +12,7 @@ export function EntityDetailPanel({
   title,
   icon,
   tone,
+  hint,
   actions,
   children,
   className,
@@ -19,6 +20,7 @@ export function EntityDetailPanel({
   title?: string;
   icon?: ReactNode;
   tone?: SoftIconToneKey;
+  hint?: string;
   actions?: ReactNode;
   children: ReactNode;
   className?: string;
@@ -31,7 +33,7 @@ export function EntityDetailPanel({
       )}
     >
       {title ? (
-        <EntitySectionHead icon={icon} tone={tone} actions={actions}>
+        <EntitySectionHead icon={icon} tone={tone} hint={hint} actions={actions}>
           {title}
         </EntitySectionHead>
       ) : null}

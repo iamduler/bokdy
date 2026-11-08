@@ -14,6 +14,7 @@ import { useOrganizationDetail } from "../organization-detail-context";
 const TABS = [
   { id: "overview", href: "", labelKey: "overview" },
   { id: "branches", href: "/branches", labelKey: "branches" },
+  { id: "holidays", href: "/holidays", labelKey: "holidays" },
   { id: "courts", href: "/courts", labelKey: "courts" },
   { id: "team", href: "/team", labelKey: "team" },
   { id: "bookings", href: "/bookings", labelKey: "bookings" },

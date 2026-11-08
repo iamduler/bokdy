@@ -7,6 +7,7 @@ import { useState } from "react";
 
 import { softDirectoryPrimaryBtn } from "@/components/data-list";
 import { EntityDetailPanel } from "@/components/entity/detail-panel";
+import { InfoHint } from "@/components/info-hint";
 import { PopoverCommandMultiSelect } from "@/components/popover-command-multi-select";
 import {
   useAmenityCatalog,
@@ -84,7 +85,10 @@ export function BranchAmenitiesView() {
         ) : (
           <div className="space-y-4">
             <div className="space-y-2">
-              <FieldLabel>{t("label")}</FieldLabel>
+              <div className="flex items-center gap-1.5">
+                <FieldLabel>{t("label")}</FieldLabel>
+                <InfoHint text={t("hint")} />
+              </div>
               <PopoverCommandMultiSelect
                 value={selected}
                 options={options}
@@ -95,7 +99,6 @@ export function BranchAmenitiesView() {
                 className="w-full bg-background"
                 onValueChange={setDraft}
               />
-              <p className="text-xs text-muted-foreground">{t("hint")}</p>
             </div>
             <div className="flex justify-end gap-2">
               <Button

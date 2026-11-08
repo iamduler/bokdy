@@ -14,6 +14,14 @@ func nullStr(s string) *string {
 	return &s
 }
 
+func toPgDate(value string) (pgtype.Date, error) {
+	parsed, err := time.Parse("2006-01-02", value)
+	if err != nil {
+		return pgtype.Date{}, err
+	}
+	return pgtype.Date{Time: parsed, Valid: true}, nil
+}
+
 func toPgTime(t time.Time) pgtype.Time {
 	d := time.Duration(t.Hour())*time.Hour +
 		time.Duration(t.Minute())*time.Minute +

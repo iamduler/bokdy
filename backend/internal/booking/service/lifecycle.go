@@ -259,6 +259,7 @@ func (s *BookingService) Reschedule(ctx context.Context, bookingID, actor uuid.U
 		locked.Currency = quote.Currency
 		locked.Subtotal, locked.TotalAmount = quote.TotalAmount, quote.TotalAmount
 		locked.PriceVersionID = &priceVersionID
+		locked.PricingSnapshot = quote.Snapshot
 		locked.UpdatedAt = now
 		if err := s.repo.Reschedule(ctx, tx, locked); err != nil {
 			return err

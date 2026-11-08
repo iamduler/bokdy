@@ -2,6 +2,7 @@
 
 import {
   BadgeCheck,
+  CalendarDays,
   Clock,
   Images,
   LayoutDashboard,
@@ -28,19 +29,20 @@ import { useBranchDetail } from "./branch-detail-context";
 const TAB_ICONS: Record<BranchDetailTabId, ReactNode> = {
   overview: <LayoutDashboard />,
   pricing: <Tags />,
+  holidays: <CalendarDays />,
   images: <Images />,
   courts: <LayoutGrid />,
   schedule: <Clock />,
   amenities: <BadgeCheck />,
 };
 
-export function BranchDetailTabs() {
+export function BranchDetailTabs({ activeId }: { activeId?: BranchDetailTabId } = {}) {
   const t = useTranslations("organization.branchDetail.tabs");
   const td = useTranslations("organization.branchDetail");
   const { branchId } = useBranchDetail();
   const pathname = usePathname();
   const base = branchDetailBase(branchId);
-  const activeId = resolveBranchDetailTab(pathname, base);
+  const resolvedId = activeId ?? resolveBranchDetailTab(pathname, base);
 
   const tabs = useMemo<EntityDetailTabItem[]>(
     () =>
@@ -48,10 +50,10 @@ export function BranchDetailTabs() {
         id: tab.id,
         label: t(tab.id),
         href: tab.segment ? `${base}/${tab.segment}` : base,
-        active: tab.id === activeId,
+        active: tab.id === resolvedId,
         icon: TAB_ICONS[tab.id],
       })),
-    [activeId, base, t],
+    [resolvedId, base, t],
   );
 
   return (

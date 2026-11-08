@@ -2,7 +2,6 @@
 
 import {
   Field,
-  FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
@@ -15,6 +14,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 
 import { EntityCover } from "@/components/entity/cover";
+import { InfoHint } from "@/components/info-hint";
 import { EntityFormFrame } from "@/components/entity/form-frame";
 import { EntityFormSection } from "@/components/entity/form-section";
 import {
@@ -795,13 +795,17 @@ export function BranchForm(props: BranchFormProps) {
                 <FieldError>{addressError}</FieldError>
               </Field>
               <Field className="sm:col-span-2">
-                <MapPicker
-                  latitude={mapsReady ? latNum : undefined}
-                  longitude={mapsReady ? lngNum : undefined}
-                  onPick={(lat, lng) => void onMapPick(lat, lng)}
-                  unavailableLabel={tb("mapUnavailable")}
-                />
-                <FieldDescription>{tb("mapPickHint")}</FieldDescription>
+                <div className="flex items-start gap-2">
+                  <div className="min-w-0 flex-1">
+                    <MapPicker
+                      latitude={mapsReady ? latNum : undefined}
+                      longitude={mapsReady ? lngNum : undefined}
+                      onPick={(lat, lng) => void onMapPick(lat, lng)}
+                      unavailableLabel={tb("mapUnavailable")}
+                    />
+                  </div>
+                  <InfoHint text={tb("mapPickHint")} />
+                </div>
               </Field>
               <input type="hidden" {...register("latitude")} />
               <input type="hidden" {...register("longitude")} />

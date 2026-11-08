@@ -2,11 +2,11 @@
 INSERT INTO booking.bookings (
     id, public_id, tenant_id, booking_no, reservation_id, customer_id, branch_id, court_id,
     status, currency, subtotal, discount_amount, tax_amount, total_amount,
-    price_version_id, starts_at, ends_at, expires_at, confirmed_at, created_by, created_at, updated_at
+    price_version_id, pricing_snapshot, starts_at, ends_at, expires_at, confirmed_at, created_by, created_at, updated_at
 ) VALUES (
     $1, $2, $3, $4, $5, $6, $7, $8,
     $9, $10, $11, $12, $13, $14,
-    $15, $16, $17, $18, $19, $20, $21, $22
+    $15, $16, $17, $18, $19, $20, $21, $22, $23
 );
 
 -- name: CreateBookingResource :exec
@@ -23,7 +23,7 @@ WHERE booking_id = $1;
 SELECT id, public_id, tenant_id, booking_no, reservation_id, customer_id, branch_id, court_id,
        status, currency, subtotal, discount_amount, tax_amount, total_amount, price_version_id,
        starts_at, ends_at, expires_at, confirmed_at, canceled_at, completed_at, checked_in_at,
-       created_by, created_at, updated_at
+       created_by, created_at, updated_at, pricing_snapshot
 FROM booking.bookings
 WHERE id = $1;
 
@@ -31,7 +31,7 @@ WHERE id = $1;
 SELECT id, public_id, tenant_id, booking_no, reservation_id, customer_id, branch_id, court_id,
        status, currency, subtotal, discount_amount, tax_amount, total_amount, price_version_id,
        starts_at, ends_at, expires_at, confirmed_at, canceled_at, completed_at, checked_in_at,
-       created_by, created_at, updated_at
+       created_by, created_at, updated_at, pricing_snapshot
 FROM booking.bookings
 WHERE id = $1
 FOR UPDATE;
@@ -40,7 +40,7 @@ FOR UPDATE;
 SELECT id, public_id, tenant_id, booking_no, reservation_id, customer_id, branch_id, court_id,
        status, currency, subtotal, discount_amount, tax_amount, total_amount, price_version_id,
        starts_at, ends_at, expires_at, confirmed_at, canceled_at, completed_at, checked_in_at,
-       created_by, created_at, updated_at
+       created_by, created_at, updated_at, pricing_snapshot
 FROM booking.bookings
 WHERE tenant_id = sqlc.arg(tenant_id)
   AND (sqlc.narg(branch_id)::uuid IS NULL OR branch_id = sqlc.narg(branch_id)::uuid)
@@ -54,7 +54,7 @@ LIMIT sqlc.arg(row_limit);
 SELECT id, public_id, tenant_id, booking_no, reservation_id, customer_id, branch_id, court_id,
        status, currency, subtotal, discount_amount, tax_amount, total_amount, price_version_id,
        starts_at, ends_at, expires_at, confirmed_at, canceled_at, completed_at, checked_in_at,
-       created_by, created_at, updated_at
+       created_by, created_at, updated_at, pricing_snapshot
 FROM booking.bookings
 WHERE customer_id = ANY (sqlc.arg(customer_ids)::uuid[])
 ORDER BY starts_at DESC
@@ -64,7 +64,7 @@ LIMIT sqlc.arg(row_limit);
 SELECT id, public_id, tenant_id, booking_no, reservation_id, customer_id, branch_id, court_id,
        status, currency, subtotal, discount_amount, tax_amount, total_amount, price_version_id,
        starts_at, ends_at, expires_at, confirmed_at, canceled_at, completed_at, checked_in_at,
-       created_by, created_at, updated_at
+       created_by, created_at, updated_at, pricing_snapshot
 FROM booking.bookings
 WHERE status = 'pending' AND expires_at IS NOT NULL AND expires_at < $1
 ORDER BY expires_at ASC
@@ -93,7 +93,7 @@ WHERE id = $1 AND status IN ('pending', 'confirmed', 'checked_in');
 -- name: RescheduleBooking :exec
 UPDATE booking.bookings
 SET starts_at = $2, ends_at = $3, currency = $4, subtotal = $5, discount_amount = $6,
-    tax_amount = $7, total_amount = $8, price_version_id = $9, updated_at = $10
+    tax_amount = $7, total_amount = $8, price_version_id = $9, pricing_snapshot = $10, updated_at = $11
 WHERE id = $1;
 
 -- name: CreateCheckIn :exec

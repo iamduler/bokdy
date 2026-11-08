@@ -2021,31 +2021,32 @@ type BillingInvoice struct {
 }
 
 type BookingBooking struct {
-	ID             uuid.UUID            `json:"id"`
-	PublicID       string               `json:"public_id"`
-	TenantID       uuid.UUID            `json:"tenant_id"`
-	BookingNo      string               `json:"booking_no"`
-	ReservationID  *uuid.UUID           `json:"reservation_id"`
-	CustomerID     uuid.UUID            `json:"customer_id"`
-	BranchID       uuid.UUID            `json:"branch_id"`
-	CourtID        uuid.UUID            `json:"court_id"`
-	Status         BookingBookingStatus `json:"status"`
-	Currency       string               `json:"currency"`
-	Subtotal       pgtype.Numeric       `json:"subtotal"`
-	DiscountAmount pgtype.Numeric       `json:"discount_amount"`
-	TaxAmount      pgtype.Numeric       `json:"tax_amount"`
-	TotalAmount    pgtype.Numeric       `json:"total_amount"`
-	PriceVersionID *uuid.UUID           `json:"price_version_id"`
-	StartsAt       time.Time            `json:"starts_at"`
-	EndsAt         time.Time            `json:"ends_at"`
-	ExpiresAt      *time.Time           `json:"expires_at"`
-	ConfirmedAt    *time.Time           `json:"confirmed_at"`
-	CanceledAt     *time.Time           `json:"canceled_at"`
-	CompletedAt    *time.Time           `json:"completed_at"`
-	CheckedInAt    *time.Time           `json:"checked_in_at"`
-	CreatedBy      *uuid.UUID           `json:"created_by"`
-	CreatedAt      time.Time            `json:"created_at"`
-	UpdatedAt      time.Time            `json:"updated_at"`
+	ID              uuid.UUID            `json:"id"`
+	PublicID        string               `json:"public_id"`
+	TenantID        uuid.UUID            `json:"tenant_id"`
+	BookingNo       string               `json:"booking_no"`
+	ReservationID   *uuid.UUID           `json:"reservation_id"`
+	CustomerID      uuid.UUID            `json:"customer_id"`
+	BranchID        uuid.UUID            `json:"branch_id"`
+	CourtID         uuid.UUID            `json:"court_id"`
+	Status          BookingBookingStatus `json:"status"`
+	Currency        string               `json:"currency"`
+	Subtotal        pgtype.Numeric       `json:"subtotal"`
+	DiscountAmount  pgtype.Numeric       `json:"discount_amount"`
+	TaxAmount       pgtype.Numeric       `json:"tax_amount"`
+	TotalAmount     pgtype.Numeric       `json:"total_amount"`
+	PriceVersionID  *uuid.UUID           `json:"price_version_id"`
+	StartsAt        time.Time            `json:"starts_at"`
+	EndsAt          time.Time            `json:"ends_at"`
+	ExpiresAt       *time.Time           `json:"expires_at"`
+	ConfirmedAt     *time.Time           `json:"confirmed_at"`
+	CanceledAt      *time.Time           `json:"canceled_at"`
+	CompletedAt     *time.Time           `json:"completed_at"`
+	CheckedInAt     *time.Time           `json:"checked_in_at"`
+	CreatedBy       *uuid.UUID           `json:"created_by"`
+	CreatedAt       time.Time            `json:"created_at"`
+	UpdatedAt       time.Time            `json:"updated_at"`
+	PricingSnapshot []byte               `json:"pricing_snapshot"`
 }
 
 type BookingBookingCourt struct {
@@ -2662,12 +2663,57 @@ type PlatformFileReference struct {
 	CreatedAt  time.Time `json:"created_at"`
 }
 
+type PricingBranchHoliday struct {
+	ID        uuid.UUID   `json:"id"`
+	BranchID  uuid.UUID   `json:"branch_id"`
+	HolidayOn pgtype.Date `json:"holiday_on"`
+	Name      string      `json:"name"`
+	CreatedAt time.Time   `json:"created_at"`
+	Effect    string      `json:"effect"`
+}
+
+type PricingCalendarHoliday struct {
+	ID        uuid.UUID   `json:"id"`
+	HolidayOn pgtype.Date `json:"holiday_on"`
+	Name      string      `json:"name"`
+	CreatedAt time.Time   `json:"created_at"`
+}
+
 type PricingCategoryPrice struct {
 	ID             uuid.UUID      `json:"id"`
 	PriceVersionID uuid.UUID      `json:"price_version_id"`
 	SportID        uuid.UUID      `json:"sport_id"`
 	Amount         pgtype.Numeric `json:"amount"`
 	CreatedAt      time.Time      `json:"created_at"`
+}
+
+type PricingDayGroup struct {
+	ID             uuid.UUID `json:"id"`
+	PriceVersionID uuid.UUID `json:"price_version_id"`
+	Name           string    `json:"name"`
+	Weekdays       []int16   `json:"weekdays"`
+	Position       int32     `json:"position"`
+	CreatedAt      time.Time `json:"created_at"`
+}
+
+type PricingHolidayWindow struct {
+	ID             uuid.UUID      `json:"id"`
+	PriceVersionID uuid.UUID      `json:"price_version_id"`
+	Name           string         `json:"name"`
+	StartsAt       pgtype.Time    `json:"starts_at"`
+	EndsAt         pgtype.Time    `json:"ends_at"`
+	Amount         pgtype.Numeric `json:"amount"`
+	Position       int32          `json:"position"`
+	CreatedAt      time.Time      `json:"created_at"`
+}
+
+type PricingOrganizationHoliday struct {
+	ID             uuid.UUID   `json:"id"`
+	OrganizationID uuid.UUID   `json:"organization_id"`
+	HolidayOn      pgtype.Date `json:"holiday_on"`
+	Name           string      `json:"name"`
+	Effect         string      `json:"effect"`
+	CreatedAt      time.Time   `json:"created_at"`
 }
 
 type PricingPriceList struct {
@@ -2683,15 +2729,38 @@ type PricingPriceList struct {
 }
 
 type PricingPriceVersion struct {
-	ID            uuid.UUID                 `json:"id"`
-	PriceListID   uuid.UUID                 `json:"price_list_id"`
-	Version       int32                     `json:"version"`
-	Status        PricingPriceVersionStatus `json:"status"`
-	EffectiveFrom time.Time                 `json:"effective_from"`
-	EffectiveTo   *time.Time                `json:"effective_to"`
-	PublishedAt   *time.Time                `json:"published_at"`
-	CreatedAt     time.Time                 `json:"created_at"`
-	UpdatedAt     time.Time                 `json:"updated_at"`
+	ID                uuid.UUID                 `json:"id"`
+	PriceListID       uuid.UUID                 `json:"price_list_id"`
+	Version           int32                     `json:"version"`
+	Status            PricingPriceVersionStatus `json:"status"`
+	EffectiveFrom     time.Time                 `json:"effective_from"`
+	EffectiveTo       *time.Time                `json:"effective_to"`
+	PublishedAt       *time.Time                `json:"published_at"`
+	CreatedAt         time.Time                 `json:"created_at"`
+	UpdatedAt         time.Time                 `json:"updated_at"`
+	ProfileID         *uuid.UUID                `json:"profile_id"`
+	SlotUnitMinutes   *int32                    `json:"slot_unit_minutes"`
+	UnlimitedDuration bool                      `json:"unlimited_duration"`
+}
+
+type PricingProfile struct {
+	ID                uuid.UUID `json:"id"`
+	TenantID          uuid.UUID `json:"tenant_id"`
+	BranchID          uuid.UUID `json:"branch_id"`
+	SportID           uuid.UUID `json:"sport_id"`
+	SlotUnitMinutes   int32     `json:"slot_unit_minutes"`
+	Currency          string    `json:"currency"`
+	CreatedAt         time.Time `json:"created_at"`
+	UpdatedAt         time.Time `json:"updated_at"`
+	Name              string    `json:"name"`
+	Code              string    `json:"code"`
+	CustomerType      string    `json:"customer_type"`
+	UnlimitedDuration bool      `json:"unlimited_duration"`
+}
+
+type PricingProfileDuration struct {
+	ProfileID uuid.UUID `json:"profile_id"`
+	Minutes   int32     `json:"minutes"`
 }
 
 type PricingTimeRule struct {
@@ -2705,6 +2774,14 @@ type PricingTimeRule struct {
 	Value          pgtype.Numeric         `json:"value"`
 	Priority       int32                  `json:"priority"`
 	CreatedAt      time.Time              `json:"created_at"`
+	SlotAmount     pgtype.Numeric         `json:"slot_amount"`
+	Name           string                 `json:"name"`
+	DayGroupID     *uuid.UUID             `json:"day_group_id"`
+}
+
+type PricingVersionDuration struct {
+	PriceVersionID uuid.UUID `json:"price_version_id"`
+	Minutes        int32     `json:"minutes"`
 }
 
 type ReferenceAmenity struct {
@@ -2828,29 +2905,30 @@ type ReferenceWardFormerSuccessor struct {
 }
 
 type ReservationReservation struct {
-	ID             uuid.UUID                    `json:"id"`
-	PublicID       string                       `json:"public_id"`
-	TenantID       uuid.UUID                    `json:"tenant_id"`
-	ReservationNo  string                       `json:"reservation_no"`
-	CustomerID     uuid.UUID                    `json:"customer_id"`
-	BranchID       uuid.UUID                    `json:"branch_id"`
-	CourtID        uuid.UUID                    `json:"court_id"`
-	Source         ReservationReservationSource `json:"source"`
-	Status         ReservationReservationStatus `json:"status"`
-	Currency       string                       `json:"currency"`
-	Subtotal       pgtype.Numeric               `json:"subtotal"`
-	DiscountAmount pgtype.Numeric               `json:"discount_amount"`
-	TaxAmount      pgtype.Numeric               `json:"tax_amount"`
-	TotalAmount    pgtype.Numeric               `json:"total_amount"`
-	PriceVersionID *uuid.UUID                   `json:"price_version_id"`
-	StartsAt       time.Time                    `json:"starts_at"`
-	EndsAt         time.Time                    `json:"ends_at"`
-	ExpiresAt      time.Time                    `json:"expires_at"`
-	CanceledAt     *time.Time                   `json:"canceled_at"`
-	ConvertedAt    *time.Time                   `json:"converted_at"`
-	CreatedBy      *uuid.UUID                   `json:"created_by"`
-	CreatedAt      time.Time                    `json:"created_at"`
-	UpdatedAt      time.Time                    `json:"updated_at"`
+	ID              uuid.UUID                    `json:"id"`
+	PublicID        string                       `json:"public_id"`
+	TenantID        uuid.UUID                    `json:"tenant_id"`
+	ReservationNo   string                       `json:"reservation_no"`
+	CustomerID      uuid.UUID                    `json:"customer_id"`
+	BranchID        uuid.UUID                    `json:"branch_id"`
+	CourtID         uuid.UUID                    `json:"court_id"`
+	Source          ReservationReservationSource `json:"source"`
+	Status          ReservationReservationStatus `json:"status"`
+	Currency        string                       `json:"currency"`
+	Subtotal        pgtype.Numeric               `json:"subtotal"`
+	DiscountAmount  pgtype.Numeric               `json:"discount_amount"`
+	TaxAmount       pgtype.Numeric               `json:"tax_amount"`
+	TotalAmount     pgtype.Numeric               `json:"total_amount"`
+	PriceVersionID  *uuid.UUID                   `json:"price_version_id"`
+	StartsAt        time.Time                    `json:"starts_at"`
+	EndsAt          time.Time                    `json:"ends_at"`
+	ExpiresAt       time.Time                    `json:"expires_at"`
+	CanceledAt      *time.Time                   `json:"canceled_at"`
+	ConvertedAt     *time.Time                   `json:"converted_at"`
+	CreatedBy       *uuid.UUID                   `json:"created_by"`
+	CreatedAt       time.Time                    `json:"created_at"`
+	UpdatedAt       time.Time                    `json:"updated_at"`
+	PricingSnapshot []byte                       `json:"pricing_snapshot"`
 }
 
 type ReservationReservationCourt struct {

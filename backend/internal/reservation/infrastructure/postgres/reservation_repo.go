@@ -34,8 +34,8 @@ func (r *ReservationRepo) Create(ctx context.Context, tx pgx.Tx, res *entity.Res
 		Currency: res.Currency,
 		Subtotal: toNumeric(res.Subtotal), DiscountAmount: toNumeric(res.DiscountAmount),
 		TaxAmount: toNumeric(res.TaxAmount), TotalAmount: toNumeric(res.TotalAmount),
-		PriceVersionID: res.PriceVersionID,
-		StartsAt:       res.StartsAt, EndsAt: res.EndsAt, ExpiresAt: res.ExpiresAt,
+		PriceVersionID: res.PriceVersionID, PricingSnapshot: res.PricingSnapshot,
+		StartsAt: res.StartsAt, EndsAt: res.EndsAt, ExpiresAt: res.ExpiresAt,
 		CreatedBy: res.CreatedBy, CreatedAt: res.CreatedAt, UpdatedAt: res.UpdatedAt,
 	})
 }
@@ -116,8 +116,8 @@ func mapReservation(row dbsqlc.ReservationReservation) *entity.Reservation {
 		Source: entity.Source(row.Source), Status: entity.Status(row.Status), Currency: row.Currency,
 		Subtotal: fromNumeric(row.Subtotal), DiscountAmount: fromNumeric(row.DiscountAmount),
 		TaxAmount: fromNumeric(row.TaxAmount), TotalAmount: fromNumeric(row.TotalAmount),
-		PriceVersionID: row.PriceVersionID,
-		StartsAt:       row.StartsAt, EndsAt: row.EndsAt, ExpiresAt: row.ExpiresAt,
+		PriceVersionID: row.PriceVersionID, PricingSnapshot: row.PricingSnapshot,
+		StartsAt: row.StartsAt, EndsAt: row.EndsAt, ExpiresAt: row.ExpiresAt,
 		CanceledAt: row.CanceledAt, ConvertedAt: row.ConvertedAt,
 		CreatedBy: row.CreatedBy, CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
 	}

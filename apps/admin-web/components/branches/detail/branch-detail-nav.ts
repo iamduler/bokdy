@@ -1,6 +1,7 @@
 export const BRANCH_DETAIL_TABS = [
   { id: "overview", segment: "" },
   { id: "pricing", segment: "pricing" },
+  { id: "holidays", segment: "holidays" },
   { id: "images", segment: "images" },
   { id: "courts", segment: "courts" },
   { id: "schedule", segment: "schedule" },

@@ -46,31 +46,32 @@ func ParseStatus(raw string) (Status, bool) {
 }
 
 type Booking struct {
-	ID             uuid.UUID
-	PublicID       string
-	TenantID       uuid.UUID
-	BookingNo      string
-	ReservationID  *uuid.UUID
-	CustomerID     uuid.UUID
-	BranchID       uuid.UUID
-	CourtID        uuid.UUID
-	Status         Status
-	Currency       string
-	Subtotal       float64
-	DiscountAmount float64
-	TaxAmount      float64
-	TotalAmount    float64
-	PriceVersionID *uuid.UUID
-	StartsAt       time.Time
-	EndsAt         time.Time
-	ExpiresAt      *time.Time
-	ConfirmedAt    *time.Time
-	CanceledAt     *time.Time
-	CompletedAt    *time.Time
-	CheckedInAt    *time.Time
-	CreatedBy      *uuid.UUID
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
+	ID              uuid.UUID
+	PublicID        string
+	TenantID        uuid.UUID
+	BookingNo       string
+	ReservationID   *uuid.UUID
+	CustomerID      uuid.UUID
+	BranchID        uuid.UUID
+	CourtID         uuid.UUID
+	Status          Status
+	Currency        string
+	Subtotal        float64
+	DiscountAmount  float64
+	TaxAmount       float64
+	TotalAmount     float64
+	PriceVersionID  *uuid.UUID
+	PricingSnapshot []byte
+	StartsAt        time.Time
+	EndsAt          time.Time
+	ExpiresAt       *time.Time
+	ConfirmedAt     *time.Time
+	CanceledAt      *time.Time
+	CompletedAt     *time.Time
+	CheckedInAt     *time.Time
+	CreatedBy       *uuid.UUID
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
 }
 
 // CanConfirm reports whether an unpaid booking may be confirmed.

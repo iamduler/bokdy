@@ -3353,10 +3353,44 @@ Table pricing.price_lists {
 // PRICE VERSION
 //////////////////////////////////////////////////////////////
 
+Table pricing.profiles {
+  id uuid [pk]
+  tenant_id uuid [not null]
+  branch_id uuid [not null]
+  sport_id uuid [not null]
+  code varchar(16) [not null, note: 'PRC00001, allocated per branch']
+  name varchar(80) [not null]
+  customer_type varchar(16) [not null, default: 'walk_in', note: 'walk_in, member, vip']
+  slot_unit_minutes int [not null]
+  unlimited_duration boolean [not null, default: false]
+  currency varchar(10) [not null, default: 'VND']
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+
+  indexes {
+    (branch_id, code) [unique]
+    (branch_id, sport_id, customer_type, name) [unique]
+    tenant_id
+  }
+
+  Note: 'Many named price lists per branch, sport, and customer type. One active version per branch + sport + customer type.'
+}
+
+Table pricing.profile_durations {
+  profile_id uuid [not null]
+  minutes int [not null]
+
+  indexes {
+    (profile_id, minutes) [pk]
+  }
+}
+
 Table pricing.price_versions {
   id uuid [pk]
 
   price_list_id uuid [not null]
+
+  profile_id uuid [note: 'Set when this version belongs to a branch sport profile']
 
   version int [not null]
 
@@ -3367,6 +3401,10 @@ Table pricing.price_versions {
   effective_to timestamptz
 
   published_at timestamptz
+
+  slot_unit_minutes int
+
+  unlimited_duration boolean [not null, default: false]
 
   created_at timestamptz [not null]
 
@@ -3401,7 +3439,7 @@ Table pricing.category_prices {
     (price_version_id, sport_id) [unique]
   }
 
-  Note: 'W6 MVP base hourly rates by sport (table name kept as category_prices). Full resource_prices remain for per-court override later.'
+  Note: 'Organization versions store VND per hour. A branch profile version stores VND per slot.'
 }
 
 //////////////////////////////////////////////////////////////
@@ -3425,6 +3463,12 @@ Table pricing.time_rules {
 
   value decimal(18,2) [not null]
 
+  slot_amount decimal(18,2) [note: 'VND for one slot when this rule replaces the base slot price']
+
+  name varchar(80) [not null, default: '']
+
+  day_group_id uuid [note: 'Set when this window belongs to a named day group']
+
   priority int [not null, default: 100]
 
   created_at timestamptz [not null]
@@ -3435,6 +3479,77 @@ Table pricing.time_rules {
   }
 
   Note: 'W6 MVP time windows. ERD rule_sets/conditions/adjustments stack deferred until needed.'
+}
+
+Table pricing.day_groups {
+  id uuid [pk]
+  price_version_id uuid [not null]
+  name varchar(80) [not null]
+  weekdays smallint[] [not null]
+  position int [not null, default: 0]
+  created_at timestamptz [not null]
+
+  indexes {
+    price_version_id
+  }
+
+  Note: 'User-entered group name stored on the price version. Not derived from the weekday set.'
+}
+
+Table pricing.holiday_windows {
+  id uuid [pk]
+  price_version_id uuid [not null]
+  name varchar(80) [not null]
+  starts_at time [not null]
+  ends_at time [not null]
+  amount decimal(18,2) [not null]
+  position int [not null, default: 0]
+  created_at timestamptz [not null]
+
+  indexes {
+    price_version_id
+  }
+
+  Note: 'Slot price used on branch holiday dates. Weekday windows do not apply on those dates.'
+}
+
+Table pricing.calendar_holidays {
+  id uuid [pk]
+  holiday_on date [not null, unique]
+  name varchar(80) [not null]
+  created_at timestamptz [not null]
+
+  Note: 'National calendar edited by a system admin. Applies to every branch unless a narrower layer excludes the date.'
+}
+
+Table pricing.organization_holidays {
+  id uuid [pk]
+  organization_id uuid [not null]
+  holiday_on date [not null]
+  name varchar(80) [not null]
+  effect varchar(16) [not null, note: 'include | exclude']
+  created_at timestamptz [not null]
+
+  indexes {
+    (organization_id, holiday_on) [unique]
+  }
+
+  Note: 'Organization overlay. include adds or renames a date. exclude removes a system date for every branch in the organization.'
+}
+
+Table pricing.branch_holidays {
+  id uuid [pk]
+  branch_id uuid [not null]
+  holiday_on date [not null]
+  name varchar(80) [not null]
+  effect varchar(16) [not null, default: 'include', note: 'include | exclude']
+  created_at timestamptz [not null]
+
+  indexes {
+    (branch_id, holiday_on) [unique]
+  }
+
+  Note: 'Branch overlay. Narrower than the organization overlay. Quote uses the resolved include dates.'
 }
 
 //////////////////////////////////////////////////////////////
@@ -3828,6 +3943,8 @@ Table reservation.reservations {
 
   total_amount decimal(18,2) [not null, default: 0]
 
+  pricing_snapshot jsonb
+
   note text
 
   expires_at timestamptz
@@ -4145,6 +4262,8 @@ Table booking.bookings {
   tax_amount decimal(18,2) [not null, default: 0]
 
   total_amount decimal(18,2) [not null, default: 0]
+
+  pricing_snapshot jsonb
 
   confirmed_at timestamptz
 

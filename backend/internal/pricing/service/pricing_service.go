@@ -62,6 +62,7 @@ type CreateVersionInput struct {
 type CalculateInput struct {
 	CourtID       *uuid.UUID
 	CourtPublicID string
+	CustomerType  string
 	StartsAt      time.Time
 	EndsAt        time.Time
 }
@@ -411,6 +412,23 @@ func (s *PricingService) Calculate(ctx context.Context, in CalculateInput) (*ent
 	if court.SportID == uuid.Nil {
 		return nil, pricingerrors.ErrSportRequired
 	}
+	customerType, err := normalizeCustomerType(in.CustomerType)
+	if err != nil {
+		return nil, err
+	}
+	profile, err := s.repo.FindActiveProfileForBranchSport(ctx, court.BranchID, court.SportID, customerType)
+	if err != nil {
+		return nil, apperr.Wrap(err, apperr.CodeInternal, "load pricing profile")
+	}
+	if profile != nil {
+		active, err := s.repo.FindActiveProfileVersion(ctx, nil, profile.ID)
+		if err != nil {
+			return nil, apperr.Wrap(err, apperr.CodeInternal, "load profile price version")
+		}
+		if active != nil {
+			return s.quoteProfile(ctx, profile, active, court, in.StartsAt, in.EndsAt)
+		}
+	}
 	version, err := s.repo.FindActiveVersion(ctx, court.TenantID)
 	if err != nil {
 		return nil, apperr.Wrap(err, apperr.CodeInternal, "load active price version")
@@ -439,5 +457,64 @@ func (s *PricingService) Calculate(ctx context.Context, in CalculateInput) (*ent
 		return nil, apperr.Wrap(err, apperr.CodeInternal, "list time rules")
 	}
 	q := calculateQuote(hourly, rules, version.ID, court.ID, in.StartsAt.UTC(), in.EndsAt.UTC())
+	return &q, nil
+}
+
+func (s *PricingService) quoteProfile(
+	ctx context.Context, profile *entity.PricingProfile, version *entity.PriceVersion,
+	court *entity.CourtPricingRow, starts, ends time.Time,
+) (*entity.Quote, error) {
+	rates, err := s.repo.ListCategoryPrices(ctx, version.ID)
+	if err != nil {
+		return nil, apperr.Wrap(err, apperr.CodeInternal, "list rates")
+	}
+	var base float64
+	found := false
+	for _, rate := range rates {
+		if rate.SportID == profile.SportID {
+			base = rate.Amount
+			found = true
+			break
+		}
+	}
+	if !found {
+		return nil, pricingerrors.ErrNoRateForSport
+	}
+	rules, err := s.repo.ListTimeRules(ctx, version.ID)
+	if err != nil {
+		return nil, apperr.Wrap(err, apperr.CodeInternal, "list time rules")
+	}
+	slot := profile.SlotUnitMinutes
+	if version.SlotUnitMinutes > 0 {
+		slot = version.SlotUnitMinutes
+	}
+	durations, err := s.repo.ListVersionDurations(ctx, version.ID)
+	if err != nil {
+		return nil, apperr.Wrap(err, apperr.CodeInternal, "list durations")
+	}
+	if !version.UnlimitedDuration && len(durations) == 0 {
+		durations, err = s.repo.ListProfileDurations(ctx, profile.ID)
+		if err != nil {
+			return nil, apperr.Wrap(err, apperr.CodeInternal, "list durations")
+		}
+	}
+	holidayWindows, err := s.repo.ListHolidayWindows(ctx, version.ID)
+	if err != nil {
+		return nil, apperr.Wrap(err, apperr.CodeInternal, "list holiday windows")
+	}
+	orgID, _, err := s.repo.FindBranchForPricing(ctx, court.BranchID)
+	if err != nil {
+		return nil, apperr.Wrap(err, apperr.CodeInternal, "load branch")
+	}
+	dates, err := s.holidayDates(ctx, orgID, court.BranchID)
+	if err != nil {
+		return nil, err
+	}
+	q, err := calculateSlotQuote(base, slot, durations, rules, branchLocation(court.Timezone), version.ID, court.ID, starts, ends, slotQuoteContext{
+		Unlimited: version.UnlimitedDuration, HolidayDates: dates, HolidayWindows: holidayWindows,
+	})
+	if err != nil {
+		return nil, err
+	}
 	return &q, nil
 }

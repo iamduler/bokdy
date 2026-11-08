@@ -65,11 +65,13 @@ func calculateQuote(
 	if total < 0 {
 		total = 0
 	}
-	return entity.Quote{
+	q := entity.Quote{
 		Currency: entity.DefaultCurrency, BaseAmount: roundVND(base), Adjustments: adjs,
 		TotalAmount: total, PriceVersionID: versionID, CourtID: courtID,
 		StartsAt: starts, EndsAt: ends, DurationMin: durationMin,
 	}
+	q.Snapshot = quoteSnapshot(q, "hourly")
+	return q
 }
 
 func overlapMinutes(bookingStart, bookingEnd time.Time, rule entity.TimeRule) int {

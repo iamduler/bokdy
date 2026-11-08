@@ -71,7 +71,7 @@ func (s *BookingService) WalkIn(ctx context.Context, actor uuid.UUID, in WalkInI
 		BookingNo: entity.NumberFor(publicID), CustomerID: customer.ID,
 		BranchID: court.BranchID, CourtID: court.ID, Status: entity.StatusConfirmed,
 		Currency: quote.Currency, Subtotal: quote.TotalAmount, TotalAmount: quote.TotalAmount,
-		PriceVersionID: &priceVersionID, StartsAt: starts, EndsAt: ends,
+		PriceVersionID: &priceVersionID, PricingSnapshot: quote.Snapshot, StartsAt: starts, EndsAt: ends,
 		ConfirmedAt: &now, CreatedBy: &actor, CreatedAt: now, UpdatedAt: now,
 	}
 	invoice := newInvoice(booking, now)
@@ -113,7 +113,7 @@ func (s *BookingService) CreateFromReservation(ctx context.Context, tx pgx.Tx, i
 		Status: entity.StatusPending, Currency: in.Currency,
 		Subtotal: in.Subtotal, DiscountAmount: in.DiscountAmount,
 		TaxAmount: in.TaxAmount, TotalAmount: in.TotalAmount,
-		PriceVersionID: in.PriceVersionID, StartsAt: in.StartsAt, EndsAt: in.EndsAt,
+		PriceVersionID: in.PriceVersionID, PricingSnapshot: in.PricingSnapshot, StartsAt: in.StartsAt, EndsAt: in.EndsAt,
 		ExpiresAt: &expiresAt, CreatedAt: in.OccurredAt, UpdatedAt: in.OccurredAt,
 	}
 	if in.ActorID != uuid.Nil {

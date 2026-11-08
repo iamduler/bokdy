@@ -15,19 +15,21 @@ export function EntityFormSection({
   title,
   icon,
   tone,
+  hint,
   children,
   className,
 }: {
   title?: string;
   icon?: ReactNode;
   tone?: SoftIconToneKey;
+  hint?: string;
   children: ReactNode;
   className?: string;
 }) {
   return (
     <section className={cn(entityFormSectionClass, className)}>
       {title ? (
-        <EntitySectionHead icon={icon} tone={tone} className="mb-1">
+        <EntitySectionHead icon={icon} tone={tone} hint={hint} className="mb-1">
           {title}
         </EntitySectionHead>
       ) : null}

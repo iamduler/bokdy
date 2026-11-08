@@ -57,29 +57,30 @@ func NumberFor(publicID string) string {
 }
 
 type Reservation struct {
-	ID             uuid.UUID
-	PublicID       string
-	TenantID       uuid.UUID
-	ReservationNo  string
-	CustomerID     uuid.UUID
-	BranchID       uuid.UUID
-	CourtID        uuid.UUID
-	Source         Source
-	Status         Status
-	Currency       string
-	Subtotal       float64
-	DiscountAmount float64
-	TaxAmount      float64
-	TotalAmount    float64
-	PriceVersionID *uuid.UUID
-	StartsAt       time.Time
-	EndsAt         time.Time
-	ExpiresAt      time.Time
-	CanceledAt     *time.Time
-	ConvertedAt    *time.Time
-	CreatedBy      *uuid.UUID
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
+	ID              uuid.UUID
+	PublicID        string
+	TenantID        uuid.UUID
+	ReservationNo   string
+	CustomerID      uuid.UUID
+	BranchID        uuid.UUID
+	CourtID         uuid.UUID
+	Source          Source
+	Status          Status
+	Currency        string
+	Subtotal        float64
+	DiscountAmount  float64
+	TaxAmount       float64
+	TotalAmount     float64
+	PriceVersionID  *uuid.UUID
+	PricingSnapshot []byte
+	StartsAt        time.Time
+	EndsAt          time.Time
+	ExpiresAt       time.Time
+	CanceledAt      *time.Time
+	ConvertedAt     *time.Time
+	CreatedBy       *uuid.UUID
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
 }
 
 // CanCancel reports whether the hold still occupies court time.

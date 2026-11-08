@@ -3,6 +3,7 @@
 import { cn } from "@bokdy/ui";
 import type { ReactNode } from "react";
 
+import { InfoHint } from "@/components/info-hint";
 import {
   SoftIconChip,
   type SoftIconToneKey,
@@ -12,6 +13,7 @@ type EntitySectionHeadProps = {
   children: ReactNode;
   icon?: ReactNode;
   tone?: SoftIconToneKey;
+  hint?: string;
   actions?: ReactNode;
   className?: string;
 };
@@ -21,6 +23,7 @@ export function EntitySectionHead({
   children,
   icon,
   tone = "sky",
+  hint,
   actions,
   className,
 }: EntitySectionHeadProps) {
@@ -36,6 +39,7 @@ export function EntitySectionHead({
         <h3 className="truncate text-base font-semibold text-foreground">
           {children}
         </h3>
+        {hint ? <InfoHint text={hint} /> : null}
       </div>
       {actions ? (
         <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>

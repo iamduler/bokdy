@@ -3,6 +3,7 @@
 import {
   BarChart3,
   Building2,
+  CalendarDays,
   HeartPulse,
   LayoutDashboard,
   MonitorSmartphone,
@@ -22,6 +23,7 @@ const ICONS: Record<AdminNavIcon, LucideIcon> = {
   zap: Zap,
   heartPulse: HeartPulse,
   building2: Building2,
+  calendar: CalendarDays,
   barChart3: BarChart3,
   ticket: Ticket,
   shield: Shield,

@@ -2,11 +2,11 @@
 INSERT INTO reservation.reservations (
     id, public_id, tenant_id, reservation_no, customer_id, branch_id, court_id,
     source, status, currency, subtotal, discount_amount, tax_amount, total_amount,
-    price_version_id, starts_at, ends_at, expires_at, created_by, created_at, updated_at
+    price_version_id, pricing_snapshot, starts_at, ends_at, expires_at, created_by, created_at, updated_at
 ) VALUES (
     $1, $2, $3, $4, $5, $6, $7,
     $8, $9, $10, $11, $12, $13, $14,
-    $15, $16, $17, $18, $19, $20, $21
+    $15, $16, $17, $18, $19, $20, $21, $22
 );
 
 -- name: CreateReservationResource :exec
@@ -18,7 +18,7 @@ INSERT INTO reservation.reservation_courts (
 SELECT id, public_id, tenant_id, reservation_no, customer_id, branch_id, court_id,
        source, status, currency, subtotal, discount_amount, tax_amount, total_amount,
        price_version_id, starts_at, ends_at, expires_at, canceled_at, converted_at,
-       created_by, created_at, updated_at
+       created_by, created_at, updated_at, pricing_snapshot
 FROM reservation.reservations
 WHERE id = $1;
 
@@ -26,7 +26,7 @@ WHERE id = $1;
 SELECT id, public_id, tenant_id, reservation_no, customer_id, branch_id, court_id,
        source, status, currency, subtotal, discount_amount, tax_amount, total_amount,
        price_version_id, starts_at, ends_at, expires_at, canceled_at, converted_at,
-       created_by, created_at, updated_at
+       created_by, created_at, updated_at, pricing_snapshot
 FROM reservation.reservations
 WHERE id = $1
 FOR UPDATE;
@@ -50,7 +50,7 @@ WHERE id = $1 AND status = 'pending';
 SELECT id, public_id, tenant_id, reservation_no, customer_id, branch_id, court_id,
        source, status, currency, subtotal, discount_amount, tax_amount, total_amount,
        price_version_id, starts_at, ends_at, expires_at, canceled_at, converted_at,
-       created_by, created_at, updated_at
+       created_by, created_at, updated_at, pricing_snapshot
 FROM reservation.reservations
 WHERE status = 'pending' AND expires_at < $1
 ORDER BY expires_at ASC

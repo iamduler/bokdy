@@ -32,7 +32,7 @@ func (r *BookingRepo) Create(ctx context.Context, tx pgx.Tx, b *entity.Booking) 
 		CourtID: b.CourtID, Status: dbsqlc.BookingBookingStatus(b.Status), Currency: b.Currency,
 		Subtotal: toNumeric(b.Subtotal), DiscountAmount: toNumeric(b.DiscountAmount),
 		TaxAmount: toNumeric(b.TaxAmount), TotalAmount: toNumeric(b.TotalAmount),
-		PriceVersionID: b.PriceVersionID, StartsAt: b.StartsAt, EndsAt: b.EndsAt,
+		PriceVersionID: b.PriceVersionID, PricingSnapshot: b.PricingSnapshot, StartsAt: b.StartsAt, EndsAt: b.EndsAt,
 		ExpiresAt: b.ExpiresAt, ConfirmedAt: b.ConfirmedAt,
 		CreatedBy: b.CreatedBy, CreatedAt: b.CreatedAt, UpdatedAt: b.UpdatedAt,
 	})
@@ -178,7 +178,7 @@ func (r *BookingRepo) Reschedule(ctx context.Context, tx pgx.Tx, b *entity.Booki
 		ID: b.ID, StartsAt: b.StartsAt, EndsAt: b.EndsAt, Currency: b.Currency,
 		Subtotal: toNumeric(b.Subtotal), DiscountAmount: toNumeric(b.DiscountAmount),
 		TaxAmount: toNumeric(b.TaxAmount), TotalAmount: toNumeric(b.TotalAmount),
-		PriceVersionID: b.PriceVersionID, UpdatedAt: b.UpdatedAt,
+		PriceVersionID: b.PriceVersionID, PricingSnapshot: b.PricingSnapshot, UpdatedAt: b.UpdatedAt,
 	})
 }
 
@@ -224,7 +224,7 @@ func mapBooking(row dbsqlc.BookingBooking) *entity.Booking {
 		CourtID: row.CourtID, Status: entity.Status(row.Status), Currency: row.Currency,
 		Subtotal: fromNumeric(row.Subtotal), DiscountAmount: fromNumeric(row.DiscountAmount),
 		TaxAmount: fromNumeric(row.TaxAmount), TotalAmount: fromNumeric(row.TotalAmount),
-		PriceVersionID: row.PriceVersionID, StartsAt: row.StartsAt, EndsAt: row.EndsAt,
+		PriceVersionID: row.PriceVersionID, PricingSnapshot: row.PricingSnapshot, StartsAt: row.StartsAt, EndsAt: row.EndsAt,
 		ExpiresAt: row.ExpiresAt, ConfirmedAt: row.ConfirmedAt, CanceledAt: row.CanceledAt,
 		CompletedAt: row.CompletedAt, CheckedInAt: row.CheckedInAt,
 		CreatedBy: row.CreatedBy, CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,

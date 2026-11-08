@@ -27,6 +27,8 @@ const (
 	ResourceCategory = "RCC"
 	// catalog.resources (Court when resource_type = court)
 	Court = "CRT"
+	// pricing.profiles
+	PriceProfile = "PRC"
 	// catalog.resource_capabilities
 	ResourceCapability = "CAP"
 	// infrastructure / reference job-like catalogs (optional discovery)

@@ -23,6 +23,7 @@ export type AdminNavItemId =
   | "commandCenter"
   | "health"
   | "organizations"
+  | "holidays"
   | "usersPlayers"
   | "usersOwners"
   | "usersAdmins"
@@ -57,6 +58,7 @@ export type AdminNavIcon =
   | "zap"
   | "heartPulse"
   | "building2"
+  | "calendar"
   | "barChart3"
   | "ticket"
   | "shield"
@@ -80,6 +82,13 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
         href: "/organizations",
         status: "ready",
         icon: "building2",
+      },
+      {
+        id: "holidays",
+        labelKey: "holidays",
+        href: "/holidays",
+        status: "ready",
+        icon: "calendar",
       },
       { id: "revenue", labelKey: "revenue", status: "missing", icon: "barChart3" },
       { id: "support", labelKey: "support", status: "missing", icon: "ticket" },

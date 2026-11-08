@@ -2878,6 +2878,309 @@ paths:
           $ref: "#/components/responses/Error"
         "409":
           $ref: "#/components/responses/Error"
+  /api/v1/branches/{id}/pricing-profiles:
+    get:
+      tags: [Pricing]
+      summary: List branch sport price lists
+      description: One group per sport played at the branch. Each sport may have several named price lists. Only one list is active for quotes.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/BranchId"
+        - $ref: "#/components/parameters/XOrganizationId"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BranchSportPricing"
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+    post:
+      tags: [Pricing]
+      summary: Create a draft price list
+      description: Saves a named price list for one sport. Quotes keep using the list that is already active.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/BranchId"
+        - $ref: "#/components/parameters/XOrganizationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaveBranchPricingProfileRequest"
+      responses:
+        "200":
+          description: Draft price list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BranchPricingProfile"
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /api/v1/branches/{id}/pricing-profiles/{profileId}:
+    put:
+      tags: [Pricing]
+      summary: Save a price list draft
+      description: |
+        Updates the latest draft, or stores a new draft when the latest version is active or retired.
+        Does not change which list is used for quotes. Owner or system admin.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/BranchId"
+        - $ref: "#/components/parameters/XOrganizationId"
+        - name: profileId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaveBranchPricingProfileRequest"
+      responses:
+        "200":
+          description: Saved price list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BranchPricingProfile"
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /api/v1/branches/{id}/pricing-profiles/{profileId}/activate:
+    post:
+      tags: [Pricing]
+      summary: Activate a price list
+      description: |
+        Publishes this list and retires the active list for the same branch, sport, and customer type.
+        Slot and window amounts are VND per slot. Owner or system admin.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/BranchId"
+        - $ref: "#/components/parameters/XOrganizationId"
+        - name: profileId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaveBranchPricingProfileRequest"
+      responses:
+        "200":
+          description: Active price list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BranchPricingProfile"
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /api/v1/branches/{id}/pricing-profiles/{profileId}/duplicate:
+    post:
+      tags: [Pricing]
+      summary: Duplicate a price list as a new draft
+      description: Allocates a new code and does not activate the copy. Owner or system admin.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/BranchId"
+        - $ref: "#/components/parameters/XOrganizationId"
+        - name: profileId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Draft copy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BranchPricingProfile"
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /api/v1/branches/{id}/holidays:
+    get:
+      tags: [Pricing]
+      summary: Resolved holiday calendar for a branch
+      description: System dates, then the organization overlay, then the branch overlay. A narrower layer replaces the same date.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/BranchId"
+        - $ref: "#/components/parameters/XOrganizationId"
+      responses:
+        "200":
+          description: Holiday dates
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BranchHolidayList"
+        "401":
+          $ref: "#/components/responses/Error"
+    put:
+      tags: [Pricing]
+      summary: Replace the branch holiday overlay
+      description: Replaces only the branch include and exclude rows. System and organization dates stay in place. The response is the resolved calendar.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/BranchId"
+        - $ref: "#/components/parameters/XOrganizationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReplaceBranchHolidaysRequest"
+      responses:
+        "200":
+          description: Replaced holiday dates
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BranchHolidayList"
+        "401":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /api/v1/organizations/{id}/holidays:
+    get:
+      tags: [Pricing]
+      summary: Organization holiday overlay
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - $ref: "#/components/parameters/XOrganizationId"
+      responses:
+        "200":
+          description: Organization include and exclude rows
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrganizationHolidayList"
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+    put:
+      tags: [Pricing]
+      summary: Replace the organization holiday overlay
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - $ref: "#/components/parameters/XOrganizationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReplaceOrganizationHolidaysRequest"
+      responses:
+        "200":
+          description: Replaced organization overlay
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrganizationHolidayList"
+        "401":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /api/v1/admin/holidays:
+    get:
+      tags: [Admin]
+      summary: System holiday calendar
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: National holiday dates
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalendarHolidayList"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+    put:
+      tags: [Admin]
+      summary: Replace the system holiday calendar
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReplaceCalendarHolidaysRequest"
+      responses:
+        "200":
+          description: Replaced system calendar
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CalendarHolidayList"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /api/v1/pricing-profiles/{id}:
+    get:
+      tags: [Pricing]
+      summary: Get one branch price list
+      description: Returns the named price list and its branch so a top-level detail screen can build breadcrumbs.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/XOrganizationId"
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Price list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BranchPricingProfile"
+        "401":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
   /api/v1/pricing/calculate:
     post:
       tags: [Pricing]
@@ -2885,7 +3188,8 @@ paths:
       description: |
         Public quote. No promo/membership. Side-effect free: BookingPriceCalculated is emitted
         when a hold or booking is created, not here.
-        Amounts are integer VND (half-up). Base rate is VND/hour by sport.
+        Amounts are integer VND (half-up). A published branch profile prices each slot.
+        Until a branch price list for that sport is active, the quote uses the organization hourly rate.
       requestBody:
         required: true
         content:
@@ -5631,6 +5935,10 @@ components:
       properties:
         court_id: { type: string, format: uuid }
         court_public_id: { type: string, minLength: 26, maxLength: 26 }
+        customer_type:
+          type: string
+          enum: [walk_in, member, vip]
+          description: Defaults to walk_in when omitted.
         starts_at: { type: string, format: date-time }
         ends_at: { type: string, format: date-time }
     PriceQuote:
@@ -5656,6 +5964,219 @@ components:
         starts_at: { type: string, format: date-time }
         ends_at: { type: string, format: date-time }
         duration_minutes: { type: integer }
+        timezone: { type: string }
+        slot_unit_minutes: { type: integer }
+        lines:
+          type: array
+          items:
+            type: object
+            required: [starts_at, ends_at, amount]
+            properties:
+              starts_at: { type: string, format: date-time }
+              ends_at: { type: string, format: date-time }
+              amount: { type: number }
+              rule_id: { type: string, format: uuid }
+              window_name: { type: string }
+    BranchPricingWindow:
+      type: object
+      required: [weekdays, starts_at, ends_at, amount]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, maxLength: 80 }
+        weekdays:
+          type: array
+          items: { type: integer, minimum: 0, maximum: 6 }
+        starts_at: { type: string, example: "16:00" }
+        ends_at: { type: string, example: "22:00" }
+        amount: { type: number, description: VND per slot }
+    BranchPricingDayGroup:
+      type: object
+      required: [name, weekdays, windows]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, maxLength: 80 }
+        weekdays:
+          type: array
+          items: { type: integer, minimum: 0, maximum: 6 }
+        windows:
+          type: array
+          items:
+            $ref: "#/components/schemas/BranchPricingWindow"
+    BranchPricingHolidayWindow:
+      type: object
+      required: [name, starts_at, ends_at, amount]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, maxLength: 80 }
+        starts_at: { type: string, example: "06:00" }
+        ends_at: { type: string, example: "22:00" }
+        amount: { type: number, description: VND per slot on a branch holiday date }
+    BranchHoliday:
+      type: object
+      required: [holiday_on, name, source, effect]
+      properties:
+        holiday_on: { type: string, format: date }
+        name: { type: string, maxLength: 80 }
+        source:
+          type: string
+          enum: [system, organization, branch]
+        effect:
+          type: string
+          enum: [include, exclude]
+    BranchHolidayList:
+      type: object
+      required: [holidays]
+      properties:
+        holidays:
+          type: array
+          items:
+            $ref: "#/components/schemas/BranchHoliday"
+    ReplaceBranchHolidaysRequest:
+      type: object
+      required: [holidays]
+      properties:
+        holidays:
+          type: array
+          items:
+            type: object
+            required: [holiday_on, name, effect]
+            properties:
+              holiday_on: { type: string, format: date }
+              name: { type: string, maxLength: 80 }
+              effect:
+                type: string
+                enum: [include, exclude]
+    CalendarHoliday:
+      type: object
+      required: [id, holiday_on, name]
+      properties:
+        id: { type: string, format: uuid }
+        holiday_on: { type: string, format: date }
+        name: { type: string, maxLength: 80 }
+    CalendarHolidayList:
+      type: object
+      required: [holidays]
+      properties:
+        holidays:
+          type: array
+          items:
+            $ref: "#/components/schemas/CalendarHoliday"
+    ReplaceCalendarHolidaysRequest:
+      type: object
+      required: [holidays]
+      properties:
+        holidays:
+          type: array
+          items:
+            type: object
+            required: [holiday_on, name]
+            properties:
+              holiday_on: { type: string, format: date }
+              name: { type: string, maxLength: 80 }
+    OrganizationHoliday:
+      type: object
+      required: [id, holiday_on, name, effect]
+      properties:
+        id: { type: string, format: uuid }
+        holiday_on: { type: string, format: date }
+        name: { type: string, maxLength: 80 }
+        effect:
+          type: string
+          enum: [include, exclude]
+    OrganizationHolidayList:
+      type: object
+      required: [holidays]
+      properties:
+        holidays:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrganizationHoliday"
+    ReplaceOrganizationHolidaysRequest:
+      type: object
+      required: [holidays]
+      properties:
+        holidays:
+          type: array
+          items:
+            type: object
+            required: [holiday_on, name, effect]
+            properties:
+              holiday_on: { type: string, format: date }
+              name: { type: string, maxLength: 80 }
+              effect:
+                type: string
+                enum: [include, exclude]
+    BranchSportPricing:
+      type: object
+      required: [sport_id, profiles]
+      properties:
+        sport_id: { type: string, format: uuid }
+        suggested_base_amount: { type: number, nullable: true }
+        profiles:
+          type: array
+          items:
+            $ref: "#/components/schemas/BranchPricingProfile"
+    BranchPricingProfile:
+      type: object
+      required: [id, code, name, branch_id, sport_id, customer_type, slot_unit_minutes, unlimited_duration, durations, windows, day_groups, holiday_windows, published, updated_at]
+      properties:
+        id: { type: string, format: uuid }
+        code: { type: string, example: PRC00001 }
+        name: { type: string }
+        sport_id: { type: string, format: uuid }
+        customer_type:
+          type: string
+          enum: [walk_in, member, vip]
+        slot_unit_minutes: { type: integer }
+        unlimited_duration: { type: boolean }
+        durations:
+          type: array
+          items: { type: integer }
+        base_amount: { type: number, nullable: true }
+        windows:
+          type: array
+          items:
+            $ref: "#/components/schemas/BranchPricingWindow"
+        day_groups:
+          type: array
+          items:
+            $ref: "#/components/schemas/BranchPricingDayGroup"
+        holiday_windows:
+          type: array
+          items:
+            $ref: "#/components/schemas/BranchPricingHolidayWindow"
+        version: { type: integer }
+        status: { type: string }
+        published: { type: boolean }
+        updated_at: { type: string, format: date-time }
+        branch_id: { type: string, format: uuid }
+    SaveBranchPricingProfileRequest:
+      type: object
+      required: [name, slot_unit_minutes, base_amount]
+      properties:
+        sport_id: { type: string, format: uuid }
+        name: { type: string, maxLength: 80 }
+        customer_type:
+          type: string
+          enum: [walk_in, member, vip]
+        slot_unit_minutes: { type: integer, minimum: 15, maximum: 180 }
+        unlimited_duration: { type: boolean }
+        durations:
+          type: array
+          items: { type: integer }
+        base_amount: { type: number, minimum: 0 }
+        day_groups:
+          type: array
+          items:
+            $ref: "#/components/schemas/BranchPricingDayGroup"
+        holiday_windows:
+          type: array
+          items:
+            $ref: "#/components/schemas/BranchPricingHolidayWindow"
+        windows:
+          type: array
+          items:
+            $ref: "#/components/schemas/BranchPricingWindow"
     CreateReservationRequest:
       type: object
       required: [court_id, starts_at, ends_at]

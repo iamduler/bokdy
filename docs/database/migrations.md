@@ -21,6 +21,11 @@ Foundation sequence:
 | `00031_rename_location_resource_to_branch_court.sql` | Rename locations→branches, resources→courts, resource_categories→court_types; location_id→branch_id; resource_id→court_id |
 | `00032_court_profile_and_drop_type.sql` | Drop courts.court_type_id; add sport_id/surface/dimensions/description; court_media; court_amenities; pricing category_prices → sport_id |
 | `00035_amenity_scope.sql` | reference.amenities.scope (`court` \| `branch`); court vs branch catalog seed |
+| `00036_pricing_profiles.sql` | Branch+sport pricing profile, slot durations, price version profile_id, booking/reservation price snapshot |
+| `00037_pricing_profile_names.sql` | Named price lists per branch sport; one active version; slot config stored on the price version |
+| `00038_pricing_profile_audience.sql` | Price-list code, customer type, named day groups, holiday windows, unlimited duration |
+| `00039_pricing_active_per_audience.sql` | Allow one active price version per profile; org hourly stays one active per list |
+| `00040_pricing_holiday_layers.sql` | System holiday calendar, organization include/exclude overlay, branch holiday effect |
 | `00011_crm_w3_customers.sql` | crm.customers, customer_profiles, customer_contacts |
 | `00017_locales_emoji.sql` | locales.emoji; en native_name → English |
 

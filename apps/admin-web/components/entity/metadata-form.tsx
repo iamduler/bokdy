@@ -1,6 +1,6 @@
 "use client";
 
-import { cn, Field, FieldDescription, FieldError, FieldGroup, FieldLabel, Input } from "@bokdy/ui";
+import { cn, Field, FieldError, FieldGroup, FieldLabel, Input } from "@bokdy/ui";
 import type { ReactNode } from "react";
 import {
   useFormContext,
@@ -12,6 +12,7 @@ import {
 } from "react-hook-form";
 
 import { EntityFormSection, entityFormFieldsClass } from "@/components/entity/form-section";
+import { InfoHint } from "@/components/info-hint";
 import type { SoftIconToneKey } from "@/components/entity/soft-icon-chip";
 import { PopoverCommandMultiSelect } from "@/components/popover-command-multi-select";
 import {
@@ -108,10 +109,8 @@ export function EntityMetadataForm<T extends FieldValues>({
             title={block.title}
             icon={block.icon}
             tone={block.tone}
+            hint={block.description}
           >
-            {block.description ? (
-              <p className="text-sm text-muted-foreground">{block.description}</p>
-            ) : null}
             <FieldGroup className={entityFormFieldsClass}>
               {fields.map((field) => (
                 <MetadataField key={String(field.name)} field={field} values={values} form={form} />
@@ -209,11 +208,13 @@ function MetadataField<T extends FieldValues>({
       data-invalid={Boolean(error) || undefined}
       className={cn(field.span === 2 && "sm:col-span-2")}
     >
-      <FieldLabel htmlFor={field.kind === "text" ? id : undefined} required={field.required}>
-        {field.label}
-      </FieldLabel>
+      <div className="flex items-center gap-1.5">
+        <FieldLabel htmlFor={field.kind === "text" ? id : undefined} required={field.required}>
+          {field.label}
+        </FieldLabel>
+        {field.description ? <InfoHint text={field.description} /> : null}
+      </div>
       {control}
-      {field.description ? <FieldDescription>{field.description}</FieldDescription> : null}
       <FieldError>{error}</FieldError>
     </Field>
   );

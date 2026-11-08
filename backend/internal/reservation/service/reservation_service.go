@@ -188,8 +188,8 @@ func (s *ReservationService) CreateHold(ctx context.Context, actor uuid.UUID, in
 		ReservationNo: entity.NumberFor(publicID), CustomerID: caller.customerID,
 		BranchID: court.BranchID, CourtID: court.ID, Source: source, Status: entity.StatusPending,
 		Currency: quote.Currency, Subtotal: quote.TotalAmount, TotalAmount: quote.TotalAmount,
-		PriceVersionID: &priceVersionID,
-		StartsAt:       starts, EndsAt: ends, ExpiresAt: now.Add(entity.HoldTTL),
+		PriceVersionID: &priceVersionID, PricingSnapshot: quote.Snapshot,
+		StartsAt: starts, EndsAt: ends, ExpiresAt: now.Add(entity.HoldTTL),
 		CreatedBy: &actor, CreatedAt: now, UpdatedAt: now,
 	}
 
@@ -321,7 +321,8 @@ func (s *ReservationService) Convert(ctx context.Context, reservationID, actor u
 			BranchID: locked.BranchID, CourtID: locked.CourtID, Currency: locked.Currency,
 			Subtotal: locked.Subtotal, DiscountAmount: locked.DiscountAmount,
 			TaxAmount: locked.TaxAmount, TotalAmount: locked.TotalAmount,
-			PriceVersionID: locked.PriceVersionID, StartsAt: locked.StartsAt, EndsAt: locked.EndsAt,
+			PriceVersionID: locked.PriceVersionID, PricingSnapshot: locked.PricingSnapshot,
+			StartsAt: locked.StartsAt, EndsAt: locked.EndsAt,
 			ActorID: actor, ActorType: caller.actorType(), OccurredAt: now,
 		})
 		if err != nil {

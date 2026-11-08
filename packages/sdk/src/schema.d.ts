@@ -4632,6 +4632,505 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/branches/{id}/pricing-profiles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List branch sport price lists
+         * @description One group per sport played at the branch. Each sport may have several named price lists. Only one list is active for quotes.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                };
+                path: {
+                    id: components["parameters"]["BranchId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BranchSportPricing"][];
+                    };
+                };
+                401: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+            };
+        };
+        put?: never;
+        /**
+         * Create a draft price list
+         * @description Saves a named price list for one sport. Quotes keep using the list that is already active.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                };
+                path: {
+                    id: components["parameters"]["BranchId"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SaveBranchPricingProfileRequest"];
+                };
+            };
+            responses: {
+                /** @description Draft price list */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BranchPricingProfile"];
+                    };
+                };
+                401: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/branches/{id}/pricing-profiles/{profileId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Save a price list draft
+         * @description Updates the latest draft, or stores a new draft when the latest version is active or retired.
+         *     Does not change which list is used for quotes. Owner or system admin.
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                };
+                path: {
+                    id: components["parameters"]["BranchId"];
+                    profileId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SaveBranchPricingProfileRequest"];
+                };
+            };
+            responses: {
+                /** @description Saved price list */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BranchPricingProfile"];
+                    };
+                };
+                401: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/branches/{id}/pricing-profiles/{profileId}/activate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Activate a price list
+         * @description Publishes this list and retires the active list for the same branch, sport, and customer type.
+         *     Slot and window amounts are VND per slot. Owner or system admin.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                };
+                path: {
+                    id: components["parameters"]["BranchId"];
+                    profileId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SaveBranchPricingProfileRequest"];
+                };
+            };
+            responses: {
+                /** @description Active price list */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BranchPricingProfile"];
+                    };
+                };
+                401: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/branches/{id}/pricing-profiles/{profileId}/duplicate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Duplicate a price list as a new draft
+         * @description Allocates a new code and does not activate the copy. Owner or system admin.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                };
+                path: {
+                    id: components["parameters"]["BranchId"];
+                    profileId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Draft copy */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BranchPricingProfile"];
+                    };
+                };
+                401: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/branches/{id}/holidays": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Resolved holiday calendar for a branch
+         * @description System dates, then the organization overlay, then the branch overlay. A narrower layer replaces the same date.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                };
+                path: {
+                    id: components["parameters"]["BranchId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Holiday dates */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BranchHolidayList"];
+                    };
+                };
+                401: components["responses"]["Error"];
+            };
+        };
+        /**
+         * Replace the branch holiday overlay
+         * @description Replaces only the branch include and exclude rows. System and organization dates stay in place. The response is the resolved calendar.
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                };
+                path: {
+                    id: components["parameters"]["BranchId"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ReplaceBranchHolidaysRequest"];
+                };
+            };
+            responses: {
+                /** @description Replaced holiday dates */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BranchHolidayList"];
+                    };
+                };
+                401: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organizations/{id}/holidays": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Organization holiday overlay */
+        get: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                };
+                path: {
+                    id: components["parameters"]["OrganizationId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Organization include and exclude rows */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OrganizationHolidayList"];
+                    };
+                };
+                401: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+            };
+        };
+        /** Replace the organization holiday overlay */
+        put: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                };
+                path: {
+                    id: components["parameters"]["OrganizationId"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ReplaceOrganizationHolidaysRequest"];
+                };
+            };
+            responses: {
+                /** @description Replaced organization overlay */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["OrganizationHolidayList"];
+                    };
+                };
+                401: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/holidays": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** System holiday calendar */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description National holiday dates */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CalendarHolidayList"];
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+            };
+        };
+        /** Replace the system holiday calendar */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["ReplaceCalendarHolidaysRequest"];
+                };
+            };
+            responses: {
+                /** @description Replaced system calendar */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CalendarHolidayList"];
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pricing-profiles/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get one branch price list
+         * @description Returns the named price list and its branch so a top-level detail screen can build breadcrumbs.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                };
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Price list */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BranchPricingProfile"];
+                    };
+                };
+                401: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/pricing/calculate": {
         parameters: {
             query?: never;
@@ -4645,7 +5144,8 @@ export interface paths {
          * Calculate booking price quote
          * @description Public quote. No promo/membership. Side-effect free: BookingPriceCalculated is emitted
          *     when a hold or booking is created, not here.
-         *     Amounts are integer VND (half-up). Base rate is VND/hour by sport.
+         *     Amounts are integer VND (half-up). A published branch profile prices each slot.
+         *     Until a branch price list for that sport is active, the quote uses the organization hourly rate.
          */
         post: {
             parameters: {
@@ -8073,6 +8573,11 @@ export interface components {
             /** Format: uuid */
             court_id?: string;
             court_public_id?: string;
+            /**
+             * @description Defaults to walk_in when omitted.
+             * @enum {string}
+             */
+            customer_type?: "walk_in" | "member" | "vip";
             /** Format: date-time */
             starts_at: string;
             /** Format: date-time */
@@ -8101,6 +8606,152 @@ export interface components {
             /** Format: date-time */
             ends_at: string;
             duration_minutes: number;
+            timezone?: string;
+            slot_unit_minutes?: number;
+            lines?: {
+                /** Format: date-time */
+                starts_at: string;
+                /** Format: date-time */
+                ends_at: string;
+                amount: number;
+                /** Format: uuid */
+                rule_id?: string;
+                window_name?: string;
+            }[];
+        };
+        BranchPricingWindow: {
+            /** Format: uuid */
+            id?: string;
+            name?: string;
+            weekdays: number[];
+            /** @example 16:00 */
+            starts_at: string;
+            /** @example 22:00 */
+            ends_at: string;
+            /** @description VND per slot */
+            amount: number;
+        };
+        BranchPricingDayGroup: {
+            /** Format: uuid */
+            id?: string;
+            name: string;
+            weekdays: number[];
+            windows: components["schemas"]["BranchPricingWindow"][];
+        };
+        BranchPricingHolidayWindow: {
+            /** Format: uuid */
+            id?: string;
+            name: string;
+            /** @example 06:00 */
+            starts_at: string;
+            /** @example 22:00 */
+            ends_at: string;
+            /** @description VND per slot on a branch holiday date */
+            amount: number;
+        };
+        BranchHoliday: {
+            /** Format: date */
+            holiday_on: string;
+            name: string;
+            /** @enum {string} */
+            source: "system" | "organization" | "branch";
+            /** @enum {string} */
+            effect: "include" | "exclude";
+        };
+        BranchHolidayList: {
+            holidays: components["schemas"]["BranchHoliday"][];
+        };
+        ReplaceBranchHolidaysRequest: {
+            holidays: {
+                /** Format: date */
+                holiday_on: string;
+                name: string;
+                /** @enum {string} */
+                effect: "include" | "exclude";
+            }[];
+        };
+        CalendarHoliday: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date */
+            holiday_on: string;
+            name: string;
+        };
+        CalendarHolidayList: {
+            holidays: components["schemas"]["CalendarHoliday"][];
+        };
+        ReplaceCalendarHolidaysRequest: {
+            holidays: {
+                /** Format: date */
+                holiday_on: string;
+                name: string;
+            }[];
+        };
+        OrganizationHoliday: {
+            /** Format: uuid */
+            id: string;
+            /** Format: date */
+            holiday_on: string;
+            name: string;
+            /** @enum {string} */
+            effect: "include" | "exclude";
+        };
+        OrganizationHolidayList: {
+            holidays: components["schemas"]["OrganizationHoliday"][];
+        };
+        ReplaceOrganizationHolidaysRequest: {
+            holidays: {
+                /** Format: date */
+                holiday_on: string;
+                name: string;
+                /** @enum {string} */
+                effect: "include" | "exclude";
+            }[];
+        };
+        BranchSportPricing: {
+            /** Format: uuid */
+            sport_id: string;
+            suggested_base_amount?: number | null;
+            profiles: components["schemas"]["BranchPricingProfile"][];
+        };
+        BranchPricingProfile: {
+            /** Format: uuid */
+            id: string;
+            /** @example PRC00001 */
+            code: string;
+            name: string;
+            /** Format: uuid */
+            sport_id: string;
+            /** @enum {string} */
+            customer_type: "walk_in" | "member" | "vip";
+            slot_unit_minutes: number;
+            unlimited_duration: boolean;
+            durations: number[];
+            base_amount?: number | null;
+            windows: components["schemas"]["BranchPricingWindow"][];
+            day_groups: components["schemas"]["BranchPricingDayGroup"][];
+            holiday_windows: components["schemas"]["BranchPricingHolidayWindow"][];
+            version?: number;
+            status?: string;
+            published: boolean;
+            /** Format: date-time */
+            updated_at: string;
+            /** Format: uuid */
+            branch_id: string;
+        };
+        SaveBranchPricingProfileRequest: {
+            /** Format: uuid */
+            sport_id?: string;
+            name: string;
+            /** @enum {string} */
+            customer_type?: "walk_in" | "member" | "vip";
+            slot_unit_minutes: number;
+            unlimited_duration?: boolean;
+            durations?: number[];
+            base_amount: number;
+            day_groups?: components["schemas"]["BranchPricingDayGroup"][];
+            holiday_windows?: components["schemas"]["BranchPricingHolidayWindow"][];
+            windows?: components["schemas"]["BranchPricingWindow"][];
         };
         CreateReservationRequest: {
             /** Format: uuid */

@@ -11,6 +11,7 @@ import { useOrganizationDetail } from "./organization-detail-context";
 export type DetailView =
   | "overview"
   | "branches"
+  | "holidays"
   | "courts"
   | "team"
   | "bookings"
@@ -21,6 +22,7 @@ export type DetailView =
 function resolveDetailView(pathname: string, orgId: string): DetailView {
   const base = `/organizations/${orgId}`;
   if (pathname === base || pathname.endsWith(base)) return "overview";
+  if (pathname.includes("/holidays")) return "holidays";
   if (pathname.includes("/branches")) return "branches";
   if (pathname.includes("/courts")) return "courts";
   if (pathname.includes("/team")) return "team";
@@ -45,6 +47,7 @@ export function OrganizationDetailSubnav() {
 
     const sectionLabel: Partial<Record<DetailView, string>> = {
       branches: t("crumbBranches"),
+      holidays: t("crumbHolidays"),
       courts: t("crumbCourts"),
       team: t("crumbTeam"),
       bookings: t("crumbBookings"),

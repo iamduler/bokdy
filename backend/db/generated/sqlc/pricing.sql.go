@@ -48,13 +48,14 @@ func (q *Queries) CreatePriceList(ctx context.Context, arg CreatePriceListParams
 
 const createPriceVersion = `-- name: CreatePriceVersion :exec
 INSERT INTO pricing.price_versions (
-    id, price_list_id, version, status, effective_from, effective_to, published_at, created_at, updated_at
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    id, price_list_id, profile_id, version, status, effective_from, effective_to, published_at, created_at, updated_at
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 `
 
 type CreatePriceVersionParams struct {
 	ID            uuid.UUID                 `json:"id"`
 	PriceListID   uuid.UUID                 `json:"price_list_id"`
+	ProfileID     *uuid.UUID                `json:"profile_id"`
 	Version       int32                     `json:"version"`
 	Status        PricingPriceVersionStatus `json:"status"`
 	EffectiveFrom time.Time                 `json:"effective_from"`
@@ -68,6 +69,7 @@ func (q *Queries) CreatePriceVersion(ctx context.Context, arg CreatePriceVersion
 	_, err := q.db.Exec(ctx, createPriceVersion,
 		arg.ID,
 		arg.PriceListID,
+		arg.ProfileID,
 		arg.Version,
 		arg.Status,
 		arg.EffectiveFrom,
@@ -79,20 +81,115 @@ func (q *Queries) CreatePriceVersion(ctx context.Context, arg CreatePriceVersion
 	return err
 }
 
+const deleteBranchHolidays = `-- name: DeleteBranchHolidays :exec
+DELETE FROM pricing.branch_holidays WHERE branch_id = $1
+`
+
+func (q *Queries) DeleteBranchHolidays(ctx context.Context, branchID uuid.UUID) error {
+	_, err := q.db.Exec(ctx, deleteBranchHolidays, branchID)
+	return err
+}
+
+const deleteCalendarHolidays = `-- name: DeleteCalendarHolidays :exec
+DELETE FROM pricing.calendar_holidays
+`
+
+func (q *Queries) DeleteCalendarHolidays(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, deleteCalendarHolidays)
+	return err
+}
+
+const deleteCategoryPricesByVersion = `-- name: DeleteCategoryPricesByVersion :exec
+DELETE FROM pricing.category_prices WHERE price_version_id = $1
+`
+
+func (q *Queries) DeleteCategoryPricesByVersion(ctx context.Context, priceVersionID uuid.UUID) error {
+	_, err := q.db.Exec(ctx, deleteCategoryPricesByVersion, priceVersionID)
+	return err
+}
+
+const deleteDayGroupsByVersion = `-- name: DeleteDayGroupsByVersion :exec
+DELETE FROM pricing.day_groups WHERE price_version_id = $1
+`
+
+func (q *Queries) DeleteDayGroupsByVersion(ctx context.Context, priceVersionID uuid.UUID) error {
+	_, err := q.db.Exec(ctx, deleteDayGroupsByVersion, priceVersionID)
+	return err
+}
+
+const deleteHolidayWindowsByVersion = `-- name: DeleteHolidayWindowsByVersion :exec
+DELETE FROM pricing.holiday_windows WHERE price_version_id = $1
+`
+
+func (q *Queries) DeleteHolidayWindowsByVersion(ctx context.Context, priceVersionID uuid.UUID) error {
+	_, err := q.db.Exec(ctx, deleteHolidayWindowsByVersion, priceVersionID)
+	return err
+}
+
+const deleteOrganizationHolidays = `-- name: DeleteOrganizationHolidays :exec
+DELETE FROM pricing.organization_holidays WHERE organization_id = $1
+`
+
+func (q *Queries) DeleteOrganizationHolidays(ctx context.Context, organizationID uuid.UUID) error {
+	_, err := q.db.Exec(ctx, deleteOrganizationHolidays, organizationID)
+	return err
+}
+
+const deleteProfileDurations = `-- name: DeleteProfileDurations :exec
+DELETE FROM pricing.profile_durations WHERE profile_id = $1
+`
+
+func (q *Queries) DeleteProfileDurations(ctx context.Context, profileID uuid.UUID) error {
+	_, err := q.db.Exec(ctx, deleteProfileDurations, profileID)
+	return err
+}
+
+const deleteTimeRulesByVersion = `-- name: DeleteTimeRulesByVersion :exec
+DELETE FROM pricing.time_rules WHERE price_version_id = $1
+`
+
+func (q *Queries) DeleteTimeRulesByVersion(ctx context.Context, priceVersionID uuid.UUID) error {
+	_, err := q.db.Exec(ctx, deleteTimeRulesByVersion, priceVersionID)
+	return err
+}
+
+const deleteVersionDurations = `-- name: DeleteVersionDurations :exec
+DELETE FROM pricing.version_durations WHERE price_version_id = $1
+`
+
+func (q *Queries) DeleteVersionDurations(ctx context.Context, priceVersionID uuid.UUID) error {
+	_, err := q.db.Exec(ctx, deleteVersionDurations, priceVersionID)
+	return err
+}
+
 const findActivePriceVersion = `-- name: FindActivePriceVersion :one
-SELECT v.id, v.price_list_id, v.version, v.status, v.effective_from, v.effective_to, v.published_at, v.created_at, v.updated_at
+SELECT v.id, v.price_list_id, v.profile_id, v.version, v.status, v.effective_from, v.effective_to, v.published_at, v.created_at, v.updated_at
 FROM pricing.price_versions v
 JOIN pricing.price_lists l ON l.id = v.price_list_id
-WHERE l.tenant_id = $1 AND l.code = 'default' AND v.status = 'active'
+WHERE l.tenant_id = $1 AND l.code = 'default' AND v.status = 'active' AND v.profile_id IS NULL
 LIMIT 1
 `
 
-func (q *Queries) FindActivePriceVersion(ctx context.Context, tenantID uuid.UUID) (PricingPriceVersion, error) {
+type FindActivePriceVersionRow struct {
+	ID            uuid.UUID                 `json:"id"`
+	PriceListID   uuid.UUID                 `json:"price_list_id"`
+	ProfileID     *uuid.UUID                `json:"profile_id"`
+	Version       int32                     `json:"version"`
+	Status        PricingPriceVersionStatus `json:"status"`
+	EffectiveFrom time.Time                 `json:"effective_from"`
+	EffectiveTo   *time.Time                `json:"effective_to"`
+	PublishedAt   *time.Time                `json:"published_at"`
+	CreatedAt     time.Time                 `json:"created_at"`
+	UpdatedAt     time.Time                 `json:"updated_at"`
+}
+
+func (q *Queries) FindActivePriceVersion(ctx context.Context, tenantID uuid.UUID) (FindActivePriceVersionRow, error) {
 	row := q.db.QueryRow(ctx, findActivePriceVersion, tenantID)
-	var i PricingPriceVersion
+	var i FindActivePriceVersionRow
 	err := row.Scan(
 		&i.ID,
 		&i.PriceListID,
+		&i.ProfileID,
 		&i.Version,
 		&i.Status,
 		&i.EffectiveFrom,
@@ -104,10 +201,122 @@ func (q *Queries) FindActivePriceVersion(ctx context.Context, tenantID uuid.UUID
 	return i, err
 }
 
+const findActiveProfileForBranchSport = `-- name: FindActiveProfileForBranchSport :one
+SELECT p.id, p.tenant_id, p.branch_id, p.sport_id, p.code, p.name, p.customer_type, p.slot_unit_minutes, p.unlimited_duration, p.currency, p.created_at, p.updated_at
+FROM pricing.profiles p
+JOIN pricing.price_versions v ON v.profile_id = p.id AND v.status = 'active'
+WHERE p.branch_id = $1 AND p.sport_id = $2 AND p.customer_type = $3
+LIMIT 1
+`
+
+type FindActiveProfileForBranchSportParams struct {
+	BranchID     uuid.UUID `json:"branch_id"`
+	SportID      uuid.UUID `json:"sport_id"`
+	CustomerType string    `json:"customer_type"`
+}
+
+type FindActiveProfileForBranchSportRow struct {
+	ID                uuid.UUID `json:"id"`
+	TenantID          uuid.UUID `json:"tenant_id"`
+	BranchID          uuid.UUID `json:"branch_id"`
+	SportID           uuid.UUID `json:"sport_id"`
+	Code              string    `json:"code"`
+	Name              string    `json:"name"`
+	CustomerType      string    `json:"customer_type"`
+	SlotUnitMinutes   int32     `json:"slot_unit_minutes"`
+	UnlimitedDuration bool      `json:"unlimited_duration"`
+	Currency          string    `json:"currency"`
+	CreatedAt         time.Time `json:"created_at"`
+	UpdatedAt         time.Time `json:"updated_at"`
+}
+
+func (q *Queries) FindActiveProfileForBranchSport(ctx context.Context, arg FindActiveProfileForBranchSportParams) (FindActiveProfileForBranchSportRow, error) {
+	row := q.db.QueryRow(ctx, findActiveProfileForBranchSport, arg.BranchID, arg.SportID, arg.CustomerType)
+	var i FindActiveProfileForBranchSportRow
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.BranchID,
+		&i.SportID,
+		&i.Code,
+		&i.Name,
+		&i.CustomerType,
+		&i.SlotUnitMinutes,
+		&i.UnlimitedDuration,
+		&i.Currency,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const findActiveProfileVersion = `-- name: FindActiveProfileVersion :one
+SELECT v.id, v.price_list_id, v.profile_id, v.version, v.status, v.effective_from, v.effective_to, v.published_at, v.created_at, v.updated_at, v.slot_unit_minutes, v.unlimited_duration
+FROM pricing.price_versions v
+WHERE v.profile_id = $1 AND v.status = 'active'
+LIMIT 1
+`
+
+type FindActiveProfileVersionRow struct {
+	ID                uuid.UUID                 `json:"id"`
+	PriceListID       uuid.UUID                 `json:"price_list_id"`
+	ProfileID         *uuid.UUID                `json:"profile_id"`
+	Version           int32                     `json:"version"`
+	Status            PricingPriceVersionStatus `json:"status"`
+	EffectiveFrom     time.Time                 `json:"effective_from"`
+	EffectiveTo       *time.Time                `json:"effective_to"`
+	PublishedAt       *time.Time                `json:"published_at"`
+	CreatedAt         time.Time                 `json:"created_at"`
+	UpdatedAt         time.Time                 `json:"updated_at"`
+	SlotUnitMinutes   *int32                    `json:"slot_unit_minutes"`
+	UnlimitedDuration bool                      `json:"unlimited_duration"`
+}
+
+func (q *Queries) FindActiveProfileVersion(ctx context.Context, profileID *uuid.UUID) (FindActiveProfileVersionRow, error) {
+	row := q.db.QueryRow(ctx, findActiveProfileVersion, profileID)
+	var i FindActiveProfileVersionRow
+	err := row.Scan(
+		&i.ID,
+		&i.PriceListID,
+		&i.ProfileID,
+		&i.Version,
+		&i.Status,
+		&i.EffectiveFrom,
+		&i.EffectiveTo,
+		&i.PublishedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.SlotUnitMinutes,
+		&i.UnlimitedDuration,
+	)
+	return i, err
+}
+
+const findBranchForPricing = `-- name: FindBranchForPricing :one
+SELECT id, organization_id, COALESCE(timezone, '') AS timezone
+FROM organization.branches
+WHERE id = $1 AND deleted_at IS NULL
+`
+
+type FindBranchForPricingRow struct {
+	ID             uuid.UUID `json:"id"`
+	OrganizationID uuid.UUID `json:"organization_id"`
+	Timezone       string    `json:"timezone"`
+}
+
+func (q *Queries) FindBranchForPricing(ctx context.Context, id uuid.UUID) (FindBranchForPricingRow, error) {
+	row := q.db.QueryRow(ctx, findBranchForPricing, id)
+	var i FindBranchForPricingRow
+	err := row.Scan(&i.ID, &i.OrganizationID, &i.Timezone)
+	return i, err
+}
+
 const findCourtForPricing = `-- name: FindCourtForPricing :one
 SELECT r.id, r.public_id, r.tenant_id, r.branch_id, r.sport_id, r.status::text AS status,
-       60::int AS slot_duration_minutes
+       60::int AS slot_duration_minutes,
+       COALESCE(l.timezone, '') AS timezone
 FROM catalog.courts r
+JOIN organization.branches l ON l.id = r.branch_id
 WHERE r.id = $1 AND r.resource_type = 'court' AND r.deleted_at IS NULL
 `
 
@@ -119,6 +328,7 @@ type FindCourtForPricingRow struct {
 	SportID             uuid.UUID `json:"sport_id"`
 	Status              string    `json:"status"`
 	SlotDurationMinutes int32     `json:"slot_duration_minutes"`
+	Timezone            string    `json:"timezone"`
 }
 
 func (q *Queries) FindCourtForPricing(ctx context.Context, id uuid.UUID) (FindCourtForPricingRow, error) {
@@ -132,14 +342,17 @@ func (q *Queries) FindCourtForPricing(ctx context.Context, id uuid.UUID) (FindCo
 		&i.SportID,
 		&i.Status,
 		&i.SlotDurationMinutes,
+		&i.Timezone,
 	)
 	return i, err
 }
 
 const findCourtForPricingByPublicID = `-- name: FindCourtForPricingByPublicID :one
 SELECT r.id, r.public_id, r.tenant_id, r.branch_id, r.sport_id, r.status::text AS status,
-       60::int AS slot_duration_minutes
+       60::int AS slot_duration_minutes,
+       COALESCE(l.timezone, '') AS timezone
 FROM catalog.courts r
+JOIN organization.branches l ON l.id = r.branch_id
 WHERE r.public_id = $1 AND r.resource_type = 'court' AND r.deleted_at IS NULL
 `
 
@@ -151,6 +364,7 @@ type FindCourtForPricingByPublicIDRow struct {
 	SportID             uuid.UUID `json:"sport_id"`
 	Status              string    `json:"status"`
 	SlotDurationMinutes int32     `json:"slot_duration_minutes"`
+	Timezone            string    `json:"timezone"`
 }
 
 func (q *Queries) FindCourtForPricingByPublicID(ctx context.Context, publicID string) (FindCourtForPricingByPublicIDRow, error) {
@@ -164,6 +378,7 @@ func (q *Queries) FindCourtForPricingByPublicID(ctx context.Context, publicID st
 		&i.SportID,
 		&i.Status,
 		&i.SlotDurationMinutes,
+		&i.Timezone,
 	)
 	return i, err
 }
@@ -204,18 +419,75 @@ func (q *Queries) FindDefaultPriceList(ctx context.Context, tenantID uuid.UUID) 
 	return i, err
 }
 
+const findLatestProfileVersion = `-- name: FindLatestProfileVersion :one
+SELECT id, price_list_id, profile_id, version, status, effective_from, effective_to, published_at, created_at, updated_at, slot_unit_minutes, unlimited_duration
+FROM pricing.price_versions
+WHERE profile_id = $1
+ORDER BY version DESC
+LIMIT 1
+`
+
+type FindLatestProfileVersionRow struct {
+	ID                uuid.UUID                 `json:"id"`
+	PriceListID       uuid.UUID                 `json:"price_list_id"`
+	ProfileID         *uuid.UUID                `json:"profile_id"`
+	Version           int32                     `json:"version"`
+	Status            PricingPriceVersionStatus `json:"status"`
+	EffectiveFrom     time.Time                 `json:"effective_from"`
+	EffectiveTo       *time.Time                `json:"effective_to"`
+	PublishedAt       *time.Time                `json:"published_at"`
+	CreatedAt         time.Time                 `json:"created_at"`
+	UpdatedAt         time.Time                 `json:"updated_at"`
+	SlotUnitMinutes   *int32                    `json:"slot_unit_minutes"`
+	UnlimitedDuration bool                      `json:"unlimited_duration"`
+}
+
+func (q *Queries) FindLatestProfileVersion(ctx context.Context, profileID *uuid.UUID) (FindLatestProfileVersionRow, error) {
+	row := q.db.QueryRow(ctx, findLatestProfileVersion, profileID)
+	var i FindLatestProfileVersionRow
+	err := row.Scan(
+		&i.ID,
+		&i.PriceListID,
+		&i.ProfileID,
+		&i.Version,
+		&i.Status,
+		&i.EffectiveFrom,
+		&i.EffectiveTo,
+		&i.PublishedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.SlotUnitMinutes,
+		&i.UnlimitedDuration,
+	)
+	return i, err
+}
+
 const findPriceVersion = `-- name: FindPriceVersion :one
-SELECT id, price_list_id, version, status, effective_from, effective_to, published_at, created_at, updated_at
+SELECT id, price_list_id, profile_id, version, status, effective_from, effective_to, published_at, created_at, updated_at
 FROM pricing.price_versions
 WHERE id = $1
 `
 
-func (q *Queries) FindPriceVersion(ctx context.Context, id uuid.UUID) (PricingPriceVersion, error) {
+type FindPriceVersionRow struct {
+	ID            uuid.UUID                 `json:"id"`
+	PriceListID   uuid.UUID                 `json:"price_list_id"`
+	ProfileID     *uuid.UUID                `json:"profile_id"`
+	Version       int32                     `json:"version"`
+	Status        PricingPriceVersionStatus `json:"status"`
+	EffectiveFrom time.Time                 `json:"effective_from"`
+	EffectiveTo   *time.Time                `json:"effective_to"`
+	PublishedAt   *time.Time                `json:"published_at"`
+	CreatedAt     time.Time                 `json:"created_at"`
+	UpdatedAt     time.Time                 `json:"updated_at"`
+}
+
+func (q *Queries) FindPriceVersion(ctx context.Context, id uuid.UUID) (FindPriceVersionRow, error) {
 	row := q.db.QueryRow(ctx, findPriceVersion, id)
-	var i PricingPriceVersion
+	var i FindPriceVersionRow
 	err := row.Scan(
 		&i.ID,
 		&i.PriceListID,
+		&i.ProfileID,
 		&i.Version,
 		&i.Status,
 		&i.EffectiveFrom,
@@ -227,6 +499,74 @@ func (q *Queries) FindPriceVersion(ctx context.Context, id uuid.UUID) (PricingPr
 	return i, err
 }
 
+const findPricingProfileByID = `-- name: FindPricingProfileByID :one
+SELECT id, tenant_id, branch_id, sport_id, code, name, customer_type, slot_unit_minutes, unlimited_duration, currency, created_at, updated_at
+FROM pricing.profiles
+WHERE id = $1
+`
+
+type FindPricingProfileByIDRow struct {
+	ID                uuid.UUID `json:"id"`
+	TenantID          uuid.UUID `json:"tenant_id"`
+	BranchID          uuid.UUID `json:"branch_id"`
+	SportID           uuid.UUID `json:"sport_id"`
+	Code              string    `json:"code"`
+	Name              string    `json:"name"`
+	CustomerType      string    `json:"customer_type"`
+	SlotUnitMinutes   int32     `json:"slot_unit_minutes"`
+	UnlimitedDuration bool      `json:"unlimited_duration"`
+	Currency          string    `json:"currency"`
+	CreatedAt         time.Time `json:"created_at"`
+	UpdatedAt         time.Time `json:"updated_at"`
+}
+
+func (q *Queries) FindPricingProfileByID(ctx context.Context, id uuid.UUID) (FindPricingProfileByIDRow, error) {
+	row := q.db.QueryRow(ctx, findPricingProfileByID, id)
+	var i FindPricingProfileByIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.BranchID,
+		&i.SportID,
+		&i.Code,
+		&i.Name,
+		&i.CustomerType,
+		&i.SlotUnitMinutes,
+		&i.UnlimitedDuration,
+		&i.Currency,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const findPricingProfileByName = `-- name: FindPricingProfileByName :one
+SELECT id
+FROM pricing.profiles
+WHERE branch_id = $1 AND sport_id = $2 AND customer_type = $3 AND name = $4 AND id <> $5
+`
+
+type FindPricingProfileByNameParams struct {
+	BranchID     uuid.UUID `json:"branch_id"`
+	SportID      uuid.UUID `json:"sport_id"`
+	CustomerType string    `json:"customer_type"`
+	Name         string    `json:"name"`
+	ID           uuid.UUID `json:"id"`
+}
+
+func (q *Queries) FindPricingProfileByName(ctx context.Context, arg FindPricingProfileByNameParams) (uuid.UUID, error) {
+	row := q.db.QueryRow(ctx, findPricingProfileByName,
+		arg.BranchID,
+		arg.SportID,
+		arg.CustomerType,
+		arg.Name,
+		arg.ID,
+	)
+	var id uuid.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
 const findSportByID = `-- name: FindSportByID :one
 SELECT id FROM catalog.sports WHERE id = $1
 `
@@ -236,6 +576,66 @@ func (q *Queries) FindSportByID(ctx context.Context, id uuid.UUID) (uuid.UUID, e
 	var id_2 uuid.UUID
 	err := row.Scan(&id_2)
 	return id_2, err
+}
+
+const insertBranchHoliday = `-- name: InsertBranchHoliday :exec
+INSERT INTO pricing.branch_holidays (id, branch_id, holiday_on, name, effect, created_at)
+VALUES (
+    $1,
+    $2,
+    $3::date,
+    $4,
+    $5,
+    $6
+)
+`
+
+type InsertBranchHolidayParams struct {
+	ID        uuid.UUID   `json:"id"`
+	BranchID  uuid.UUID   `json:"branch_id"`
+	HolidayOn pgtype.Date `json:"holiday_on"`
+	Name      string      `json:"name"`
+	Effect    string      `json:"effect"`
+	CreatedAt time.Time   `json:"created_at"`
+}
+
+func (q *Queries) InsertBranchHoliday(ctx context.Context, arg InsertBranchHolidayParams) error {
+	_, err := q.db.Exec(ctx, insertBranchHoliday,
+		arg.ID,
+		arg.BranchID,
+		arg.HolidayOn,
+		arg.Name,
+		arg.Effect,
+		arg.CreatedAt,
+	)
+	return err
+}
+
+const insertCalendarHoliday = `-- name: InsertCalendarHoliday :exec
+INSERT INTO pricing.calendar_holidays (id, holiday_on, name, created_at)
+VALUES (
+    $1,
+    $2::date,
+    $3,
+    $4
+)
+`
+
+type InsertCalendarHolidayParams struct {
+	ID        uuid.UUID   `json:"id"`
+	HolidayOn pgtype.Date `json:"holiday_on"`
+	Name      string      `json:"name"`
+	CreatedAt time.Time   `json:"created_at"`
+}
+
+func (q *Queries) InsertCalendarHoliday(ctx context.Context, arg InsertCalendarHolidayParams) error {
+	_, err := q.db.Exec(ctx, insertCalendarHoliday,
+		arg.ID,
+		arg.HolidayOn,
+		arg.Name,
+		arg.CreatedAt,
+	)
+	return err
 }
 
 const insertCategoryPrice = `-- name: InsertCategoryPrice :exec
@@ -262,10 +662,183 @@ func (q *Queries) InsertCategoryPrice(ctx context.Context, arg InsertCategoryPri
 	return err
 }
 
+const insertDayGroup = `-- name: InsertDayGroup :exec
+INSERT INTO pricing.day_groups (id, price_version_id, name, weekdays, position, created_at)
+VALUES ($1, $2, $3, $4, $5, $6)
+`
+
+type InsertDayGroupParams struct {
+	ID             uuid.UUID `json:"id"`
+	PriceVersionID uuid.UUID `json:"price_version_id"`
+	Name           string    `json:"name"`
+	Weekdays       []int16   `json:"weekdays"`
+	Position       int32     `json:"position"`
+	CreatedAt      time.Time `json:"created_at"`
+}
+
+func (q *Queries) InsertDayGroup(ctx context.Context, arg InsertDayGroupParams) error {
+	_, err := q.db.Exec(ctx, insertDayGroup,
+		arg.ID,
+		arg.PriceVersionID,
+		arg.Name,
+		arg.Weekdays,
+		arg.Position,
+		arg.CreatedAt,
+	)
+	return err
+}
+
+const insertHolidayWindow = `-- name: InsertHolidayWindow :exec
+INSERT INTO pricing.holiday_windows (id, price_version_id, name, starts_at, ends_at, amount, position, created_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+`
+
+type InsertHolidayWindowParams struct {
+	ID             uuid.UUID      `json:"id"`
+	PriceVersionID uuid.UUID      `json:"price_version_id"`
+	Name           string         `json:"name"`
+	StartsAt       pgtype.Time    `json:"starts_at"`
+	EndsAt         pgtype.Time    `json:"ends_at"`
+	Amount         pgtype.Numeric `json:"amount"`
+	Position       int32          `json:"position"`
+	CreatedAt      time.Time      `json:"created_at"`
+}
+
+func (q *Queries) InsertHolidayWindow(ctx context.Context, arg InsertHolidayWindowParams) error {
+	_, err := q.db.Exec(ctx, insertHolidayWindow,
+		arg.ID,
+		arg.PriceVersionID,
+		arg.Name,
+		arg.StartsAt,
+		arg.EndsAt,
+		arg.Amount,
+		arg.Position,
+		arg.CreatedAt,
+	)
+	return err
+}
+
+const insertOrganizationHoliday = `-- name: InsertOrganizationHoliday :exec
+INSERT INTO pricing.organization_holidays (id, organization_id, holiday_on, name, effect, created_at)
+VALUES (
+    $1,
+    $2,
+    $3::date,
+    $4,
+    $5,
+    $6
+)
+`
+
+type InsertOrganizationHolidayParams struct {
+	ID             uuid.UUID   `json:"id"`
+	OrganizationID uuid.UUID   `json:"organization_id"`
+	HolidayOn      pgtype.Date `json:"holiday_on"`
+	Name           string      `json:"name"`
+	Effect         string      `json:"effect"`
+	CreatedAt      time.Time   `json:"created_at"`
+}
+
+func (q *Queries) InsertOrganizationHoliday(ctx context.Context, arg InsertOrganizationHolidayParams) error {
+	_, err := q.db.Exec(ctx, insertOrganizationHoliday,
+		arg.ID,
+		arg.OrganizationID,
+		arg.HolidayOn,
+		arg.Name,
+		arg.Effect,
+		arg.CreatedAt,
+	)
+	return err
+}
+
+const insertPricingProfile = `-- name: InsertPricingProfile :one
+INSERT INTO pricing.profiles (
+    id, tenant_id, branch_id, sport_id, code, name, customer_type, slot_unit_minutes, unlimited_duration, currency, created_at, updated_at
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+RETURNING id, tenant_id, branch_id, sport_id, code, name, customer_type, slot_unit_minutes, unlimited_duration, currency, created_at, updated_at
+`
+
+type InsertPricingProfileParams struct {
+	ID                uuid.UUID `json:"id"`
+	TenantID          uuid.UUID `json:"tenant_id"`
+	BranchID          uuid.UUID `json:"branch_id"`
+	SportID           uuid.UUID `json:"sport_id"`
+	Code              string    `json:"code"`
+	Name              string    `json:"name"`
+	CustomerType      string    `json:"customer_type"`
+	SlotUnitMinutes   int32     `json:"slot_unit_minutes"`
+	UnlimitedDuration bool      `json:"unlimited_duration"`
+	Currency          string    `json:"currency"`
+	CreatedAt         time.Time `json:"created_at"`
+	UpdatedAt         time.Time `json:"updated_at"`
+}
+
+type InsertPricingProfileRow struct {
+	ID                uuid.UUID `json:"id"`
+	TenantID          uuid.UUID `json:"tenant_id"`
+	BranchID          uuid.UUID `json:"branch_id"`
+	SportID           uuid.UUID `json:"sport_id"`
+	Code              string    `json:"code"`
+	Name              string    `json:"name"`
+	CustomerType      string    `json:"customer_type"`
+	SlotUnitMinutes   int32     `json:"slot_unit_minutes"`
+	UnlimitedDuration bool      `json:"unlimited_duration"`
+	Currency          string    `json:"currency"`
+	CreatedAt         time.Time `json:"created_at"`
+	UpdatedAt         time.Time `json:"updated_at"`
+}
+
+func (q *Queries) InsertPricingProfile(ctx context.Context, arg InsertPricingProfileParams) (InsertPricingProfileRow, error) {
+	row := q.db.QueryRow(ctx, insertPricingProfile,
+		arg.ID,
+		arg.TenantID,
+		arg.BranchID,
+		arg.SportID,
+		arg.Code,
+		arg.Name,
+		arg.CustomerType,
+		arg.SlotUnitMinutes,
+		arg.UnlimitedDuration,
+		arg.Currency,
+		arg.CreatedAt,
+		arg.UpdatedAt,
+	)
+	var i InsertPricingProfileRow
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.BranchID,
+		&i.SportID,
+		&i.Code,
+		&i.Name,
+		&i.CustomerType,
+		&i.SlotUnitMinutes,
+		&i.UnlimitedDuration,
+		&i.Currency,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const insertProfileDuration = `-- name: InsertProfileDuration :exec
+INSERT INTO pricing.profile_durations (profile_id, minutes) VALUES ($1, $2)
+`
+
+type InsertProfileDurationParams struct {
+	ProfileID uuid.UUID `json:"profile_id"`
+	Minutes   int32     `json:"minutes"`
+}
+
+func (q *Queries) InsertProfileDuration(ctx context.Context, arg InsertProfileDurationParams) error {
+	_, err := q.db.Exec(ctx, insertProfileDuration, arg.ProfileID, arg.Minutes)
+	return err
+}
+
 const insertTimeRule = `-- name: InsertTimeRule :exec
 INSERT INTO pricing.time_rules (
-    id, price_version_id, weekdays, starts_at, ends_at, adjustment_type, value_type, value, priority, created_at
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+    id, price_version_id, weekdays, starts_at, ends_at, adjustment_type, value_type, value, priority, slot_amount, created_at, name, day_group_id
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
 `
 
 type InsertTimeRuleParams struct {
@@ -278,7 +851,10 @@ type InsertTimeRuleParams struct {
 	ValueType      PricingPricingRuleType `json:"value_type"`
 	Value          pgtype.Numeric         `json:"value"`
 	Priority       int32                  `json:"priority"`
+	SlotAmount     pgtype.Numeric         `json:"slot_amount"`
 	CreatedAt      time.Time              `json:"created_at"`
+	Name           string                 `json:"name"`
+	DayGroupID     *uuid.UUID             `json:"day_group_id"`
 }
 
 func (q *Queries) InsertTimeRule(ctx context.Context, arg InsertTimeRuleParams) error {
@@ -292,9 +868,134 @@ func (q *Queries) InsertTimeRule(ctx context.Context, arg InsertTimeRuleParams) 
 		arg.ValueType,
 		arg.Value,
 		arg.Priority,
+		arg.SlotAmount,
 		arg.CreatedAt,
+		arg.Name,
+		arg.DayGroupID,
 	)
 	return err
+}
+
+const insertVersionDuration = `-- name: InsertVersionDuration :exec
+INSERT INTO pricing.version_durations (price_version_id, minutes) VALUES ($1, $2)
+`
+
+type InsertVersionDurationParams struct {
+	PriceVersionID uuid.UUID `json:"price_version_id"`
+	Minutes        int32     `json:"minutes"`
+}
+
+func (q *Queries) InsertVersionDuration(ctx context.Context, arg InsertVersionDurationParams) error {
+	_, err := q.db.Exec(ctx, insertVersionDuration, arg.PriceVersionID, arg.Minutes)
+	return err
+}
+
+const listBranchHolidays = `-- name: ListBranchHolidays :many
+SELECT id, branch_id, holiday_on::text AS holiday_on, name, effect, created_at
+FROM pricing.branch_holidays
+WHERE branch_id = $1
+ORDER BY holiday_on ASC
+`
+
+type ListBranchHolidaysRow struct {
+	ID        uuid.UUID `json:"id"`
+	BranchID  uuid.UUID `json:"branch_id"`
+	HolidayOn string    `json:"holiday_on"`
+	Name      string    `json:"name"`
+	Effect    string    `json:"effect"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+func (q *Queries) ListBranchHolidays(ctx context.Context, branchID uuid.UUID) ([]ListBranchHolidaysRow, error) {
+	rows, err := q.db.Query(ctx, listBranchHolidays, branchID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListBranchHolidaysRow{}
+	for rows.Next() {
+		var i ListBranchHolidaysRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.BranchID,
+			&i.HolidayOn,
+			&i.Name,
+			&i.Effect,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listBranchSportIDs = `-- name: ListBranchSportIDs :many
+SELECT DISTINCT sport_id
+FROM catalog.courts
+WHERE branch_id = $1 AND resource_type = 'court' AND deleted_at IS NULL AND sport_id IS NOT NULL
+ORDER BY sport_id
+`
+
+func (q *Queries) ListBranchSportIDs(ctx context.Context, branchID uuid.UUID) ([]uuid.UUID, error) {
+	rows, err := q.db.Query(ctx, listBranchSportIDs, branchID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []uuid.UUID{}
+	for rows.Next() {
+		var sport_id uuid.UUID
+		if err := rows.Scan(&sport_id); err != nil {
+			return nil, err
+		}
+		items = append(items, sport_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listCalendarHolidays = `-- name: ListCalendarHolidays :many
+SELECT id, holiday_on::text AS holiday_on, name, created_at
+FROM pricing.calendar_holidays
+ORDER BY holiday_on ASC
+`
+
+type ListCalendarHolidaysRow struct {
+	ID        uuid.UUID `json:"id"`
+	HolidayOn string    `json:"holiday_on"`
+	Name      string    `json:"name"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+func (q *Queries) ListCalendarHolidays(ctx context.Context) ([]ListCalendarHolidaysRow, error) {
+	rows, err := q.db.Query(ctx, listCalendarHolidays)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListCalendarHolidaysRow{}
+	for rows.Next() {
+		var i ListCalendarHolidaysRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.HolidayOn,
+			&i.Name,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listCategoryPrices = `-- name: ListCategoryPrices :many
@@ -330,25 +1031,152 @@ func (q *Queries) ListCategoryPrices(ctx context.Context, priceVersionID uuid.UU
 	return items, nil
 }
 
+const listDayGroupsByVersion = `-- name: ListDayGroupsByVersion :many
+SELECT id, price_version_id, name, weekdays, position, created_at
+FROM pricing.day_groups
+WHERE price_version_id = $1
+ORDER BY position ASC, created_at ASC
+`
+
+func (q *Queries) ListDayGroupsByVersion(ctx context.Context, priceVersionID uuid.UUID) ([]PricingDayGroup, error) {
+	rows, err := q.db.Query(ctx, listDayGroupsByVersion, priceVersionID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []PricingDayGroup{}
+	for rows.Next() {
+		var i PricingDayGroup
+		if err := rows.Scan(
+			&i.ID,
+			&i.PriceVersionID,
+			&i.Name,
+			&i.Weekdays,
+			&i.Position,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listHolidayWindowsByVersion = `-- name: ListHolidayWindowsByVersion :many
+SELECT id, price_version_id, name, starts_at, ends_at, amount, position, created_at
+FROM pricing.holiday_windows
+WHERE price_version_id = $1
+ORDER BY position ASC, created_at ASC
+`
+
+func (q *Queries) ListHolidayWindowsByVersion(ctx context.Context, priceVersionID uuid.UUID) ([]PricingHolidayWindow, error) {
+	rows, err := q.db.Query(ctx, listHolidayWindowsByVersion, priceVersionID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []PricingHolidayWindow{}
+	for rows.Next() {
+		var i PricingHolidayWindow
+		if err := rows.Scan(
+			&i.ID,
+			&i.PriceVersionID,
+			&i.Name,
+			&i.StartsAt,
+			&i.EndsAt,
+			&i.Amount,
+			&i.Position,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listOrganizationHolidays = `-- name: ListOrganizationHolidays :many
+SELECT id, organization_id, holiday_on::text AS holiday_on, name, effect, created_at
+FROM pricing.organization_holidays
+WHERE organization_id = $1
+ORDER BY holiday_on ASC
+`
+
+type ListOrganizationHolidaysRow struct {
+	ID             uuid.UUID `json:"id"`
+	OrganizationID uuid.UUID `json:"organization_id"`
+	HolidayOn      string    `json:"holiday_on"`
+	Name           string    `json:"name"`
+	Effect         string    `json:"effect"`
+	CreatedAt      time.Time `json:"created_at"`
+}
+
+func (q *Queries) ListOrganizationHolidays(ctx context.Context, organizationID uuid.UUID) ([]ListOrganizationHolidaysRow, error) {
+	rows, err := q.db.Query(ctx, listOrganizationHolidays, organizationID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListOrganizationHolidaysRow{}
+	for rows.Next() {
+		var i ListOrganizationHolidaysRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.OrganizationID,
+			&i.HolidayOn,
+			&i.Name,
+			&i.Effect,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listPriceVersionsByList = `-- name: ListPriceVersionsByList :many
-SELECT id, price_list_id, version, status, effective_from, effective_to, published_at, created_at, updated_at
+SELECT id, price_list_id, profile_id, version, status, effective_from, effective_to, published_at, created_at, updated_at
 FROM pricing.price_versions
 WHERE price_list_id = $1
 ORDER BY version DESC
 `
 
-func (q *Queries) ListPriceVersionsByList(ctx context.Context, priceListID uuid.UUID) ([]PricingPriceVersion, error) {
+type ListPriceVersionsByListRow struct {
+	ID            uuid.UUID                 `json:"id"`
+	PriceListID   uuid.UUID                 `json:"price_list_id"`
+	ProfileID     *uuid.UUID                `json:"profile_id"`
+	Version       int32                     `json:"version"`
+	Status        PricingPriceVersionStatus `json:"status"`
+	EffectiveFrom time.Time                 `json:"effective_from"`
+	EffectiveTo   *time.Time                `json:"effective_to"`
+	PublishedAt   *time.Time                `json:"published_at"`
+	CreatedAt     time.Time                 `json:"created_at"`
+	UpdatedAt     time.Time                 `json:"updated_at"`
+}
+
+func (q *Queries) ListPriceVersionsByList(ctx context.Context, priceListID uuid.UUID) ([]ListPriceVersionsByListRow, error) {
 	rows, err := q.db.Query(ctx, listPriceVersionsByList, priceListID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []PricingPriceVersion{}
+	items := []ListPriceVersionsByListRow{}
 	for rows.Next() {
-		var i PricingPriceVersion
+		var i ListPriceVersionsByListRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.PriceListID,
+			&i.ProfileID,
 			&i.Version,
 			&i.Status,
 			&i.EffectiveFrom,
@@ -367,22 +1195,117 @@ func (q *Queries) ListPriceVersionsByList(ctx context.Context, priceListID uuid.
 	return items, nil
 }
 
+const listPricingProfilesByBranch = `-- name: ListPricingProfilesByBranch :many
+SELECT id, tenant_id, branch_id, sport_id, code, name, customer_type, slot_unit_minutes, unlimited_duration, currency, created_at, updated_at
+FROM pricing.profiles
+WHERE branch_id = $1
+ORDER BY sport_id, customer_type, name
+`
+
+type ListPricingProfilesByBranchRow struct {
+	ID                uuid.UUID `json:"id"`
+	TenantID          uuid.UUID `json:"tenant_id"`
+	BranchID          uuid.UUID `json:"branch_id"`
+	SportID           uuid.UUID `json:"sport_id"`
+	Code              string    `json:"code"`
+	Name              string    `json:"name"`
+	CustomerType      string    `json:"customer_type"`
+	SlotUnitMinutes   int32     `json:"slot_unit_minutes"`
+	UnlimitedDuration bool      `json:"unlimited_duration"`
+	Currency          string    `json:"currency"`
+	CreatedAt         time.Time `json:"created_at"`
+	UpdatedAt         time.Time `json:"updated_at"`
+}
+
+func (q *Queries) ListPricingProfilesByBranch(ctx context.Context, branchID uuid.UUID) ([]ListPricingProfilesByBranchRow, error) {
+	rows, err := q.db.Query(ctx, listPricingProfilesByBranch, branchID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListPricingProfilesByBranchRow{}
+	for rows.Next() {
+		var i ListPricingProfilesByBranchRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.BranchID,
+			&i.SportID,
+			&i.Code,
+			&i.Name,
+			&i.CustomerType,
+			&i.SlotUnitMinutes,
+			&i.UnlimitedDuration,
+			&i.Currency,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listProfileDurations = `-- name: ListProfileDurations :many
+SELECT minutes FROM pricing.profile_durations WHERE profile_id = $1 ORDER BY minutes ASC
+`
+
+func (q *Queries) ListProfileDurations(ctx context.Context, profileID uuid.UUID) ([]int32, error) {
+	rows, err := q.db.Query(ctx, listProfileDurations, profileID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []int32{}
+	for rows.Next() {
+		var minutes int32
+		if err := rows.Scan(&minutes); err != nil {
+			return nil, err
+		}
+		items = append(items, minutes)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listTimeRules = `-- name: ListTimeRules :many
-SELECT id, price_version_id, weekdays, starts_at, ends_at, adjustment_type, value_type, value, priority, created_at
+SELECT id, price_version_id, weekdays, starts_at, ends_at, adjustment_type, value_type, value, priority, slot_amount, created_at, name, day_group_id
 FROM pricing.time_rules
 WHERE price_version_id = $1
 ORDER BY priority ASC, created_at ASC
 `
 
-func (q *Queries) ListTimeRules(ctx context.Context, priceVersionID uuid.UUID) ([]PricingTimeRule, error) {
+type ListTimeRulesRow struct {
+	ID             uuid.UUID              `json:"id"`
+	PriceVersionID uuid.UUID              `json:"price_version_id"`
+	Weekdays       []int16                `json:"weekdays"`
+	StartsAt       pgtype.Time            `json:"starts_at"`
+	EndsAt         pgtype.Time            `json:"ends_at"`
+	AdjustmentType PricingAdjustmentType  `json:"adjustment_type"`
+	ValueType      PricingPricingRuleType `json:"value_type"`
+	Value          pgtype.Numeric         `json:"value"`
+	Priority       int32                  `json:"priority"`
+	SlotAmount     pgtype.Numeric         `json:"slot_amount"`
+	CreatedAt      time.Time              `json:"created_at"`
+	Name           string                 `json:"name"`
+	DayGroupID     *uuid.UUID             `json:"day_group_id"`
+}
+
+func (q *Queries) ListTimeRules(ctx context.Context, priceVersionID uuid.UUID) ([]ListTimeRulesRow, error) {
 	rows, err := q.db.Query(ctx, listTimeRules, priceVersionID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []PricingTimeRule{}
+	items := []ListTimeRulesRow{}
 	for rows.Next() {
-		var i PricingTimeRule
+		var i ListTimeRulesRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.PriceVersionID,
@@ -393,7 +1316,10 @@ func (q *Queries) ListTimeRules(ctx context.Context, priceVersionID uuid.UUID) (
 			&i.ValueType,
 			&i.Value,
 			&i.Priority,
+			&i.SlotAmount,
 			&i.CreatedAt,
+			&i.Name,
+			&i.DayGroupID,
 		); err != nil {
 			return nil, err
 		}
@@ -403,6 +1329,54 @@ func (q *Queries) ListTimeRules(ctx context.Context, priceVersionID uuid.UUID) (
 		return nil, err
 	}
 	return items, nil
+}
+
+const listVersionDurations = `-- name: ListVersionDurations :many
+SELECT minutes FROM pricing.version_durations WHERE price_version_id = $1 ORDER BY minutes ASC
+`
+
+func (q *Queries) ListVersionDurations(ctx context.Context, priceVersionID uuid.UUID) ([]int32, error) {
+	rows, err := q.db.Query(ctx, listVersionDurations, priceVersionID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []int32{}
+	for rows.Next() {
+		var minutes int32
+		if err := rows.Scan(&minutes); err != nil {
+			return nil, err
+		}
+		items = append(items, minutes)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const maxProfileCodeSeq = `-- name: MaxProfileCodeSeq :one
+SELECT COALESCE(MAX(
+    CASE
+        WHEN code ~ ('^' || $1::text || '[0-9]+$')
+        THEN SUBSTRING(code FROM LENGTH($1::text) + 1)::int
+        ELSE NULL
+    END
+), 0)::int AS max_seq
+FROM pricing.profiles
+WHERE branch_id = $2
+`
+
+type MaxProfileCodeSeqParams struct {
+	Prefix   string    `json:"prefix"`
+	BranchID uuid.UUID `json:"branch_id"`
+}
+
+func (q *Queries) MaxProfileCodeSeq(ctx context.Context, arg MaxProfileCodeSeqParams) (int32, error) {
+	row := q.db.QueryRow(ctx, maxProfileCodeSeq, arg.Prefix, arg.BranchID)
+	var max_seq int32
+	err := row.Scan(&max_seq)
+	return max_seq, err
 }
 
 const nextPriceVersionNumber = `-- name: NextPriceVersionNumber :one
@@ -434,10 +1408,26 @@ func (q *Queries) PublishPriceVersion(ctx context.Context, arg PublishPriceVersi
 	return err
 }
 
+const retireActiveProfileVersions = `-- name: RetireActiveProfileVersions :exec
+UPDATE pricing.price_versions
+SET status = 'retired', effective_to = $2, updated_at = $2
+WHERE profile_id = $1 AND status = 'active'
+`
+
+type RetireActiveProfileVersionsParams struct {
+	ProfileID   *uuid.UUID `json:"profile_id"`
+	EffectiveTo *time.Time `json:"effective_to"`
+}
+
+func (q *Queries) RetireActiveProfileVersions(ctx context.Context, arg RetireActiveProfileVersionsParams) error {
+	_, err := q.db.Exec(ctx, retireActiveProfileVersions, arg.ProfileID, arg.EffectiveTo)
+	return err
+}
+
 const retireActiveVersions = `-- name: RetireActiveVersions :exec
 UPDATE pricing.price_versions
 SET status = 'retired', effective_to = $2, updated_at = $2
-WHERE price_list_id = $1 AND status = 'active'
+WHERE price_list_id = $1 AND status = 'active' AND profile_id IS NULL
 `
 
 type RetireActiveVersionsParams struct {
@@ -447,6 +1437,34 @@ type RetireActiveVersionsParams struct {
 
 func (q *Queries) RetireActiveVersions(ctx context.Context, arg RetireActiveVersionsParams) error {
 	_, err := q.db.Exec(ctx, retireActiveVersions, arg.PriceListID, arg.EffectiveTo)
+	return err
+}
+
+const retireActiveVersionsForBranchSport = `-- name: RetireActiveVersionsForBranchSport :exec
+UPDATE pricing.price_versions v
+SET status = 'retired', effective_to = $4, updated_at = $4
+FROM pricing.profiles p
+WHERE v.profile_id = p.id
+  AND p.branch_id = $1
+  AND p.sport_id = $2
+  AND p.customer_type = $3
+  AND v.status = 'active'
+`
+
+type RetireActiveVersionsForBranchSportParams struct {
+	BranchID     uuid.UUID  `json:"branch_id"`
+	SportID      uuid.UUID  `json:"sport_id"`
+	CustomerType string     `json:"customer_type"`
+	EffectiveTo  *time.Time `json:"effective_to"`
+}
+
+func (q *Queries) RetireActiveVersionsForBranchSport(ctx context.Context, arg RetireActiveVersionsForBranchSportParams) error {
+	_, err := q.db.Exec(ctx, retireActiveVersionsForBranchSport,
+		arg.BranchID,
+		arg.SportID,
+		arg.CustomerType,
+		arg.EffectiveTo,
+	)
 	return err
 }
 
@@ -463,5 +1481,53 @@ type RetireDraftPriceVersionParams struct {
 
 func (q *Queries) RetireDraftPriceVersion(ctx context.Context, arg RetireDraftPriceVersionParams) error {
 	_, err := q.db.Exec(ctx, retireDraftPriceVersion, arg.ID, arg.UpdatedAt)
+	return err
+}
+
+const updatePriceVersionSlotUnit = `-- name: UpdatePriceVersionSlotUnit :exec
+UPDATE pricing.price_versions
+SET slot_unit_minutes = $2, unlimited_duration = $3, updated_at = $4
+WHERE id = $1
+`
+
+type UpdatePriceVersionSlotUnitParams struct {
+	ID                uuid.UUID `json:"id"`
+	SlotUnitMinutes   *int32    `json:"slot_unit_minutes"`
+	UnlimitedDuration bool      `json:"unlimited_duration"`
+	UpdatedAt         time.Time `json:"updated_at"`
+}
+
+func (q *Queries) UpdatePriceVersionSlotUnit(ctx context.Context, arg UpdatePriceVersionSlotUnitParams) error {
+	_, err := q.db.Exec(ctx, updatePriceVersionSlotUnit,
+		arg.ID,
+		arg.SlotUnitMinutes,
+		arg.UnlimitedDuration,
+		arg.UpdatedAt,
+	)
+	return err
+}
+
+const updatePricingProfile = `-- name: UpdatePricingProfile :exec
+UPDATE pricing.profiles
+SET name = $2, slot_unit_minutes = $3, unlimited_duration = $4, updated_at = $5
+WHERE id = $1
+`
+
+type UpdatePricingProfileParams struct {
+	ID                uuid.UUID `json:"id"`
+	Name              string    `json:"name"`
+	SlotUnitMinutes   int32     `json:"slot_unit_minutes"`
+	UnlimitedDuration bool      `json:"unlimited_duration"`
+	UpdatedAt         time.Time `json:"updated_at"`
+}
+
+func (q *Queries) UpdatePricingProfile(ctx context.Context, arg UpdatePricingProfileParams) error {
+	_, err := q.db.Exec(ctx, updatePricingProfile,
+		arg.ID,
+		arg.Name,
+		arg.SlotUnitMinutes,
+		arg.UnlimitedDuration,
+		arg.UpdatedAt,
+	)
 	return err
 }

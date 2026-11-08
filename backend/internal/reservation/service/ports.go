@@ -26,22 +26,23 @@ type BookingCreator interface {
 
 // ConvertedHold is the hold snapshot handed to the booking module on convert.
 type ConvertedHold struct {
-	ReservationID  uuid.UUID
-	TenantID       uuid.UUID
-	CustomerID     uuid.UUID
-	BranchID       uuid.UUID
-	CourtID        uuid.UUID
-	Currency       string
-	Subtotal       float64
-	DiscountAmount float64
-	TaxAmount      float64
-	TotalAmount    float64
-	PriceVersionID *uuid.UUID
-	StartsAt       time.Time
-	EndsAt         time.Time
-	ActorID        uuid.UUID
-	ActorType      events.ActorType
-	OccurredAt     time.Time
+	ReservationID   uuid.UUID
+	TenantID        uuid.UUID
+	CustomerID      uuid.UUID
+	BranchID        uuid.UUID
+	CourtID         uuid.UUID
+	Currency        string
+	Subtotal        float64
+	DiscountAmount  float64
+	TaxAmount       float64
+	TotalAmount     float64
+	PriceVersionID  *uuid.UUID
+	PricingSnapshot []byte
+	StartsAt        time.Time
+	EndsAt          time.Time
+	ActorID         uuid.UUID
+	ActorType       events.ActorType
+	OccurredAt      time.Time
 }
 
 // CreatedBooking is what the booking module reports back, including the outbox

@@ -49,36 +49,37 @@ const createReservation = `-- name: CreateReservation :exec
 INSERT INTO reservation.reservations (
     id, public_id, tenant_id, reservation_no, customer_id, branch_id, court_id,
     source, status, currency, subtotal, discount_amount, tax_amount, total_amount,
-    price_version_id, starts_at, ends_at, expires_at, created_by, created_at, updated_at
+    price_version_id, pricing_snapshot, starts_at, ends_at, expires_at, created_by, created_at, updated_at
 ) VALUES (
     $1, $2, $3, $4, $5, $6, $7,
     $8, $9, $10, $11, $12, $13, $14,
-    $15, $16, $17, $18, $19, $20, $21
+    $15, $16, $17, $18, $19, $20, $21, $22
 )
 `
 
 type CreateReservationParams struct {
-	ID             uuid.UUID                    `json:"id"`
-	PublicID       string                       `json:"public_id"`
-	TenantID       uuid.UUID                    `json:"tenant_id"`
-	ReservationNo  string                       `json:"reservation_no"`
-	CustomerID     uuid.UUID                    `json:"customer_id"`
-	BranchID       uuid.UUID                    `json:"branch_id"`
-	CourtID        uuid.UUID                    `json:"court_id"`
-	Source         ReservationReservationSource `json:"source"`
-	Status         ReservationReservationStatus `json:"status"`
-	Currency       string                       `json:"currency"`
-	Subtotal       pgtype.Numeric               `json:"subtotal"`
-	DiscountAmount pgtype.Numeric               `json:"discount_amount"`
-	TaxAmount      pgtype.Numeric               `json:"tax_amount"`
-	TotalAmount    pgtype.Numeric               `json:"total_amount"`
-	PriceVersionID *uuid.UUID                   `json:"price_version_id"`
-	StartsAt       time.Time                    `json:"starts_at"`
-	EndsAt         time.Time                    `json:"ends_at"`
-	ExpiresAt      time.Time                    `json:"expires_at"`
-	CreatedBy      *uuid.UUID                   `json:"created_by"`
-	CreatedAt      time.Time                    `json:"created_at"`
-	UpdatedAt      time.Time                    `json:"updated_at"`
+	ID              uuid.UUID                    `json:"id"`
+	PublicID        string                       `json:"public_id"`
+	TenantID        uuid.UUID                    `json:"tenant_id"`
+	ReservationNo   string                       `json:"reservation_no"`
+	CustomerID      uuid.UUID                    `json:"customer_id"`
+	BranchID        uuid.UUID                    `json:"branch_id"`
+	CourtID         uuid.UUID                    `json:"court_id"`
+	Source          ReservationReservationSource `json:"source"`
+	Status          ReservationReservationStatus `json:"status"`
+	Currency        string                       `json:"currency"`
+	Subtotal        pgtype.Numeric               `json:"subtotal"`
+	DiscountAmount  pgtype.Numeric               `json:"discount_amount"`
+	TaxAmount       pgtype.Numeric               `json:"tax_amount"`
+	TotalAmount     pgtype.Numeric               `json:"total_amount"`
+	PriceVersionID  *uuid.UUID                   `json:"price_version_id"`
+	PricingSnapshot []byte                       `json:"pricing_snapshot"`
+	StartsAt        time.Time                    `json:"starts_at"`
+	EndsAt          time.Time                    `json:"ends_at"`
+	ExpiresAt       time.Time                    `json:"expires_at"`
+	CreatedBy       *uuid.UUID                   `json:"created_by"`
+	CreatedAt       time.Time                    `json:"created_at"`
+	UpdatedAt       time.Time                    `json:"updated_at"`
 }
 
 func (q *Queries) CreateReservation(ctx context.Context, arg CreateReservationParams) error {
@@ -98,6 +99,7 @@ func (q *Queries) CreateReservation(ctx context.Context, arg CreateReservationPa
 		arg.TaxAmount,
 		arg.TotalAmount,
 		arg.PriceVersionID,
+		arg.PricingSnapshot,
 		arg.StartsAt,
 		arg.EndsAt,
 		arg.ExpiresAt,
@@ -184,7 +186,7 @@ const findReservation = `-- name: FindReservation :one
 SELECT id, public_id, tenant_id, reservation_no, customer_id, branch_id, court_id,
        source, status, currency, subtotal, discount_amount, tax_amount, total_amount,
        price_version_id, starts_at, ends_at, expires_at, canceled_at, converted_at,
-       created_by, created_at, updated_at
+       created_by, created_at, updated_at, pricing_snapshot
 FROM reservation.reservations
 WHERE id = $1
 `
@@ -216,6 +218,7 @@ func (q *Queries) FindReservation(ctx context.Context, id uuid.UUID) (Reservatio
 		&i.CreatedBy,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.PricingSnapshot,
 	)
 	return i, err
 }
@@ -224,7 +227,7 @@ const findReservationForUpdate = `-- name: FindReservationForUpdate :one
 SELECT id, public_id, tenant_id, reservation_no, customer_id, branch_id, court_id,
        source, status, currency, subtotal, discount_amount, tax_amount, total_amount,
        price_version_id, starts_at, ends_at, expires_at, canceled_at, converted_at,
-       created_by, created_at, updated_at
+       created_by, created_at, updated_at, pricing_snapshot
 FROM reservation.reservations
 WHERE id = $1
 FOR UPDATE
@@ -257,6 +260,7 @@ func (q *Queries) FindReservationForUpdate(ctx context.Context, id uuid.UUID) (R
 		&i.CreatedBy,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.PricingSnapshot,
 	)
 	return i, err
 }
@@ -265,7 +269,7 @@ const listExpiredPendingReservations = `-- name: ListExpiredPendingReservations 
 SELECT id, public_id, tenant_id, reservation_no, customer_id, branch_id, court_id,
        source, status, currency, subtotal, discount_amount, tax_amount, total_amount,
        price_version_id, starts_at, ends_at, expires_at, canceled_at, converted_at,
-       created_by, created_at, updated_at
+       created_by, created_at, updated_at, pricing_snapshot
 FROM reservation.reservations
 WHERE status = 'pending' AND expires_at < $1
 ORDER BY expires_at ASC
@@ -310,6 +314,7 @@ func (q *Queries) ListExpiredPendingReservations(ctx context.Context, arg ListEx
 			&i.CreatedBy,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.PricingSnapshot,
 		); err != nil {
 			return nil, err
 		}

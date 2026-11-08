@@ -147,6 +147,7 @@ func RegisterRoutes(api *gin.RouterGroup, app *server.Application) {
 	paymenthandler.NewPaymentHandler(paymentSvc).RegisterRoutes(api, jwt)
 
 	admin := api.Group("/admin", jwt, middleware.RequireSystemAdmin())
+	pricingHandler.RegisterAdminRoutes(admin)
 	orgHandler.RegisterAdminRoutes(admin)
 	bookingHandler.RegisterAdminRoutes(admin)
 	adminUserRepo := identitypg.NewAdminUserRepo(app.DB.Pool)
