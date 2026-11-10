@@ -1,5 +1,5 @@
 ---
-description: App controls use @bokdy/ui shadcn primitives, never native select/date/time/textarea
+description: App controls and buttons use existing @bokdy/ui primitives, never native controls or one-off hover styles
 globs:
   - packages/ui/src/**/*.{tsx,ts}
   - apps/**/components/**/*.tsx
@@ -29,18 +29,37 @@ Feature code imports interactive controls from `@bokdy/ui`. Do not render the br
 | Shortcut | `Kbd` |
 | Scrollable pane | `ScrollArea` |
 | Text, search | `Input` / `InputGroup` |
+| Primary action | `Button` default, or admin `softDirectoryPrimaryBtn` |
+| White surface button | `Button` `variant="outline"`, or admin `softDirectorySecondaryBtn` |
+| Quiet icon action | `Button` `variant="ghost"` |
+| Section hint | `InfoHint`, or `hint` on `EntityDetailPanel` / `EntitySectionHead` |
 
 ```tsx
 // ❌ BAD
 <select value={status} onChange={…} />
 <input type="date" value={day} />
-<input type="time" value={start} />
+<button className="rounded-xl bg-white hover:bg-sky-50" />
+<Button className="hover:bg-sky-500 hover:bg-muted/40" />
+<p>{t("branchHint")}</p>
+<DataListEmpty description={t("branchHint")} />
 
 // ✅ GOOD
 <DatePicker value={day} onChange={setDay} locale={locale} placeholder={t("pickDate")} />
 <TimePicker value={start} onChange={setStart} hourLabel={t("hour")} minuteLabel={t("minute")} />
+<Button variant="outline" />
+<Button className={softDirectorySecondaryBtn} />
+<InfoHint text={t("branchHint")} />
+<EntityDetailPanel hint={t("branchHint")} />
 ```
 
 Allowed native inputs: `type="hidden"` and `type="file"`. A numeric range uses `Slider`.
 
-If a control is missing, add the shadcn New York component under `packages/ui/src/ui/` and export it from `packages/ui/src/index.ts`. Do not ship the browser control as a stand-in. App-only compositions (nav combobox, filters) stay in `apps/<app>/components/`.
+A hint explains a section. Do not print it as body copy, an empty-state description, or a paragraph. Pass it to `InfoHint`, or to the `hint` prop on `EntityDetailPanel` / `EntitySectionHead`, which already renders `InfoHint`.
+
+## Do not restyle a control that already exists
+
+Pick the component and variant from the table. Do not invent a second hover, border, or fill on the call site. Two `hover:bg-*` classes on one element fight, and the later one wins, so the screen silently drifts from the shared style.
+
+Hover lives in the primitive: `outline` and `softDirectorySecondaryBtn` hover to sky, `ghost` stays a muted wash, the default `Button` stays a solid fill. Admin title-row actions import `softDirectoryPrimaryBtn` and `softDirectorySecondaryBtn` from `@/components/data-list`. Do not copy those class strings into a feature.
+
+If a look is missing, change the variant once in `packages/ui/src/ui/button.tsx` (or the soft constants) and export it from `packages/ui/src/index.ts`. Do not ship the browser control, or a one-off className, as a stand-in. App-only compositions (nav combobox, filters) stay in `apps/<app>/components/`.

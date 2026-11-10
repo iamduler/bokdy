@@ -1,10 +1,22 @@
 "use client";
 
-import { Button, DatePicker, FieldLabel, Input, toast } from "@bokdy/ui";
+import {
+  Button,
+  DatePicker,
+  FieldLabel,
+  Input,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  toast,
+} from "@bokdy/ui";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
-import { softDirectoryPrimaryBtn } from "@/components/data-list";
+import { DataListEmpty } from "@/components/data-list";
 import { PopoverCommandSelect } from "@/components/popover-command-select";
 import { ApiError, errorMessageKey } from "@/lib/api/errors";
 import type { HolidayEffect, HolidayOverlayInput } from "@/lib/api/pricing";
@@ -30,8 +42,16 @@ export function HolidayLayerForm({
     { value: "include", label: t("include"), keywords: t("include") },
     { value: "exclude", label: t("exclude"), keywords: t("exclude") },
   ];
-  const signature = rows.map((row) => `${row.holiday_on}|${row.name}|${row.effect}`).join("\n");
+  const signature = rows
+    .map((row) => `${row.holiday_on}|${row.name.trim()}|${row.effect}`)
+    .sort()
+    .join("\n");
   const [draft, setDraft] = useState<HolidayDraft[]>(rows);
+  const dirty =
+    draft
+      .map((row) => `${row.holiday_on}|${row.name.trim()}|${row.effect}`)
+      .sort()
+      .join("\n") !== signature;
 
   useEffect(() => {
     setDraft(rows);
@@ -63,57 +83,97 @@ export function HolidayLayerForm({
 
   return (
     <div className="space-y-3">
-      {draft.length === 0 ? <p className="text-sm text-muted-foreground">{t("empty")}</p> : null}
-      {draft.map((row, index) => (
-        <div key={index} className="grid gap-2 sm:grid-cols-[10rem_1fr_9rem_auto]">
-          <div className="space-y-1.5">
-            <FieldLabel required>{t("date")}</FieldLabel>
-            <DatePicker
-              value={row.holiday_on}
-              onChange={(value) => update(index, { holiday_on: value })}
-              locale={locale}
-              placeholder={tc("pickDate")}
-              aria-label={t("date")}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <FieldLabel required>{t("name")}</FieldLabel>
-            <Input value={row.name} onChange={(event) => update(index, { name: event.target.value })} />
-          </div>
-          {showEffect ? (
-            <div className="space-y-1.5">
-              <FieldLabel required>{t("effect")}</FieldLabel>
-              <PopoverCommandSelect
-                value={row.effect}
-                onValueChange={(value) => update(index, { effect: value as HolidayEffect })}
-                options={effectOptions}
-                aria-label={t("effect")}
-                searchable={false}
-                align="start"
-                className="w-full border border-input bg-background"
-              />
+      {draft.length === 0 ? (
+        <DataListEmpty
+          title={t("empty")}
+          className="py-10"
+          action={
+            <div className="flex flex-wrap justify-center gap-2">
+              <Button type="button" size="sm" onClick={() => setDraft([...draft, { holiday_on: "", name: "", effect: "include" }])}>
+                {t("addDate")}
+              </Button>
+              {dirty ? (
+                <Button type="button" size="sm" disabled={pending} onClick={() => void save()}>
+                  {t("save")}
+                </Button>
+              ) : null}
             </div>
-          ) : (
-            <span />
-          )}
-          <Button type="button" size="sm" variant="outline" className="self-end" onClick={() => setDraft(draft.filter((_, i) => i !== index))}>
-            {t("remove")}
+          }
+        />
+      ) : null}
+      {draft.length > 0 ? (
+        <Table className={showEffect ? "min-w-[42rem]" : "min-w-[32rem]"}>
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="w-44">
+                <FieldLabel required>{t("date")}</FieldLabel>
+              </TableHead>
+              <TableHead className="min-w-56">
+                <FieldLabel required>{t("name")}</FieldLabel>
+              </TableHead>
+              {showEffect ? (
+                <TableHead className="w-40">
+                  <FieldLabel required>{t("effect")}</FieldLabel>
+                </TableHead>
+              ) : null}
+              <TableHead className="w-20">
+                <span className="sr-only">{t("remove")}</span>
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {draft.map((row, index) => (
+              <TableRow key={index} className="hover:bg-transparent">
+                <TableCell>
+                  <DatePicker
+                    value={row.holiday_on}
+                    onChange={(value) => update(index, { holiday_on: value })}
+                    locale={locale}
+                    placeholder={tc("pickDate")}
+                    aria-label={t("date")}
+                  />
+                </TableCell>
+                <TableCell>
+                  <Input value={row.name} aria-label={t("name")} onChange={(event) => update(index, { name: event.target.value })} />
+                </TableCell>
+                {showEffect ? (
+                  <TableCell>
+                    <PopoverCommandSelect
+                      value={row.effect}
+                      onValueChange={(value) => update(index, { effect: value as HolidayEffect })}
+                      options={effectOptions}
+                      aria-label={t("effect")}
+                      searchable={false}
+                      align="start"
+                      className="w-full border border-input bg-background"
+                    />
+                  </TableCell>
+                ) : null}
+                <TableCell>
+                  <Button type="button" size="sm" variant="outline" className="h-9" onClick={() => setDraft(draft.filter((_, i) => i !== index))}>
+                    {t("remove")}
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      ) : null}
+      {draft.length === 0 ? null : (
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" size="sm" variant="outline" onClick={() => setDraft([...draft, { holiday_on: "", name: "", effect: "include" }])}>
+            {t("addDate")}
+          </Button>
+          {showEffect ? (
+            <Button type="button" size="sm" variant="outline" onClick={() => setDraft([...draft, { holiday_on: "", name: "", effect: "exclude" }])}>
+              {t("addExclude")}
+            </Button>
+          ) : null}
+          <Button type="button" size="sm" disabled={!dirty || pending} onClick={() => void save()}>
+            {t("save")}
           </Button>
         </div>
-      ))}
-      <div className="flex flex-wrap gap-2">
-        <Button type="button" size="sm" variant="outline" onClick={() => setDraft([...draft, { holiday_on: "", name: "", effect: "include" }])}>
-          {t("addDate")}
-        </Button>
-        {showEffect ? (
-          <Button type="button" size="sm" variant="outline" onClick={() => setDraft([...draft, { holiday_on: "", name: "", effect: "exclude" }])}>
-            {t("addExclude")}
-          </Button>
-        ) : null}
-        <Button type="button" size="sm" className={softDirectoryPrimaryBtn} disabled={pending} onClick={() => void save()}>
-          {t("save")}
-        </Button>
-      </div>
+      )}
     </div>
   );
 }

@@ -124,13 +124,17 @@ export const TimePicker = React.forwardRef<HTMLButtonElement, TimePickerProps>(f
           aria-invalid={ariaInvalid || undefined}
           onBlur={onBlur}
           className={cn(
-            "h-9 w-full justify-start gap-2 border-input bg-background px-3 font-normal text-foreground shadow-xs hover:bg-background hover:text-foreground dark:bg-input/30 dark:hover:bg-input/30",
-            !parsed && "text-muted-foreground",
+            "h-9 w-full justify-start gap-2 border-input bg-background px-3 font-normal text-foreground shadow-xs",
+            "hover:border-sky-400 hover:bg-background! hover:text-foreground!",
+            "dark:bg-input/30 dark:hover:border-sky-400 dark:hover:bg-input/30! dark:hover:text-foreground!",
+            !parsed && "text-muted-foreground hover:text-muted-foreground!",
             className,
           )}
         >
           <Clock className="size-4 text-muted-foreground" />
-          <span className="truncate tabular-nums">{parsed ? `${parsed.hour}:${parsed.minute}` : placeholder}</span>
+          <span className={cn("truncate tabular-nums", parsed ? "text-foreground" : "text-muted-foreground")}>
+            {parsed ? `${parsed.hour}:${parsed.minute}` : placeholder}
+          </span>
         </Button>
       </PopoverTrigger>
       <PopoverContent
