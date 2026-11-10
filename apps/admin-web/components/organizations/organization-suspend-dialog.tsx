@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button, Label } from "@bokdy/ui";
+import { Button, Label, Textarea } from "@bokdy/ui";
 import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -93,12 +93,7 @@ export function OrganizationSuspendDialog({ orgId, status }: OrganizationSuspend
           <p className="text-sm text-muted-foreground">{t("suspendHint")}</p>
           <div className="space-y-1.5">
             <Label htmlFor="suspend-reason">{t("suspendReason")}</Label>
-            <textarea
-              id="suspend-reason"
-              rows={4}
-              className="flex min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-              {...register("reason")}
-            />
+            <Textarea id="suspend-reason" rows={4} {...register("reason")} />
             {errors.reason?.message ? (
               <p className="text-sm text-destructive">{errors.reason.message}</p>
             ) : null}

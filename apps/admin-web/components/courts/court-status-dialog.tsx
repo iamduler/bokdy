@@ -1,6 +1,16 @@
 "use client";
 
-import { Button } from "@bokdy/ui";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Button,
+} from "@bokdy/ui";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 
@@ -137,37 +147,35 @@ export function CourtStatusDialog({
         ) : null}
       </EntityActionDialog>
 
-      <EntityActionDialog
-        open={confirm !== null}
-        title={confirm === "archive" ? t("archiveTitle") : t("maintenanceTitle")}
-        closeLabel={t("cancel")}
-        onClose={() => setConfirm(null)}
-      >
-        <p className="mb-4 text-sm text-muted-foreground">
-          {confirm === "archive" ? t("archiveHint") : t("maintenanceHint")}
-        </p>
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={() => setConfirm(null)}>
-            {t("cancel")}
-          </Button>
-          <Button
-            type="button"
-            disabled={pending}
-            className={
-              confirm === "archive" ? "bg-destructive text-destructive-foreground" : undefined
-            }
-            onClick={() => {
-              if (confirm === "archive") {
-                void runAction(() => archive.mutateAsync());
-              } else if (confirm === "maintenance") {
-                void runAction(() => startMaint.mutateAsync({}));
-              }
-            }}
-          >
-            {confirm === "archive" ? t("actionArchive") : t("actionMaintenance")}
-          </Button>
-        </div>
-      </EntityActionDialog>
+      <AlertDialog open={confirm !== null} onOpenChange={(next) => { if (!next) setConfirm(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirm === "archive" ? t("archiveTitle") : t("maintenanceTitle")}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirm === "archive" ? t("archiveHint") : t("maintenanceHint")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={pending}
+              className={confirm === "archive" ? "bg-destructive text-destructive-foreground" : undefined}
+              onClick={(event) => {
+                event.preventDefault();
+                if (confirm === "archive") {
+                  void runAction(() => archive.mutateAsync());
+                } else if (confirm === "maintenance") {
+                  void runAction(() => startMaint.mutateAsync({}));
+                }
+              }}
+            >
+              {confirm === "archive" ? t("actionArchive") : t("actionMaintenance")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

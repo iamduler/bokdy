@@ -1,6 +1,15 @@
 "use client";
 
-import { Input, Label, cn } from "@bokdy/ui";
+import {
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  cn,
+} from "@bokdy/ui";
 import { useTranslations } from "next-intl";
 import { useId, useState } from "react";
 
@@ -98,26 +107,28 @@ export function BranchAddressFields({ value, onChange, className }: BranchAddres
     <div className={cn("space-y-3", className)}>
       <div className="space-y-1.5">
         <Label htmlFor={schemeId}>{t("scheme")}</Label>
-        <select
-          id={schemeId}
+        <Select
           value={form.scheme}
-          onChange={(e) => {
-            const scheme = e.target.value as AdminDivisionScheme;
+          onValueChange={(scheme) =>
             update({
-              scheme,
+              scheme: scheme as AdminDivisionScheme,
               provinceFormerId: "",
               districtFormerId: "",
               wardFormerId: "",
               provinceId: "",
               wardId: "",
               line1: form.line1,
-            });
-          }}
-          className="h-9 w-full rounded-md border border-border bg-background px-2.5 text-sm"
+            })
+          }
         >
-          <option value="current_v2">{t("schemeCurrent")}</option>
-          <option value="former_v3">{t("schemeFormer")}</option>
-        </select>
+          <SelectTrigger id={schemeId} className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="current_v2">{t("schemeCurrent")}</SelectItem>
+            <SelectItem value="former_v3">{t("schemeFormer")}</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {form.scheme === "former_v3" ? (
@@ -199,23 +210,20 @@ function UnitSelect({
   return (
     <div className="space-y-1.5">
       <Label htmlFor={id}>{label}</Label>
-      <select
-        id={id}
-        value={value}
-        disabled={disabled}
-        onChange={(e) => onChange(e.target.value)}
-        className={cn(
-          "h-9 w-full rounded-md border border-border bg-background px-2.5 text-sm",
-          disabled && "cursor-not-allowed opacity-60",
-        )}
-      >
-        <option value="">{placeholder}</option>
-        {options.map((opt) => (
-          <option key={opt.id} value={opt.id}>
-            {opt.name}
-          </option>
-        ))}
-      </select>
+      <Select value={value || undefined} onValueChange={onChange} disabled={disabled}>
+        <SelectTrigger id={id} className="w-full">
+          <SelectValue placeholder={placeholder} />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((opt) =>
+            opt.id ? (
+              <SelectItem key={opt.id} value={opt.id}>
+                {opt.name}
+              </SelectItem>
+            ) : null,
+          )}
+        </SelectContent>
+      </Select>
     </div>
   );
 }

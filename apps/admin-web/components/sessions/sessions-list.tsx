@@ -1,6 +1,6 @@
 "use client";
 
-import { AuthActionButton, AuthAlert, SecurityRiskBadge } from "@bokdy/ui";
+import { AuthActionButton, AuthAlert, SecurityRiskBadge, Spinner } from "@bokdy/ui";
 import { useFormatter, useTranslations } from "next-intl";
 
 import {
@@ -28,7 +28,7 @@ export function SessionsList() {
   const revokeAll = useRevokeAllSessions();
 
   if (isLoading) {
-    return <p className="text-sm text-muted-foreground">{tc("loading")}</p>;
+    return <p className="flex items-center gap-2 text-sm text-muted-foreground"><Spinner />{tc("loading")}</p>;
   }
 
   if (isError) {

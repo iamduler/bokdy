@@ -1,6 +1,22 @@
 "use client";
 
-import { Button, Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, toast } from "@bokdy/ui";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Button,
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  toast,
+} from "@bokdy/ui";
 import { BadgeCheck, CalendarDays, Clock, Copy, Pencil, Search } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
@@ -8,7 +24,6 @@ import { useState } from "react";
 import { PricingQuotePreview } from "@/components/branches/detail/pricing-quote-preview";
 import { sportLabel } from "@/components/branches/branch-sports-chips";
 import { softDirectoryPrimaryBtn, softDirectorySecondaryBtn } from "@/components/data-list";
-import { EntityActionDialog } from "@/components/entity/action-dialog";
 import { EntityDetailPanel } from "@/components/entity/detail-panel";
 import { SoftStatusChip } from "@/components/entity/soft-status-chip";
 import { usePricingProfileDetail } from "@/components/pricing-profiles/pricing-profile-context";
@@ -273,29 +288,26 @@ export function PricingProfileDetailView() {
         </EntityDetailPanel>
       </div>
 
-      <EntityActionDialog
-        open={confirming}
-        title={t("activateTitle")}
-        closeLabel={t("cancel")}
-        onClose={() => setConfirming(false)}
-      >
-        <p className="text-sm text-muted-foreground">{t("activateConfirm")}</p>
-        <div className="mt-4 flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={() => setConfirming(false)}>
-            {t("cancel")}
-          </Button>
-          <Button
-            type="button"
-            disabled={activate.isPending}
-            onClick={() => {
-              setConfirming(false);
-              void onActivate();
-            }}
-          >
-            {t("activate")}
-          </Button>
-        </div>
-      </EntityActionDialog>
+      <AlertDialog open={confirming} onOpenChange={(next) => { if (!next) setConfirming(false); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("activateTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("activateConfirm")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={activate.isPending}
+              onClick={() => {
+                setConfirming(false);
+                void onActivate();
+              }}
+            >
+              {t("activate")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Sheet open={testerOpen} onOpenChange={setTesterOpen}>
         <SheetContent side="right" className="flex h-full w-full flex-col gap-0 overflow-y-auto p-0 sm:max-w-xl">
@@ -311,6 +323,7 @@ export function PricingProfileDetailView() {
                 sportId={profile.sport_id}
                 durations={profile.durations ?? []}
                 customerType={profile.customer_type}
+                slotUnitMinutes={profile.slot_unit_minutes}
                 unlimited={profile.unlimited_duration}
               />
             ) : null}

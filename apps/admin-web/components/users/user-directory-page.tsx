@@ -1,5 +1,6 @@
 "use client";
 
+import { Spinner } from "@bokdy/ui";
 import type { OnChangeFn, PaginationState, SortingState } from "@tanstack/react-table";
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
@@ -173,7 +174,7 @@ export function UserDirectoryPage({ audience }: { audience: UserAudience }) {
   const tc = useTranslations("common");
   return (
     <Suspense
-      fallback={<p className="p-4 text-sm text-muted-foreground">{tc("loading")}</p>}
+      fallback={<p className="flex items-center gap-2 p-4 text-sm text-muted-foreground"><Spinner />{tc("loading")}</p>}
     >
       <UserDirectoryPageContent audience={audience} />
     </Suspense>

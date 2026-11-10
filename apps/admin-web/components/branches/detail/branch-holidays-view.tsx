@@ -1,12 +1,13 @@
 "use client";
 
-import { Button, FieldLabel, Input, toast } from "@bokdy/ui";
+import { Button, DatePicker, FieldLabel, Input, toast } from "@bokdy/ui";
 import { CalendarDays } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import { softDirectoryPrimaryBtn } from "@/components/data-list";
 import { EntityDetailPanel } from "@/components/entity/detail-panel";
+import { PopoverCommandSelect } from "@/components/popover-command-select";
 import { ApiError, errorMessageKey } from "@/lib/api/errors";
 import type { BranchHoliday, HolidayEffect } from "@/lib/api/pricing";
 import { useBranchHolidays, useReplaceBranchHolidays } from "@/hooks/use-pricing";
@@ -18,7 +19,13 @@ type Overlay = { holiday_on: string; name: string; effect: HolidayEffect };
 
 export function BranchHolidaysView() {
   const t = useTranslations("organization.holidays");
+  const tc = useTranslations("common");
   const te = useTranslations("errors");
+  const locale = useLocale();
+  const effectOptions = [
+    { value: "include", label: t("include"), keywords: t("include") },
+    { value: "exclude", label: t("exclude"), keywords: t("exclude") },
+  ];
   const { organizationId, branchId } = useBranchDetail();
   const query = useBranchHolidays(organizationId, branchId);
   const save = useReplaceBranchHolidays(organizationId, branchId);
@@ -91,14 +98,16 @@ export function BranchHolidaysView() {
               <div key={index} className="grid gap-2 sm:grid-cols-[10rem_1fr_9rem_auto]">
                 <div className="space-y-1.5">
                   <FieldLabel required>{t("date")}</FieldLabel>
-                  <Input
-                    type="date"
+                  <DatePicker
                     value={row.holiday_on}
-                    onChange={(event) => {
+                    onChange={(value) => {
                       const next = [...overlay];
-                      next[index] = { ...row, holiday_on: event.target.value };
+                      next[index] = { ...row, holiday_on: value };
                       setOverlay(next);
                     }}
+                    locale={locale}
+                    placeholder={tc("pickDate")}
+                    aria-label={t("date")}
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -114,18 +123,19 @@ export function BranchHolidaysView() {
                 </div>
                 <div className="space-y-1.5">
                   <FieldLabel required>{t("effect")}</FieldLabel>
-                  <select
-                    className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+                  <PopoverCommandSelect
                     value={row.effect}
-                    onChange={(event) => {
+                    onValueChange={(value) => {
                       const next = [...overlay];
-                      next[index] = { ...row, effect: event.target.value as HolidayEffect };
+                      next[index] = { ...row, effect: value as HolidayEffect };
                       setOverlay(next);
                     }}
-                  >
-                    <option value="include">{t("include")}</option>
-                    <option value="exclude">{t("exclude")}</option>
-                  </select>
+                    options={effectOptions}
+                    aria-label={t("effect")}
+                    searchable={false}
+                    align="start"
+                    className="w-full border border-input bg-background"
+                  />
                 </div>
                 <Button type="button" size="sm" variant="outline" className="self-end" onClick={() => setOverlay(overlay.filter((_, i) => i !== index))}>
                   {t("remove")}

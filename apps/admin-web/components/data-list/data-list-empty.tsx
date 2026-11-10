@@ -1,6 +1,6 @@
 "use client";
 
-import { Skeleton, cn } from "@bokdy/ui";
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle, Skeleton, cn } from "@bokdy/ui";
 import type { ReactNode } from "react";
 
 type DataListEmptyProps = {
@@ -17,18 +17,13 @@ export function DataListEmpty({
   className,
 }: DataListEmptyProps) {
   return (
-    <div
-      className={cn(
-        "flex flex-1 flex-col items-center justify-center gap-2 px-4 py-16 text-center",
-        className,
-      )}
-    >
-      <p className="text-sm font-medium text-foreground">{title}</p>
-      {description ? (
-        <p className="max-w-sm text-xs text-muted-foreground">{description}</p>
-      ) : null}
-      {action}
-    </div>
+    <Empty className={cn("flex-1 gap-2 border-0 px-4 py-16", className)}>
+      <EmptyHeader>
+        <EmptyTitle>{title}</EmptyTitle>
+        {description ? <EmptyDescription className="text-xs">{description}</EmptyDescription> : null}
+      </EmptyHeader>
+      {action ? <EmptyContent>{action}</EmptyContent> : null}
+    </Empty>
   );
 }
 

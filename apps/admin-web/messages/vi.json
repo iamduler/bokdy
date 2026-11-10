@@ -3,7 +3,11 @@
     "appName": "Bokdy Admin",
     "loading": "Đang tải…",
     "logout": "Đăng xuất",
-    "retry": "Thử lại"
+    "retry": "Thử lại",
+    "pickDate": "Chọn ngày",
+    "pickTime": "Chọn giờ",
+    "hour": "Giờ",
+    "minute": "Phút"
   },
   "dataList": {
     "advancedFilters": "Bộ lọc nâng cao",
@@ -986,6 +990,9 @@
         "preview": "Xem báo giá",
         "previewTitle": "Báo giá khách đang trả",
         "previewHint": "Máy tính giá trả về bảng đang kích hoạt. Bản nháp chưa kích hoạt không nằm trong báo giá này.",
+        "previewDurationSlot": "Thời lượng phải là bội số của độ dài slot trên bảng giá đang dùng.",
+        "previewDurationNotAllowed": "Thời lượng này không có trong bảng giá đang dùng.",
+        "previewStartAlign": "Giờ bắt đầu phải khớp độ dài slot của bảng giá đang dùng.",
         "previewDate": "Ngày",
         "previewStart": "Giờ bắt đầu",
         "previewDuration": "Thời lượng",

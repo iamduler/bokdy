@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@bokdy/ui";
+import { Button, Spinner } from "@bokdy/ui";
 import { useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
 
@@ -20,7 +20,7 @@ export default function EditOrganizationPage() {
   const { data, isLoading, isError, error, refetch, isFetching } = useAdminOrganization(id);
 
   if (isLoading) {
-    return <p className="page-canvas p-4 text-sm text-muted-foreground md:p-6">{tc("loading")}</p>;
+    return <p className="page-canvas flex items-center gap-2 p-4 text-sm text-muted-foreground md:p-6"><Spinner />{tc("loading")}</p>;
   }
 
   if (isError || !data) {

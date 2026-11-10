@@ -1,10 +1,11 @@
 "use client";
 
-import { Button, FieldLabel, Input, toast } from "@bokdy/ui";
-import { useTranslations } from "next-intl";
+import { Button, DatePicker, FieldLabel, Input, toast } from "@bokdy/ui";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import { softDirectoryPrimaryBtn } from "@/components/data-list";
+import { PopoverCommandSelect } from "@/components/popover-command-select";
 import { ApiError, errorMessageKey } from "@/lib/api/errors";
 import type { HolidayEffect, HolidayOverlayInput } from "@/lib/api/pricing";
 
@@ -22,7 +23,13 @@ export function HolidayLayerForm({
   onSave: (rows: HolidayOverlayInput[]) => Promise<unknown>;
 }) {
   const t = useTranslations("organization.holidays");
+  const tc = useTranslations("common");
   const te = useTranslations("errors");
+  const locale = useLocale();
+  const effectOptions = [
+    { value: "include", label: t("include"), keywords: t("include") },
+    { value: "exclude", label: t("exclude"), keywords: t("exclude") },
+  ];
   const signature = rows.map((row) => `${row.holiday_on}|${row.name}|${row.effect}`).join("\n");
   const [draft, setDraft] = useState<HolidayDraft[]>(rows);
 
@@ -61,7 +68,13 @@ export function HolidayLayerForm({
         <div key={index} className="grid gap-2 sm:grid-cols-[10rem_1fr_9rem_auto]">
           <div className="space-y-1.5">
             <FieldLabel required>{t("date")}</FieldLabel>
-            <Input type="date" value={row.holiday_on} onChange={(event) => update(index, { holiday_on: event.target.value })} />
+            <DatePicker
+              value={row.holiday_on}
+              onChange={(value) => update(index, { holiday_on: value })}
+              locale={locale}
+              placeholder={tc("pickDate")}
+              aria-label={t("date")}
+            />
           </div>
           <div className="space-y-1.5">
             <FieldLabel required>{t("name")}</FieldLabel>
@@ -70,14 +83,15 @@ export function HolidayLayerForm({
           {showEffect ? (
             <div className="space-y-1.5">
               <FieldLabel required>{t("effect")}</FieldLabel>
-              <select
-                className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+              <PopoverCommandSelect
                 value={row.effect}
-                onChange={(event) => update(index, { effect: event.target.value as HolidayEffect })}
-              >
-                <option value="include">{t("include")}</option>
-                <option value="exclude">{t("exclude")}</option>
-              </select>
+                onValueChange={(value) => update(index, { effect: value as HolidayEffect })}
+                options={effectOptions}
+                aria-label={t("effect")}
+                searchable={false}
+                align="start"
+                className="w-full border border-input bg-background"
+              />
             </div>
           ) : (
             <span />

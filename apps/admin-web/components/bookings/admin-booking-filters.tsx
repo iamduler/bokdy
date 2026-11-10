@@ -1,9 +1,10 @@
 "use client";
 
-import { InputGroup, InputGroupAddon, InputGroupInput } from "@bokdy/ui";
+import { DatePicker, InputGroup, InputGroupAddon, InputGroupInput } from "@bokdy/ui";
 import { Search } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
+import { PopoverCommandSelect } from "@/components/popover-command-select";
 import type { AdminBookingStatus } from "@/lib/api/admin-bookings";
 
 const STATUSES: AdminBookingStatus[] = [
@@ -16,9 +17,6 @@ const STATUSES: AdminBookingStatus[] = [
 ];
 
 export const ADMIN_BOOKING_STATUSES = new Set<AdminBookingStatus>(STATUSES);
-
-const fieldClass =
-  "h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground";
 
 export function AdminBookingFilters({
   q,
@@ -34,6 +32,8 @@ export function AdminBookingFilters({
   onChange: (updates: { q?: string; status?: string; from?: string; to?: string }) => void;
 }) {
   const t = useTranslations("adminBookings");
+  const tc = useTranslations("common");
+  const locale = useLocale();
   return (
     <div className="flex flex-col gap-2 p-4 md:flex-row md:flex-wrap md:items-end">
       <label className="flex min-w-0 flex-1 flex-col gap-1 text-xs text-muted-foreground">
@@ -51,37 +51,43 @@ export function AdminBookingFilters({
           />
         </InputGroup>
       </label>
-      <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+      <label className="flex min-w-40 flex-col gap-1 text-xs text-muted-foreground">
         {t("status")}
-        <select
+        <PopoverCommandSelect
           value={status}
-          onChange={(event) => onChange({ status: event.target.value })}
-          className={fieldClass}
-        >
-          <option value="">{t("statusAll")}</option>
-          {STATUSES.map((item) => (
-            <option key={item} value={item}>
-              {t(`statusLabel.${item}`)}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label className="flex flex-col gap-1 text-xs text-muted-foreground">
-        {t("from")}
-        <input
-          type="date"
-          value={from}
-          onChange={(event) => onChange({ from: event.target.value })}
-          className={fieldClass}
+          onValueChange={(value) => onChange({ status: value })}
+          options={[
+            { value: "", label: t("statusAll"), keywords: t("statusAll") },
+            ...STATUSES.map((item) => ({
+              value: item,
+              label: t(`statusLabel.${item}`),
+              keywords: item,
+            })),
+          ]}
+          aria-label={t("status")}
+          searchable={false}
+          align="start"
+          className="w-full border border-input bg-background"
         />
       </label>
-      <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+      <label className="flex min-w-40 flex-col gap-1 text-xs text-muted-foreground">
+        {t("from")}
+        <DatePicker
+          value={from}
+          onChange={(value) => onChange({ from: value })}
+          locale={locale}
+          placeholder={tc("pickDate")}
+          aria-label={t("from")}
+        />
+      </label>
+      <label className="flex min-w-40 flex-col gap-1 text-xs text-muted-foreground">
         {t("to")}
-        <input
-          type="date"
+        <DatePicker
           value={to}
-          onChange={(event) => onChange({ to: event.target.value })}
-          className={fieldClass}
+          onChange={(value) => onChange({ to: value })}
+          locale={locale}
+          placeholder={tc("pickDate")}
+          aria-label={t("to")}
         />
       </label>
     </div>

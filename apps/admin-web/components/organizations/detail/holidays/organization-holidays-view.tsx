@@ -1,5 +1,6 @@
 "use client";
 
+import { Spinner } from "@bokdy/ui";
 import { CalendarDays } from "lucide-react";
 import { useTranslations } from "next-intl";
 
@@ -31,7 +32,7 @@ export function OrganizationHolidaysView() {
         tone="sky"
       >
         {query.isLoading ? (
-          <p className="text-sm text-muted-foreground">{t("loading")}</p>
+          <p className="flex items-center gap-2 text-sm text-muted-foreground"><Spinner />{t("loading")}</p>
         ) : query.isError ? (
           <p className="text-sm text-destructive">{t("loadError")}</p>
         ) : (

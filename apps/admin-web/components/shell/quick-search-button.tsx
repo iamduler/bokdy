@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Popover, PopoverContent, PopoverTrigger } from "@bokdy/ui";
+import { Button, Kbd, Popover, PopoverContent, PopoverTrigger } from "@bokdy/ui";
 import { Search } from "lucide-react";
 import { useTranslations } from "next-intl";
 
@@ -20,9 +20,7 @@ export function QuickSearchButton() {
         >
           <Search className="size-3.5" aria-hidden />
           <span className="hidden text-xs md:inline">{t("quickSearch")}</span>
-          <kbd className="pointer-events-none hidden h-5 select-none items-center gap-0.5 rounded-md bg-background/80 px-1.5 font-sans text-[10px] font-medium text-muted-foreground sm:inline-flex">
-            ⌘K
-          </kbd>
+          <Kbd className="hidden bg-background/80 sm:inline-flex">⌘K</Kbd>
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-72 space-y-2 p-3">

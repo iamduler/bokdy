@@ -1,5 +1,6 @@
 "use client";
 
+import { Spinner } from "@bokdy/ui";
 import type { OnChangeFn, PaginationState, SortingState } from "@tanstack/react-table";
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
@@ -145,7 +146,7 @@ export default function OrganizationsPage() {
   return (
     <Suspense
       fallback={
-        <p className="p-4 text-sm text-muted-foreground">{tc("loading")}</p>
+        <p className="flex items-center gap-2 p-4 text-sm text-muted-foreground"><Spinner />{tc("loading")}</p>
       }
     >
       <OrganizationsPageContent />

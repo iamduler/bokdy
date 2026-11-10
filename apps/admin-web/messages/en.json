@@ -3,7 +3,11 @@
     "appName": "Bokdy Admin",
     "loading": "Loading…",
     "logout": "Log out",
-    "retry": "Try again"
+    "retry": "Try again",
+    "pickDate": "Choose a date",
+    "pickTime": "Choose a time",
+    "hour": "Hour",
+    "minute": "Minute"
   },
   "dataList": {
     "advancedFilters": "Advanced filters",
@@ -986,6 +990,9 @@
         "preview": "Preview quote",
         "previewTitle": "What customers pay now",
         "previewHint": "The pricing engine quotes the activated list. A draft that is not activated is not in this quote.",
+        "previewDurationSlot": "The length must be a multiple of the live list's slot.",
+        "previewDurationNotAllowed": "This length is not offered on the live list.",
+        "previewStartAlign": "The start time must line up with the live list's slot.",
         "previewDate": "Date",
         "previewStart": "Start time",
         "previewDuration": "Duration",

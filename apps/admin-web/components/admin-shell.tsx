@@ -4,7 +4,7 @@
  * Hallmark · theme: bokdy-custom · design-system: design.md · Soft UI shell
  */
 
-import { SidebarInset, SidebarProvider, Toaster, TooltipProvider, cn } from "@bokdy/ui";
+import { SidebarInset, SidebarProvider, Spinner, Toaster, TooltipProvider, cn } from "@bokdy/ui";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, type ReactNode } from "react";
 
@@ -93,7 +93,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
             <SidebarInset className="min-h-0 overflow-hidden bg-transparent">
               <div className="page-canvas min-h-0 flex-1 overflow-auto soft-scrollbar bg-transparent">
                 {isLoading ? (
-                  <p className="p-4 text-sm text-muted-foreground">{tc("loading")}</p>
+                  <p className="flex items-center gap-2 p-4 text-sm text-muted-foreground"><Spinner />{tc("loading")}</p>
                 ) : (
                   children
                 )}

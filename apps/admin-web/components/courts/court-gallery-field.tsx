@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Input, toast } from "@bokdy/ui";
+import { Button, Input, Spinner, toast } from "@bokdy/ui";
 import { Play, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
@@ -229,7 +229,7 @@ export function CourtGalleryManager({
         <InfoHint text={t("editDraftHint")} />
       </div>
       {gallery.isLoading ? (
-        <p className="text-xs text-muted-foreground">{t("loading")}</p>
+        <p className="flex items-center gap-2 text-xs text-muted-foreground"><Spinner />{t("loading")}</p>
       ) : gallery.isError ? (
         <div className="flex items-center gap-2 text-xs text-destructive">
           <span>{t("loadError")}</span>

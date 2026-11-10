@@ -20,4 +20,4 @@ export const softDirectoryPrimaryBtn =
 
 /** Soft UI title-row secondary CTA (white surface + light shadow). */
 export const softDirectorySecondaryBtn =
-  "soft-btn-secondary h-11 gap-2 rounded-xl border border-border/60 bg-card text-sm font-semibold text-foreground shadow-none hover:bg-muted/40";
+  "soft-btn-secondary h-11 gap-2 rounded-xl border border-border/60 bg-card text-sm font-semibold text-foreground shadow-none hover:border-sky-400 hover:bg-sky-500 hover:text-white";

@@ -1,5 +1,6 @@
 "use client";
 
+import { Spinner } from "@bokdy/ui";
 import { Images, Play } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
@@ -52,7 +53,7 @@ export function CourtGalleryStrip({ organizationId, courtId }: CourtGalleryStrip
       tone="amber"
     >
       {gallery.isLoading ? (
-        <p className="mt-3 text-sm text-muted-foreground">{t("loading")}</p>
+        <p className="mt-3 flex items-center gap-2 text-sm text-muted-foreground"><Spinner />{t("loading")}</p>
       ) : gallery.isError ? (
         <p className="mt-3 text-sm text-destructive">{t("loadError")}</p>
       ) : items.length === 0 ? (

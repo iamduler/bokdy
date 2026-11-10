@@ -1,7 +1,6 @@
 "use client";
 
-import { Button, cn } from "@bokdy/ui";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious, cn } from "@bokdy/ui";
 
 type DataTablePaginationSummary = {
   from: number;
@@ -61,35 +60,35 @@ export function DataTablePagination({
       )}
     >
       <p className="min-w-0 truncate text-sm text-muted-foreground">{summary}</p>
-      <div className="flex shrink-0 items-center gap-1.5">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="h-8 gap-1 rounded-full border-border/60 bg-background px-2.5 shadow-none"
-          disabled={!canPreviousPage}
-          onClick={onPreviousPage}
-          aria-label={labels.previous}
-        >
-          <ChevronLeft className="size-4" aria-hidden />
-          <span className="hidden sm:inline">{labels.previous}</span>
-        </Button>
-        <span className="min-w-10 rounded-full bg-muted/60 px-2.5 py-1 text-center text-xs font-medium tabular-nums text-foreground">
-          {pageIndex + 1}/{safePageCount}
-        </span>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="h-8 gap-1 rounded-full border-border/60 bg-background px-2.5 shadow-none"
-          disabled={!canNextPage}
-          onClick={onNextPage}
-          aria-label={labels.next}
-        >
-          <span className="hidden sm:inline">{labels.next}</span>
-          <ChevronRight className="size-4" aria-hidden />
-        </Button>
-      </div>
+      <Pagination className="mx-0 w-auto justify-end">
+        <PaginationContent>
+          <PaginationItem>
+            <PaginationPrevious
+              className="h-8 rounded-full border-border/60 bg-background px-2.5 shadow-none"
+              disabled={!canPreviousPage}
+              onClick={onPreviousPage}
+              aria-label={labels.previous}
+            >
+              <span className="hidden sm:inline">{labels.previous}</span>
+            </PaginationPrevious>
+          </PaginationItem>
+          <PaginationItem>
+            <span className="min-w-10 rounded-full bg-muted/60 px-2.5 py-1 text-center text-xs font-medium tabular-nums text-foreground">
+              {pageIndex + 1}/{safePageCount}
+            </span>
+          </PaginationItem>
+          <PaginationItem>
+            <PaginationNext
+              className="h-8 rounded-full border-border/60 bg-background px-2.5 shadow-none"
+              disabled={!canNextPage}
+              onClick={onNextPage}
+              aria-label={labels.next}
+            >
+              <span className="hidden sm:inline">{labels.next}</span>
+            </PaginationNext>
+          </PaginationItem>
+        </PaginationContent>
+      </Pagination>
     </div>
   );
 }

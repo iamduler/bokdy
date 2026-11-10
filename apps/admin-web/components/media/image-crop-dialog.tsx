@@ -3,6 +3,7 @@
 import {
   Button,
   Dialog,
+  Slider,
   DialogContent,
   DialogFooter,
   DialogHeader,
@@ -89,13 +90,13 @@ export function ImageCropDialog({
         </div>
         <label className="flex items-center gap-3 text-sm">
           <span className="text-muted-foreground">{zoomLabel}</span>
-          <input
-            type="range"
+          <Slider
             min={1}
             max={3}
             step={0.05}
-            value={zoom}
-            onChange={(event) => setZoom(Number(event.target.value))}
+            value={[zoom]}
+            onValueChange={([next]) => setZoom(next ?? zoom)}
+            aria-label={zoomLabel}
             className="w-full"
           />
         </label>

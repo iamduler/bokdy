@@ -281,15 +281,12 @@ export function DataTable<TData>({
                   colSpan={columns.length}
                   className="h-24 text-center"
                 >
-                  <div className="flex flex-col items-center gap-2 py-6">
-                    <p className="text-sm font-medium">{emptyTitle}</p>
-                    {emptyDescription ? (
-                      <p className="text-sm text-muted-foreground">
-                        {emptyDescription}
-                      </p>
-                    ) : null}
-                    {emptyAction}
-                  </div>
+                  <DataListEmpty
+                    title={emptyTitle}
+                    description={emptyDescription}
+                    action={emptyAction}
+                    className="py-6"
+                  />
                 </TableCell>
               </TableRow>
             )}

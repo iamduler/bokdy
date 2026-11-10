@@ -1,11 +1,12 @@
 "use client";
 
-import { applyBokdyTheme, Button, Input, Label, THEME_STORAGE_KEY, type BokdyTheme } from "@bokdy/ui";
+import { applyBokdyTheme, Button, Input, Label, Spinner, THEME_STORAGE_KEY, type BokdyTheme } from "@bokdy/ui";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 
+import { PopoverCommandSelect } from "@/components/popover-command-select";
 import { useMe } from "@/hooks/use-me";
 import { useUpdateMe } from "@/hooks/use-update-me";
 import { ApiError, errorMessageKey } from "@/lib/api/errors";
@@ -13,9 +14,6 @@ import { profileSchema, type ProfileFormValues } from "@/lib/validation/profile"
 
 const THEMES: BokdyTheme[] = ["light", "dark", "system"];
 const DATE_FORMATS = ["dmy", "mdy", "ymd"] as const;
-
-const selectClass =
-  "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
 
 function formatVerifiedAt(iso: string | undefined, locale: string): string {
   if (!iso) return "";
@@ -44,6 +42,7 @@ export function ProfileForm() {
 
   const {
     register,
+    control,
     handleSubmit,
     reset,
     formState: { errors },
@@ -68,7 +67,7 @@ export function ProfileForm() {
   }, [user, reset]);
 
   if (isLoading) {
-    return <p className="text-sm text-muted-foreground">{tc("loading")}</p>;
+    return <p className="flex items-center gap-2 text-sm text-muted-foreground"><Spinner />{tc("loading")}</p>;
   }
 
   if (isError || !user) {
@@ -127,26 +126,50 @@ export function ProfileForm() {
 
       <div className="space-y-4">
         <div className="space-y-1.5">
-          <Label htmlFor="profile-theme">{t("theme")}</Label>
-          <select id="profile-theme" className={selectClass} {...register("theme")}>
-            {THEMES.map((value) => (
-              <option key={value} value={value}>
-                {t(`themeOptions.${value}`)}
-              </option>
-            ))}
-          </select>
+          <Label>{t("theme")}</Label>
+          <Controller
+            control={control}
+            name="theme"
+            render={({ field }) => (
+              <PopoverCommandSelect
+                value={field.value}
+                onValueChange={field.onChange}
+                options={THEMES.map((value) => ({
+                  value,
+                  label: t(`themeOptions.${value}`),
+                  keywords: value,
+                }))}
+                aria-label={t("theme")}
+                searchable={false}
+                align="start"
+                className="w-full border border-input bg-background"
+              />
+            )}
+          />
           {errors.theme?.message ? <p className="text-sm text-destructive">{errors.theme.message}</p> : null}
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="profile-date-format">{t("dateFormat")}</Label>
-          <select id="profile-date-format" className={selectClass} {...register("date_format")}>
-            {DATE_FORMATS.map((value) => (
-              <option key={value} value={value}>
-                {t(`dateFormatOptions.${value}`)}
-              </option>
-            ))}
-          </select>
+          <Label>{t("dateFormat")}</Label>
+          <Controller
+            control={control}
+            name="date_format"
+            render={({ field }) => (
+              <PopoverCommandSelect
+                value={field.value}
+                onValueChange={field.onChange}
+                options={DATE_FORMATS.map((value) => ({
+                  value,
+                  label: t(`dateFormatOptions.${value}`),
+                  keywords: value,
+                }))}
+                aria-label={t("dateFormat")}
+                searchable={false}
+                align="start"
+                className="w-full border border-input bg-background"
+              />
+            )}
+          />
           {errors.date_format?.message ? (
             <p className="text-sm text-destructive">{errors.date_format.message}</p>
           ) : null}

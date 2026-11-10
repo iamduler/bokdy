@@ -1,7 +1,26 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button, FieldError, FieldLabel, Input, cn, toast } from "@bokdy/ui";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Button,
+  FieldError,
+  FieldLabel,
+  Input,
+  Switch,
+  Toggle,
+  ToggleGroup,
+  ToggleGroupItem,
+  cn,
+  toast,
+} from "@bokdy/ui";
 import { ArrowLeft, Check, Plus } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
@@ -447,7 +466,7 @@ export function BranchPricingForm({
           ) : null}
           <Button
             type="button"
-            className={cn(softDirectorySecondaryBtn, "hover:bg-sky-50 dark:hover:bg-muted/40")}
+            className={softDirectorySecondaryBtn}
             onClick={() => {
               const { lists, pairs } = reviewSchedule(form.getValues());
               if (pairs.length > 0 || lists.some(blocksPublish))
@@ -462,7 +481,7 @@ export function BranchPricingForm({
             className={
               creating
                 ? softDirectoryPrimaryBtn
-                : cn(softDirectorySecondaryBtn, "hover:bg-sky-50 dark:hover:bg-muted/40")
+                : softDirectorySecondaryBtn
             }
             disabled={pending}
           >
@@ -537,40 +556,35 @@ export function BranchPricingForm({
             control={form.control}
             name="customer_type"
             render={({ field }) => (
-              <div className="grid gap-2 sm:grid-cols-3">
+              <ToggleGroup
+                type="single"
+                value={field.value}
+                onValueChange={(next) => {
+                  if (creating && next) field.onChange(next);
+                }}
+                className="grid gap-2 sm:grid-cols-3"
+              >
                 {CUSTOMER_TYPES.map((type) => {
                   const selected = field.value === type;
                   const locked = !creating && !selected;
                   return (
-                    <button
+                    <ToggleGroupItem
                       key={type}
-                      type="button"
+                      value={type}
                       disabled={locked}
-                      aria-pressed={selected}
-                      className={cn(
-                        "rounded-xl border p-3 text-left",
-                        selected
-                          ? "border-primary bg-primary/10 text-primary"
-                          : "border-border bg-card",
-                        locked && "cursor-not-allowed",
-                      )}
-                      onClick={() => {
-                        if (creating) field.onChange(type);
-                      }}
+                      className="h-auto items-start justify-start rounded-xl border p-3 text-left data-[state=off]:border-border data-[state=off]:bg-card data-[state=on]:border-primary data-[state=on]:bg-primary/10 data-[state=on]:text-primary"
                     >
-                      <span className="flex items-center justify-between gap-2 text-sm font-medium">
+                      <span className="flex w-full items-center justify-between gap-2 text-sm font-medium">
                         {t(`audience.${type}`)}
-                        {selected ? (
-                          <Check className="size-4 text-primary" aria-hidden />
-                        ) : null}
+                        {selected ? <Check className="size-4 text-primary" aria-hidden /> : null}
                       </span>
                       <span className="mt-1 block text-xs text-muted-foreground">
                         {t(`audienceDesc.${type}`)}
                       </span>
-                    </button>
+                    </ToggleGroupItem>
                   );
                 })}
-              </div>
+              </ToggleGroup>
             )}
           />
         </div>
@@ -592,23 +606,12 @@ export function BranchPricingForm({
                   />
                 </div>
               </div>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={activateOnCreate}
-                className={cn(
-                  "relative h-6 w-11 shrink-0 rounded-full transition-colors",
-                  activateOnCreate ? "bg-sky-600" : "bg-muted",
-                )}
-                onClick={() => setActivateOnCreate((value) => !value)}
-              >
-                <span
-                  className={cn(
-                    "absolute top-0.5 size-5 rounded-full bg-background shadow",
-                    activateOnCreate ? "left-5" : "left-0.5",
-                  )}
-                />
-              </button>
+              <Switch
+                checked={activateOnCreate}
+                onCheckedChange={setActivateOnCreate}
+                aria-label={t("activateAfterCreate")}
+                className="data-[state=checked]:bg-sky-600"
+              />
             </div>
             {activateOnCreate ? (
               <p className="text-xs text-amber-700 dark:text-amber-300">
@@ -690,51 +693,40 @@ export function BranchPricingForm({
             />
           </div>
           <div className="flex flex-wrap gap-2">
-            {choices.map((minutes) => {
-              const selected = watchedDurations.includes(minutes);
-              return (
-                <button
+            <ToggleGroup
+              type="multiple"
+              value={watchedDurations.map(String)}
+              disabled={watchedUnlimited}
+              onValueChange={(next) =>
+                form.setValue(
+                  "durations",
+                  next.map(Number).sort((a, b) => a - b),
+                  { shouldValidate: form.formState.isSubmitted },
+                )
+              }
+              className={cn("gap-2", watchedUnlimited && "opacity-50")}
+            >
+              {choices.map((minutes) => (
+                <ToggleGroupItem
                   key={minutes}
-                  type="button"
-                  disabled={watchedUnlimited}
-                  aria-pressed={selected}
-                  className={cn(
-                    "rounded-full border px-3 py-1 text-sm",
-                    selected
-                      ? "border-sky-600 bg-sky-600 text-white"
-                      : "border-border text-foreground",
-                    watchedUnlimited && "cursor-not-allowed opacity-50",
-                  )}
-                  onClick={() => {
-                    const next = selected
-                      ? watchedDurations.filter((value) => value !== minutes)
-                      : [...watchedDurations, minutes].sort((a, b) => a - b);
-                    form.setValue("durations", next, {
-                      shouldValidate: form.formState.isSubmitted,
-                    });
-                  }}
+                  value={String(minutes)}
+                  className="h-auto rounded-full border px-3 py-1 text-sm data-[state=off]:border-border data-[state=off]:text-foreground data-[state=on]:border-sky-600 data-[state=on]:bg-sky-600 data-[state=on]:text-white"
                 >
                   {t("minutes", { count: minutes })}
-                </button>
-              );
-            })}
-            <button
-              type="button"
-              aria-pressed={watchedUnlimited}
-              className={cn(
-                "rounded-full border px-3 py-1 text-sm",
-                watchedUnlimited
-                  ? "border-sky-600 bg-sky-600 text-white"
-                  : "border-border",
-              )}
-              onClick={() =>
-                form.setValue("unlimited_duration", !watchedUnlimited, {
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
+            <Toggle
+              pressed={watchedUnlimited}
+              onPressedChange={(pressed) =>
+                form.setValue("unlimited_duration", pressed, {
                   shouldValidate: form.formState.isSubmitted,
                 })
               }
+              className="h-auto rounded-full border px-3 py-1 text-sm data-[state=off]:border-border data-[state=on]:border-sky-600 data-[state=on]:bg-sky-600 data-[state=on]:text-white"
             >
               {t("unlimited")}
-            </button>
+            </Toggle>
           </div>
           <FieldError>{form.formState.errors.durations?.message}</FieldError>
         </div>
@@ -810,39 +802,32 @@ export function BranchPricingForm({
         </Button>
       </FormSection>
 
-      <EntityActionDialog
-        open={confirming}
-        title={t("activateTitle")}
-        closeLabel={t("cancel")}
-        onClose={() => setConfirming(false)}
-      >
-        <p className="text-sm text-muted-foreground">{t("activateConfirm")}</p>
-        <div className="mt-4 flex justify-end gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setConfirming(false)}
-          >
-            {t("cancel")}
-          </Button>
-          <Button
-            type="button"
-            disabled={pending}
-            onClick={() => {
-              setConfirming(false);
-              void form.handleSubmit(
-                (values) => submit(values, "activate"),
-                (errors) => {
-                  const message = firstMessage(errors);
-                  if (message) toast.error(message);
-                },
-              )();
-            }}
-          >
-            {t("activate")}
-          </Button>
-        </div>
-      </EntityActionDialog>
+      <AlertDialog open={confirming} onOpenChange={(next) => { if (!next) setConfirming(false); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("activateTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("activateConfirm")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={pending}
+              onClick={() => {
+                setConfirming(false);
+                void form.handleSubmit(
+                  (values) => submit(values, "activate"),
+                  (errors) => {
+                    const message = firstMessage(errors);
+                    if (message) toast.error(message);
+                  },
+                )();
+              }}
+            >
+              {t("activate")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <EntityActionDialog
         open={conflicts.length > 0}

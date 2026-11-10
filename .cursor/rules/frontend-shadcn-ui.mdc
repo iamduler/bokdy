@@ -1,35 +1,46 @@
 ---
-description: Shared UI primitives come from shadcn/ui patterns in @bokdy/ui
+description: App controls use @bokdy/ui shadcn primitives, never native select/date/time/textarea
 globs:
   - packages/ui/src/**/*.{tsx,ts}
   - apps/**/components/**/*.tsx
   - apps/**/app/**/*.tsx
-alwaysApply: false
+alwaysApply: true
 ---
 
-# UI: shadcn/ui via `@bokdy/ui`
+# UI controls come from `@bokdy/ui`
 
-Interactive UI primitives live in [`packages/ui/src/ui`](packages/ui/src/ui) as **shadcn/ui registry** components (Radix + CVA + Tailwind, New York style). Apps import from `@bokdy/ui` — do not reinvent menus, dialogs, or selects with ad-hoc `useState` + absolute divs.
+Feature code imports interactive controls from `@bokdy/ui`. Do not render the browser's `<select>`, `<textarea>`, `<input type="date">`, `<input type="time">`, or `<input type="datetime-local">`. Do not hand-roll a dialog, menu, or listbox with `useState` and a positioned div.
+
+| Need | Use |
+| --- | --- |
+| Choice list | `Select`, or admin `PopoverCommandSelect` |
+| Long text | `Textarea` |
+| Date | `DatePicker` (`YYYY-MM-DD`) |
+| Time | `TimePicker` (`HH:MM`) |
+| On / off | `Switch` |
+| Range | `Slider` |
+| Chip or filter pill | `Toggle` / `ToggleGroup` |
+| Confirm, no form | `AlertDialog` |
+| Dialog / drawer with a form | `Dialog` / `Sheet` |
+| Crumbs | `Breadcrumb` |
+| Empty list | `Empty` |
+| Page controls | `Pagination` |
+| Loading | `Spinner` |
+| Shortcut | `Kbd` |
+| Scrollable pane | `ScrollArea` |
+| Text, search | `Input` / `InputGroup` |
 
 ```tsx
-// ❌ BAD — hand-rolled dropdown
-<button onClick={() => setOpen(!open)} />
-{open ? <ul className="absolute …">…</ul> : null}
+// ❌ BAD
+<select value={status} onChange={…} />
+<input type="date" value={day} />
+<input type="time" value={start} />
 
-// ✅ GOOD — compose shadcn Popover + Command + Button (classic combobox)
-import { Button, Command, Popover, PopoverContent, PopoverTrigger } from "@bokdy/ui";
+// ✅ GOOD
+<DatePicker value={day} onChange={setDay} locale={locale} placeholder={t("pickDate")} />
+<TimePicker value={start} onChange={setStart} hourLabel={t("hour")} minuteLabel={t("minute")} />
 ```
 
-`packages/ui/src/ui/` must stay **registry-only**. Do not invent new primitives there (no Twemoji wrappers, no all-in-one Combobox with `variant="nav"`). Domain chrome and app compositions belong in:
+Allowed native inputs: `type="hidden"` and `type="file"`. A numeric range uses `Slider`.
 
-- `packages/ui/src/common/` — shared chrome used by ≥2 apps (auth shells, `Emoji`, theme script)
-- `apps/<app>/components/` — app-only compositions (e.g. admin `PopoverCommandSelect` for locale/theme/filters)
-
-Locale and theme switchers compose Popover + Command with the **nav dropdown layout** in `.cursor/rules/frontend-dropdown-layout.mdc`.
-
-## Conventions
-
-- Add new primitives under `packages/ui/src/ui/` by copying the shadcn New York source; export from `packages/ui/src/index.ts`.
-- Prefer existing `@bokdy/ui` exports before copying another design system into an app.
-- Semantic status colors go on app wrappers via `className` (Badge variants stay `default | secondary | destructive | outline`).
-- Stack freeze: Tailwind + shadcn/ui (Radix) — see `docs/architecture/tech-stack.md` / `AGENTS.md`. Do not introduce Base UI for Combobox.
+If a control is missing, add the shadcn New York component under `packages/ui/src/ui/` and export it from `packages/ui/src/index.ts`. Do not ship the browser control as a stand-in. App-only compositions (nav combobox, filters) stay in `apps/<app>/components/`.

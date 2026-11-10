@@ -1,5 +1,6 @@
 "use client";
 
+import { Spinner } from "@bokdy/ui";
 import { useLocale, useTranslations } from "next-intl";
 
 import { bookingFormatters } from "@/components/bookings/booking-format";
@@ -16,7 +17,7 @@ export function OrganizationBookingDetailView({ bookingId }: { bookingId: string
   const format = bookingFormatters(locale);
 
   if (query.isLoading) {
-    return <p className="p-6 text-sm text-muted-foreground">{tc("loading")}</p>;
+    return <p className="flex items-center gap-2 p-6 text-sm text-muted-foreground"><Spinner />{tc("loading")}</p>;
   }
   if (query.isError || !query.data) {
     return (

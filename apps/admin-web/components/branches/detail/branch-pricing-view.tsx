@@ -11,6 +11,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  ToggleGroup,
+  ToggleGroupItem,
   cn,
   toast,
 } from "@bokdy/ui";
@@ -138,31 +140,30 @@ export function BranchPricingView() {
             <DataListStats items={stats} className="grid-cols-3 md:grid-cols-3" />
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div className="min-w-0 overflow-x-auto soft-scrollbar">
-                <div className="inline-flex w-max max-w-full items-center rounded-full border border-border/60 bg-card p-1 shadow-sm">
+                <ToggleGroup
+                  type="single"
+                  value={filter}
+                  onValueChange={(next) => {
+                    if (next) setFilter(next as typeof filter);
+                  }}
+                  className="inline-flex w-max max-w-full flex-nowrap items-center rounded-full border border-border/60 bg-card p-1 shadow-sm"
+                >
                   {FILTERS.map((item) => {
-                    const selected = filter === item;
                     const label =
                       item === "all" || item === "active" || item === "draft"
                         ? t(`filter.${item}`)
                         : t(`audience.${item}`);
                     return (
-                      <button
+                      <ToggleGroupItem
                         key={item}
-                        type="button"
-                        aria-pressed={selected}
-                        onClick={() => setFilter(item)}
-                        className={cn(
-                          "inline-flex shrink-0 items-center rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors",
-                          selected
-                            ? "bg-sky-500 text-white shadow-sm"
-                            : "text-muted-foreground hover:text-foreground",
-                        )}
+                        value={item}
+                        className="h-auto rounded-full px-3.5 py-1.5 text-xs font-semibold data-[state=off]:bg-transparent data-[state=off]:text-muted-foreground data-[state=on]:bg-sky-500 data-[state=on]:text-white data-[state=on]:shadow-sm"
                       >
                         {label}
-                      </button>
+                      </ToggleGroupItem>
                     );
                   })}
-                </div>
+                </ToggleGroup>
               </div>
               <InputGroup className="min-w-0 overflow-hidden rounded-full border-0 bg-muted/50 shadow-none md:w-60 has-[[data-slot=input-group-control]:focus-visible]:ring-1">
                 <InputGroupInput

@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@bokdy/ui";
+import { Button, Spinner } from "@bokdy/ui";
 import { useTranslations } from "next-intl";
 
 import { useUserDetail } from "@/components/users/detail/user-detail-context";
@@ -13,7 +13,7 @@ export function UserActivityView() {
   const { data: events = [], isLoading, isError, refetch, isFetching } = useUserActivity(userId);
 
   if (isLoading) {
-    return <p className="p-4 text-sm text-muted-foreground md:p-6">{tc("loading")}</p>;
+    return <p className="flex items-center gap-2 p-4 text-sm text-muted-foreground md:p-6"><Spinner />{tc("loading")}</p>;
   }
 
   if (isError) {

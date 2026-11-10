@@ -13,6 +13,8 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
+  ToggleGroup,
+  ToggleGroupItem,
   cn,
 } from "@bokdy/ui";
 import { Search, SlidersHorizontal, X } from "lucide-react";
@@ -118,27 +120,23 @@ export function DataListLayout({
 
       <div className="soft-elevated flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border-0">
         <div className="flex shrink-0 flex-col gap-3 border-b border-border/40 px-4 py-3.5 md:flex-row md:items-center md:justify-between md:px-6 md:py-4">
-          <div
-            className="min-w-0 flex-1 overflow-x-auto soft-scrollbar"
-            role="tablist"
-            aria-label={statusAriaLabel}
-          >
-            <div className="inline-flex w-max max-w-full items-center rounded-full border border-border/60 bg-card p-1 shadow-sm">
+          <div className="min-w-0 flex-1 overflow-x-auto soft-scrollbar">
+            <ToggleGroup
+              type="single"
+              value={statusValue || "__all"}
+              onValueChange={(next) => {
+                if (next) onStatusChange(next === "__all" ? "" : next);
+              }}
+              aria-label={statusAriaLabel}
+              className="inline-flex w-max max-w-full flex-nowrap items-center rounded-full border border-border/60 bg-card p-1 shadow-sm"
+            >
               {statusTabs.map((tab) => {
-                const active = statusValue === tab.value;
+                const active = (statusValue || "__all") === (tab.value || "__all");
                 return (
-                  <button
+                  <ToggleGroupItem
                     key={tab.value || "__all"}
-                    type="button"
-                    role="tab"
-                    aria-selected={active}
-                    onClick={() => onStatusChange(tab.value)}
-                    className={cn(
-                      "inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors",
-                      active
-                        ? "bg-sky-500 text-white shadow-sm"
-                        : "text-muted-foreground hover:text-foreground",
-                    )}
+                    value={tab.value || "__all"}
+                    className="h-auto gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold data-[state=off]:bg-transparent data-[state=off]:text-muted-foreground data-[state=on]:bg-sky-500 data-[state=on]:text-white data-[state=on]:shadow-sm"
                   >
                     {tab.dotClass && !active ? (
                       <span
@@ -162,10 +160,10 @@ export function DataListLayout({
                         {tab.count}
                       </span>
                     ) : null}
-                  </button>
+                  </ToggleGroupItem>
                 );
               })}
-            </div>
+            </ToggleGroup>
           </div>
 
           <div className="flex shrink-0 items-center gap-2">

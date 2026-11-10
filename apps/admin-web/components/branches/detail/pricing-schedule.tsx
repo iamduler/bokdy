@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, cn, FieldError, FieldLabel, Input } from "@bokdy/ui";
+import { Button, FieldError, FieldLabel, Input, TimePicker, ToggleGroup, ToggleGroupItem } from "@bokdy/ui";
 import { Plus, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Controller, useFormContext, useWatch, type FieldPath } from "react-hook-form";
@@ -43,6 +43,7 @@ export function PricingWindowCard({
   onRemove: () => void;
 }) {
   const t = useTranslations("organization.branchDetail.pricing");
+  const tc = useTranslations("common");
   const { control } = useFormContext<BranchPricingFormValues>();
 
   return (
@@ -73,14 +74,16 @@ export function PricingWindowCard({
             <FieldLabel htmlFor={field.name} required>
               {t("startsAt")}
             </FieldLabel>
-            <Input
+            <TimePicker
               id={field.name}
-              inputMode="numeric"
-              placeholder="16:00"
               value={typeof field.value === "string" ? field.value : ""}
               onChange={field.onChange}
               onBlur={field.onBlur}
               ref={field.ref}
+              placeholder={tc("pickTime")}
+              hourLabel={tc("hour")}
+              minuteLabel={tc("minute")}
+              aria-label={t("startsAt")}
               aria-invalid={fieldState.invalid || undefined}
             />
             <FieldError>{fieldState.error?.message}</FieldError>
@@ -95,14 +98,16 @@ export function PricingWindowCard({
             <FieldLabel htmlFor={field.name} required>
               {t("endsAt")}
             </FieldLabel>
-            <Input
+            <TimePicker
               id={field.name}
-              inputMode="numeric"
-              placeholder="22:00"
               value={typeof field.value === "string" ? field.value : ""}
               onChange={field.onChange}
               onBlur={field.onBlur}
               ref={field.ref}
+              placeholder={tc("pickTime")}
+              hourLabel={tc("hour")}
+              minuteLabel={tc("minute")}
+              aria-label={t("endsAt")}
               aria-invalid={fieldState.invalid || undefined}
             />
             <FieldError>{fieldState.error?.message}</FieldError>
@@ -198,31 +203,22 @@ export function PricingSchedule() {
                     <FieldLabel required className="mr-1 text-xs font-normal text-muted-foreground">
                       {t("daysApply")}
                     </FieldLabel>
-                    {WEEKDAYS.map((day) => {
-                      const selected = field.value.includes(day);
-                      return (
-                        <button
+                    <ToggleGroup
+                      type="multiple"
+                      value={field.value.map(String)}
+                      onValueChange={(next) => field.onChange(next.map((value) => Number(value)))}
+                      className="gap-1.5"
+                    >
+                      {WEEKDAYS.map((day) => (
+                        <ToggleGroupItem
                           key={day}
-                          type="button"
-                          aria-pressed={selected}
-                          className={cn(
-                            "rounded-md border px-2 py-1 text-xs font-medium",
-                            selected
-                              ? "border-primary bg-primary/10 text-primary"
-                              : "border-border bg-background text-muted-foreground",
-                          )}
-                          onClick={() => {
-                            field.onChange(
-                              selected
-                                ? field.value.filter((value) => value !== day)
-                                : [...field.value, day],
-                            );
-                          }}
+                          value={String(day)}
+                          className="h-auto rounded-md border px-2 py-1 text-xs font-medium data-[state=off]:border-border data-[state=off]:bg-background data-[state=off]:text-muted-foreground data-[state=on]:border-primary data-[state=on]:bg-primary/10 data-[state=on]:text-primary"
                         >
                           {tw(String(day))}
-                        </button>
-                      );
-                    })}
+                        </ToggleGroupItem>
+                      ))}
+                    </ToggleGroup>
                   </div>
                   <FieldError>{fieldState.error?.message}</FieldError>
                 </div>

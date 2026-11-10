@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Checkbox, FieldError, Input, toast } from "@bokdy/ui";
+import { Button, Checkbox, FieldError, TimePicker, toast } from "@bokdy/ui";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CalendarClock, Pencil } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -48,6 +48,7 @@ function toFormValues(rows: BusinessHour[] | undefined): BranchScheduleFormValue
 export function BranchScheduleView() {
   const t = useTranslations("organization.branchDetail.schedule");
   const tw = useTranslations("organization.branchDetail.weekdays");
+  const tc = useTranslations("common");
   const te = useTranslations("errors");
   const { organizationId, branchId } = useBranchDetail();
   const { data, isLoading, isError, refetch, isFetching } = useBranchSchedule(
@@ -69,7 +70,7 @@ export function BranchScheduleView() {
     resolver: zodResolver(schema),
     defaultValues: toFormValues(data),
   });
-  const { register, control, handleSubmit, reset, watch, formState } = form;
+  const { control, handleSubmit, reset, watch, formState } = form;
 
   useEffect(() => {
     if (!editing) reset(toFormValues(data));
@@ -160,23 +161,43 @@ export function BranchScheduleView() {
                     {!closed ? (
                       <div className="flex flex-wrap items-start gap-3">
                         <div className="space-y-1">
-                          <Input
-                            type="time"
-                            className="w-32"
-                            aria-label={`${tw(String(weekday))}: ${t("opensAt")}`}
-                            aria-invalid={Boolean(opensError) || undefined}
-                            {...register(`days.${index}.opens_at`)}
+                          <Controller
+                            control={control}
+                            name={`days.${index}.opens_at`}
+                            render={({ field }) => (
+                              <TimePicker
+                                value={field.value}
+                                onChange={field.onChange}
+                                onBlur={field.onBlur}
+                                className="w-32"
+                                placeholder={tc("pickTime")}
+                                hourLabel={tc("hour")}
+                                minuteLabel={tc("minute")}
+                                aria-label={`${tw(String(weekday))}: ${t("opensAt")}`}
+                                aria-invalid={Boolean(opensError) || undefined}
+                              />
+                            )}
                           />
                           <FieldError>{opensError}</FieldError>
                         </div>
                         <span className="pt-2 text-sm text-muted-foreground">–</span>
                         <div className="space-y-1">
-                          <Input
-                            type="time"
-                            className="w-32"
-                            aria-label={`${tw(String(weekday))}: ${t("closesAt")}`}
-                            aria-invalid={Boolean(closesError) || undefined}
-                            {...register(`days.${index}.closes_at`)}
+                          <Controller
+                            control={control}
+                            name={`days.${index}.closes_at`}
+                            render={({ field }) => (
+                              <TimePicker
+                                value={field.value}
+                                onChange={field.onChange}
+                                onBlur={field.onBlur}
+                                className="w-32"
+                                placeholder={tc("pickTime")}
+                                hourLabel={tc("hour")}
+                                minuteLabel={tc("minute")}
+                                aria-label={`${tw(String(weekday))}: ${t("closesAt")}`}
+                                aria-invalid={Boolean(closesError) || undefined}
+                              />
+                            )}
                           />
                           <FieldError>{closesError}</FieldError>
                         </div>
