@@ -875,6 +875,8 @@
         "loadError": "Could not load courts.",
         "emptyValue": "-",
         "colName": "Court",
+        "colSport": "Sport",
+        "colSurface": "Surface",
         "colEnvironment": "Environment",
         "colStatus": "Status",
         "environment": {
@@ -1123,7 +1125,13 @@
         "deleteTitle": "Delete image",
         "deleteConfirm": "This image will be removed from the gallery.",
         "deleted": "Image deleted.",
-        "cancel": "Cancel"
+        "cancel": "Cancel",
+        "preview": "Preview",
+        "closePreview": "Close preview",
+        "previous": "Previous",
+        "next": "Next",
+        "zoomIn": "Zoom in",
+        "zoomOut": "Zoom out"
       },
       "amenities": {
         "title": "Amenities",

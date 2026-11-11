@@ -1,7 +1,15 @@
 "use client";
 
 import { RichTextView } from "@bokdy/ui";
-import { Copy, Home, LayoutGrid, Pencil, RefreshCw, Sparkles, Sun } from "lucide-react";
+import {
+  Copy,
+  Home,
+  LayoutGrid,
+  Pencil,
+  RefreshCw,
+  Sparkles,
+  Sun,
+} from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useState, type ReactNode } from "react";
 
@@ -12,13 +20,19 @@ import { COURT_STATUS_TONE } from "@/components/courts/court-status";
 import { CourtStatusDialog } from "@/components/courts/court-status-dialog";
 import { useCourtDetail } from "@/components/courts/detail/court-detail-context";
 import { EntityDetailPanel } from "@/components/entity/detail-panel";
+import { EntityRelationLink } from "@/components/entity/relation-link";
 import { SoftStatusChip } from "@/components/entity/soft-status-chip";
 import { EntitySplitButton } from "@/components/entity/split-button";
 import { useAmenityCatalog } from "@/hooks/use-amenities";
 import { useBranch } from "@/hooks/use-branches";
 import { useSports } from "@/hooks/use-sports";
 import { amenityLabel } from "@/lib/api/amenities";
-import { Link } from "@/i18n/navigation";
+
+function localizedText(locale: string, vi?: string | null, en?: string | null) {
+  const primary = locale.startsWith("vi") ? vi : en;
+  const fallback = locale.startsWith("vi") ? en : vi;
+  return primary?.trim() || fallback?.trim() || "";
+}
 
 export function CourtOverviewView() {
   const t = useTranslations("organization.court");
@@ -34,9 +48,12 @@ export function CourtOverviewView() {
     return amenity ? amenityLabel(amenity, locale) : id;
   });
   const surface = court.surface ?? "unspecified";
-  const description = locale.startsWith("vi")
-    ? court.description_vi || court.description_en
-    : court.description_en || court.description_vi;
+  const name = localizedText(locale, court.name_vi, court.name_en);
+  const description = localizedText(
+    locale,
+    court.description_vi,
+    court.description_en,
+  );
 
   const [editOpen, setEditOpen] = useState(false);
   const [duplicateOpen, setDuplicateOpen] = useState(false);
@@ -47,7 +64,7 @@ export function CourtOverviewView() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
           <h1 className="min-w-0 truncate text-xl font-semibold text-foreground">
-            {court.name}
+            {name || court.name}
           </h1>
           <span className="shrink-0">
             <SoftStatusChip
@@ -80,22 +97,24 @@ export function CourtOverviewView() {
         />
       </div>
 
-      <EntityDetailPanel title={t("sectionIdentity")} icon={<LayoutGrid className="size-4" />} tone="sky">
+      <EntityDetailPanel
+        title={t("sectionIdentity")}
+        icon={<LayoutGrid className="size-4" />}
+        tone="sky"
+      >
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          <ProfileRow label={t("fieldNameVi")} value={court.name_vi || t("emptyValue")} />
-          <ProfileRow label={t("fieldNameEn")} value={court.name_en || t("emptyValue")} />
+          <ProfileRow
+            label={t("fieldNameVi")}
+            value={name || t("emptyValue")}
+          />
           <ProfileRow label={t("fieldCode")} value={court.code} />
-          <ProfileRow label={t("fieldPublicId")} value={court.public_id} />
           <ProfileRow
             label={t("fieldBranch")}
             value={
               branch ? (
-                <Link
-                  href={`/branches/${branch.id}`}
-                  className="text-sky-700 underline-offset-2 hover:underline dark:text-sky-300"
-                >
+                <EntityRelationLink href={`/branches/${branch.id}`}>
                   {branch.name}
-                </Link>
+                </EntityRelationLink>
               ) : (
                 court.branch_id
               )
@@ -107,9 +126,9 @@ export function CourtOverviewView() {
               <span className="inline-flex items-center gap-1.5">
                 {env === "indoor" ? (
                   <Home className="size-3.5" aria-hidden />
-                ) : (
+                ) : env === "outdoor" ? (
                   <Sun className="size-3.5" aria-hidden />
-                )}
+                ) : null}
                 {t(`environment.${env}`)}
               </span>
             }
@@ -118,7 +137,10 @@ export function CourtOverviewView() {
             label={t("fieldSport")}
             value={sport ? sportLabel(sport, locale) : t("emptyValue")}
           />
-          <ProfileRow label={t("fieldSurface")} value={t(`surface.${surface}`)} />
+          <ProfileRow
+            label={t("fieldSurface")}
+            value={t(`surface.${surface}`)}
+          />
           <ProfileRow
             label={t("fieldDimensions")}
             value={court.dimensions || t("emptyValue")}

@@ -10,6 +10,7 @@ import { useOrganizationDetail } from "./organization-detail-context";
 type OrganizationDetailScreenHeaderProps = {
   title: string;
   subtitle?: string;
+  hint?: string;
   actions?: ReactNode;
   className?: string;
 };
@@ -17,6 +18,7 @@ type OrganizationDetailScreenHeaderProps = {
 export function OrganizationDetailScreenHeader({
   title,
   subtitle,
+  hint,
   actions,
   className,
 }: OrganizationDetailScreenHeaderProps) {
@@ -29,6 +31,7 @@ export function OrganizationDetailScreenHeader({
       backLabel={tShell("menuBack")}
       title={title}
       subtitle={subtitle}
+      hint={hint}
       actions={actions}
       className={className}
     />

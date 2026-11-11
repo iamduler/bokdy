@@ -875,6 +875,8 @@
         "loadError": "Không tải được danh sách sân.",
         "emptyValue": "-",
         "colName": "Sân",
+        "colSport": "Môn",
+        "colSurface": "Mặt sân",
         "colEnvironment": "Môi trường",
         "colStatus": "Trạng thái",
         "environment": {
@@ -1123,7 +1125,13 @@
         "deleteTitle": "Xóa ảnh",
         "deleteConfirm": "Ảnh này sẽ bị xóa khỏi thư viện.",
         "deleted": "Đã xóa ảnh.",
-        "cancel": "Hủy"
+        "cancel": "Hủy",
+        "preview": "Xem trước",
+        "closePreview": "Đóng xem trước",
+        "previous": "Trước",
+        "next": "Sau",
+        "zoomIn": "Phóng to",
+        "zoomOut": "Thu nhỏ"
       },
       "amenities": {
         "title": "Tiện ích",

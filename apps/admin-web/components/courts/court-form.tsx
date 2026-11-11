@@ -18,26 +18,19 @@ import type { PopoverCommandOption } from "@/components/popover-command-select";
 import { useAmenityCatalog } from "@/hooks/use-amenities";
 import { useBranches } from "@/hooks/use-branches";
 import {
-  useArchiveCourt,
-  useCloseCourt,
-  useCompleteCourtMaintenance,
   useCreateCourt,
   useDeleteCourtGalleryItem,
-  useOpenCourt,
-  useStartCourtMaintenance,
   useUpdateCourt,
   useUploadCourtGalleryImage,
 } from "@/hooks/use-courts";
 import { useSports } from "@/hooks/use-sports";
 import { amenityLabel } from "@/lib/api/amenities";
 import { useRouter } from "@/i18n/navigation";
-import type { Court, CourtEnvironment, CourtStatus, CourtSurface } from "@/lib/api/courts";
+import type { Court, CourtEnvironment, CourtSurface } from "@/lib/api/courts";
 import { ApiError } from "@/lib/api/errors";
 import { toVietnameseASCII } from "@/lib/text/vietnamese-ascii";
 import {
-  COURT_EDITABLE_STATUSES,
   COURT_ENVIRONMENTS,
-  COURT_FORM_STATUSES,
   COURT_SURFACES,
   courtFormSchema,
   emptyCourtFormValues,
@@ -74,11 +67,6 @@ export function CourtForm(props: CourtFormProps) {
   const editCourtId = props.mode === "edit" ? props.court.id : "";
   const update = useUpdateCourt(organizationId, editCourtId);
   const deleteGalleryItem = useDeleteCourtGalleryItem(organizationId, editCourtId);
-  const open = useOpenCourt(organizationId, editCourtId);
-  const close = useCloseCourt(organizationId, editCourtId);
-  const archive = useArchiveCourt(organizationId, editCourtId);
-  const startMaint = useStartCourtMaintenance(organizationId, editCourtId);
-  const completeMaint = useCompleteCourtMaintenance(organizationId, editCourtId);
 
   const schema = useMemo(
     () =>
@@ -158,12 +146,7 @@ export function CourtForm(props: CourtFormProps) {
     create.isPending ||
     update.isPending ||
     uploadImage.isPending ||
-    deleteGalleryItem.isPending ||
-    open.isPending ||
-    close.isPending ||
-    archive.isPending ||
-    startMaint.isPending ||
-    completeMaint.isPending;
+    deleteGalleryItem.isPending;
 
   const branchOptions = useMemo<PopoverCommandOption[]>(
     () =>
@@ -221,16 +204,6 @@ export function CourtForm(props: CourtFormProps) {
         value: surface,
         label: t(`surface.${surface}`),
         keywords: surface,
-      })),
-    [t],
-  );
-
-  const statusOptions = useMemo<PopoverCommandOption[]>(
-    () =>
-      COURT_FORM_STATUSES.map((value) => ({
-        value,
-        label: t(`status.${value}`),
-        keywords: value,
       })),
     [t],
   );
@@ -312,21 +285,6 @@ export function CourtForm(props: CourtFormProps) {
             disabled: pending,
             span: 2,
           },
-          {
-            kind: "select",
-            name: "status",
-            label: t("fieldStatus"),
-            options: statusOptions,
-            visible: () =>
-              props.mode === "edit" &&
-              (COURT_EDITABLE_STATUSES as readonly string[]).includes(
-                props.court.status,
-              ),
-            disabled: pending,
-            onValueChange: (_value, formApi) => {
-              formApi.clearErrors("status");
-            },
-          },
         ],
       },
     ],
@@ -337,46 +295,10 @@ export function CourtForm(props: CourtFormProps) {
       envOptions,
       surfaceOptions,
       amenityOptions,
-      statusOptions,
       branchLocked,
       pending,
-      props,
     ],
   );
-
-  async function applyStatusTransition(
-    from: CourtStatus,
-    to: CourtFormStatus,
-  ): Promise<boolean> {
-    if (from === to) return true;
-    if (to === "active") {
-      if (from === "inactive") {
-        await open.mutateAsync();
-        return true;
-      }
-      if (from === "maintenance") {
-        await completeMaint.mutateAsync();
-        return true;
-      }
-    } else if (to === "inactive") {
-      if (from === "active") {
-        await close.mutateAsync();
-        return true;
-      }
-    } else if (to === "maintenance") {
-      if (from === "active" || from === "inactive") {
-        await startMaint.mutateAsync({});
-        return true;
-      }
-    } else if (to === "archived") {
-      if (from === "inactive") {
-        await archive.mutateAsync();
-        return true;
-      }
-    }
-    form.setError("status", { message: t("statusUnsupported") });
-    return false;
-  }
 
   async function onSubmit(values: CourtFormValues) {
     const nameEn = toVietnameseASCII(values.name_vi);
@@ -408,17 +330,7 @@ export function CourtForm(props: CourtFormProps) {
         return;
       }
 
-      const nextStatus = values.status;
-      const editable = COURT_EDITABLE_STATUSES as readonly string[];
-      const canChangeStatus =
-        editable.includes(props.court.status) &&
-        (editable.includes(nextStatus) || nextStatus === "archived");
-      if (nextStatus !== props.court.status && !canChangeStatus) {
-        form.setError("status", { message: t("statusUnsupported") });
-        return;
-      }
-
-      const saved = await update.mutateAsync({
+      await update.mutateAsync({
         name_vi: values.name_vi,
         name_en: nameEn,
         environment: values.environment,
@@ -429,11 +341,6 @@ export function CourtForm(props: CourtFormProps) {
         description_en: values.description_en,
         amenity_ids: values.amenity_ids,
       });
-
-      if (nextStatus !== saved.status) {
-        const ok = await applyStatusTransition(saved.status, nextStatus);
-        if (!ok) return;
-      }
 
       let galleryFailed = false;
       for (const mediaId of removedGalleryIds) {

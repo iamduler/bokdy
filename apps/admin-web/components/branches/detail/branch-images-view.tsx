@@ -21,6 +21,7 @@ import {
   softDirectorySecondaryBtn,
 } from "@/components/data-list";
 import { EntityDetailPanel } from "@/components/entity/detail-panel";
+import { MediaLightbox, type MediaPreviewItem } from "@/components/entity/media-lightbox";
 import {
   useBranchGallery,
   useDeleteBranchGalleryItem,
@@ -53,6 +54,7 @@ export function BranchImagesView() {
   const update = useUpdateBranchGalleryItem(organizationId, branchId);
   const remove = useDeleteBranchGalleryItem(organizationId, branchId);
   const [pendingDelete, setPendingDelete] = useState<BranchGalleryItem | null>(null);
+  const [previewIndex, setPreviewIndex] = useState<number | null>(null);
   const busy = upload.isPending || update.isPending || remove.isPending;
 
   function fail(err: unknown) {
@@ -78,6 +80,12 @@ export function BranchImagesView() {
   const items = [...(gallery.data ?? [])].sort(
     (a, b) => Number(b.is_cover) - Number(a.is_cover) || a.sort_order - b.sort_order,
   );
+  const playlist: MediaPreviewItem[] = items.map((item) => ({
+    id: item.id,
+    src: branchGalleryFileSrc(item),
+    kind: "image",
+    alt: captionOf(item, locale),
+  }));
 
   return (
     <BranchTabBody>
@@ -127,20 +135,27 @@ export function BranchImagesView() {
           <DataListEmpty title={t("empty")} description={t("emptyHint")} className="py-10" />
         ) : (
           <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            {items.map((item) => {
+            {items.map((item, index) => {
               const caption = captionOf(item, locale);
               return (
                 <li
                   key={item.id}
                   className="group relative overflow-hidden rounded-xl ring-1 ring-black/5"
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={branchGalleryFileSrc(item)}
-                    alt={caption}
-                    className="aspect-4/3 w-full object-cover"
-                    loading="lazy"
-                  />
+                  <button
+                    type="button"
+                    className="block w-full cursor-pointer"
+                    aria-label={t("preview")}
+                    onClick={() => setPreviewIndex(index)}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={branchGalleryFileSrc(item)}
+                      alt={caption}
+                      className="aspect-4/3 w-full object-cover"
+                      loading="lazy"
+                    />
+                  </button>
                   {item.is_cover ? (
                     <span className="absolute top-2 left-2 inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-800 dark:bg-amber-950 dark:text-amber-300">
                       <Star className="size-3" aria-hidden />
@@ -162,12 +177,13 @@ export function BranchImagesView() {
                         aria-label={t("setCover")}
                         title={t("setCover")}
                         disabled={busy}
-                        onClick={() =>
+                        onClick={(event) => {
+                          event.stopPropagation();
                           update.mutate(
                             { mediaId: item.id, patch: { is_cover: true } },
                             { onSuccess: () => toast.success(t("coverSet")), onError: fail },
-                          )
-                        }
+                          );
+                        }}
                       >
                         <Star />
                       </Button>
@@ -180,7 +196,10 @@ export function BranchImagesView() {
                       aria-label={t("delete")}
                       title={t("delete")}
                       disabled={busy}
-                      onClick={() => setPendingDelete(item)}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setPendingDelete(item);
+                      }}
                     >
                       <Trash2 />
                     </Button>
@@ -196,6 +215,18 @@ export function BranchImagesView() {
           </ul>
         )}
       </EntityDetailPanel>
+
+      <MediaLightbox
+        items={playlist}
+        index={previewIndex}
+        onIndexChange={setPreviewIndex}
+        closeLabel={t("closePreview")}
+        previousLabel={t("previous")}
+        nextLabel={t("next")}
+        titleLabel={t("preview")}
+        zoomInLabel={t("zoomIn")}
+        zoomOutLabel={t("zoomOut")}
+      />
 
       <Dialog
         open={pendingDelete !== null}

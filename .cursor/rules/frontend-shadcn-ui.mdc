@@ -33,6 +33,7 @@ Feature code imports interactive controls from `@bokdy/ui`. Do not render the br
 | White surface button | `Button` `variant="outline"`, or admin `softDirectorySecondaryBtn` |
 | Quiet icon action | `Button` `variant="ghost"` |
 | Section hint | `InfoHint`, or `hint` on `EntityDetailPanel` / `EntitySectionHead` |
+| Relation to another entity | admin `EntityRelationLink` |
 
 ```tsx
 // ❌ BAD
@@ -50,7 +51,10 @@ Feature code imports interactive controls from `@bokdy/ui`. Do not render the br
 <Button className={softDirectorySecondaryBtn} />
 <InfoHint text={t("branchHint")} />
 <EntityDetailPanel hint={t("branchHint")} />
+<EntityRelationLink href={`/branches/${branch.id}`}>{branch.name}</EntityRelationLink>
 ```
+
+A field that points at another Bokdy record (branch, organization, court) uses `EntityRelationLink` from `apps/admin-web/components/entity/relation-link.tsx`. Do not put `text-sky-*` or `dark:text-sky-*` on that link. The color is the `--relation-link` token: sky-700 on a light surface, sky-300 in dark.
 
 Allowed native inputs: `type="hidden"` and `type="file"`. A numeric range uses `Slider`.
 

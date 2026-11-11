@@ -104,6 +104,7 @@ export function OrganizationCourtsView() {
       <OrganizationDetailScreenHeader
         title={t("title", { name: org.name })}
         subtitle={t("subtitle", { total: courts.length })}
+        hint={t("emptyHint")}
         actions={
           <>
             <PopoverCommandSelect
@@ -160,7 +161,6 @@ export function OrganizationCourtsView() {
         {!isLoading && !isError && filtered.length === 0 ? (
           <DataListEmpty
             title={courts.length === 0 ? tc("empty") : t("emptyFiltered")}
-            description={courts.length === 0 ? t("emptyHint") : undefined}
             action={
               courts.length === 0 ? (
                 <Button

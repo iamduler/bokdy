@@ -4,6 +4,7 @@ import { Button, cn } from "@bokdy/ui";
 import { ArrowLeft } from "lucide-react";
 import type { ReactNode } from "react";
 
+import { InfoHint } from "@/components/info-hint";
 import { usePageShellLeading } from "@/components/shell/shell-title";
 import { Link } from "@/i18n/navigation";
 
@@ -12,6 +13,7 @@ type EntityDetailScreenHeaderProps = {
   backLabel: string;
   title: string;
   subtitle?: string;
+  hint?: string;
   actions?: ReactNode;
   className?: string;
 };
@@ -21,6 +23,7 @@ export function EntityDetailScreenHeader({
   backLabel,
   title,
   subtitle,
+  hint,
   actions,
   className,
 }: EntityDetailScreenHeaderProps) {
@@ -47,7 +50,10 @@ export function EntityDetailScreenHeader({
         )}
       >
         <div className="min-w-0 flex-1">
-          <h2 className="truncate text-xl font-semibold tracking-tight text-foreground">{title}</h2>
+          <div className="flex min-w-0 items-center gap-1.5">
+            <h2 className="truncate text-xl font-semibold tracking-tight text-foreground">{title}</h2>
+            {hint ? <InfoHint text={hint} /> : null}
+          </div>
           {subtitle ? <p className="mt-0.5 text-sm text-muted-foreground">{subtitle}</p> : null}
         </div>
         {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}

@@ -80,9 +80,9 @@ export function CourtCard({ court, branchName }: CourtCardProps) {
           icon={
             env === "indoor" ? (
               <Home className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
-            ) : (
+            ) : env === "outdoor" ? (
               <Sun className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
-            )
+            ) : undefined
           }
         />
         <MetaCell

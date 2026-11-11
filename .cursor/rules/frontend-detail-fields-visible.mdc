@@ -25,6 +25,7 @@ Show the label and an empty placeholder (`emptyValue` / `—`) instead of omitti
 
 * Entire **optional chrome** that is not a field (e.g. map widget when there are no coordinates)
 * Secondary marketing / list empty-states that are not labeled profile fields
+* `public_id` and any “Public ID” label. It is an internal token. Business codes (court code, branch code) stay visible.
 
 ```tsx
 // ❌ BAD — hide when empty
@@ -34,4 +35,40 @@ Show the label and an empty placeholder (`emptyValue` / `—`) instead of omitti
 // ✅ GOOD — always show, placeholder when empty
 <ProfileRow label="Website" value={website || empty} />
 <Panel>{description ? <RichTextView html={description} /> : empty}</Panel>
+```
+
+## Bilingual fields resolve to the active locale
+
+Do not render a `*_en` field, or a label that says “(EN)”, on a read surface.
+
+A field stored as `_vi` and `_en` shows **one** value: the copy for the current locale, then the other locale, then the empty placeholder. The same resolution applies to the page title when the record has localized names.
+
+Forms may still submit both columns. Only the read surface collapses them.
+
+```tsx
+// ❌ BAD — two language rows
+<ProfileRow label={t("fieldNameVi")} value={court.name_vi} />
+<ProfileRow label={t("fieldNameEn")} value={court.name_en} />
+
+// ✅ GOOD — locale, then the other locale, then the placeholder
+const name = locale.startsWith("vi")
+  ? court.name_vi?.trim() || court.name_en?.trim()
+  : court.name_en?.trim() || court.name_vi?.trim();
+<ProfileRow label={t("fieldName")} value={name || empty} />
+```
+
+## Relation fields use `EntityRelationLink`
+
+A profile value that navigates to another Bokdy entity is `EntityRelationLink` (`apps/admin-web/components/entity/relation-link.tsx`). Do not style that link with `text-sky-*` or `dark:text-sky-*`.
+
+When the related record is loaded, the link shows its name. When it is not loaded, show the id or the empty placeholder as plain text.
+
+```tsx
+// ❌ BAD — one-off sky classes
+<Link href={`/branches/${branch.id}`} className="text-sky-700 font-medium dark:text-sky-300">
+  {branch.name}
+</Link>
+
+// ✅ GOOD
+<EntityRelationLink href={`/branches/${branch.id}`}>{branch.name}</EntityRelationLink>
 ```
