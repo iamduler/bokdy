@@ -1,8 +1,8 @@
 "use client";
 
-import { applyBokdyTheme, Button, Input, Label, Spinner, THEME_STORAGE_KEY, type BokdyTheme } from "@bokdy/ui";
+import { applyBokdyTheme, Button, formatUserDateTime, Input, Label, Spinner, THEME_STORAGE_KEY, type BokdyTheme, useUserDateTimePrefs } from "@bokdy/ui";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 
@@ -15,22 +15,11 @@ import { profileSchema, type ProfileFormValues } from "@/lib/validation/profile"
 const THEMES: BokdyTheme[] = ["light", "dark", "system"];
 const DATE_FORMATS = ["dmy", "mdy", "ymd"] as const;
 
-function formatVerifiedAt(iso: string | undefined, locale: string): string {
-  if (!iso) return "";
-  try {
-    return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(
-      new Date(iso),
-    );
-  } catch {
-    return iso;
-  }
-}
-
 export function ProfileForm() {
   const t = useTranslations("profile");
   const tc = useTranslations("common");
   const te = useTranslations("errors");
-  const locale = useLocale();
+  const prefs = useUserDateTimePrefs();
   const { data, isLoading, isError, refetch, isFetching } = useMe();
   const updateMe = useUpdateMe();
   const user = data?.user;
@@ -115,11 +104,11 @@ export function ProfileForm() {
         <div className="grid gap-3 text-sm text-muted-foreground sm:grid-cols-2">
           <div>
             <p className="font-medium text-foreground">{t("emailVerifiedAt")}</p>
-            <p>{user.email_verified_at ? formatVerifiedAt(user.email_verified_at, locale) : t("notVerified")}</p>
+            <p>{user.email_verified_at ? formatUserDateTime(user.email_verified_at, prefs) : t("notVerified")}</p>
           </div>
           <div>
             <p className="font-medium text-foreground">{t("phoneVerifiedAt")}</p>
-            <p>{user.phone_verified_at ? formatVerifiedAt(user.phone_verified_at, locale) : t("notVerified")}</p>
+            <p>{user.phone_verified_at ? formatUserDateTime(user.phone_verified_at, prefs) : t("notVerified")}</p>
           </div>
         </div>
       </div>

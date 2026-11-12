@@ -161,8 +161,8 @@
       "system": "Theo hệ thống"
     },
     "dateFormatOptions": {
-      "dmy": "DD/MM/YYYY",
-      "mdy": "MM/DD/YYYY",
+      "dmy": "DD-MM-YYYY",
+      "mdy": "MM-DD-YYYY",
       "ymd": "YYYY-MM-DD"
     }
   },
@@ -360,14 +360,15 @@
       },
       "excludeDate": "Loại ngày này",
       "keepDate": "Dùng ngày này",
-      "addDate": "Thêm ngày",
-      "addExclude": "Loại một ngày",
+      "addRow": "Thêm dòng",
       "save": "Lưu",
       "saved": "Đã lưu ngày lễ.",
       "remove": "Xóa",
       "empty": "Chưa có ngày lễ.",
       "overridden": "Đã ghi đè",
       "incomplete": "Nhập đủ ngày và tên.",
+      "dateRequired": "Chọn ngày.",
+      "nameRequired": "Nhập tên.",
       "loading": "Đang tải…",
       "loadError": "Không tải được ngày lễ."
     },
@@ -1175,7 +1176,7 @@
     },
     "columns": {
       "user": "Người dùng",
-      "staffRole": "Vai trò staff",
+      "staffRole": "Vai trò",
       "organization": "Tổ chức",
       "status": "Trạng thái",
       "emailVerified": "Email xác minh",
@@ -1192,7 +1193,7 @@
       "emailVerified": "Email xác minh",
       "verified": "Đã xác minh",
       "unverified": "Chưa xác minh",
-      "staffRole": "Vai trò staff",
+      "staffRole": "Vai trò",
       "roleOwner": "Chủ tổ chức",
       "roleStaff": "Nhân viên",
       "filterSearch": "Tìm…",
@@ -1226,7 +1227,38 @@
     "detail": {
       "activate": "Kích hoạt",
       "suspend": "Tạm ngưng",
-      "restore": "Khôi phục"
+      "restore": "Khôi phục",
+      "edit": "Sửa"
+    },
+    "accountForm": {
+      "create": "Tạo mới",
+      "createTitle": "Tạo người dùng",
+      "editTitle": "Sửa người dùng",
+      "unsavedWarning": "Có thay đổi chưa lưu. Bấm lần nữa để rời trang.",
+      "createSubmit": "Tạo tài khoản",
+      "save": "Lưu",
+      "cancel": "Huỷ",
+      "identity": "Hồ sơ",
+      "email": "Email",
+      "phone": "Số điện thoại",
+      "fullName": "Họ và tên",
+      "firstName": "Tên",
+      "lastName": "Họ",
+      "displayName": "Tên hiển thị",
+      "password": "Mật khẩu",
+      "confirmPassword": "Xác nhận mật khẩu",
+      "passwordMismatch": "Mật khẩu không khớp.",
+      "pendingHint": "Tài khoản mới ở trạng thái chờ. Mật khẩu này là cách người dùng đăng nhập trước khi xác minh email.",
+      "membership": "Tổ chức",
+      "memberships": "Tổ chức",
+      "membershipHint": "Tổ chức giữ nguyên. Có thể đổi vai trò và chức danh.",
+      "organization": "Tổ chức",
+      "organizationPlaceholder": "Chọn tổ chức",
+      "role": "Vai trò",
+      "rolePlaceholder": "Chọn vai trò",
+      "title": "Chức danh",
+      "loadingMemberships": "Đang tải tổ chức…",
+      "noMemberships": "Chưa có tổ chức."
     },
     "suspend": {
       "title": "Tạm ngưng người dùng",
@@ -1258,6 +1290,11 @@
       "revokeAll": "Thu hồi tất cả",
       "revoke": "Thu hồi",
       "status": "Trạng thái",
+      "statusLabel": {
+        "active": "Đang hoạt động",
+        "expired": "Hết hạn",
+        "revoked": "Đã thu hồi"
+      },
       "unknownDevice": "Thiết bị không xác định",
       "empty": "Không có phiên."
     },

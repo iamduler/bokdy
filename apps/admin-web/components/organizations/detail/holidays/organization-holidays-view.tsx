@@ -1,6 +1,6 @@
 "use client";
 
-import { Spinner } from "@bokdy/ui";
+import { formatUserDate, Spinner, useUserDateTimePrefs } from "@bokdy/ui";
 import { CalendarDays } from "lucide-react";
 import { useTranslations } from "next-intl";
 
@@ -12,6 +12,7 @@ import { useOrganizationDetail } from "../organization-detail-context";
 
 export function OrganizationHolidaysView() {
   const t = useTranslations("organization.holidays");
+  const prefs = useUserDateTimePrefs();
   const { orgId } = useOrganizationDetail();
   const query = useOrganizationHolidays(orgId);
   const calendar = useCalendarHolidays();
@@ -45,7 +46,7 @@ export function OrganizationHolidaysView() {
           <ul className="space-y-2">
             {calendar.data.holidays.map((holiday) => (
               <li key={holiday.id} className="text-sm">
-                {holiday.holiday_on} · {holiday.name}
+                {formatUserDate(holiday.holiday_on, prefs)} · {holiday.name}
                 {covered.has(holiday.holiday_on) ? <span className="text-muted-foreground"> · {t("overridden")}</span> : null}
               </li>
             ))}

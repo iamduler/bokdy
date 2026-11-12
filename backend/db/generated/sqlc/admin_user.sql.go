@@ -834,7 +834,7 @@ func (q *Queries) ListAdminUserOrganizations(ctx context.Context, userID uuid.UU
 }
 
 const listLoginHistoryByUser = `-- name: ListLoginHistoryByUser :many
-SELECT id, user_id, is_success, ip_address, user_agent, created_at
+SELECT id, user_id, is_success, COALESCE(host(ip_address), '')::text AS ip_address, user_agent, created_at
 FROM identity.login_histories
 WHERE user_id = $1
 ORDER BY created_at DESC
@@ -850,7 +850,7 @@ type ListLoginHistoryByUserRow struct {
 	ID        uuid.UUID `json:"id"`
 	UserID    uuid.UUID `json:"user_id"`
 	IsSuccess bool      `json:"is_success"`
-	IpAddress *string   `json:"ip_address"`
+	IpAddress string    `json:"ip_address"`
 	UserAgent *string   `json:"user_agent"`
 	CreatedAt time.Time `json:"created_at"`
 }

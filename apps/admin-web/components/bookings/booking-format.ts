@@ -1,8 +1,9 @@
-export function bookingFormatters(locale: string) {
+import { formatUserDateTime, type UserDateTimePrefs } from "@bokdy/ui";
+
+export function bookingFormatters(locale: string, prefs: UserDateTimePrefs) {
   const money = new Intl.NumberFormat(locale, { style: "currency", currency: "VND" });
-  const when = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" });
   return {
     money: (amount: number) => money.format(amount),
-    when: (value: string) => when.format(new Date(value)),
+    when: (value: string) => formatUserDateTime(value, prefs),
   };
 }

@@ -66,8 +66,11 @@ Gate: `jwt` + `is_system_admin`. Do not invent paths — add to OpenAPI before i
 | [x] | F-ADMIN-USERS-22 | Force email verify | — | post-mvp | admin | `POST /api/v1/admin/users/{id}/force-email-verify` | — | done | |
 | — | F-ADMIN-USERS-23 | Bulk suspend players | — | post-mvp | admin | `POST /api/v1/admin/users/players/bulk/suspend` | — | deferred | |
 | — | F-ADMIN-USERS-24 | Export players CSV | — | post-mvp | admin | `GET /api/v1/admin/users/players/export` | — | deferred | |
-| — | F-ADMIN-USERS-25 | Invite admin | — | post-mvp | admin | `POST /api/v1/admin/users/admins/invite` | — | deferred | Seed-only MVP |
-| — | F-ADMIN-USERS-26 | Change staff role | — | post-mvp | admin | `PATCH /api/v1/admin/users/owners/{id}/staff/{staff_id}/role` | — | deferred | org_owner / org_staff only |
+| — | F-ADMIN-USERS-25 | Provision admin | — | mvp | admin | `POST /api/v1/admin/users/admins` | UserRegistered | done | Password hash, pending. Public register still forbidden. |
+| [x] | F-ADMIN-USERS-26 | Change staff role | UC-STAFF-002 | mvp | admin | `PATCH /api/v1/admin/users/owners/{id}/staff/{staff_id}` | RoleAssigned | done | org_owner / org_staff only. Last owner guarded. |
+| [x] | F-ADMIN-USERS-27 | Create player | — | mvp | admin | `POST /api/v1/admin/users/players` | UserRegistered | done | Not a system admin. No staff row. |
+| [x] | F-ADMIN-USERS-28 | Update profile | — | mvp | admin | `PATCH /api/v1/admin/users/{id}` | UserProfileUpdated | done | Email or phone change clears that verification. |
+| [x] | F-ADMIN-USERS-29 | Create owner | UC-STAFF-001 | mvp | admin | `POST /api/v1/admin/users/owners` | UserRegistered, StaffAdded | done | New user plus one org membership. |
 
 ---
 

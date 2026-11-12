@@ -161,8 +161,8 @@
       "system": "System"
     },
     "dateFormatOptions": {
-      "dmy": "DD/MM/YYYY",
-      "mdy": "MM/DD/YYYY",
+      "dmy": "DD-MM-YYYY",
+      "mdy": "MM-DD-YYYY",
       "ymd": "YYYY-MM-DD"
     }
   },
@@ -360,14 +360,15 @@
       },
       "excludeDate": "Exclude this date",
       "keepDate": "Use this date",
-      "addDate": "Add date",
-      "addExclude": "Exclude a date",
+      "addRow": "Add row",
       "save": "Save",
       "saved": "Holidays saved.",
       "remove": "Remove",
       "empty": "No holidays yet.",
       "overridden": "Overridden",
       "incomplete": "Enter both the date and the name.",
+      "dateRequired": "Choose a date.",
+      "nameRequired": "Enter a name.",
       "loading": "Loading…",
       "loadError": "Could not load holidays."
     },
@@ -1226,7 +1227,38 @@
     "detail": {
       "activate": "Activate",
       "suspend": "Suspend",
-      "restore": "Restore"
+      "restore": "Restore",
+      "edit": "Edit"
+    },
+    "accountForm": {
+      "create": "Create",
+      "createTitle": "Create user",
+      "editTitle": "Edit user",
+      "unsavedWarning": "You have unsaved changes. Click again to leave.",
+      "createSubmit": "Create account",
+      "save": "Save",
+      "cancel": "Cancel",
+      "identity": "Profile",
+      "email": "Email",
+      "phone": "Phone",
+      "fullName": "Full name",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "displayName": "Display name",
+      "password": "Password",
+      "confirmPassword": "Confirm password",
+      "passwordMismatch": "Passwords do not match.",
+      "pendingHint": "The new account stays pending. This password is how they sign in before the email is verified.",
+      "membership": "Organization",
+      "memberships": "Organizations",
+      "membershipHint": "The organization stays. Role and title can change.",
+      "organization": "Organization",
+      "organizationPlaceholder": "Choose an organization",
+      "role": "Role",
+      "rolePlaceholder": "Choose a role",
+      "title": "Title",
+      "loadingMemberships": "Loading organizations…",
+      "noMemberships": "No organizations yet."
     },
     "suspend": {
       "title": "Suspend user",
@@ -1258,6 +1290,11 @@
       "revokeAll": "Revoke all",
       "revoke": "Revoke",
       "status": "Status",
+      "statusLabel": {
+        "active": "Active",
+        "expired": "Expired",
+        "revoked": "Revoked"
+      },
       "unknownDevice": "Unknown device",
       "empty": "No sessions."
     },

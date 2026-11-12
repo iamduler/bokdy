@@ -17,7 +17,7 @@ WHERE rt.token_hash = $1;
 UPDATE identity.sessions SET status = 'revoked' WHERE id = $1;
 
 -- name: ListSessionsByUser :many
-SELECT id, user_id, device_id, status, ip_address, user_agent, last_activity_at, expires_at, created_at
+SELECT id, user_id, device_id, status, COALESCE(host(ip_address), '')::text AS ip_address, user_agent, last_activity_at, expires_at, created_at
 FROM identity.sessions
 WHERE user_id = $1
 ORDER BY created_at DESC;

@@ -1,7 +1,7 @@
 "use client";
 
-import { AuthActionButton, AuthAlert, SecurityRiskBadge, Spinner } from "@bokdy/ui";
-import { useFormatter, useTranslations } from "next-intl";
+import { AuthActionButton, AuthAlert, formatUserDateTime, SecurityRiskBadge, Spinner, useUserDateTimePrefs } from "@bokdy/ui";
+import { useTranslations } from "next-intl";
 
 import {
   useRevokeAllSessions,
@@ -22,7 +22,7 @@ function riskForUserAgent(
 export function SessionsList() {
   const t = useTranslations("sessions");
   const tc = useTranslations("common");
-  const format = useFormatter();
+  const prefs = useUserDateTimePrefs();
   const { data, isLoading, isError } = useSessions();
   const revokeOne = useRevokeSession();
   const revokeAll = useRevokeAllSessions();
@@ -84,15 +84,7 @@ export function SessionsList() {
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {t("lastSeen", {
-                      date: format.dateTime(
-                        new Date(
-                          session.last_activity_at || session.created_at,
-                        ),
-                        {
-                          dateStyle: "medium",
-                          timeStyle: "short",
-                        },
-                      ),
+                      date: formatUserDateTime(session.last_activity_at || session.created_at, prefs),
                     })}
                   </p>
                 </div>
@@ -131,10 +123,7 @@ export function SessionsList() {
                     {t("expiresAt")}
                   </dt>
                   <dd className="mt-1 font-medium">
-                    {format.dateTime(new Date(session.expires_at), {
-                      dateStyle: "medium",
-                      timeStyle: "short",
-                    })}
+                    {formatUserDateTime(session.expires_at, prefs)}
                   </dd>
                 </div>
               </dl>

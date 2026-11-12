@@ -101,6 +101,10 @@ func (r *UserRepo) ClearPhoneVerified(ctx context.Context, tx pgx.Tx, id uuid.UU
 	return r.q.WithTx(tx).ClearUserPhoneVerified(ctx, id)
 }
 
+func (r *UserRepo) ClearEmailVerified(ctx context.Context, tx pgx.Tx, id uuid.UUID) error {
+	return r.q.WithTx(tx).ClearUserEmailVerified(ctx, id)
+}
+
 func (r *UserRepo) TouchLastLogin(ctx context.Context, tx pgx.Tx, id uuid.UUID, at time.Time) error {
 	return r.q.WithTx(tx).TouchUserLastLogin(ctx, dbsqlc.TouchUserLastLoginParams{
 		ID: id, LastLoginAt: &at,

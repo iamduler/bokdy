@@ -66,4 +66,6 @@ Pick the component and variant from the table. Do not invent a second hover, bor
 
 Hover lives in the primitive: `outline` and `softDirectorySecondaryBtn` hover to sky, `ghost` stays a muted wash, the default `Button` stays a solid fill. Admin title-row actions import `softDirectoryPrimaryBtn` and `softDirectorySecondaryBtn` from `@/components/data-list`. Do not copy those class strings into a feature.
 
+Do not add `hover:underline`. A link takes its color from the text color or from `EntityRelationLink`. Underline on hover is not a hover style.
+
 If a look is missing, change the variant once in `packages/ui/src/ui/button.tsx` (or the soft constants) and export it from `packages/ui/src/index.ts`. Do not ship the browser control, or a one-off className, as a stand-in. App-only compositions (nav combobox, filters) stay in `apps/<app>/components/`.

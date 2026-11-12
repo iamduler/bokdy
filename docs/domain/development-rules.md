@@ -465,7 +465,7 @@ Audit records are immutable.
 
 Store all timestamps in UTC (`timestamptz`).
 
-Public HTTP APIs return RFC3339 UTC (`Z`). The frontend converts for display using the browser timezone or `user_profiles.timezone` when set.
+Public HTTP APIs return RFC3339 UTC (`Z`). Calendar dates stay `YYYY-MM-DD`. The UI shows them with the signed-in user's `date_format` (default `dmy` → `DD-MM-YYYY`) and `HH:mm:ss`. Datetimes are converted from UTC into `user_profiles.timezone`, or `Asia/Ho_Chi_Minh` (UTC+7) when that field is empty. Calendar dates and wall-clock times are not shifted by a timezone. Do not format those fields with `toLocaleString` or `Intl.DateTimeFormat`.
 
 Branch timezone is only for venue business clocks (opening hours, slots). Do not convert identity or audit timestamps on the API.
 

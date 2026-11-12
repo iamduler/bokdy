@@ -336,7 +336,7 @@ WHERE sm.user_id = $1
 ORDER BY sm.created_at ASC;
 
 -- name: ListLoginHistoryByUser :many
-SELECT id, user_id, is_success, ip_address, user_agent, created_at
+SELECT id, user_id, is_success, COALESCE(host(ip_address), '')::text AS ip_address, user_agent, created_at
 FROM identity.login_histories
 WHERE user_id = $1
 ORDER BY created_at DESC

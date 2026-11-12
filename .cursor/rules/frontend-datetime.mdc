@@ -1,0 +1,32 @@
+---
+description: Date, time, and datetime text uses the signed-in user's format
+globs:
+  - apps/**/*.{tsx,ts}
+  - packages/ui/src/**/*.{tsx,ts}
+alwaysApply: true
+---
+
+# User date and time display
+
+Show date, time, and datetime text through `@bokdy/ui`:
+
+- `formatUserDate` for a calendar date (`YYYY-MM-DD` in, no timezone shift)
+- `formatUserTime` for a wall clock (`HH:mm` or `HH:mm:ss` in, seconds shown)
+- `formatUserDateTime` for a UTC instant, drawn in the user's timezone
+- `formatUserZonedTime` for only the clock of a UTC instant
+
+Read the active preference with `useUserDateTimePrefs`. The default is `dmy` (`DD-MM-YYYY`) and `Asia/Ho_Chi_Minh` (UTC+7). `mdy` is `MM-DD-YYYY`. `ymd` is `YYYY-MM-DD`. Time is always `HH:mm:ss`.
+
+DatePicker and TimePicker values stay `YYYY-MM-DD` and `HH:MM`. Only the visible label uses the user format.
+
+```tsx
+// ❌ BAD
+new Date(iso).toLocaleString()
+new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(date)
+
+// ✅ GOOD
+formatUserDateTime(iso, useUserDateTimePrefs())
+formatUserDate(holidayOn, prefs)
+```
+
+Do not call `toLocaleString` or `Intl.DateTimeFormat` to render a date, time, or datetime field. A weekday index used to pick venue hours is not one of those fields.

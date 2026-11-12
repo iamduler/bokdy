@@ -10,6 +10,7 @@ import (
 
 	identityentity "bokdy/internal/identity/entity"
 	idrepo "bokdy/internal/identity/repository"
+	idservice "bokdy/internal/identity/service"
 	"bokdy/internal/organization/entity"
 	orgerrors "bokdy/internal/organization/errors"
 	"bokdy/internal/organization/repository"
@@ -27,15 +28,16 @@ import (
 )
 
 type OrganizationService struct {
-	pool    *pgxpool.Pool
-	orgs    repository.OrganizationRepository
-	staff   repository.StaffRepository
-	invites repository.InvitationRepository
-	roles   idrepo.RoleRepository
-	users   idrepo.UserRepository
-	mailer  mail.Mailer
-	outbox  events.Enqueuer
-	fileDir string
+	pool     *pgxpool.Pool
+	orgs     repository.OrganizationRepository
+	staff    repository.StaffRepository
+	invites  repository.InvitationRepository
+	roles    idrepo.RoleRepository
+	users    idrepo.UserRepository
+	mailer   mail.Mailer
+	outbox   events.Enqueuer
+	fileDir  string
+	accounts idservice.LocalProvisioner
 }
 
 func NewOrganizationService(
@@ -47,10 +49,11 @@ func NewOrganizationService(
 	users idrepo.UserRepository,
 	mailer mail.Mailer,
 	outbox events.Enqueuer,
+	accounts idservice.LocalProvisioner,
 ) *OrganizationService {
 	return &OrganizationService{
 		pool: pool, orgs: orgs, staff: staff, invites: invites,
-		roles: roles, users: users, mailer: mailer, outbox: outbox,
+		roles: roles, users: users, mailer: mailer, outbox: outbox, accounts: accounts,
 	}
 }
 
@@ -1075,6 +1078,181 @@ func (s *OrganizationService) guardLastOwner(ctx context.Context, org *entity.Or
 	if n <= 1 {
 		return orgerrors.ErrLastOwner
 	}
+	return nil
+}
+
+type CreateStaffUserInput struct {
+	OrganizationID uuid.UUID
+	RoleCode       string
+	Title          string
+	Account        idservice.AccountInput
+}
+
+func (s *OrganizationService) CreateStaffUser(ctx context.Context, actor uuid.UUID, in CreateStaffUserInput) (uuid.UUID, error) {
+	norm, err := idservice.ValidateNewAccount(in.Account)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	if in.OrganizationID == uuid.Nil {
+		return uuid.Nil, apperr.New(apperr.CodeValidation, "organization is required")
+	}
+	roleCode := strings.TrimSpace(in.RoleCode)
+	if !isSeededRole(roleCode) {
+		return uuid.Nil, orgerrors.ErrSeededRoleOnly
+	}
+	if err := s.accounts.AccountAvailable(ctx, norm.Email, norm.Phone, uuid.Nil); err != nil {
+		return uuid.Nil, err
+	}
+	org, err := s.orgs.FindByID(ctx, in.OrganizationID)
+	if err != nil {
+		return uuid.Nil, apperr.Wrap(err, apperr.CodeInternal, "lookup organization")
+	}
+	if org == nil {
+		return uuid.Nil, orgerrors.ErrOrganizationNotFound
+	}
+	role, err := s.roles.FindByCode(ctx, roleCode)
+	if err != nil {
+		return uuid.Nil, apperr.Wrap(err, apperr.CodeInternal, "lookup role")
+	}
+	if role == nil {
+		return uuid.Nil, orgerrors.ErrRoleNotFound
+	}
+	now := time.Now().UTC()
+	var userID uuid.UUID
+	var token string
+	var outboxIDs []uuid.UUID
+	err = persistence.WithinTx(ctx, s.pool, func(tx pgx.Tx) error {
+		user, verifyToken, err := s.accounts.ProvisionLocalUser(ctx, tx, idservice.KindOwner, norm, in.Account.Password)
+		if err != nil {
+			return err
+		}
+		userID = user.ID
+		token = verifyToken
+		member := &entity.StaffMember{
+			ID: id.MustNewUUID(), OrganizationID: org.ID, UserID: user.ID,
+			Title: strings.TrimSpace(in.Title), Status: entity.StaffActive, CreatedAt: now, UpdatedAt: now,
+		}
+		if err := s.staff.Add(ctx, tx, member); err != nil {
+			return err
+		}
+		tenantID := org.TenantID
+		if err := s.roles.Assign(ctx, tx, &identityentity.UserRole{
+			ID: id.MustNewUUID(), TenantID: &tenantID, UserID: user.ID, RoleID: role.ID,
+		}); err != nil {
+			return err
+		}
+		actorID := actor
+		if actorID == uuid.Nil {
+			actorID = user.ID
+		}
+		registered, err := events.Append(ctx, tx, events.Event{
+			Type: "UserRegistered", AggregateType: "User", AggregateID: user.ID,
+			TenantID: &tenantID, ActorType: events.ActorUser, ActorID: &actorID,
+			EntityType: "User", EntityID: user.ID,
+			Payload: map[string]any{"email": norm.Email, "kind": string(idservice.KindOwner)}, OccurredAt: now,
+		})
+		if err != nil {
+			return err
+		}
+		outboxIDs = append(outboxIDs, registered)
+		added, err := events.Append(ctx, tx, events.Event{
+			Type: "StaffAdded", AggregateType: "StaffMember", AggregateID: member.ID,
+			TenantID: &tenantID, ActorType: events.ActorUser, ActorID: &actorID,
+			EntityType: "StaffMember", EntityID: member.ID,
+			Payload: map[string]any{
+				"organization_id": org.ID.String(), "user_id": user.ID.String(), "role_code": roleCode,
+			},
+			OccurredAt: now,
+		})
+		if err != nil {
+			return err
+		}
+		outboxIDs = append(outboxIDs, added)
+		return nil
+	})
+	if err != nil {
+		return uuid.Nil, apperr.Wrap(err, apperr.CodeInternal, "create staff user")
+	}
+	events.AfterCommit(ctx, s.outbox, outboxIDs...)
+	s.accounts.SendVerification(ctx, norm.Email, token)
+	return userID, nil
+}
+
+func (s *OrganizationService) ReplaceStaffRole(ctx context.Context, userID, staffID, actor uuid.UUID, roleCode, title string) error {
+	roleCode = strings.TrimSpace(roleCode)
+	if !isSeededRole(roleCode) {
+		return orgerrors.ErrSeededRoleOnly
+	}
+	member, err := s.staff.FindByMemberID(ctx, staffID)
+	if err != nil {
+		return apperr.Wrap(err, apperr.CodeInternal, "lookup staff")
+	}
+	if member == nil || member.UserID != userID || member.Status == entity.StaffResigned {
+		return orgerrors.ErrStaffNotFound
+	}
+	org, err := s.orgs.FindByID(ctx, member.OrganizationID)
+	if err != nil {
+		return apperr.Wrap(err, apperr.CodeInternal, "lookup organization")
+	}
+	if org == nil {
+		return orgerrors.ErrOrganizationNotFound
+	}
+	role, err := s.roles.FindByCode(ctx, roleCode)
+	if err != nil {
+		return apperr.Wrap(err, apperr.CodeInternal, "lookup role")
+	}
+	if role == nil {
+		return orgerrors.ErrRoleNotFound
+	}
+	current, err := s.roles.ListByUserTenant(ctx, member.UserID, org.TenantID)
+	if err != nil {
+		return apperr.Wrap(err, apperr.CodeInternal, "list roles")
+	}
+	for _, assigned := range current {
+		if assigned.RoleCode == entity.RoleOrgOwner && roleCode != entity.RoleOrgOwner {
+			if err := s.guardLastOwner(ctx, org, member); err != nil {
+				return err
+			}
+			break
+		}
+	}
+	now := time.Now().UTC()
+	member.Title = strings.TrimSpace(title)
+	member.UpdatedAt = now
+	var outboxID uuid.UUID
+	err = persistence.WithinTx(ctx, s.pool, func(tx pgx.Tx) error {
+		if err := s.staff.Update(ctx, tx, member); err != nil {
+			return err
+		}
+		for _, assigned := range current {
+			if !isSeededRole(assigned.RoleCode) || assigned.RoleCode == roleCode {
+				continue
+			}
+			if err := s.roles.Remove(ctx, tx, org.TenantID, member.UserID, assigned.RoleID); err != nil {
+				return err
+			}
+		}
+		tenantID := org.TenantID
+		if err := s.roles.Assign(ctx, tx, &identityentity.UserRole{
+			ID: id.MustNewUUID(), TenantID: &tenantID, UserID: member.UserID, RoleID: role.ID,
+		}); err != nil {
+			return err
+		}
+		actorID := actor
+		oid, err := events.Append(ctx, tx, events.Event{
+			Type: "RoleAssigned", AggregateType: "StaffMember", AggregateID: member.ID,
+			TenantID: &tenantID, ActorType: events.ActorUser, ActorID: &actorID,
+			EntityType: "StaffMember", EntityID: member.ID,
+			Payload:    map[string]any{"role_code": roleCode, "title": member.Title},
+			OccurredAt: now,
+		})
+		outboxID = oid
+		return err
+	})
+	if err != nil {
+		return apperr.Wrap(err, apperr.CodeInternal, "replace staff role")
+	}
+	events.AfterCommit(ctx, s.outbox, outboxID)
 	return nil
 }
 

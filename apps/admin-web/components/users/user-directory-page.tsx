@@ -8,6 +8,7 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 
 import { DATA_LIST_PAGE_SIZE } from "@/components/data-list";
 import { usePageShellTitle } from "@/components/shell/shell-title";
+import { UserAccountFormSheet } from "@/components/users/user-account-form-sheet";
 import { UserDirectoryToolbar } from "@/components/users/user-directory-toolbar";
 import { UserList } from "@/components/users/shared/user-list";
 import { useAdminUserList, useAdminUserStats } from "@/hooks/use-admin-users";
@@ -120,6 +121,7 @@ function UserDirectoryPageContent({ audience }: { audience: UserAudience }) {
     listParams,
   );
   const statsQuery = useAdminUserStats(audience);
+  const [creating, setCreating] = useState(false);
   const users = data?.items ?? [];
   const total = data?.total ?? 0;
 
@@ -150,6 +152,7 @@ function UserDirectoryPageContent({ audience }: { audience: UserAudience }) {
         onReplaceParams={replaceParams}
         stats={statsQuery.data}
         statsLoading={statsQuery.isLoading}
+        onCreate={() => setCreating(true)}
       >
         <UserList
           audience={audience}
@@ -166,6 +169,14 @@ function UserDirectoryPageContent({ audience }: { audience: UserAudience }) {
           onRetry={() => void refetch()}
         />
       </UserDirectoryToolbar>
+      <UserAccountFormSheet
+        open={creating}
+        mode="create"
+        audience={audience}
+        onOpenChange={(open) => {
+          if (!open) setCreating(false);
+        }}
+      />
     </div>
   );
 }

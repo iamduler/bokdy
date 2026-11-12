@@ -6645,7 +6645,38 @@ export interface paths {
             };
         };
         put?: never;
-        post?: never;
+        /**
+         * Create a player account
+         * @description Pending local account. Password is stored as a hash and is not returned. is_system_admin stays false.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AdminUserAccountRequest"];
+                };
+            };
+            responses: {
+                /** @description Player created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminPlayerUser"];
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                409: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -6871,7 +6902,39 @@ export interface paths {
             };
         };
         put?: never;
-        post?: never;
+        /**
+         * Create an owner account
+         * @description Pending user plus one active staff membership and a single seeded role.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AdminOwnerCreateRequest"];
+                };
+            };
+            responses: {
+                /** @description Owner created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminOwnerUser"];
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                409: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -6998,6 +7061,56 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/users/owners/{id}/staff/{staff_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Replace a staff member's seeded role
+         * @description Swaps org_owner and org_staff. Refuses to demote the last organization owner.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["parameters"]["UserId"];
+                    staff_id: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AdminStaffRoleRequest"];
+                };
+            };
+            responses: {
+                /** @description Owner updated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminOwnerUser"];
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        trace?: never;
+    };
     "/api/v1/admin/users/admins": {
         parameters: {
             query?: never;
@@ -7038,7 +7151,38 @@ export interface paths {
             };
         };
         put?: never;
-        post?: never;
+        /**
+         * Provision a system admin
+         * @description Internal provisioning. Public registration still cannot set is_system_admin.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AdminUserAccountRequest"];
+                };
+            };
+            responses: {
+                /** @description Admin created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminSystemUser"];
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                409: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -7464,6 +7608,56 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/users/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update a user profile
+         * @description Email, phone, and names. Changing email or phone clears that contact's verification. Does not change status, role, or is_system_admin.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["parameters"]["UserId"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["AdminUserProfileRequest"];
+                };
+            };
+            responses: {
+                /** @description Profile updated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminUser"];
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                409: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        trace?: never;
+    };
     "/api/v1/admin/users/{id}/reset-password": {
         parameters: {
             query?: never;
@@ -7692,6 +7886,8 @@ export interface components {
             email?: string;
             display_name?: string;
             full_name?: string;
+            first_name?: string;
+            last_name?: string;
             phone?: string;
             /** @enum {string} */
             status: "pending" | "active" | "suspended" | "locked" | "deleted";
@@ -7801,6 +7997,36 @@ export interface components {
              * @description UTC
              */
             created_at: string;
+        };
+        /** @description full_name and display_name are derived as last name then first name. */
+        AdminUserAccountRequest: {
+            /** Format: email */
+            email: string;
+            /** @description BR-806. Never returned. */
+            password: string;
+            first_name: string;
+            last_name?: string;
+            phone?: string;
+        };
+        /** @description full_name and display_name are derived as last name then first name. */
+        AdminUserProfileRequest: {
+            /** Format: email */
+            email: string;
+            first_name: string;
+            last_name?: string;
+            phone?: string;
+        };
+        AdminOwnerCreateRequest: components["schemas"]["AdminUserAccountRequest"] & {
+            /** Format: uuid */
+            organization_id: string;
+            /** @enum {string} */
+            staff_role: "org_owner" | "org_staff";
+            title?: string;
+        };
+        AdminStaffRoleRequest: {
+            /** @enum {string} */
+            role_code: "org_owner" | "org_staff";
+            title?: string;
         };
         SuspendUserRequest: {
             reason: string;

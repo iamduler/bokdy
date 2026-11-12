@@ -44,6 +44,17 @@ func (r *StaffRepo) FindByID(ctx context.Context, orgID, staffID uuid.UUID) (*en
 	return toStaff(row.ID, row.OrganizationID, row.BranchID, row.UserID, row.Title, row.Status, row.CreatedAt, row.UpdatedAt), nil
 }
 
+func (r *StaffRepo) FindByMemberID(ctx context.Context, staffID uuid.UUID) (*entity.StaffMember, error) {
+	row, err := r.q.FindStaffMemberByID(ctx, staffID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return toStaff(row.ID, row.OrganizationID, row.BranchID, row.UserID, row.Title, row.Status, row.CreatedAt, row.UpdatedAt), nil
+}
+
 func (r *StaffRepo) FindByOrgUser(ctx context.Context, orgID, userID uuid.UUID) (*entity.StaffMember, error) {
 	row, err := r.q.FindStaffByOrgUser(ctx, dbsqlc.FindStaffByOrgUserParams{OrganizationID: orgID, UserID: userID})
 	if err != nil {

@@ -6,9 +6,11 @@ import { useTranslations } from "next-intl";
 import { useUserDetail } from "@/components/users/detail/user-detail-context";
 import { useOwnerOrganizations } from "@/hooks/use-admin-users";
 import { Link } from "@/i18n/navigation";
+import { staffRoleLabel } from "@/lib/users/staff-role-label";
 
 export function UserOrganizationsView() {
   const t = useTranslations("users.organizations");
+  const tu = useTranslations("users");
   const tc = useTranslations("common");
   const { userId } = useUserDetail();
   const { data: orgs = [], isLoading, isError, refetch, isFetching } = useOwnerOrganizations(userId);
@@ -44,7 +46,7 @@ export function UserOrganizationsView() {
             <dl className="mt-3 space-y-1 text-sm">
               <div className="flex justify-between">
                 <dt className="text-muted-foreground">{t("role")}</dt>
-                <dd>{o.staff_role}</dd>
+                <dd>{staffRoleLabel(tu, o.staff_role)}</dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-muted-foreground">{t("branches")}</dt>

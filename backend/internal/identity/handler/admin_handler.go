@@ -10,10 +10,12 @@ import (
 	"bokdy/internal/identity/entity"
 	"bokdy/internal/identity/repository"
 	"bokdy/internal/identity/service"
+	orgservice "bokdy/internal/organization/service"
 	"bokdy/internal/platform/apperr"
 	"bokdy/internal/platform/httpx"
 	"bokdy/internal/platform/i18n"
 	"bokdy/internal/platform/listpage"
+	"bokdy/internal/platform/requestctx"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -21,24 +23,29 @@ import (
 
 type AdminUserHandler struct {
 	admin    *service.AdminUserService
+	orgs     *orgservice.OrganizationService
 	bookings *bookinghandler.BookingHandler
 }
 
-func NewAdminUserHandler(admin *service.AdminUserService, bookings *bookinghandler.BookingHandler) *AdminUserHandler {
-	return &AdminUserHandler{admin: admin, bookings: bookings}
+func NewAdminUserHandler(admin *service.AdminUserService, orgs *orgservice.OrganizationService, bookings *bookinghandler.BookingHandler) *AdminUserHandler {
+	return &AdminUserHandler{admin: admin, orgs: orgs, bookings: bookings}
 }
 
 func (h *AdminUserHandler) RegisterAdminRoutes(admin *gin.RouterGroup) {
 	admin.GET("/users/players", h.ListPlayers)
+	admin.POST("/users/players", h.CreatePlayer)
 	admin.GET("/users/players/stats", h.PlayerStats)
 	admin.GET("/users/players/:id", h.GetPlayer)
 	admin.GET("/users/players/:id/summary", h.PlayerSummary)
 	admin.GET("/users/players/:id/bookings", h.ListPlayerBookings)
 	admin.GET("/users/owners", h.ListOwners)
+	admin.POST("/users/owners", h.CreateOwner)
 	admin.GET("/users/owners/stats", h.OwnerStats)
 	admin.GET("/users/owners/:id", h.GetOwner)
 	admin.GET("/users/owners/:id/organizations", h.ListOrganizations)
+	admin.PATCH("/users/owners/:id/staff/:staff_id", h.ReplaceStaffRole)
 	admin.GET("/users/admins", h.ListAdmins)
+	admin.POST("/users/admins", h.CreateAdmin)
 	admin.GET("/users/admins/stats", h.AdminStats)
 	admin.GET("/users/admins/:id", h.GetAdmin)
 	admin.POST("/users/:id/suspend", h.Suspend)
@@ -51,6 +58,7 @@ func (h *AdminUserHandler) RegisterAdminRoutes(admin *gin.RouterGroup) {
 	admin.GET("/users/:id/activity", h.ListActivity)
 	admin.POST("/users/:id/reset-password", h.ResetPassword)
 	admin.POST("/users/:id/force-email-verify", h.ForceEmailVerify)
+	admin.PATCH("/users/:id", h.UpdateProfile)
 }
 
 type adminUserDTO struct {
@@ -59,6 +67,8 @@ type adminUserDTO struct {
 	Email           string  `json:"email,omitempty"`
 	DisplayName     string  `json:"display_name,omitempty"`
 	FullName        string  `json:"full_name,omitempty"`
+	FirstName       string  `json:"first_name,omitempty"`
+	LastName        string  `json:"last_name,omitempty"`
 	Phone           string  `json:"phone,omitempty"`
 	Status          string  `json:"status"`
 	IsSystemAdmin   bool    `json:"is_system_admin"`
@@ -274,6 +284,134 @@ func (h *AdminUserHandler) GetAdmin(c *gin.Context) {
 		return
 	}
 	httpx.OK(c, toAdminUserDTO(*row))
+}
+
+type adminAccountBody struct {
+	Email     string `json:"email"`
+	Password  string `json:"password"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	Phone     string `json:"phone"`
+}
+
+type adminOwnerCreateBody struct {
+	adminAccountBody
+	OrganizationID string `json:"organization_id"`
+	StaffRole      string `json:"staff_role"`
+	Title          string `json:"title"`
+}
+
+type adminStaffRoleBody struct {
+	RoleCode string `json:"role_code"`
+	Title    string `json:"title"`
+}
+
+func accountInput(body adminAccountBody) service.AccountInput {
+	return service.AccountInput{
+		Email: body.Email, Password: body.Password,
+		FirstName: body.FirstName, LastName: body.LastName, Phone: body.Phone,
+	}
+}
+
+func (h *AdminUserHandler) CreatePlayer(c *gin.Context) {
+	var req adminAccountBody
+	if !httpx.BindJSON(c, &req) {
+		return
+	}
+	actor, _ := requestctx.UserID(c.Request.Context())
+	row, err := h.admin.CreatePlayer(c.Request.Context(), actor, accountInput(req))
+	if err != nil {
+		httpx.Error(c, err)
+		return
+	}
+	httpx.Created(c, toAdminUserDTO(*row))
+}
+
+func (h *AdminUserHandler) CreateAdmin(c *gin.Context) {
+	var req adminAccountBody
+	if !httpx.BindJSON(c, &req) {
+		return
+	}
+	actor, _ := requestctx.UserID(c.Request.Context())
+	row, err := h.admin.CreateAdmin(c.Request.Context(), actor, accountInput(req))
+	if err != nil {
+		httpx.Error(c, err)
+		return
+	}
+	httpx.Created(c, toAdminUserDTO(*row))
+}
+
+func (h *AdminUserHandler) CreateOwner(c *gin.Context) {
+	var req adminOwnerCreateBody
+	if !httpx.BindJSON(c, &req) {
+		return
+	}
+	orgID, err := uuid.Parse(strings.TrimSpace(req.OrganizationID))
+	if err != nil {
+		httpx.Fail(c, apperr.CodeValidation, "organization is required")
+		return
+	}
+	actor, _ := requestctx.UserID(c.Request.Context())
+	userID, err := h.orgs.CreateStaffUser(c.Request.Context(), actor, orgservice.CreateStaffUserInput{
+		OrganizationID: orgID,
+		RoleCode:       req.StaffRole,
+		Title:          req.Title,
+		Account:        accountInput(req.adminAccountBody),
+	})
+	if err != nil {
+		httpx.Error(c, err)
+		return
+	}
+	row, err := h.admin.GetOwner(c.Request.Context(), userID)
+	if err != nil {
+		httpx.Error(c, err)
+		return
+	}
+	httpx.Created(c, toAdminOwnerUserDTO(c, *row))
+}
+
+func (h *AdminUserHandler) UpdateProfile(c *gin.Context) {
+	id, ok := parseUserID(c)
+	if !ok {
+		return
+	}
+	var req adminAccountBody
+	if !httpx.BindJSON(c, &req) {
+		return
+	}
+	row, err := h.admin.UpdateProfile(c.Request.Context(), id, accountInput(req))
+	if err != nil {
+		httpx.Error(c, err)
+		return
+	}
+	httpx.OK(c, toAdminUserDTO(*row))
+}
+
+func (h *AdminUserHandler) ReplaceStaffRole(c *gin.Context) {
+	userID, ok := parseUserID(c)
+	if !ok {
+		return
+	}
+	staffID, err := uuid.Parse(c.Param("staff_id"))
+	if err != nil {
+		httpx.Fail(c, apperr.CodeValidation, "invalid staff id")
+		return
+	}
+	var req adminStaffRoleBody
+	if !httpx.BindJSON(c, &req) {
+		return
+	}
+	actor, _ := requestctx.UserID(c.Request.Context())
+	if err := h.orgs.ReplaceStaffRole(c.Request.Context(), userID, staffID, actor, req.RoleCode, req.Title); err != nil {
+		httpx.Error(c, err)
+		return
+	}
+	row, err := h.admin.GetOwner(c.Request.Context(), userID)
+	if err != nil {
+		httpx.Error(c, err)
+		return
+	}
+	httpx.OK(c, toAdminOwnerUserDTO(c, *row))
 }
 
 func (h *AdminUserHandler) PlayerSummary(c *gin.Context) {
@@ -537,7 +675,8 @@ func parseBoolQuery(c *gin.Context, key string) *bool {
 func toAdminUserDTO(row repository.AdminUserRow) adminUserDTO {
 	return adminUserDTO{
 		ID: row.ID.String(), PublicID: row.PublicID, Email: row.Email,
-		DisplayName: row.DisplayName, FullName: row.FullName, Phone: row.Phone,
+		DisplayName: row.DisplayName, FullName: row.FullName,
+		FirstName: row.FirstName, LastName: row.LastName, Phone: row.Phone,
 		Status: row.Status, IsSystemAdmin: row.IsSystemAdmin,
 		LastLoginAt: row.LastLoginAt, EmailVerifiedAt: row.EmailVerifiedAt,
 		PhoneVerifiedAt: row.PhoneVerifiedAt, CreatedAt: row.CreatedAt,

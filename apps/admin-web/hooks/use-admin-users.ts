@@ -4,6 +4,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
   activateUser,
+  createAdminUser,
+  createOwnerUser,
+  createPlayerUser,
   forceEmailVerify,
   getAdminUser,
   getAdminUserStats,
@@ -22,8 +25,10 @@ import {
   restoreUser,
   revokeAllUserSessions,
   revokeUserSession,
+  replaceOwnerStaffRole,
   resetUserPassword,
   suspendUser,
+  updateUserProfile,
   type AdminUserListParams,
   type SuspendUserInput,
   type UserAudience,
@@ -175,5 +180,46 @@ export function useForceEmailVerify() {
   return useMutation({
     mutationFn: (id: string) => forceEmailVerify(id),
     onSuccess: () => void qc.invalidateQueries({ queryKey: adminUserKeys.all }),
+  });
+}
+
+function useSavedUser() {
+  const qc = useQueryClient();
+  return () => void qc.invalidateQueries({ queryKey: adminUserKeys.all });
+}
+
+export function useCreatePlayerUser() {
+  const saved = useSavedUser();
+  return useMutation({ mutationFn: createPlayerUser, onSuccess: saved });
+}
+
+export function useCreateAdminUser() {
+  const saved = useSavedUser();
+  return useMutation({ mutationFn: createAdminUser, onSuccess: saved });
+}
+
+export function useCreateOwnerUser() {
+  const saved = useSavedUser();
+  return useMutation({ mutationFn: createOwnerUser, onSuccess: saved });
+}
+
+export function useUpdateUserProfile() {
+  const saved = useSavedUser();
+  return useMutation({
+    mutationFn: ({ id, ...input }: Parameters<typeof updateUserProfile>[1] & { id: string }) =>
+      updateUserProfile(id, input),
+    onSuccess: saved,
+  });
+}
+
+export function useReplaceOwnerStaffRole(userId: string) {
+  const saved = useSavedUser();
+  return useMutation({
+    mutationFn: ({
+      staffId,
+      ...input
+    }: Parameters<typeof replaceOwnerStaffRole>[2] & { staffId: string }) =>
+      replaceOwnerStaffRole(userId, staffId, input),
+    onSuccess: saved,
   });
 }

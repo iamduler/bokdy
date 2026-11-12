@@ -18,6 +18,8 @@ type AdminUserRow struct {
 	Email           string
 	DisplayName     string
 	FullName        string
+	FirstName       string
+	LastName        string
 	Phone           string
 }
 

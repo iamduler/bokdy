@@ -1,19 +1,40 @@
 "use client";
 
 import type { ColumnDef } from "@tanstack/react-table";
+import { useUserDateTimePrefs } from "@bokdy/ui";
 import { useLocale, useTranslations } from "next-intl";
 import { useMemo } from "react";
 
 import { bookingFormatters } from "@/components/bookings/booking-format";
-import { Link } from "@/i18n/navigation";
-import type { AdminBooking } from "@/lib/api/admin-bookings";
+import { EntityRelationLink } from "@/components/entity/relation-link";
+import {
+  SoftStatusChip,
+  type SoftStatusToneKey,
+} from "@/components/entity/soft-status-chip";
+import type { AdminBooking, AdminBookingStatus } from "@/lib/api/admin-bookings";
+
+const BOOKING_STATUS_TONE: Record<AdminBookingStatus, SoftStatusToneKey> = {
+  pending: "amber",
+  confirmed: "sky",
+  checked_in: "emerald",
+  in_progress: "emerald",
+  completed: "muted",
+  canceled: "rose",
+};
+
+function namedRelation(name: string | null | undefined, href: string, empty: string) {
+  const label = name?.trim();
+  if (!label) return empty;
+  return <EntityRelationLink href={href}>{label}</EntityRelationLink>;
+}
 
 export function useAdminBookingColumns(showOrganization: boolean) {
   const t = useTranslations("adminBookings");
   const locale = useLocale();
+  const prefs = useUserDateTimePrefs();
 
   return useMemo<ColumnDef<AdminBooking, unknown>[]>(() => {
-    const format = bookingFormatters(locale);
+    const format = bookingFormatters(locale, prefs);
     const columns: ColumnDef<AdminBooking, unknown>[] = [
       {
         id: "booking_no",
@@ -21,12 +42,11 @@ export function useAdminBookingColumns(showOrganization: boolean) {
         header: t("columns.bookingNo"),
         enableSorting: false,
         cell: ({ row }) => (
-          <Link
+          <EntityRelationLink
             href={`/organizations/${row.original.organization_id}/bookings/${row.original.id}`}
-            className="font-medium text-foreground underline-offset-4 hover:underline"
           >
             {row.original.booking_no}
-          </Link>
+          </EntityRelationLink>
         ),
       },
       {
@@ -47,14 +67,24 @@ export function useAdminBookingColumns(showOrganization: boolean) {
         accessorKey: "court_name",
         header: t("columns.court"),
         enableSorting: false,
-        cell: ({ row }) => row.original.court_name ?? t("none"),
+        cell: ({ row }) =>
+          namedRelation(
+            row.original.court_name,
+            `/courts/${row.original.court_id}`,
+            t("none"),
+          ),
       },
       {
         id: "branch",
         accessorKey: "branch_name",
         header: t("columns.branch"),
         enableSorting: false,
-        cell: ({ row }) => row.original.branch_name ?? t("none"),
+        cell: ({ row }) =>
+          namedRelation(
+            row.original.branch_name,
+            `/branches/${row.original.branch_id}`,
+            t("none"),
+          ),
       },
     ];
     if (showOrganization) {
@@ -63,6 +93,12 @@ export function useAdminBookingColumns(showOrganization: boolean) {
         accessorKey: "organization_name",
         header: t("columns.organization"),
         enableSorting: false,
+        cell: ({ row }) =>
+          namedRelation(
+            row.original.organization_name,
+            `/organizations/${row.original.organization_id}`,
+            t("none"),
+          ),
       });
     }
     columns.push(
@@ -70,7 +106,12 @@ export function useAdminBookingColumns(showOrganization: boolean) {
         id: "status",
         accessorKey: "status",
         header: t("columns.status"),
-        cell: ({ row }) => t(`statusLabel.${row.original.status}`),
+        cell: ({ row }) => (
+          <SoftStatusChip
+            label={t(`statusLabel.${row.original.status}`)}
+            tone={BOOKING_STATUS_TONE[row.original.status]}
+          />
+        ),
       },
       {
         id: "total_amount",
@@ -80,5 +121,5 @@ export function useAdminBookingColumns(showOrganization: boolean) {
       },
     );
     return columns;
-  }, [locale, showOrganization, t]);
+  }, [locale, prefs, showOrganization, t]);
 }

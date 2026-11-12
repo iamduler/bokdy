@@ -17,10 +17,11 @@ export const adminOrganizationKeys = {
   detail: (id: string) => [...adminOrganizationKeys.all, "detail", id] as const,
 };
 
-export function useAdminOrganizations(params: AdminOrgListParams) {
+export function useAdminOrganizations(params: AdminOrgListParams, enabled = true) {
   return useQuery({
     queryKey: adminOrganizationKeys.list(params),
     queryFn: () => listOrganizations(params),
+    enabled,
   });
 }
 

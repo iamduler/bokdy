@@ -9,6 +9,7 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Lock, Mail } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 
@@ -21,12 +22,14 @@ import {
 import { Link, useRouter } from "@/i18n/navigation";
 import { useLogin } from "@/hooks/use-auth";
 import { ApiError, errorMessageKey } from "@/lib/api/errors";
+import { safeNextPath } from "@/lib/login-return";
 import { loginSchema, type LoginFormValues } from "@/lib/validation/auth";
 
 export function LoginForm() {
   const t = useTranslations("auth");
   const te = useTranslations("errors");
   const router = useRouter();
+  const searchParams = useSearchParams();
   const login = useLogin();
   const [error, setError] = useState<string | null>(null);
   const alertRef = useRef<HTMLDivElement>(null);
@@ -59,7 +62,7 @@ export function LoginForm() {
     setError(null);
     try {
       await login.mutateAsync(values);
-      router.push("/organizations");
+      router.push(safeNextPath(searchParams.get("next")) ?? "/organizations");
       router.refresh();
     } catch (err) {
       const apiErr =

@@ -3,6 +3,7 @@
 import { Clock } from "lucide-react";
 import * as React from "react";
 
+import { formatUserTime } from "../common/user-datetime";
 import { cn } from "../lib/utils";
 import { Button } from "./button";
 import { Popover, PopoverContent, PopoverTrigger } from "./popover";
@@ -133,7 +134,7 @@ export const TimePicker = React.forwardRef<HTMLButtonElement, TimePickerProps>(f
         >
           <Clock className="size-4 text-muted-foreground" />
           <span className={cn("truncate tabular-nums", parsed ? "text-foreground" : "text-muted-foreground")}>
-            {parsed ? `${parsed.hour}:${parsed.minute}` : placeholder}
+            {parsed ? formatUserTime(`${parsed.hour}:${parsed.minute}`) : placeholder}
           </span>
         </Button>
       </PopoverTrigger>

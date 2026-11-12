@@ -67,7 +67,7 @@ User detail no longer uses a mock fixture. MFA, spend, refunds, and transactions
 | [ ] | FE-ADMIN-USERS-ADM-DIR-01 | F-ADMIN-USERS-03 | Page shell + KPI | `/users/admins` | `GET …/admins`, stats | `listAdmins`, `getAdminStats` | mvp | partial | |
 | [ ] | FE-ADMIN-USERS-ADM-DIR-02 | F-ADMIN-USERS-03 | Search + status | `/users/admins` | `q`, `status` | `listAdmins` | mvp | partial | |
 | [ ] | FE-ADMIN-USERS-ADM-DIR-03 | n/a | Navigate to detail | `/users/admins/[id]` | n/a | n/a | mvp | partial | |
-| [ ] | FE-ADMIN-USERS-ADM-DIR-04 | F-ADMIN-USERS-25 | Invite admin CTA | `/users/admins` | TBD | TBD | post-mvp | blocked | Disabled MVP |
+| [x] | FE-ADMIN-USERS-ADM-DIR-04 | F-ADMIN-USERS-25 | Create admin | `/users/admins/new` | `POST …/admins` | `createAdminUser` | mvp | done | Password provisioning, not an invite token |
 
 ---
 

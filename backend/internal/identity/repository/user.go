@@ -23,6 +23,7 @@ type UserRepository interface {
 	UpdateStatus(ctx context.Context, tx pgx.Tx, id uuid.UUID, status entity.UserStatus) error
 	MarkEmailVerified(ctx context.Context, tx pgx.Tx, id uuid.UUID, at time.Time) error
 	ClearPhoneVerified(ctx context.Context, tx pgx.Tx, id uuid.UUID) error
+	ClearEmailVerified(ctx context.Context, tx pgx.Tx, id uuid.UUID) error
 	TouchLastLogin(ctx context.Context, tx pgx.Tx, id uuid.UUID, at time.Time) error
 	GetProfile(ctx context.Context, userID uuid.UUID) (*entity.UserProfile, error)
 	UpdateProfile(ctx context.Context, tx pgx.Tx, profile *entity.UserProfile) error

@@ -71,7 +71,7 @@ func (r *SessionRepo) ListByUser(ctx context.Context, userID uuid.UUID) ([]entit
 			UserID:         row.UserID,
 			DeviceID:       row.DeviceID,
 			Status:         entity.SessionStatus(row.Status),
-			IPAddress:      row.IpAddress,
+			IPAddress:      optionalString(row.IpAddress),
 			UserAgent:      row.UserAgent,
 			LastActivityAt: row.LastActivityAt,
 			ExpiresAt:      row.ExpiresAt,
@@ -120,4 +120,11 @@ func (r *SessionRepo) RecordLogin(ctx context.Context, tx pgx.Tx, userID uuid.UU
 	return r.q.WithTx(tx).RecordLoginHistory(ctx, dbsqlc.RecordLoginHistoryParams{
 		ID: id.MustNewUUID(), UserID: userID, SessionID: sessionID, IsSuccess: success, IpAddress: ip, UserAgent: ua,
 	})
+}
+
+func optionalString(value string) *string {
+	if value == "" {
+		return nil
+	}
+	return &value
 }

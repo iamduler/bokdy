@@ -10,25 +10,45 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   Button,
+  formatUserDateTime,
+  formatUserTime,
   Sheet,
   SheetContent,
   SheetDescription,
   SheetHeader,
   SheetTitle,
   toast,
+  useUserDateTimePrefs,
+  type UserDateTimePrefs,
 } from "@bokdy/ui";
-import { BadgeCheck, CalendarDays, Clock, Copy, Pencil, Search } from "lucide-react";
+import {
+  BadgeCheck,
+  CalendarDays,
+  Clock,
+  Copy,
+  Pencil,
+  Search,
+} from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { PricingQuotePreview } from "@/components/branches/detail/pricing-quote-preview";
 import { sportLabel } from "@/components/branches/branch-sports-chips";
-import { softDirectoryPrimaryBtn, softDirectorySecondaryBtn } from "@/components/data-list";
+import {
+  softDirectoryPrimaryBtn,
+  softDirectorySecondaryBtn,
+} from "@/components/data-list";
 import { EntityDetailPanel } from "@/components/entity/detail-panel";
 import { SoftStatusChip } from "@/components/entity/soft-status-chip";
 import { usePricingProfileDetail } from "@/components/pricing-profiles/pricing-profile-context";
-import { PRICING_STATUS_TONE, pricingStatusKey } from "@/components/pricing-profiles/pricing-status";
-import { useActivateBranchPricing, useDuplicateBranchPricing } from "@/hooks/use-pricing";
+import {
+  PRICING_STATUS_TONE,
+  pricingStatusKey,
+} from "@/components/pricing-profiles/pricing-status";
+import {
+  useActivateBranchPricing,
+  useDuplicateBranchPricing,
+} from "@/hooks/use-pricing";
 import { useBranch } from "@/hooks/use-branches";
 import { useSports } from "@/hooks/use-sports";
 import { Link, useRouter } from "@/i18n/navigation";
@@ -38,17 +58,19 @@ import type { BranchPricingProfile } from "@/lib/api/pricing";
 const WEEKDAYS = [1, 2, 3, 4, 5, 6, 0] as const;
 
 function formatAmount(locale: string, amount: number) {
-  return new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(amount);
+  return new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(
+    amount,
+  );
 }
 
-function updatedStamp(locale: string, iso: string) {
+function updatedStamp(iso: string, prefs: UserDateTimePrefs) {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime()) || date.getUTCFullYear() < 2000) return "";
-  return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(date);
+  return formatUserDateTime(iso, prefs);
 }
 
 function clock(value: string) {
-  return value.slice(0, 5);
+  return formatUserTime(value);
 }
 
 export function PricingProfileDetailView() {
@@ -56,6 +78,7 @@ export function PricingProfileDetailView() {
   const tw = useTranslations("organization.branchDetail.weekdaysShort");
   const te = useTranslations("errors");
   const locale = useLocale();
+  const prefs = useUserDateTimePrefs();
   const router = useRouter();
   const { profile, organizationId, branchId } = usePricingProfileDetail();
   const { data: sports = [] } = useSports();
@@ -79,7 +102,9 @@ export function PricingProfileDetailView() {
     ? t("unlimited")
     : durationList.length === 0
       ? t("emptyValue")
-      : durationList.map((minutes) => t("minutes", { count: minutes })).join(", ");
+      : durationList
+          .map((minutes) => t("minutes", { count: minutes }))
+          .join(", ");
   const durationCaption =
     profile.unlimited_duration || durationList.length === 0
       ? undefined
@@ -89,8 +114,11 @@ export function PricingProfileDetailView() {
   const editHref = `/pricing-profiles/${profile.id}/edit`;
   const groups = profile.day_groups ?? [];
   const holidayWindows = profile.holiday_windows ?? [];
-  const windowCount = groups.reduce((sum, group) => sum + (group.windows ?? []).length, 0);
-  const updated = updatedStamp(locale, profile.updated_at);
+  const windowCount = groups.reduce(
+    (sum, group) => sum + (group.windows ?? []).length,
+    0,
+  );
+  const updated = updatedStamp(profile.updated_at, prefs);
   const branchName = branch.data?.name || t("emptyValue");
   const audience = t(`audience.${profile.customer_type}`);
 
@@ -124,7 +152,9 @@ export function PricingProfileDetailView() {
       });
       toast.success(t("activated"));
     } catch (err) {
-      toast.error(err instanceof ApiError ? te(errorMessageKey(err)) : t("loadError"));
+      toast.error(
+        err instanceof ApiError ? te(errorMessageKey(err)) : t("loadError"),
+      );
     }
   }
 
@@ -134,7 +164,9 @@ export function PricingProfileDetailView() {
       toast.success(t("duplicated"));
       router.push(`/pricing-profiles/${copy.id}`);
     } catch (err) {
-      toast.error(err instanceof ApiError ? te(errorMessageKey(err)) : t("loadError"));
+      toast.error(
+        err instanceof ApiError ? te(errorMessageKey(err)) : t("loadError"),
+      );
     }
   }
 
@@ -143,11 +175,18 @@ export function PricingProfileDetailView() {
       <header className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="truncate text-xl font-semibold text-foreground">{profile.name}</h1>
-            <SoftStatusChip label={statusLabel} tone={PRICING_STATUS_TONE[status]} />
+            <h1 className="truncate text-xl font-semibold text-foreground">
+              {profile.name}
+            </h1>
+            <SoftStatusChip
+              label={statusLabel}
+              tone={PRICING_STATUS_TONE[status]}
+            />
           </div>
           <p className="text-sm text-muted-foreground">
-            {updated ? t("updatedLine", { code: profile.code, updated }) : profile.code}
+            {updated
+              ? t("updatedLine", { code: profile.code, updated })
+              : profile.code}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -200,13 +239,23 @@ export function PricingProfileDetailView() {
       </header>
 
       <div className="grid gap-3 sm:grid-cols-3">
-        <StatCard label={t("customerType")} value={audience} caption={t("audienceCaption")} />
+        <StatCard
+          label={t("customerType")}
+          value={audience}
+          caption={t("audienceCaption")}
+        />
         <StatCard
           label={t("basePrice")}
           value={price}
-          caption={t("perSlot", { duration: t("minutes", { count: profile.slot_unit_minutes }) })}
+          caption={t("perSlot", {
+            duration: t("minutes", { count: profile.slot_unit_minutes }),
+          })}
         />
-        <StatCard label={t("durationTitle")} value={durations} caption={durationCaption} />
+        <StatCard
+          label={t("durationTitle")}
+          value={durations}
+          caption={durationCaption}
+        />
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_18rem]">
@@ -218,21 +267,30 @@ export function PricingProfileDetailView() {
             tone="sky"
             actions={
               groups.length > 0 || windowCount > 0 ? (
-                <CountBadge label={t("scheduleCount", { groups: groups.length, windows: windowCount })} />
+                <CountBadge
+                  label={t("scheduleCount", {
+                    groups: groups.length,
+                    windows: windowCount,
+                  })}
+                />
               ) : undefined
             }
           >
             {groups.length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 {t("scheduleEmpty")}{" "}
-                <Link href={editHref} className="font-medium text-sky-700 hover:underline">
+                <Link href={editHref} className="font-medium text-sky-700">
                   {t("editDetail")}
                 </Link>
               </p>
             ) : (
               <div className="space-y-4">
                 {groups.map((group) => (
-                  <DayGroup key={group.id ?? group.name} group={group} locale={locale} />
+                  <DayGroup
+                    key={group.id ?? group.name}
+                    group={group}
+                    locale={locale}
+                  />
                 ))}
               </div>
             )}
@@ -245,14 +303,16 @@ export function PricingProfileDetailView() {
             tone="sky"
             actions={
               holidayWindows.length > 0 ? (
-                <CountBadge label={t("holidayCount", { count: holidayWindows.length })} />
+                <CountBadge
+                  label={t("holidayCount", { count: holidayWindows.length })}
+                />
               ) : undefined
             }
           >
             {holidayWindows.length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 {t("holidayEmpty")}{" "}
-                <Link href={editHref} className="font-medium text-sky-700 hover:underline">
+                <Link href={editHref} className="font-medium text-sky-700">
                   {t("editDetail")}
                 </Link>
               </p>
@@ -264,21 +324,32 @@ export function PricingProfileDetailView() {
                     starts={window.starts_at}
                     ends={window.ends_at}
                     name={window.name}
-                    amount={window.amount === 0 ? t("freePrice") : `${formatAmount(locale, window.amount)} ${t("currencySuffix")}`}
+                    amount={
+                      window.amount === 0
+                        ? t("freePrice")
+                        : `${formatAmount(locale, window.amount)} ${t("currencySuffix")}`
+                    }
                   />
                 ))}
               </div>
             )}
           </EntityDetailPanel>
-
         </div>
 
-        <EntityDetailPanel title={t("applyTitle")} hint={t("applyLead")} icon={<BadgeCheck className="size-4" aria-hidden />} tone="sky">
+        <EntityDetailPanel
+          title={t("applyTitle")}
+          hint={t("applyLead")}
+          icon={<BadgeCheck className="size-4" aria-hidden />}
+          tone="sky"
+        >
           <dl className="space-y-2 text-sm">
             <Fact label={t("branch")} value={branchName} />
             <Fact label={t("sport")} value={sportName} />
             <Fact label={t("customerType")} value={audience} />
-            <Fact label={t("slotUnit")} value={t("minutes", { count: profile.slot_unit_minutes })} />
+            <Fact
+              label={t("slotUnit")}
+              value={t("minutes", { count: profile.slot_unit_minutes })}
+            />
           </dl>
           <p className="mt-4 rounded-xl bg-muted px-3 py-2 text-xs text-muted-foreground">
             {profile.published
@@ -288,11 +359,18 @@ export function PricingProfileDetailView() {
         </EntityDetailPanel>
       </div>
 
-      <AlertDialog open={confirming} onOpenChange={(next) => { if (!next) setConfirming(false); }}>
+      <AlertDialog
+        open={confirming}
+        onOpenChange={(next) => {
+          if (!next) setConfirming(false);
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{t("activateTitle")}</AlertDialogTitle>
-            <AlertDialogDescription>{t("activateConfirm")}</AlertDialogDescription>
+            <AlertDialogDescription>
+              {t("activateConfirm")}
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
@@ -310,10 +388,15 @@ export function PricingProfileDetailView() {
       </AlertDialog>
 
       <Sheet open={testerOpen} onOpenChange={setTesterOpen}>
-        <SheetContent side="right" className="flex h-full w-full flex-col gap-0 overflow-y-auto p-0 sm:max-w-xl">
+        <SheetContent
+          side="right"
+          className="flex h-full w-full flex-col gap-0 overflow-y-auto p-0 sm:max-w-xl"
+        >
           <SheetHeader className="space-y-0 border-b border-border px-4 py-3 pr-12">
             <SheetTitle className="text-base">{t("testPrice")}</SheetTitle>
-            <SheetDescription className="sr-only">{t("testPrice")}</SheetDescription>
+            <SheetDescription className="sr-only">
+              {t("testPrice")}
+            </SheetDescription>
           </SheetHeader>
           <div className="p-4">
             {testerOpen ? (
@@ -353,7 +436,13 @@ function DayGroup({
           {group.name?.trim() ? (
             <p className="text-sm font-medium text-foreground">{group.name}</p>
           ) : null}
-          <div className={group.name?.trim() ? "mt-1 flex flex-wrap gap-1" : "flex flex-wrap gap-1"}>
+          <div
+            className={
+              group.name?.trim()
+                ? "mt-1 flex flex-wrap gap-1"
+                : "flex flex-wrap gap-1"
+            }
+          >
             {days.map((day) => (
               <span
                 key={day}
@@ -364,7 +453,9 @@ function DayGroup({
             ))}
           </div>
         </div>
-        <span className="text-xs text-muted-foreground">{t("windowsPerWeek", { count: windows.length })}</span>
+        <span className="text-xs text-muted-foreground">
+          {t("windowsPerWeek", { count: windows.length })}
+        </span>
       </div>
       <div>
         {windows.map((window) => (
@@ -373,7 +464,11 @@ function DayGroup({
             starts={window.starts_at}
             ends={window.ends_at}
             name={window.name}
-            amount={window.amount === 0 ? t("freePrice") : `${formatAmount(locale, window.amount)} ${t("currencySuffix")}`}
+            amount={
+              window.amount === 0
+                ? t("freePrice")
+                : `${formatAmount(locale, window.amount)} ${t("currencySuffix")}`
+            }
           />
         ))}
       </div>
@@ -398,24 +493,42 @@ function WindowRow({
       <span className="tabular-nums text-muted-foreground">
         {clock(starts)}–{clock(ends)}
       </span>
-      {label ? <span className="truncate text-foreground">{label}</span> : <span />}
+      {label ? (
+        <span className="truncate text-foreground">{label}</span>
+      ) : (
+        <span />
+      )}
       <span className="font-medium tabular-nums text-foreground">{amount}</span>
     </div>
   );
 }
 
-function StatCard({ label, value, caption }: { label: string; value: string; caption?: string }) {
+function StatCard({
+  label,
+  value,
+  caption,
+}: {
+  label: string;
+  value: string;
+  caption?: string;
+}) {
   return (
     <div className="soft-elevated rounded-2xl p-4">
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className="mt-1 text-lg font-semibold text-foreground">{value}</p>
-      {caption ? <p className="text-xs text-muted-foreground">{caption}</p> : null}
+      {caption ? (
+        <p className="text-xs text-muted-foreground">{caption}</p>
+      ) : null}
     </div>
   );
 }
 
 function CountBadge({ label }: { label: string }) {
-  return <span className="rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground">{label}</span>;
+  return (
+    <span className="rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground">
+      {label}
+    </span>
+  );
 }
 
 function Fact({ label, value }: { label: string; value: string }) {

@@ -201,6 +201,22 @@ func (q *Queries) MarkVerificationVerified(ctx context.Context, id uuid.UUID) er
 	return err
 }
 
+const updatePrimaryIdentityEmail = `-- name: UpdatePrimaryIdentityEmail :exec
+UPDATE identity.identities
+SET email = $2, provider_subject = $2, updated_at = now()
+WHERE user_id = $1 AND is_primary = true AND provider = 'local'
+`
+
+type UpdatePrimaryIdentityEmailParams struct {
+	UserID uuid.UUID `json:"user_id"`
+	Email  *string   `json:"email"`
+}
+
+func (q *Queries) UpdatePrimaryIdentityEmail(ctx context.Context, arg UpdatePrimaryIdentityEmailParams) error {
+	_, err := q.db.Exec(ctx, updatePrimaryIdentityEmail, arg.UserID, arg.Email)
+	return err
+}
+
 const updatePrimaryIdentityPhone = `-- name: UpdatePrimaryIdentityPhone :exec
 UPDATE identity.identities SET phone = $2, updated_at = now()
 WHERE user_id = $1 AND is_primary = true

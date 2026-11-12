@@ -16,6 +16,7 @@ import { useMe } from "@/hooks/use-me";
 import { useRouter } from "@/i18n/navigation";
 import { ADMIN_SIDEBAR_COLLAPSE_KEY } from "@/lib/admin-nav";
 import { ApiError } from "@/lib/api/errors";
+import { loginHref } from "@/lib/login-return";
 
 function writeCollapsed(value: boolean) {
   try {
@@ -60,7 +61,8 @@ export function AdminShell({ children }: { children: ReactNode }) {
       .mutateAsync()
       .catch(() => undefined)
       .finally(() => {
-        router.push("/login");
+        const here = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+        router.push(loginHref(here));
         router.refresh();
       });
   }, [data, isError, error, logout, router]);

@@ -4,6 +4,8 @@ import { CalendarIcon } from "lucide-react";
 import * as React from "react";
 import { enUS, vi } from "react-day-picker/locale";
 
+import { formatUserDate } from "../common/user-datetime";
+import { useUserDateTimePrefs } from "../common/user-datetime-context";
 import { cn } from "../lib/utils";
 import { Button } from "./button";
 import { Calendar } from "./calendar";
@@ -15,7 +17,7 @@ export type DatePickerProps = {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
-  /** BCP 47 language, used for the calendar and the button label. */
+  /** BCP 47 language, used for the calendar month names. The button label uses the user date format. */
   locale?: string;
   disabled?: boolean;
   "aria-label"?: string;
@@ -58,9 +60,8 @@ export const DatePicker = React.forwardRef<HTMLButtonElement, DatePickerProps>(f
   const [open, setOpen] = React.useState(false);
   const [container, setContainer] = React.useState<HTMLElement | null>(null);
   const selected = parseISODate(value);
-  const label = selected
-    ? new Intl.DateTimeFormat(locale, { day: "2-digit", month: "2-digit", year: "numeric" }).format(selected)
-    : "";
+  const prefs = useUserDateTimePrefs();
+  const label = selected ? formatUserDate(value, prefs) : "";
 
   React.useImperativeHandle(ref, () => triggerRef.current as HTMLButtonElement);
 

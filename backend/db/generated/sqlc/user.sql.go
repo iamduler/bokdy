@@ -12,6 +12,15 @@ import (
 	"github.com/google/uuid"
 )
 
+const clearUserEmailVerified = `-- name: ClearUserEmailVerified :exec
+UPDATE identity.users SET email_verified_at = NULL, updated_at = now() WHERE id = $1
+`
+
+func (q *Queries) ClearUserEmailVerified(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.Exec(ctx, clearUserEmailVerified, id)
+	return err
+}
+
 const clearUserPhoneVerified = `-- name: ClearUserPhoneVerified :exec
 UPDATE identity.users SET phone_verified_at = NULL, updated_at = now() WHERE id = $1
 `

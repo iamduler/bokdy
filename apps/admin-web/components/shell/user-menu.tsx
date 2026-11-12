@@ -34,6 +34,7 @@ import { useLocales } from "@/hooks/use-locales";
 import { useUpdateMe } from "@/hooks/use-update-me";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
+import { loginHref } from "@/lib/login-return";
 
 type MenuView = "root" | "locale" | "theme";
 
@@ -127,7 +128,8 @@ export function UserMenu({
 
   async function onLogout() {
     await logout.mutateAsync().catch(() => undefined);
-    router.push("/login");
+    const here = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    router.push(loginHref(here));
     router.refresh();
   }
 

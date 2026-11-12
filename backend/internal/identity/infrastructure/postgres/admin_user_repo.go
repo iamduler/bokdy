@@ -239,7 +239,7 @@ func (r *AdminUserRepo) ListActivity(ctx context.Context, userID uuid.UUID, limi
 			eventType = "login_failed"
 		}
 		out = append(out, repository.AdminUserActivityRow{
-			ID: row.ID, EventType: eventType, IPAddress: row.IpAddress,
+			ID: row.ID, EventType: eventType, IPAddress: optionalString(row.IpAddress),
 			UserAgent: row.UserAgent, CreatedAt: row.CreatedAt.UTC().Format(time.RFC3339),
 		})
 	}

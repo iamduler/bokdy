@@ -81,7 +81,8 @@ function clockValue(value: string) {
 
 function firstMessage(node: unknown): string | undefined {
   if (!node || typeof node !== "object") return undefined;
-  if ("message" in node && typeof node.message === "string" && node.message) return node.message;
+  if ("message" in node && typeof node.message === "string" && node.message)
+    return node.message;
   for (const value of Object.values(node)) {
     const found = firstMessage(value);
     if (found) return found;
@@ -407,443 +408,457 @@ export function BranchPricingForm({
 
   return (
     <FormProvider {...form}>
-    <form
-      className="space-y-5"
-      noValidate
-      onSubmit={form.handleSubmit(
-        (values) => submit(values, creating ? "create" : "save"),
-        (errors) => {
-          const message = firstMessage(errors);
-          if (message) toast.error(message);
-        },
-      )}
-    >
-      {shellBack}
-      <header className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div className="min-w-0 space-y-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl font-semibold tracking-tight">
-              {creating ? t("formCreateTitle") : profile.name}
-            </h1>
-            {creating ? (
-              <SoftStatusChip
-                label={activateOnCreate ? t("willActivate") : t("draft")}
-                tone={activateOnCreate ? "emerald" : "amber"}
-              />
-            ) : statusKey ? (
-              <SoftStatusChip
-                label={
-                  statusKey === "activeBadge" ? t("activeLive") : t(statusKey)
-                }
-                tone={PRICING_STATUS_TONE[statusKey]}
-              />
-            ) : null}
+      <form
+        className="space-y-5"
+        noValidate
+        onSubmit={form.handleSubmit(
+          (values) => submit(values, creating ? "create" : "save"),
+          (errors) => {
+            const message = firstMessage(errors);
+            if (message) toast.error(message);
+          },
+        )}
+      >
+        {shellBack}
+        <header className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0 space-y-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-2xl font-semibold tracking-tight">
+                {creating ? t("formCreateTitle") : profile.name}
+              </h1>
+              {creating ? (
+                <SoftStatusChip
+                  label={activateOnCreate ? t("willActivate") : t("draft")}
+                  tone={activateOnCreate ? "emerald" : "amber"}
+                />
+              ) : statusKey ? (
+                <SoftStatusChip
+                  label={
+                    statusKey === "activeBadge" ? t("activeLive") : t(statusKey)
+                  }
+                  tone={PRICING_STATUS_TONE[statusKey]}
+                />
+              ) : null}
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {creating
+                ? t("formCreateLead", { branch: branchName })
+                : t("contextLine", { branch: branchName, sport: sportName })}
+            </p>
           </div>
-          <p className="text-sm text-muted-foreground">
-            {creating
-              ? t("formCreateLead", { branch: branchName })
-              : t("contextLine", { branch: branchName, sport: sportName })}
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {creating ? (
+          <div className="flex flex-wrap items-center gap-2">
+            {creating ? (
+              <Button
+                type="button"
+                className={softDirectorySecondaryBtn}
+                disabled={pending}
+                onClick={() =>
+                  void form.handleSubmit(
+                    (values) => submit(values, "create", { draft: true }),
+                    (errors) => {
+                      const message = firstMessage(errors);
+                      if (message) toast.error(message);
+                    },
+                  )()
+                }
+              >
+                {t("saveDraft")}
+              </Button>
+            ) : null}
             <Button
               type="button"
               className={softDirectorySecondaryBtn}
-              disabled={pending}
-              onClick={() =>
-                void form.handleSubmit(
-                  (values) => submit(values, "create", { draft: true }),
-                  (errors) => {
-                    const message = firstMessage(errors);
-                    if (message) toast.error(message);
-                  },
-                )()
-              }
+              onClick={() => {
+                const { lists, pairs } = reviewSchedule(form.getValues());
+                if (pairs.length > 0 || lists.some(blocksPublish))
+                  toast.error(t("scheduleInvalid"));
+                else toast.success(t("scheduleValid"));
+              }}
             >
-              {t("saveDraft")}
+              {t("checkOverlap")}
             </Button>
-          ) : null}
-          <Button
-            type="button"
-            className={softDirectorySecondaryBtn}
-            onClick={() => {
-              const { lists, pairs } = reviewSchedule(form.getValues());
-              if (pairs.length > 0 || lists.some(blocksPublish))
-                toast.error(t("scheduleInvalid"));
-              else toast.success(t("scheduleValid"));
-            }}
-          >
-            {t("checkOverlap")}
-          </Button>
-          <Button
-            type="submit"
-            className={
-              creating
-                ? softDirectoryPrimaryBtn
-                : softDirectorySecondaryBtn
-            }
-            disabled={pending}
-          >
-            {creating ? t("createList") : t("save")}
-          </Button>
-          {!creating && !profile.published ? (
             <Button
-              type="button"
-              className={softDirectoryPrimaryBtn}
+              type="submit"
+              className={
+                creating ? softDirectoryPrimaryBtn : softDirectorySecondaryBtn
+              }
               disabled={pending}
-              onClick={() => setConfirming(true)}
             >
-              {t("activate")}
+              {creating ? t("createList") : t("save")}
             </Button>
-          ) : null}
-        </div>
-      </header>
-
-      <FormSection index={1} title={t("sectionBasic")}>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-1.5">
-              <FieldLabel htmlFor={`${formId}-name`} required>
-                {t("name")}
-              </FieldLabel>
-              <InfoHint text={t("nameHint")} />
-            </div>
-            <Input id={`${formId}-name`} {...form.register("name")} />
-            <FieldError>{form.formState.errors.name?.message}</FieldError>
+            {!creating && !profile.published ? (
+              <Button
+                type="button"
+                className={softDirectoryPrimaryBtn}
+                disabled={pending}
+                onClick={() => setConfirming(true)}
+              >
+                {t("activate")}
+              </Button>
+            ) : null}
           </div>
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-1.5">
-              <FieldLabel htmlFor={`${formId}-sport`} required>
-                {t("sport")}
-              </FieldLabel>
-              <InfoHint text={t("sportHint")} />
+        </header>
+
+        <FormSection index={1} title={t("sectionBasic")}>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-1.5">
+                <FieldLabel htmlFor={`${formId}-name`} required>
+                  {t("name")}
+                </FieldLabel>
+                <InfoHint text={t("nameHint")} />
+              </div>
+              <Input id={`${formId}-name`} {...form.register("name")} />
+              <FieldError>{form.formState.errors.name?.message}</FieldError>
             </div>
-            {creating ? (
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-1.5">
+                <FieldLabel htmlFor={`${formId}-sport`} required>
+                  {t("sport")}
+                </FieldLabel>
+                <InfoHint text={t("sportHint")} />
+              </div>
+              {creating ? (
+                <PopoverCommandSelect
+                  value={watchedSportId}
+                  onValueChange={(value) =>
+                    form.setValue("sport_id", value, {
+                      shouldValidate: form.formState.isSubmitted,
+                      shouldDirty: true,
+                    })
+                  }
+                  options={sportOptions.map((option) => ({
+                    value: option.id,
+                    label: option.label,
+                    keywords: option.label,
+                  }))}
+                  placeholder={t("sportPlaceholder")}
+                  aria-label={t("sport")}
+                  searchable={false}
+                  className="w-full border border-input bg-background"
+                />
+              ) : (
+                <p className="flex h-9 items-center rounded-md border border-input bg-background px-3 text-sm">
+                  {sportName}
+                </p>
+              )}
+              <FieldError>{form.formState.errors.sport_id?.message}</FieldError>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center gap-1.5">
+              <FieldLabel required>{t("audienceApply")}</FieldLabel>
+              <InfoHint text={t("audienceRule")} />
+            </div>
+            <Controller
+              control={form.control}
+              name="customer_type"
+              render={({ field }) => (
+                <ToggleGroup
+                  type="single"
+                  value={field.value}
+                  onValueChange={(next) => {
+                    if (creating && next) field.onChange(next);
+                  }}
+                  className="grid gap-2 sm:grid-cols-3"
+                >
+                  {CUSTOMER_TYPES.map((type) => {
+                    const selected = field.value === type;
+                    const locked = !creating && !selected;
+                    return (
+                      <ToggleGroupItem
+                        key={type}
+                        value={type}
+                        disabled={locked}
+                        className="h-auto items-start justify-start rounded-xl border p-3 text-left data-[state=off]:border-border data-[state=off]:bg-card data-[state=on]:border-primary data-[state=on]:bg-primary/10 data-[state=on]:text-primary"
+                      >
+                        <span className="flex w-full items-center justify-between gap-2 text-sm font-medium">
+                          {t(`audience.${type}`)}
+                          {selected ? (
+                            <Check
+                              className="size-4 text-primary"
+                              aria-hidden
+                            />
+                          ) : null}
+                        </span>
+                        <span className="mt-1 block text-xs text-muted-foreground">
+                          {t(`audienceDesc.${type}`)}
+                        </span>
+                      </ToggleGroupItem>
+                    );
+                  })}
+                </ToggleGroup>
+              )}
+            />
+          </div>
+
+          {creating ? (
+            <div className="space-y-2 rounded-xl border border-border/70 p-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-sm font-medium">
+                      {t("activateAfterCreate")}
+                    </p>
+                    <InfoHint
+                      text={t("activateAfterCreateLead", {
+                        sport: sportName || t("sport"),
+                        branch: branchName,
+                        audience: audienceLabel,
+                      })}
+                    />
+                  </div>
+                </div>
+                <Switch
+                  checked={activateOnCreate}
+                  onCheckedChange={setActivateOnCreate}
+                  aria-label={t("activateAfterCreate")}
+                  className="data-[state=checked]:bg-sky-600"
+                />
+              </div>
+              {activateOnCreate ? (
+                <p className="text-xs text-amber-700 dark:text-amber-300">
+                  {t("activateReplaces", { audience: audienceLabel })}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+        </FormSection>
+
+        <FormSection index={2} title={t("sectionDuration")}>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-1.5">
+                <FieldLabel required>{t("slotUnit")}</FieldLabel>
+                <InfoHint
+                  text={t("slotHint", { count: Number(slotUnit) || 60 })}
+                />
+              </div>
               <PopoverCommandSelect
-                value={watchedSportId}
+                value={String(Number(slotUnit) || 60)}
                 onValueChange={(value) =>
-                  form.setValue("sport_id", value, {
+                  form.setValue("slot_unit_minutes", Number(value), {
                     shouldValidate: form.formState.isSubmitted,
                     shouldDirty: true,
                   })
                 }
-                options={sportOptions.map((option) => ({
-                  value: option.id,
-                  label: option.label,
-                  keywords: option.label,
+                options={SLOT_UNITS.map((minutes) => ({
+                  value: String(minutes),
+                  label: t("minutes", { count: minutes }),
+                  keywords: String(minutes),
                 }))}
-                placeholder={t("sportPlaceholder")}
-                aria-label={t("sport")}
+                aria-label={t("slotUnit")}
                 searchable={false}
                 className="w-full border border-input bg-background"
               />
-            ) : (
-              <p className="flex h-9 items-center rounded-md border border-input bg-background px-3 text-sm">
-                {sportName}
-              </p>
-            )}
-            <FieldError>{form.formState.errors.sport_id?.message}</FieldError>
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <div className="flex items-center gap-1.5">
-            <FieldLabel required>{t("audienceApply")}</FieldLabel>
-            <InfoHint text={t("audienceRule")} />
-          </div>
-          <Controller
-            control={form.control}
-            name="customer_type"
-            render={({ field }) => (
-              <ToggleGroup
-                type="single"
-                value={field.value}
-                onValueChange={(next) => {
-                  if (creating && next) field.onChange(next);
-                }}
-                className="grid gap-2 sm:grid-cols-3"
-              >
-                {CUSTOMER_TYPES.map((type) => {
-                  const selected = field.value === type;
-                  const locked = !creating && !selected;
-                  return (
-                    <ToggleGroupItem
-                      key={type}
-                      value={type}
-                      disabled={locked}
-                      className="h-auto items-start justify-start rounded-xl border p-3 text-left data-[state=off]:border-border data-[state=off]:bg-card data-[state=on]:border-primary data-[state=on]:bg-primary/10 data-[state=on]:text-primary"
-                    >
-                      <span className="flex w-full items-center justify-between gap-2 text-sm font-medium">
-                        {t(`audience.${type}`)}
-                        {selected ? <Check className="size-4 text-primary" aria-hidden /> : null}
-                      </span>
-                      <span className="mt-1 block text-xs text-muted-foreground">
-                        {t(`audienceDesc.${type}`)}
-                      </span>
-                    </ToggleGroupItem>
-                  );
-                })}
-              </ToggleGroup>
-            )}
-          />
-        </div>
-
-        {creating ? (
-          <div className="space-y-2 rounded-xl border border-border/70 p-3">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <p className="text-sm font-medium">
-                    {t("activateAfterCreate")}
-                  </p>
-                  <InfoHint
-                    text={t("activateAfterCreateLead", {
-                      sport: sportName || t("sport"),
-                      branch: branchName,
-                      audience: audienceLabel,
-                    })}
-                  />
-                </div>
+              <FieldError>
+                {form.formState.errors.slot_unit_minutes?.message}
+              </FieldError>
+            </div>
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-1.5">
+                <FieldLabel htmlFor={`${formId}-base`} required>
+                  {t("baseSlotTitle")}
+                </FieldLabel>
+                <InfoHint text={t("baseSlotLead")} />
               </div>
-              <Switch
-                checked={activateOnCreate}
-                onCheckedChange={setActivateOnCreate}
-                aria-label={t("activateAfterCreate")}
-                className="data-[state=checked]:bg-sky-600"
+              <div className="flex items-center gap-2">
+                <Controller
+                  control={form.control}
+                  name="base_amount"
+                  render={({ field }) => (
+                    <CurrencyAmountInput
+                      id={`${formId}-base`}
+                      value={Number(field.value)}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      ref={field.ref}
+                    />
+                  )}
+                />
+                <span className="text-sm text-muted-foreground">
+                  {t("currencySuffix")}
+                </span>
+              </div>
+              <FieldError>
+                {form.formState.errors.base_amount?.message}
+              </FieldError>
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-1.5">
+              <FieldLabel required={!watchedUnlimited}>
+                {t("durations")}
+              </FieldLabel>
+              <InfoHint
+                text={
+                  watchedUnlimited
+                    ? t("durationUnlimitedLead")
+                    : t("durationChipLead")
+                }
               />
             </div>
-            {activateOnCreate ? (
-              <p className="text-xs text-amber-700 dark:text-amber-300">
-                {t("activateReplaces", { audience: audienceLabel })}
-              </p>
-            ) : null}
-          </div>
-        ) : null}
-      </FormSection>
-
-      <FormSection index={2} title={t("sectionDuration")}>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-1.5">
-              <FieldLabel required>{t("slotUnit")}</FieldLabel>
-              <InfoHint text={t("slotHint", { count: Number(slotUnit) || 60 })} />
+            <div className="flex flex-wrap gap-2">
+              <ToggleGroup
+                type="multiple"
+                value={watchedDurations.map(String)}
+                disabled={watchedUnlimited}
+                onValueChange={(next) =>
+                  form.setValue(
+                    "durations",
+                    next.map(Number).sort((a, b) => a - b),
+                    { shouldValidate: form.formState.isSubmitted },
+                  )
+                }
+                className={cn("gap-2", watchedUnlimited && "opacity-50")}
+              >
+                {choices.map((minutes) => (
+                  <ToggleGroupItem
+                    key={minutes}
+                    value={String(minutes)}
+                    className="h-auto rounded-full border px-3 py-1 text-sm data-[state=off]:border-border data-[state=off]:text-foreground data-[state=on]:border-sky-600 data-[state=on]:bg-sky-600 data-[state=on]:text-white"
+                  >
+                    {t("minutes", { count: minutes })}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+              <Toggle
+                pressed={watchedUnlimited}
+                onPressedChange={(pressed) =>
+                  form.setValue("unlimited_duration", pressed, {
+                    shouldValidate: form.formState.isSubmitted,
+                  })
+                }
+                className="h-auto rounded-full border px-3 py-1 text-sm data-[state=off]:border-border data-[state=on]:border-sky-600 data-[state=on]:bg-sky-600 data-[state=on]:text-white"
+              >
+                {t("unlimited")}
+              </Toggle>
             </div>
-            <PopoverCommandSelect
-              value={String(Number(slotUnit) || 60)}
-              onValueChange={(value) =>
-                form.setValue("slot_unit_minutes", Number(value), {
-                  shouldValidate: form.formState.isSubmitted,
-                  shouldDirty: true,
-                })
-              }
-              options={SLOT_UNITS.map((minutes) => ({
-                value: String(minutes),
-                label: t("minutes", { count: minutes }),
-                keywords: String(minutes),
-              }))}
-              aria-label={t("slotUnit")}
-              searchable={false}
-              className="w-full border border-input bg-background"
-            />
-            <FieldError>
-              {form.formState.errors.slot_unit_minutes?.message}
-            </FieldError>
+            <FieldError>{form.formState.errors.durations?.message}</FieldError>
           </div>
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-1.5">
-              <FieldLabel htmlFor={`${formId}-base`} required>
-                {t("baseSlotTitle")}
-              </FieldLabel>
-              <InfoHint text={t("baseSlotLead")} />
-            </div>
-            <div className="flex items-center gap-2">
-            <Controller
-              control={form.control}
-              name="base_amount"
-              render={({ field }) => (
-                <CurrencyAmountInput
-                  id={`${formId}-base`}
-                  value={Number(field.value)}
-                  onChange={field.onChange}
-                  onBlur={field.onBlur}
-                  ref={field.ref}
-                />
-              )}
-            />
-              <span className="text-sm text-muted-foreground">
-                {t("currencySuffix")}
-              </span>
-            </div>
-            <FieldError>{form.formState.errors.base_amount?.message}</FieldError>
-          </div>
-        </div>
+        </FormSection>
 
-        <div className="space-y-1.5">
-          <div className="flex items-center gap-1.5">
-            <FieldLabel required={!watchedUnlimited}>
-              {t("durations")}
-            </FieldLabel>
-            <InfoHint
-              text={
-                watchedUnlimited
-                  ? t("durationUnlimitedLead")
-                  : t("durationChipLead")
-              }
-            />
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <ToggleGroup
-              type="multiple"
-              value={watchedDurations.map(String)}
-              disabled={watchedUnlimited}
-              onValueChange={(next) =>
-                form.setValue(
-                  "durations",
-                  next.map(Number).sort((a, b) => a - b),
-                  { shouldValidate: form.formState.isSubmitted },
-                )
-              }
-              className={cn("gap-2", watchedUnlimited && "opacity-50")}
-            >
-              {choices.map((minutes) => (
-                <ToggleGroupItem
-                  key={minutes}
-                  value={String(minutes)}
-                  className="h-auto rounded-full border px-3 py-1 text-sm data-[state=off]:border-border data-[state=off]:text-foreground data-[state=on]:border-sky-600 data-[state=on]:bg-sky-600 data-[state=on]:text-white"
-                >
-                  {t("minutes", { count: minutes })}
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
-            <Toggle
-              pressed={watchedUnlimited}
-              onPressedChange={(pressed) =>
-                form.setValue("unlimited_duration", pressed, {
-                  shouldValidate: form.formState.isSubmitted,
-                })
-              }
-              className="h-auto rounded-full border px-3 py-1 text-sm data-[state=off]:border-border data-[state=on]:border-sky-600 data-[state=on]:bg-sky-600 data-[state=on]:text-white"
-            >
-              {t("unlimited")}
-            </Toggle>
-          </div>
-          <FieldError>{form.formState.errors.durations?.message}</FieldError>
-        </div>
-      </FormSection>
-
-      <FormSection index={3} title={t("sectionSchedule")}>
-        <PricingSchedule />
-        <Button
-          type="button"
-          className={softDirectorySecondaryBtn}
-          onClick={() =>
-            replaceGroups([
-              ...groups,
-              {
-                name: "",
-                weekdays: [1, 2, 3, 4, 5],
-                windows: [blankPricingWindow()],
-              },
-            ])
-          }
-        >
-          <Plus className="size-3.5" aria-hidden />
-          {t("addGroup")}
-        </Button>
-      </FormSection>
-
-      <FormSection index={4} title={t("sectionHoliday")}>
-        <div className="flex flex-col gap-2 rounded-xl border border-border/70 p-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="flex items-center gap-1.5">
-              <p className="text-sm font-medium">{t("holidayManaged")}</p>
-              <InfoHint text={t("holidayManagedLead")} />
-            </div>
-          </div>
-          <Link
-            href={`/branches/${branchId}/holidays`}
-            className="text-sm font-medium text-sky-700 hover:underline"
+        <FormSection index={3} title={t("sectionSchedule")}>
+          <PricingSchedule />
+          <Button
+            type="button"
+            className={softDirectorySecondaryBtn}
+            onClick={() =>
+              replaceGroups([
+                ...groups,
+                {
+                  name: "",
+                  weekdays: [1, 2, 3, 4, 5],
+                  windows: [blankPricingWindow()],
+                },
+              ])
+            }
           >
-            {t("viewHolidays")}
-          </Link>
-        </div>
-        {holidays.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t("holidayEmpty")}</p>
-        ) : null}
-        <div className="space-y-2">
-          {holidays.map((_, index) => (
-            <PricingWindowCard
-              key={index}
-              base={`holiday_windows.${index}`}
-              onRemove={() =>
-                replaceHolidays(holidays.filter((_, i) => i !== index))
-              }
-            />
-          ))}
-        </div>
-        <Button
-          type="button"
-          className={softDirectorySecondaryBtn}
-          onClick={() =>
-            replaceHolidays([
-              ...holidays,
-              {
-                name: "",
-                starts_at: "06:00",
-                ends_at: "22:00",
-                amount: Number.NaN,
-              },
-            ])
-          }
-        >
-          <Plus className="size-3.5" aria-hidden />
-          {t("addHolidayWindow")}
-        </Button>
-      </FormSection>
+            <Plus className="size-3.5" aria-hidden />
+            {t("addGroup")}
+          </Button>
+        </FormSection>
 
-      <AlertDialog open={confirming} onOpenChange={(next) => { if (!next) setConfirming(false); }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t("activateTitle")}</AlertDialogTitle>
-            <AlertDialogDescription>{t("activateConfirm")}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
-            <AlertDialogAction
-              disabled={pending}
-              onClick={() => {
-                setConfirming(false);
-                void form.handleSubmit(
-                  (values) => submit(values, "activate"),
-                  (errors) => {
-                    const message = firstMessage(errors);
-                    if (message) toast.error(message);
-                  },
-                )();
-              }}
+        <FormSection index={4} title={t("sectionHoliday")}>
+          <div className="flex flex-col gap-2 rounded-xl border border-border/70 p-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="flex items-center gap-1.5">
+                <p className="text-sm font-medium">{t("holidayManaged")}</p>
+                <InfoHint text={t("holidayManagedLead")} />
+              </div>
+            </div>
+            <Link
+              href={`/branches/${branchId}/holidays`}
+              className="text-sm font-medium text-sky-700"
             >
-              {t("activate")}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+              {t("viewHolidays")}
+            </Link>
+          </div>
+          {holidays.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t("holidayEmpty")}</p>
+          ) : null}
+          <div className="space-y-2">
+            {holidays.map((_, index) => (
+              <PricingWindowCard
+                key={index}
+                base={`holiday_windows.${index}`}
+                onRemove={() =>
+                  replaceHolidays(holidays.filter((_, i) => i !== index))
+                }
+              />
+            ))}
+          </div>
+          <Button
+            type="button"
+            className={softDirectorySecondaryBtn}
+            onClick={() =>
+              replaceHolidays([
+                ...holidays,
+                {
+                  name: "",
+                  starts_at: "06:00",
+                  ends_at: "22:00",
+                  amount: Number.NaN,
+                },
+              ])
+            }
+          >
+            <Plus className="size-3.5" aria-hidden />
+            {t("addHolidayWindow")}
+          </Button>
+        </FormSection>
 
-      <EntityActionDialog
-        open={conflicts.length > 0}
-        title={t("conflictTitle")}
-        closeLabel={t("cancel")}
-        onClose={() => setConflicts([])}
-      >
-        <ul className="space-y-1 text-sm text-muted-foreground">
-          {conflicts.map((pair) => (
-            <li key={`${pair.left}-${pair.right}`}>
-              {pair.left} · {pair.right}
-            </li>
-          ))}
-        </ul>
-      </EntityActionDialog>
-    </form>
+        <AlertDialog
+          open={confirming}
+          onOpenChange={(next) => {
+            if (!next) setConfirming(false);
+          }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{t("activateTitle")}</AlertDialogTitle>
+              <AlertDialogDescription>
+                {t("activateConfirm")}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+              <AlertDialogAction
+                disabled={pending}
+                onClick={() => {
+                  setConfirming(false);
+                  void form.handleSubmit(
+                    (values) => submit(values, "activate"),
+                    (errors) => {
+                      const message = firstMessage(errors);
+                      if (message) toast.error(message);
+                    },
+                  )();
+                }}
+              >
+                {t("activate")}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <EntityActionDialog
+          open={conflicts.length > 0}
+          title={t("conflictTitle")}
+          closeLabel={t("cancel")}
+          onClose={() => setConflicts([])}
+        >
+          <ul className="space-y-1 text-sm text-muted-foreground">
+            {conflicts.map((pair) => (
+              <li key={`${pair.left}-${pair.right}`}>
+                {pair.left} · {pair.right}
+              </li>
+            ))}
+          </ul>
+        </EntityActionDialog>
+      </form>
     </FormProvider>
   );
 }

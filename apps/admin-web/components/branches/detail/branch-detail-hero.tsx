@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, cn } from "@bokdy/ui";
+import { Button, cn, formatUserTime } from "@bokdy/ui";
 import {
   ArrowLeft,
   Clock,
@@ -57,7 +57,7 @@ function todayHoursLabel(
   if (!day) return null;
   if (day.is_closed) return closedToday;
   if (day.opens_at && day.closes_at) {
-    return openToday(`${day.opens_at} – ${day.closes_at}`);
+    return openToday(`${formatUserTime(day.opens_at)} – ${formatUserTime(day.closes_at)}`);
   }
   return closedToday;
 }

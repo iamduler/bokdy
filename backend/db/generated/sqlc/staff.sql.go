@@ -119,6 +119,39 @@ func (q *Queries) FindStaffByOrgUser(ctx context.Context, arg FindStaffByOrgUser
 	return i, err
 }
 
+const findStaffMemberByID = `-- name: FindStaffMemberByID :one
+SELECT id, organization_id, branch_id, user_id, COALESCE(title, '') AS title, status, created_at, updated_at
+FROM organization.staff_members
+WHERE id = $1
+`
+
+type FindStaffMemberByIDRow struct {
+	ID             uuid.UUID               `json:"id"`
+	OrganizationID uuid.UUID               `json:"organization_id"`
+	BranchID       *uuid.UUID              `json:"branch_id"`
+	UserID         uuid.UUID               `json:"user_id"`
+	Title          string                  `json:"title"`
+	Status         OrganizationStaffStatus `json:"status"`
+	CreatedAt      time.Time               `json:"created_at"`
+	UpdatedAt      time.Time               `json:"updated_at"`
+}
+
+func (q *Queries) FindStaffMemberByID(ctx context.Context, id uuid.UUID) (FindStaffMemberByIDRow, error) {
+	row := q.db.QueryRow(ctx, findStaffMemberByID, id)
+	var i FindStaffMemberByIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.OrganizationID,
+		&i.BranchID,
+		&i.UserID,
+		&i.Title,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const isActiveStaffMember = `-- name: IsActiveStaffMember :one
 SELECT EXISTS(
     SELECT 1 FROM organization.staff_members

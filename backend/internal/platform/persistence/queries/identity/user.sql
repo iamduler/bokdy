@@ -28,6 +28,9 @@ UPDATE identity.users SET status = $2, email_verified_at = $3, updated_at = now(
 -- name: ClearUserPhoneVerified :exec
 UPDATE identity.users SET phone_verified_at = NULL, updated_at = now() WHERE id = $1;
 
+-- name: ClearUserEmailVerified :exec
+UPDATE identity.users SET email_verified_at = NULL, updated_at = now() WHERE id = $1;
+
 -- name: TouchUserLastLogin :exec
 UPDATE identity.users SET last_login_at = $2, updated_at = now() WHERE id = $1;
 

@@ -202,7 +202,7 @@ function linkValue(url: string | undefined | null, empty: string): ReactNode {
       href={trimmed}
       target="_blank"
       rel="noopener noreferrer"
-      className="break-all text-sky-700 hover:underline dark:text-sky-300"
+      className="break-all text-sky-700 dark:text-sky-300"
     >
       {trimmed}
     </a>

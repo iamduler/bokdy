@@ -19,6 +19,16 @@ Do not delete entries. If a deferred item returns to MVP, add a new entry that r
 
 ---
 
+### DEF-20261112-01
+
+- Date: 2026-11-12
+- From flow/ID: F-ADMIN-USERS-25 invite admin; F-ADMIN-USERS-26 change staff role
+- New post-mvp ID: both return to MVP as provision and role replace
+- Reason: admin create/edit screens now cover players, owners, and system admins
+- MVP workaround: none — `POST /admin/users/admins` stores a password hash; invite-by-token stays out because mail is log-only
+- Unblocks later wave: admin user forms
+- Decided in: plan `user_create_edit`
+
 ### DEF-20260808-04
 
 - Date: 2026-08-08

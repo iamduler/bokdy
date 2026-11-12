@@ -17,7 +17,6 @@ import (
 	"bokdy/internal/platform/auth"
 	"bokdy/internal/platform/config"
 	"bokdy/internal/platform/events"
-	"bokdy/internal/platform/i18n"
 	"bokdy/internal/platform/id"
 	"bokdy/internal/platform/mail"
 	"bokdy/internal/platform/persistence"
@@ -106,12 +105,6 @@ func (s *AuthService) Register(ctx context.Context, in RegisterInput) (*entity.U
 		}
 	}
 
-	now := time.Now().UTC()
-	userID := id.MustNewUUID()
-	user := &entity.User{
-		ID: userID, PublicID: id.MustNewPublicID(), Status: entity.UserStatusPending,
-		CreatedAt: now, UpdatedAt: now,
-	}
 	fullName := strings.TrimSpace(in.FullName)
 	if fullName == "" {
 		fullName = strings.TrimSpace(in.FirstName + " " + in.LastName)
@@ -119,44 +112,24 @@ func (s *AuthService) Register(ctx context.Context, in RegisterInput) (*entity.U
 	if fullName == "" {
 		fullName = email
 	}
-	localeID := i18n.LocaleVIID
-	countryID := i18n.CountryVNID
-	profile := &entity.UserProfile{
-		ID: id.MustNewUUID(), UserID: userID, FirstName: in.FirstName, LastName: in.LastName,
-		FullName: fullName, DisplayName: fullName, LocaleID: &localeID,
-		Timezone: i18n.DefaultTimezone, CountryID: &countryID,
-		PreferredCurrencyCode: i18n.DefaultCurrencyCode,
-		Theme:                 entity.ThemeSystem, DateFormat: entity.DateFormatDMY,
-		CreatedAt: now, UpdatedAt: now,
+	norm := NormalizedAccount{
+		Email: email, FullName: fullName, FirstName: strings.TrimSpace(in.FirstName),
+		LastName: strings.TrimSpace(in.LastName), Phone: phone, DisplayName: fullName,
 	}
-	ident := &entity.Identity{
-		ID: id.MustNewUUID(), UserID: userID, Provider: entity.ProviderLocal,
-		ProviderSubject: email, Email: email, Phone: phone, IsPrimary: true, CreatedAt: now, UpdatedAt: now,
-	}
-	hash, err := bcrypt.GenerateFromPassword([]byte(in.Password), bcrypt.DefaultCost)
-	if err != nil {
-		return nil, apperr.Wrap(err, apperr.CodeInternal, "hash password")
-	}
-	verifyToken, verifyHash := randomToken()
-
+	var user *entity.User
+	var verifyToken string
 	var outboxID uuid.UUID
 	err = persistence.WithinTx(ctx, s.pool, func(tx pgx.Tx) error {
-		if err := s.users.Create(ctx, tx, user, profile); err != nil {
+		created, token, err := s.ProvisionLocalUser(ctx, tx, KindPlayer, norm, in.Password)
+		if err != nil {
 			return err
 		}
-		if err := s.idents.Create(ctx, tx, ident); err != nil {
-			return err
-		}
-		if err := s.creds.UpsertPassword(ctx, tx, userID, string(hash)); err != nil {
-			return err
-		}
-		if _, err := s.idents.CreateVerification(ctx, tx, ident.ID, verifyHash, now.Add(24*time.Hour)); err != nil {
-			return err
-		}
+		user = created
+		verifyToken = token
 		oid, err := events.Append(ctx, tx, events.Event{
-			Type: "UserRegistered", AggregateType: "User", AggregateID: userID,
-			ActorType: events.ActorUser, ActorID: &userID, EntityType: "User", EntityID: userID,
-			Payload: map[string]any{"email": email}, OccurredAt: now,
+			Type: "UserRegistered", AggregateType: "User", AggregateID: user.ID,
+			ActorType: events.ActorUser, ActorID: &user.ID, EntityType: "User", EntityID: user.ID,
+			Payload: map[string]any{"email": email}, OccurredAt: user.CreatedAt,
 		})
 		outboxID = oid
 		return err
@@ -165,11 +138,7 @@ func (s *AuthService) Register(ctx context.Context, in RegisterInput) (*entity.U
 		return nil, apperr.Wrap(err, apperr.CodeInternal, "register user")
 	}
 	events.AfterCommit(ctx, s.outbox, outboxID)
-
-	_ = s.mailer.Send(ctx, mail.Message{
-		To: email, Subject: "Verify your Bokdy account",
-		Body: "Verification token: " + verifyToken,
-	})
+	s.SendVerification(ctx, email, verifyToken)
 	return user, nil
 }
 

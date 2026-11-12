@@ -2,16 +2,49 @@
 
 import { Button } from "@bokdy/ui";
 import { useTranslations } from "next-intl";
+import type { ReactNode } from "react";
 
 import { useUserDetail } from "@/components/users/detail/user-detail-context";
 import { UserUnavailableBadge } from "@/components/users/shared/user-unavailable-badge";
 import { useForceEmailVerify, useResetUserPassword } from "@/hooks/use-admin-users";
 
-export function UserSecurityView() {
+export function UserSecurityActions({ extra }: { extra?: ReactNode }) {
   const t = useTranslations("users.security");
   const { user, userId } = useUserDetail();
   const resetPw = useResetUserPassword();
   const forceVerify = useForceEmailVerify();
+
+  return (
+    <div>
+      <div className="flex flex-wrap gap-2">
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={resetPw.isPending}
+          onClick={() => resetPw.mutate(userId)}
+        >
+          {t("resetPassword")}
+        </Button>
+        {!user.email_verified_at ? (
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={forceVerify.isPending}
+            onClick={() => forceVerify.mutate(userId)}
+          >
+            {t("forceEmailVerify")}
+          </Button>
+        ) : null}
+        {extra}
+      </div>
+      {resetPw.isSuccess ? <p className="mt-2 text-sm text-emerald-600">{t("resetSent")}</p> : null}
+    </div>
+  );
+}
+
+export function UserSecurityView() {
+  const t = useTranslations("users.security");
+  const { user } = useUserDetail();
 
   const cards = [
     { label: t("mfa"), value: <UserUnavailableBadge /> },
@@ -31,30 +64,13 @@ export function UserSecurityView() {
       </div>
       <div className="rounded-md border border-destructive/20 bg-destructive/5 p-4">
         <p className="mb-3 font-semibold text-destructive">{t("dangerZone")}</p>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={resetPw.isPending}
-            onClick={() => resetPw.mutate(userId)}
-          >
-            {t("resetPassword")}
-          </Button>
-          {!user.email_verified_at ? (
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={forceVerify.isPending}
-              onClick={() => forceVerify.mutate(userId)}
-            >
-              {t("forceEmailVerify")}
+        <UserSecurityActions
+          extra={
+            <Button size="sm" variant="outline" disabled>
+              {t("resetMfa")} (<UserUnavailableBadge />)
             </Button>
-          ) : null}
-          <Button size="sm" variant="outline" disabled>
-            {t("resetMfa")} (<UserUnavailableBadge />)
-          </Button>
-        </div>
-        {resetPw.isSuccess ? <p className="mt-2 text-sm text-emerald-600">{t("resetSent")}</p> : null}
+          }
+        />
       </div>
     </div>
   );

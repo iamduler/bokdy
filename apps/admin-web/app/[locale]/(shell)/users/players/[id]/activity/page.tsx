@@ -1,5 +1,10 @@
-import { UserActivityView } from "@/components/users/detail/user-activity-view";
+import { redirect } from "@/i18n/navigation";
 
-export default function PlayerActivityPage() {
-  return <UserActivityView />;
+export default async function PlayerActivityPage({
+  params,
+}: {
+  params: Promise<{ locale: string; id: string }>;
+}) {
+  const { locale, id } = await params;
+  redirect({ href: `/users/players/${id}/sessions`, locale });
 }

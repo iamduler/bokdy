@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { Suspense } from "react";
 
 import { AdminAuthShell } from "@/components/auth/admin-auth-shell";
 import { LoginForm } from "@/components/auth/login-form";
@@ -27,7 +28,9 @@ export default async function LoginPage({
   setRequestLocale(locale);
   return (
     <AdminAuthShell>
-      <LoginForm />
+      <Suspense>
+        <LoginForm />
+      </Suspense>
     </AdminAuthShell>
   );
 }

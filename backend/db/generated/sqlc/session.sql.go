@@ -108,21 +108,33 @@ func (q *Queries) FindRefreshTokenByHash(ctx context.Context, tokenHash string) 
 }
 
 const listSessionsByUser = `-- name: ListSessionsByUser :many
-SELECT id, user_id, device_id, status, ip_address, user_agent, last_activity_at, expires_at, created_at
+SELECT id, user_id, device_id, status, COALESCE(host(ip_address), '')::text AS ip_address, user_agent, last_activity_at, expires_at, created_at
 FROM identity.sessions
 WHERE user_id = $1
 ORDER BY created_at DESC
 `
 
-func (q *Queries) ListSessionsByUser(ctx context.Context, userID uuid.UUID) ([]IdentitySession, error) {
+type ListSessionsByUserRow struct {
+	ID             uuid.UUID             `json:"id"`
+	UserID         uuid.UUID             `json:"user_id"`
+	DeviceID       *uuid.UUID            `json:"device_id"`
+	Status         IdentitySessionStatus `json:"status"`
+	IpAddress      string                `json:"ip_address"`
+	UserAgent      *string               `json:"user_agent"`
+	LastActivityAt *time.Time            `json:"last_activity_at"`
+	ExpiresAt      time.Time             `json:"expires_at"`
+	CreatedAt      time.Time             `json:"created_at"`
+}
+
+func (q *Queries) ListSessionsByUser(ctx context.Context, userID uuid.UUID) ([]ListSessionsByUserRow, error) {
 	rows, err := q.db.Query(ctx, listSessionsByUser, userID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []IdentitySession{}
+	items := []ListSessionsByUserRow{}
 	for rows.Next() {
-		var i IdentitySession
+		var i ListSessionsByUserRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.UserID,

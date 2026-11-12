@@ -48,27 +48,29 @@ function AdminBookingListScreenContent({
   const query = useList(list.params);
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-      <AdminBookingFilters
-        q={list.q}
-        status={list.status}
-        from={list.from}
-        to={list.to}
-        onChange={list.onFilterChange}
-      />
-      <AdminBookingList
-        rows={query.data?.items ?? []}
-        total={query.data?.total ?? 0}
-        pageIndex={list.pageIndex}
-        sorting={list.sorting}
-        onSortingChange={list.onSortingChange}
-        onPaginationChange={list.onPaginationChange}
-        isLoading={query.isLoading}
-        isError={query.isError}
-        isFetching={query.isFetching}
-        onRetry={() => void query.refetch()}
-        showOrganization={showOrganization}
-      />
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-4 md:p-6">
+      <div className="soft-elevated flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border-0">
+        <AdminBookingFilters
+          q={list.q}
+          status={list.status}
+          from={list.from}
+          to={list.to}
+          onChange={list.onFilterChange}
+        />
+        <AdminBookingList
+          rows={query.data?.items ?? []}
+          total={query.data?.total ?? 0}
+          pageIndex={list.pageIndex}
+          sorting={list.sorting}
+          onSortingChange={list.onSortingChange}
+          onPaginationChange={list.onPaginationChange}
+          isLoading={query.isLoading}
+          isError={query.isError}
+          isFetching={query.isFetching}
+          onRetry={() => void query.refetch()}
+          showOrganization={showOrganization}
+        />
+      </div>
     </div>
   );
 }

@@ -22,6 +22,11 @@ WHERE provider = 'local' AND lower(email) = lower($1);
 UPDATE identity.identities SET phone = $2, updated_at = now()
 WHERE user_id = $1 AND is_primary = true;
 
+-- name: UpdatePrimaryIdentityEmail :exec
+UPDATE identity.identities
+SET email = $2, provider_subject = $2, updated_at = now()
+WHERE user_id = $1 AND is_primary = true AND provider = 'local';
+
 -- name: CreateIdentityVerification :exec
 INSERT INTO identity.identity_verifications (id, identity_id, status, token_hash, expires_at, created_at)
 VALUES ($1, $2, 'pending', $3, $4, now());

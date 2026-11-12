@@ -3,6 +3,7 @@
 import {
   Button,
   DatePicker,
+  FieldError,
   FieldLabel,
   Input,
   Table,
@@ -22,6 +23,15 @@ import { ApiError, errorMessageKey } from "@/lib/api/errors";
 import type { HolidayEffect, HolidayOverlayInput } from "@/lib/api/pricing";
 
 export type HolidayDraft = { holiday_on: string; name: string; effect: HolidayEffect };
+
+type RowErrors = { date?: boolean; name?: boolean };
+
+function rowErrors(rows: HolidayDraft[]): RowErrors[] {
+  return rows.map((row) => ({
+    date: !row.holiday_on,
+    name: !row.name.trim(),
+  }));
+}
 
 export function HolidayLayerForm({
   rows,
@@ -47,6 +57,7 @@ export function HolidayLayerForm({
     .sort()
     .join("\n");
   const [draft, setDraft] = useState<HolidayDraft[]>(rows);
+  const [errors, setErrors] = useState<RowErrors[]>([]);
   const dirty =
     draft
       .map((row) => `${row.holiday_on}|${row.name.trim()}|${row.effect}`)
@@ -55,25 +66,35 @@ export function HolidayLayerForm({
 
   useEffect(() => {
     setDraft(rows);
+    setErrors([]);
     // Reset only when the saved list changes, not when the parent recreates the array.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signature]);
 
   function update(index: number, patch: Partial<HolidayDraft>) {
     setDraft((current) => current.map((row, i) => (i === index ? { ...row, ...patch } : row)));
+    setErrors((current) =>
+      current.map((error, i) => {
+        if (i !== index || !error) return error;
+        return {
+          date: patch.holiday_on !== undefined ? !patch.holiday_on : error.date,
+          name: patch.name !== undefined ? !patch.name.trim() : error.name,
+        };
+      }),
+    );
+  }
+
+  function addRow() {
+    setDraft((current) => [...current, { holiday_on: "", name: "", effect: "include" }]);
   }
 
   async function save() {
-    const incomplete = draft.some((row) => (row.holiday_on || row.name.trim()) && !(row.holiday_on && row.name.trim()));
-    if (incomplete) {
-      toast.error(t("incomplete"));
-      return;
-    }
+    const nextErrors = rowErrors(draft);
+    setErrors(nextErrors);
+    if (nextErrors.some((error) => error.date || error.name)) return;
     try {
       await onSave(
-        draft
-          .filter((row) => row.holiday_on && row.name.trim())
-          .map((row) => ({ holiday_on: row.holiday_on, name: row.name.trim(), effect: row.effect })),
+        draft.map((row) => ({ holiday_on: row.holiday_on, name: row.name.trim(), effect: row.effect })),
       );
       toast.success(t("saved"));
     } catch (err) {
@@ -89,8 +110,8 @@ export function HolidayLayerForm({
           className="py-10"
           action={
             <div className="flex flex-wrap justify-center gap-2">
-              <Button type="button" size="sm" onClick={() => setDraft([...draft, { holiday_on: "", name: "", effect: "include" }])}>
-                {t("addDate")}
+              <Button type="button" size="sm" onClick={addRow}>
+                {t("addRow")}
               </Button>
               {dirty ? (
                 <Button type="button" size="sm" disabled={pending} onClick={() => void save()}>
@@ -124,20 +145,28 @@ export function HolidayLayerForm({
           <TableBody>
             {draft.map((row, index) => (
               <TableRow key={index} className="hover:bg-transparent">
-                <TableCell>
+                <TableCell className="align-top">
                   <DatePicker
                     value={row.holiday_on}
                     onChange={(value) => update(index, { holiday_on: value })}
                     locale={locale}
                     placeholder={tc("pickDate")}
                     aria-label={t("date")}
+                    aria-invalid={errors[index]?.date || undefined}
                   />
+                  {errors[index]?.date ? <FieldError className="mt-1">{t("dateRequired")}</FieldError> : null}
                 </TableCell>
-                <TableCell>
-                  <Input value={row.name} aria-label={t("name")} onChange={(event) => update(index, { name: event.target.value })} />
+                <TableCell className="align-top">
+                  <Input
+                    value={row.name}
+                    aria-label={t("name")}
+                    aria-invalid={errors[index]?.name || undefined}
+                    onChange={(event) => update(index, { name: event.target.value })}
+                  />
+                  {errors[index]?.name ? <FieldError className="mt-1">{t("nameRequired")}</FieldError> : null}
                 </TableCell>
                 {showEffect ? (
-                  <TableCell>
+                  <TableCell className="align-top">
                     <PopoverCommandSelect
                       value={row.effect}
                       onValueChange={(value) => update(index, { effect: value as HolidayEffect })}
@@ -149,8 +178,17 @@ export function HolidayLayerForm({
                     />
                   </TableCell>
                 ) : null}
-                <TableCell>
-                  <Button type="button" size="sm" variant="outline" className="h-9" onClick={() => setDraft(draft.filter((_, i) => i !== index))}>
+                <TableCell className="align-top">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-9"
+                    onClick={() => {
+                      setDraft(draft.filter((_, i) => i !== index));
+                      setErrors((current) => current.filter((_, i) => i !== index));
+                    }}
+                  >
                     {t("remove")}
                   </Button>
                 </TableCell>
@@ -161,14 +199,9 @@ export function HolidayLayerForm({
       ) : null}
       {draft.length === 0 ? null : (
         <div className="flex flex-wrap gap-2">
-          <Button type="button" size="sm" variant="outline" onClick={() => setDraft([...draft, { holiday_on: "", name: "", effect: "include" }])}>
-            {t("addDate")}
+          <Button type="button" size="sm" variant="outline" onClick={addRow}>
+            {t("addRow")}
           </Button>
-          {showEffect ? (
-            <Button type="button" size="sm" variant="outline" onClick={() => setDraft([...draft, { holiday_on: "", name: "", effect: "exclude" }])}>
-              {t("addExclude")}
-            </Button>
-          ) : null}
           <Button type="button" size="sm" disabled={!dirty || pending} onClick={() => void save()}>
             {t("save")}
           </Button>

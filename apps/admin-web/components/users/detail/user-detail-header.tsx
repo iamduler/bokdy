@@ -1,71 +1,103 @@
 "use client";
 
+/**
+ * Hallmark · theme: bokdy-custom · design-system: design.md · Soft UI user detail
+ */
+
 import { Button } from "@bokdy/ui";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 
+import { EntityAvatar } from "@/components/entity/avatar";
+import { EntityIdentityHeader } from "@/components/entity/identity-header";
+import { EntityRelationLink } from "@/components/entity/relation-link";
+import { usePageShellTitle } from "@/components/shell/shell-title";
+import { UserSuspendDialog } from "@/components/users/detail/user-suspend-dialog";
 import {
   useUserDetail,
   userDisplayName,
 } from "@/components/users/detail/user-detail-context";
 import { UserStatusBadge } from "@/components/users/shared/user-status-badge";
-import { UserSuspendDialog } from "@/components/users/detail/user-suspend-dialog";
+import { UserAccountFormSheet } from "@/components/users/user-account-form-sheet";
 import { useActivateUser, useRestoreUser } from "@/hooks/use-admin-users";
+import { staffRoleLabel } from "@/lib/users/staff-role-label";
 
 export function UserDetailHeader() {
   const t = useTranslations("users.detail");
-  const { user, userId } = useUserDetail();
+  const tu = useTranslations("users");
+  const tShell = useTranslations("shell");
+  const { user, userId, audience } = useUserDetail();
   const restore = useRestoreUser();
   const activate = useActivateUser();
   const [suspendOpen, setSuspendOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const name = userDisplayName(user);
+  const org = user.primary_organization;
+
+  usePageShellTitle(name);
 
   return (
-    <div className="shrink-0 border-b border-border px-4 py-4 md:px-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div className="min-w-0 space-y-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-xl font-semibold tracking-tight">{userDisplayName(user)}</h1>
-            <UserStatusBadge status={user.status} />
-          </div>
-          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-            {user.email ? <span className="tracking-wide">{user.email}</span> : null}
-            {user.primary_organization?.name ? (
-              <span>{user.primary_organization.name}</span>
+    <>
+      <EntityIdentityHeader
+        backHref={`/users/${audience}`}
+        backLabel={tShell("menuBack")}
+        avatar={<EntityAvatar name={name} size="lg" />}
+        title={name}
+        badges={<UserStatusBadge status={user.status} />}
+        meta={
+          <p className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+            {user.email ? <span>{user.email}</span> : null}
+            {org?.id ? (
+              <EntityRelationLink href={`/organizations/${org.id}`}>
+                {org.name || org.id}
+              </EntityRelationLink>
             ) : null}
-            {user.staff_role ? <span>{user.staff_role}</span> : null}
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {user.status === "pending" ? (
+            {user.staff_role ? <span>{staffRoleLabel(tu, user.staff_role)}</span> : null}
+          </p>
+        }
+        actions={
+          <>
             <Button
+              type="button"
               size="sm"
-              onClick={() => activate.mutate(userId)}
-              disabled={activate.isPending}
+              variant="outline"
+              onClick={() => setEditing(true)}
             >
-              {t("activate")}
+              {t("edit")}
             </Button>
-          ) : null}
-          {user.status === "active" ? (
-            <Button
-              size="sm"
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => setSuspendOpen(true)}
-            >
-              {t("suspend")}
-            </Button>
-          ) : null}
-          {user.status === "suspended" ? (
-            <Button
-              size="sm"
-              onClick={() => restore.mutate(userId)}
-              disabled={restore.isPending}
-            >
-              {t("restore")}
-            </Button>
-          ) : null}
-        </div>
-      </div>
+            {user.status === "pending" ? (
+              <Button
+                size="sm"
+                onClick={() => activate.mutate(userId)}
+                disabled={activate.isPending}
+              >
+                {t("activate")}
+              </Button>
+            ) : user.status === "active" ? (
+              <Button size="sm" variant="destructive" onClick={() => setSuspendOpen(true)}>
+                {t("suspend")}
+              </Button>
+            ) : user.status === "suspended" ? (
+              <Button
+                size="sm"
+                onClick={() => restore.mutate(userId)}
+                disabled={restore.isPending}
+              >
+                {t("restore")}
+              </Button>
+            ) : null}
+          </>
+        }
+      />
       <UserSuspendDialog open={suspendOpen} onClose={() => setSuspendOpen(false)} userId={userId} />
-    </div>
+      <UserAccountFormSheet
+        open={editing}
+        mode="edit"
+        audience={audience}
+        onOpenChange={(open) => {
+          if (!open) setEditing(false);
+        }}
+      />
+    </>
   );
 }

@@ -73,6 +73,13 @@ func (r *IdentityRepo) UpdatePrimaryPhone(ctx context.Context, tx pgx.Tx, userID
 	})
 }
 
+func (r *IdentityRepo) UpdatePrimaryEmail(ctx context.Context, tx pgx.Tx, userID uuid.UUID, email string) error {
+	value := email
+	return r.q.WithTx(tx).UpdatePrimaryIdentityEmail(ctx, dbsqlc.UpdatePrimaryIdentityEmailParams{
+		UserID: userID, Email: &value,
+	})
+}
+
 func (r *IdentityRepo) CreateVerification(ctx context.Context, tx pgx.Tx, identityID uuid.UUID, tokenHash string, expiresAt time.Time) (uuid.UUID, error) {
 	vid := id.MustNewUUID()
 	err := r.q.WithTx(tx).CreateIdentityVerification(ctx, dbsqlc.CreateIdentityVerificationParams{

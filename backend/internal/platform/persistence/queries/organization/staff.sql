@@ -3,6 +3,11 @@ INSERT INTO organization.staff_members
     (id, organization_id, branch_id, user_id, title, status, joined_at, created_at, updated_at)
 VALUES ($1, $2, $3, $4, $5, $6, CURRENT_DATE, $7, $8);
 
+-- name: FindStaffMemberByID :one
+SELECT id, organization_id, branch_id, user_id, COALESCE(title, '') AS title, status, created_at, updated_at
+FROM organization.staff_members
+WHERE id = $1;
+
 -- name: FindStaffByID :one
 SELECT id, organization_id, branch_id, user_id, COALESCE(title, '') AS title, status, created_at, updated_at
 FROM organization.staff_members

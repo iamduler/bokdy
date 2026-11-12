@@ -10,6 +10,7 @@ import (
 	identityerrors "bokdy/internal/identity/errors"
 	"bokdy/internal/identity/repository"
 	"bokdy/internal/platform/apperr"
+	"bokdy/internal/platform/events"
 	"bokdy/internal/platform/listpage"
 	"bokdy/internal/platform/persistence"
 
@@ -137,6 +138,7 @@ func (s *AdminUserService) GetPlayer(ctx context.Context, id uuid.UUID) (*reposi
 	if hasStaff {
 		return nil, identityerrors.ErrUserNotFound
 	}
+	s.attachNames(ctx, row)
 	return row, nil
 }
 
@@ -166,6 +168,7 @@ func (s *AdminUserService) GetOwner(ctx context.Context, id uuid.UUID) (*reposit
 	out.PrimaryOrgCode = staff.PrimaryOrgCode
 	out.PrimaryOrgNameEn = staff.PrimaryOrgNameEn
 	out.PrimaryOrgNameVi = staff.PrimaryOrgNameVi
+	s.attachNames(ctx, &out.AdminUserRow)
 	return out, nil
 }
 
@@ -177,6 +180,7 @@ func (s *AdminUserService) GetAdmin(ctx context.Context, id uuid.UUID) (*reposit
 	if row == nil || !row.IsSystemAdmin {
 		return nil, identityerrors.ErrUserNotFound
 	}
+	s.attachNames(ctx, row)
 	return row, nil
 }
 
@@ -384,6 +388,135 @@ func (s *AdminUserService) ResetPassword(ctx context.Context, userID uuid.UUID) 
 		return apperr.New(apperr.CodeValidation, "user has no email")
 	}
 	return s.auth.RequestPasswordReset(ctx, row.Email)
+}
+
+func (s *AdminUserService) CreatePlayer(ctx context.Context, actor uuid.UUID, in AccountInput) (*repository.AdminUserRow, error) {
+	return s.createAccount(ctx, actor, KindPlayer, in)
+}
+
+func (s *AdminUserService) CreateAdmin(ctx context.Context, actor uuid.UUID, in AccountInput) (*repository.AdminUserRow, error) {
+	return s.createAccount(ctx, actor, KindAdmin, in)
+}
+
+func (s *AdminUserService) createAccount(ctx context.Context, actor uuid.UUID, kind AccountKind, in AccountInput) (*repository.AdminUserRow, error) {
+	norm, err := ValidateNewAccount(in)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.auth.AccountAvailable(ctx, norm.Email, norm.Phone, uuid.Nil); err != nil {
+		return nil, err
+	}
+	var created *entity.User
+	var token string
+	var outboxID uuid.UUID
+	err = persistence.WithinTx(ctx, s.pool, func(tx pgx.Tx) error {
+		user, verifyToken, err := s.auth.ProvisionLocalUser(ctx, tx, kind, norm, in.Password)
+		if err != nil {
+			return err
+		}
+		created = user
+		token = verifyToken
+		actorID := actor
+		if actorID == uuid.Nil {
+			actorID = user.ID
+		}
+		oid, err := events.Append(ctx, tx, events.Event{
+			Type: "UserRegistered", AggregateType: "User", AggregateID: user.ID,
+			ActorType: events.ActorUser, ActorID: &actorID, EntityType: "User", EntityID: user.ID,
+			Payload: map[string]any{"email": norm.Email, "kind": string(kind)}, OccurredAt: user.CreatedAt,
+		})
+		outboxID = oid
+		return err
+	})
+	if err != nil {
+		return nil, apperr.Wrap(err, apperr.CodeInternal, "create user")
+	}
+	events.AfterCommit(ctx, s.auth.outbox, outboxID)
+	s.auth.SendVerification(ctx, norm.Email, token)
+	if kind == KindAdmin {
+		return s.GetAdmin(ctx, created.ID)
+	}
+	return s.GetPlayer(ctx, created.ID)
+}
+
+func (s *AdminUserService) UpdateProfile(ctx context.Context, id uuid.UUID, in AccountInput) (*repository.AdminUserRow, error) {
+	norm, err := ValidateProfile(in)
+	if err != nil {
+		return nil, err
+	}
+	row, err := s.admin.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if row == nil {
+		return nil, identityerrors.ErrUserNotFound
+	}
+	if err := s.auth.AccountAvailable(ctx, norm.Email, norm.Phone, id); err != nil {
+		return nil, err
+	}
+	profile, err := s.users.GetProfile(ctx, id)
+	if err != nil {
+		return nil, apperr.Wrap(err, apperr.CodeInternal, "load profile")
+	}
+	if profile == nil {
+		return nil, identityerrors.ErrUserNotFound
+	}
+	reset := ContactVerificationReset(row.Email, norm.Email, row.Phone, norm.Phone)
+	profile.FirstName = norm.FirstName
+	profile.LastName = norm.LastName
+	profile.FullName = norm.FullName
+	profile.DisplayName = norm.DisplayName
+	var outboxID uuid.UUID
+	err = persistence.WithinTx(ctx, s.pool, func(tx pgx.Tx) error {
+		if err := s.users.UpdateProfile(ctx, tx, profile); err != nil {
+			return err
+		}
+		if reset.ClearEmail {
+			if err := s.auth.idents.UpdatePrimaryEmail(ctx, tx, id, norm.Email); err != nil {
+				return err
+			}
+			if err := s.users.ClearEmailVerified(ctx, tx, id); err != nil {
+				return err
+			}
+		}
+		if reset.ClearPhone {
+			if err := s.auth.idents.UpdatePrimaryPhone(ctx, tx, id, norm.Phone); err != nil {
+				return err
+			}
+			if err := s.users.ClearPhoneVerified(ctx, tx, id); err != nil {
+				return err
+			}
+		}
+		oid, err := events.Append(ctx, tx, events.Event{
+			Type: "UserProfileUpdated", AggregateType: "User", AggregateID: id,
+			ActorType: events.ActorUser, ActorID: &id, EntityType: "User", EntityID: id,
+			Payload: map[string]any{"email": norm.Email}, OccurredAt: time.Now().UTC(),
+		})
+		outboxID = oid
+		return err
+	})
+	if err != nil {
+		return nil, apperr.Wrap(err, apperr.CodeInternal, "update profile")
+	}
+	events.AfterCommit(ctx, s.auth.outbox, outboxID)
+	updated, err := s.admin.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	s.attachNames(ctx, updated)
+	return updated, nil
+}
+
+func (s *AdminUserService) attachNames(ctx context.Context, row *repository.AdminUserRow) {
+	if s.users == nil || row == nil {
+		return
+	}
+	profile, err := s.users.GetProfile(ctx, row.ID)
+	if err != nil || profile == nil {
+		return
+	}
+	row.FirstName = profile.FirstName
+	row.LastName = profile.LastName
 }
 
 func ParseUserStatus(raw string) (entity.UserStatus, bool) {

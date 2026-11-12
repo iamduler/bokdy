@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, DatePicker, FieldLabel, TimePicker } from "@bokdy/ui";
+import { Button, formatUserZonedTime, DatePicker, FieldLabel, TimePicker, useUserDateTimePrefs } from "@bokdy/ui";
 import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 
@@ -14,15 +14,6 @@ import { CUSTOMER_TYPES, durationChoices } from "@/lib/validation/branch-pricing
 
 function formatAmount(amount: number) {
   return new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 0 }).format(amount);
-}
-
-function ictClock(iso: string) {
-  return new Intl.DateTimeFormat("vi-VN", {
-    timeZone: "Asia/Ho_Chi_Minh",
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-  }).format(new Date(iso));
 }
 
 function ictRange(date: string, time: string, durationMin: number) {
@@ -54,6 +45,7 @@ export function PricingQuotePreview({
   const tc = useTranslations("common");
   const te = useTranslations("errors");
   const locale = useLocale();
+  const prefs = useUserDateTimePrefs();
   const courts = useBranchCourts(organizationId, branchId);
   const lists = useBranchPricingProfiles(organizationId, branchId);
   const matching = useMemo(
@@ -215,7 +207,7 @@ export function PricingQuotePreview({
           <ul className="space-y-0.5 text-muted-foreground">
             {(quote.lines ?? []).map((line) => (
               <li key={`${line.starts_at}-${line.ends_at}`}>
-                {ictClock(line.starts_at)}–{ictClock(line.ends_at)}
+                {formatUserZonedTime(line.starts_at, prefs)}–{formatUserZonedTime(line.ends_at, prefs)}
                 {" · "}
                 {line.window_name || (line.rule_id ? t("previewRuleLine") : t("previewBaseLine"))}
                 {" · "}

@@ -140,3 +140,58 @@ export function forceEmailVerify(id: string) {
     method: "POST",
   });
 }
+
+export type UserAccountWrite = {
+  email: string;
+  first_name: string;
+  last_name?: string;
+  phone?: string;
+};
+
+export type CreateUserAccountInput = UserAccountWrite & { password: string };
+
+export type CreateOwnerAccountInput = CreateUserAccountInput & {
+  organization_id: string;
+  staff_role: "org_owner" | "org_staff";
+  title?: string;
+};
+
+export type StaffRoleUpdate = {
+  role_code: "org_owner" | "org_staff";
+  title?: string;
+};
+
+export function createPlayerUser(input: CreateUserAccountInput) {
+  return apiGo<AdminPlayerUser>("admin/users/players", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function createAdminUser(input: CreateUserAccountInput) {
+  return apiGo<AdminSystemUser>("admin/users/admins", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function createOwnerUser(input: CreateOwnerAccountInput) {
+  return apiGo<AdminOwnerUser>("admin/users/owners", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function updateUserProfile(id: string, input: UserAccountWrite) {
+  return apiGo<AdminUser>(`admin/users/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+}
+
+export function replaceOwnerStaffRole(userId: string, staffId: string, input: StaffRoleUpdate) {
+  return apiGo<AdminOwnerUser>(
+    `admin/users/owners/${encodeURIComponent(userId)}/staff/${encodeURIComponent(staffId)}`,
+    { method: "PATCH", body: JSON.stringify(input) },
+  );
+}

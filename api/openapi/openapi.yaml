@@ -4095,6 +4095,33 @@ paths:
           $ref: "#/components/responses/Error"
         "422":
           $ref: "#/components/responses/ValidationFailed"
+    post:
+      tags: [Admin]
+      summary: Create a player account
+      description: Pending local account. Password is stored as a hash and is not returned. is_system_admin stays false.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminUserAccountRequest"
+      responses:
+        "201":
+          description: Player created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminPlayerUser"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
   /api/v1/admin/users/players/stats:
     get:
       tags: [Admin]
@@ -4238,6 +4265,35 @@ paths:
           $ref: "#/components/responses/Error"
         "422":
           $ref: "#/components/responses/ValidationFailed"
+    post:
+      tags: [Admin]
+      summary: Create an owner account
+      description: Pending user plus one active staff membership and a single seeded role.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminOwnerCreateRequest"
+      responses:
+        "201":
+          description: Owner created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminOwnerUser"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
   /api/v1/admin/users/owners/stats:
     get:
       tags: [Admin]
@@ -4299,6 +4355,40 @@ paths:
           $ref: "#/components/responses/Error"
         "404":
           $ref: "#/components/responses/Error"
+  /api/v1/admin/users/owners/{id}/staff/{staff_id}:
+    patch:
+      tags: [Admin]
+      summary: Replace a staff member's seeded role
+      description: Swaps org_owner and org_staff. Refuses to demote the last organization owner.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+        - name: staff_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminStaffRoleRequest"
+      responses:
+        "200":
+          description: Owner updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminOwnerUser"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
   /api/v1/admin/users/admins:
     get:
       tags: [Admin]
@@ -4322,6 +4412,33 @@ paths:
         "401":
           $ref: "#/components/responses/Error"
         "403":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+    post:
+      tags: [Admin]
+      summary: Provision a system admin
+      description: Internal provisioning. Public registration still cannot set is_system_admin.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminUserAccountRequest"
+      responses:
+        "201":
+          description: Admin created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminSystemUser"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "409":
           $ref: "#/components/responses/Error"
         "422":
           $ref: "#/components/responses/ValidationFailed"
@@ -4554,6 +4671,38 @@ paths:
           $ref: "#/components/responses/Error"
         "404":
           $ref: "#/components/responses/Error"
+  /api/v1/admin/users/{id}:
+    patch:
+      tags: [Admin]
+      summary: Update a user profile
+      description: Email, phone, and names. Changing email or phone clears that contact's verification. Does not change status, role, or is_system_admin.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminUserProfileRequest"
+      responses:
+        "200":
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUser"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
   /api/v1/admin/users/{id}/reset-password:
     post:
       tags: [Admin]
@@ -5023,6 +5172,8 @@ components:
         email: { type: string, format: email }
         display_name: { type: string }
         full_name: { type: string }
+        first_name: { type: string }
+        last_name: { type: string }
         phone: { type: string }
         status: { type: string, enum: [pending, active, suspended, locked, deleted] }
         is_system_admin: { type: boolean }
@@ -5140,6 +5291,40 @@ components:
         ip_address: { type: string }
         user_agent: { type: string }
         created_at: { type: string, format: date-time, description: UTC }
+    AdminUserAccountRequest:
+      type: object
+      description: full_name and display_name are derived as last name then first name.
+      required: [email, password, first_name]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 8, description: BR-806. Never returned. }
+        first_name: { type: string }
+        last_name: { type: string }
+        phone: { type: string }
+    AdminUserProfileRequest:
+      type: object
+      description: full_name and display_name are derived as last name then first name.
+      required: [email, first_name]
+      properties:
+        email: { type: string, format: email }
+        first_name: { type: string }
+        last_name: { type: string }
+        phone: { type: string }
+    AdminOwnerCreateRequest:
+      allOf:
+        - $ref: "#/components/schemas/AdminUserAccountRequest"
+        - type: object
+          required: [organization_id, staff_role]
+          properties:
+            organization_id: { type: string, format: uuid }
+            staff_role: { type: string, enum: [org_owner, org_staff] }
+            title: { type: string }
+    AdminStaffRoleRequest:
+      type: object
+      required: [role_code]
+      properties:
+        role_code: { type: string, enum: [org_owner, org_staff] }
+        title: { type: string }
     SuspendUserRequest:
       type: object
       required: [reason]

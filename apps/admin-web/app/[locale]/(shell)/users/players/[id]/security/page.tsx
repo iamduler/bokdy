@@ -1,5 +1,10 @@
-import { UserSecurityView } from "@/components/users/detail/user-security-view";
+import { redirect } from "@/i18n/navigation";
 
-export default function PlayerSecurityPage() {
-  return <UserSecurityView />;
+export default async function PlayerSecurityPage({
+  params,
+}: {
+  params: Promise<{ locale: string; id: string }>;
+}) {
+  const { locale, id } = await params;
+  redirect({ href: `/users/players/${id}`, locale });
 }

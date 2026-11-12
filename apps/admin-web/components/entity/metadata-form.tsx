@@ -38,7 +38,7 @@ type FieldBase<T extends FieldValues> = {
 
 export type EntityTextField<T extends FieldValues> = FieldBase<T> & {
   kind: "text";
-  inputType?: "text" | "email" | "tel" | "url";
+  inputType?: "text" | "email" | "tel" | "url" | "password";
   placeholder?: string;
   autoComplete?: string;
   /** Normalize value on change (e.g. Vietnamese → ASCII). */

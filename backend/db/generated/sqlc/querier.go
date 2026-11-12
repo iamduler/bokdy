@@ -27,6 +27,7 @@ type Querier interface {
 	CheckInBooking(ctx context.Context, arg CheckInBookingParams) error
 	ClearBranchMediaCover(ctx context.Context, branchID uuid.UUID) error
 	ClearCourtMediaCover(ctx context.Context, courtID uuid.UUID) error
+	ClearUserEmailVerified(ctx context.Context, id uuid.UUID) error
 	ClearUserPhoneVerified(ctx context.Context, id uuid.UUID) error
 	CompleteBooking(ctx context.Context, arg CompleteBookingParams) error
 	CompleteResourceMaintenance(ctx context.Context, id uuid.UUID) error
@@ -183,6 +184,7 @@ type Querier interface {
 	FindSportsByIDs(ctx context.Context, ids []uuid.UUID) ([]FindSportsByIDsRow, error)
 	FindStaffByID(ctx context.Context, arg FindStaffByIDParams) (FindStaffByIDRow, error)
 	FindStaffByOrgUser(ctx context.Context, arg FindStaffByOrgUserParams) (FindStaffByOrgUserRow, error)
+	FindStaffMemberByID(ctx context.Context, id uuid.UUID) (FindStaffMemberByIDRow, error)
 	FindTenantByID(ctx context.Context, id uuid.UUID) (FindTenantByIDRow, error)
 	FindTenantBySlug(ctx context.Context, slug string) (uuid.UUID, error)
 	FindUserByEmail(ctx context.Context, lower string) (FindUserByEmailRow, error)
@@ -262,7 +264,7 @@ type Querier interface {
 	ListPricingProfilesByBranch(ctx context.Context, branchID uuid.UUID) ([]ListPricingProfilesByBranchRow, error)
 	ListProfileDurations(ctx context.Context, profileID uuid.UUID) ([]int32, error)
 	ListResourceBlocksOverlapping(ctx context.Context, arg ListResourceBlocksOverlappingParams) ([]ListResourceBlocksOverlappingRow, error)
-	ListSessionsByUser(ctx context.Context, userID uuid.UUID) ([]IdentitySession, error)
+	ListSessionsByUser(ctx context.Context, userID uuid.UUID) ([]ListSessionsByUserRow, error)
 	ListSports(ctx context.Context) ([]ListSportsRow, error)
 	ListStaffByOrg(ctx context.Context, organizationID uuid.UUID) ([]ListStaffByOrgRow, error)
 	ListTimeRules(ctx context.Context, priceVersionID uuid.UUID) ([]ListTimeRulesRow, error)
@@ -328,6 +330,7 @@ type Querier interface {
 	UpdatePriceVersionSlotUnit(ctx context.Context, arg UpdatePriceVersionSlotUnitParams) error
 	UpdatePricingProfile(ctx context.Context, arg UpdatePricingProfileParams) error
 	UpdatePrimaryContactValue(ctx context.Context, arg UpdatePrimaryContactValueParams) (int64, error)
+	UpdatePrimaryIdentityEmail(ctx context.Context, arg UpdatePrimaryIdentityEmailParams) error
 	UpdatePrimaryIdentityPhone(ctx context.Context, arg UpdatePrimaryIdentityPhoneParams) error
 	UpdateStaffMember(ctx context.Context, arg UpdateStaffMemberParams) error
 	UpdateStaffStatus(ctx context.Context, arg UpdateStaffStatusParams) error

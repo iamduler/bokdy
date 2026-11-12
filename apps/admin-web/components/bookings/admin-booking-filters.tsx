@@ -35,7 +35,7 @@ export function AdminBookingFilters({
   const tc = useTranslations("common");
   const locale = useLocale();
   return (
-    <div className="flex flex-col gap-2 p-4 md:flex-row md:flex-wrap md:items-end">
+    <div className="flex shrink-0 flex-col gap-2 border-b border-border/40 p-4 md:flex-row md:flex-wrap md:items-end">
       <label className="flex min-w-0 flex-1 flex-col gap-1 text-xs text-muted-foreground">
         {t("search")}
         <InputGroup className="h-9">
@@ -67,7 +67,6 @@ export function AdminBookingFilters({
           aria-label={t("status")}
           searchable={false}
           align="start"
-          className="w-full border border-input bg-background"
         />
       </label>
       <label className="flex min-w-40 flex-col gap-1 text-xs text-muted-foreground">

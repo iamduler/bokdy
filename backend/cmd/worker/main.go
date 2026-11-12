@@ -93,6 +93,7 @@ func main() {
 		identitypg.NewUserRepo(pool),
 		mail.NewLogMailer(queueLog),
 		outbox,
+		nil,
 	)
 
 	consumer := audit.NewConsumer(db.Pool)

@@ -69,7 +69,7 @@ func RegisterRoutes(api *gin.RouterGroup, app *server.Application) {
 	branchRepo := orgpg.NewBranchRepo(app.DB.Pool)
 	sportRepo := catalogpg.NewSportRepo(app.DB.Pool)
 	orgSvc := orgservice.NewOrganizationService(
-		app.DB.Pool, orgRepo, staffRepo, inviteRepo, roleRepo, userRepo, app.Mailer, outbox,
+		app.DB.Pool, orgRepo, staffRepo, inviteRepo, roleRepo, userRepo, app.Mailer, outbox, authSvc,
 	)
 	branchSvc := orgservice.NewBranchService(app.DB.Pool, orgRepo, branchRepo, sportRepo, orgSvc, outbox)
 	customerRepo := crmpg.NewCustomerRepo(app.DB.Pool)
@@ -154,5 +154,5 @@ func RegisterRoutes(api *gin.RouterGroup, app *server.Application) {
 	adminUserSvc := identityservice.NewAdminUserService(
 		app.DB.Pool, userRepo, adminUserRepo, sessionRepo, roleRepo, authSvc,
 	)
-	identityhandler.NewAdminUserHandler(adminUserSvc, bookingHandler).RegisterAdminRoutes(admin)
+	identityhandler.NewAdminUserHandler(adminUserSvc, orgSvc, bookingHandler).RegisterAdminRoutes(admin)
 }

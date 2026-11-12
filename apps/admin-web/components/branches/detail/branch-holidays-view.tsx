@@ -3,6 +3,7 @@
 import {
   Button,
   DatePicker,
+  FieldError,
   FieldLabel,
   Input,
   Table,
@@ -12,6 +13,8 @@ import {
   TableHeader,
   TableRow,
   toast,
+  formatUserDate,
+  useUserDateTimePrefs,
 } from "@bokdy/ui";
 import { CalendarDays } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
@@ -28,6 +31,14 @@ import { useBranchDetail } from "./branch-detail-context";
 import { BranchTabBody, BranchTabError, BranchTabLoading } from "./branch-tab-state";
 
 type Overlay = { holiday_on: string; name: string; effect: HolidayEffect };
+type RowErrors = { date?: boolean; name?: boolean };
+
+function rowErrors(rows: Overlay[]): RowErrors[] {
+  return rows.map((row) => ({
+    date: !row.holiday_on,
+    name: !row.name.trim(),
+  }));
+}
 
 function holidaySignature(rows: Overlay[]) {
   return rows
@@ -41,6 +52,7 @@ export function BranchHolidaysView() {
   const tc = useTranslations("common");
   const te = useTranslations("errors");
   const locale = useLocale();
+  const prefs = useUserDateTimePrefs();
   const effectOptions = [
     { value: "include", label: t("include"), keywords: t("include") },
     { value: "exclude", label: t("exclude"), keywords: t("exclude") },
@@ -49,6 +61,7 @@ export function BranchHolidaysView() {
   const query = useBranchHolidays(organizationId, branchId);
   const save = useReplaceBranchHolidays(organizationId, branchId);
   const [overlay, setOverlay] = useState<Overlay[]>([]);
+  const [errors, setErrors] = useState<RowErrors[]>([]);
 
   useEffect(() => {
     setOverlay(
@@ -56,6 +69,7 @@ export function BranchHolidaysView() {
         .filter((holiday) => holiday.source === "branch")
         .map((holiday) => ({ holiday_on: holiday.holiday_on, name: holiday.name, effect: holiday.effect })),
     );
+    setErrors([]);
   }, [query.data]);
 
   const covered = new Set(overlay.map((row) => row.holiday_on));
@@ -76,16 +90,12 @@ export function BranchHolidaysView() {
   }
 
   async function onSave() {
-    const incomplete = overlay.some((row) => (row.holiday_on || row.name.trim()) && !(row.holiday_on && row.name.trim()));
-    if (incomplete) {
-      toast.error(t("incomplete"));
-      return;
-    }
+    const nextErrors = rowErrors(overlay);
+    setErrors(nextErrors);
+    if (nextErrors.some((error) => error.date || error.name)) return;
     try {
       await save.mutateAsync(
-        overlay
-          .filter((row) => row.holiday_on && row.name.trim())
-          .map((row) => ({ holiday_on: row.holiday_on, name: row.name.trim(), effect: row.effect })),
+        overlay.map((row) => ({ holiday_on: row.holiday_on, name: row.name.trim(), effect: row.effect })),
       );
       toast.success(t("saved"));
     } catch (err) {
@@ -109,7 +119,7 @@ export function BranchHolidaysView() {
                 action={
                   <div className="flex flex-wrap justify-center gap-2">
                     <Button type="button" size="sm" onClick={addRow}>
-                      {t("addDate")}
+                      {t("addRow")}
                     </Button>
                     {dirty ? (
                       <Button type="button" size="sm" disabled={save.isPending} onClick={() => void onSave()}>
@@ -125,7 +135,7 @@ export function BranchHolidaysView() {
                 <div>
                   <p className="text-sm font-medium">{holiday.name}</p>
                   <p className="text-xs text-muted-foreground">
-                    {holiday.holiday_on} · {t(`source.${holiday.source}`)} · {t(holiday.effect)}
+                    {formatUserDate(holiday.holiday_on, prefs)} · {t(`source.${holiday.source}`)} · {t(holiday.effect)}
                   </p>
                 </div>
                 {holiday.effect === "include" ? (
@@ -160,31 +170,42 @@ export function BranchHolidaysView() {
                 <TableBody>
                   {overlay.map((row, index) => (
                     <TableRow key={index} className="hover:bg-transparent">
-                      <TableCell>
+                      <TableCell className="align-top">
                         <DatePicker
                           value={row.holiday_on}
                           onChange={(value) => {
                             const next = [...overlay];
                             next[index] = { ...row, holiday_on: value };
                             setOverlay(next);
+                            setErrors((current) =>
+                              current.map((error, i) => (i === index && error ? { ...error, date: !value } : error)),
+                            );
                           }}
                           locale={locale}
                           placeholder={tc("pickDate")}
                           aria-label={t("date")}
+                          aria-invalid={errors[index]?.date || undefined}
                         />
+                        {errors[index]?.date ? <FieldError className="mt-1">{t("dateRequired")}</FieldError> : null}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="align-top">
                         <Input
                           value={row.name}
                           aria-label={t("name")}
+                          aria-invalid={errors[index]?.name || undefined}
                           onChange={(event) => {
+                            const value = event.target.value;
                             const next = [...overlay];
-                            next[index] = { ...row, name: event.target.value };
+                            next[index] = { ...row, name: value };
                             setOverlay(next);
+                            setErrors((current) =>
+                              current.map((error, i) => (i === index && error ? { ...error, name: !value.trim() } : error)),
+                            );
                           }}
                         />
+                        {errors[index]?.name ? <FieldError className="mt-1">{t("nameRequired")}</FieldError> : null}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="align-top">
                         <PopoverCommandSelect
                           value={row.effect}
                           onValueChange={(value) => {
@@ -199,8 +220,17 @@ export function BranchHolidaysView() {
                           className="w-full border border-input bg-background"
                         />
                       </TableCell>
-                      <TableCell>
-                        <Button type="button" size="sm" variant="outline" className="h-9" onClick={() => setOverlay(overlay.filter((_, i) => i !== index))}>
+                      <TableCell className="align-top">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="h-9"
+                          onClick={() => {
+                            setOverlay(overlay.filter((_, i) => i !== index));
+                            setErrors((current) => current.filter((_, i) => i !== index));
+                          }}
+                        >
                           {t("remove")}
                         </Button>
                       </TableCell>
@@ -212,7 +242,7 @@ export function BranchHolidaysView() {
             {isEmpty ? null : (
               <div className="flex flex-wrap gap-2">
                 <Button type="button" size="sm" variant="outline" onClick={addRow}>
-                  {t("addDate")}
+                  {t("addRow")}
                 </Button>
                 <Button type="button" size="sm" disabled={!dirty || save.isPending} onClick={() => void onSave()}>
                   {t("save")}

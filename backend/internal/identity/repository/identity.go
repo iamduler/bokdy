@@ -16,6 +16,7 @@ type IdentityRepository interface {
 	FindPrimaryByUserID(ctx context.Context, userID uuid.UUID) (*entity.Identity, error)
 	FindByPhone(ctx context.Context, phone string) (*entity.Identity, error)
 	UpdatePrimaryPhone(ctx context.Context, tx pgx.Tx, userID uuid.UUID, phone string) error
+	UpdatePrimaryEmail(ctx context.Context, tx pgx.Tx, userID uuid.UUID, email string) error
 	CreateVerification(ctx context.Context, tx pgx.Tx, identityID uuid.UUID, tokenHash string, expiresAt time.Time) (uuid.UUID, error)
 	VerifyByTokenHash(ctx context.Context, tx pgx.Tx, tokenHash string) (uuid.UUID, uuid.UUID, error)
 }

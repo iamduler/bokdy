@@ -3,6 +3,7 @@
 import { Button, Label } from "@bokdy/ui";
 import {
   PauseCircle,
+  Plus,
   ShieldCheck,
   UserPlus,
   Users,
@@ -12,6 +13,7 @@ import { useMemo, type ReactNode } from "react";
 
 import {
   DataListLayout,
+  softDirectoryPrimaryBtn,
   type DataListStatItem,
   type DataListStatusTab,
 } from "@/components/data-list";
@@ -48,6 +50,7 @@ type UserDirectoryToolbarProps = {
   onReplaceParams: (updates: Record<string, string | undefined>) => void;
   stats?: UserDirectoryStats;
   statsLoading?: boolean;
+  onCreate: () => void;
   children: ReactNode;
 };
 
@@ -64,6 +67,7 @@ export function UserDirectoryToolbar({
   onReplaceParams,
   stats,
   statsLoading,
+  onCreate,
   children,
 }: UserDirectoryToolbarProps) {
   const t = useTranslations("users");
@@ -179,6 +183,17 @@ export function UserDirectoryToolbar({
       eyebrow={t(`audienceHint.${audience}`)}
       stats={kpiItems}
       statsLoading={statsLoading}
+      primaryAction={
+        <Button
+          type="button"
+          size="lg"
+          className={softDirectoryPrimaryBtn}
+          onClick={onCreate}
+        >
+          <Plus className="size-4" aria-hidden />
+          {t("accountForm.create")}
+        </Button>
+      }
       statusTabs={statusTabs}
       statusValue={status}
       onStatusChange={(value) =>
