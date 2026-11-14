@@ -61,9 +61,12 @@ SelectScrollDownButton.displayName = SelectPrimitive.ScrollDownButton.displayNam
 
 export const SelectContent = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content>
->(({ className, children, position = "popper", ...props }, ref) => (
-  <SelectPrimitive.Portal>
+  React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content> & {
+    /** Portal target. Use the nearest popover or dialog so the menu stays clickable. */
+    container?: HTMLElement | null;
+  }
+>(({ className, children, position = "popper", container, ...props }, ref) => (
+  <SelectPrimitive.Portal container={container ?? undefined}>
     <SelectPrimitive.Content
       ref={ref}
       data-slot="select-content"

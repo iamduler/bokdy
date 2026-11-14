@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"bokdy/db/generated/sqlc"
 	"bokdy/internal/identity/entity"
 	iderrors "bokdy/internal/identity/errors"
 	"bokdy/internal/identity/repository"
@@ -38,7 +39,10 @@ type AuthService struct {
 	mailer   mail.Mailer
 	cfg      *config.Config
 	outbox   events.Enqueuer
+	q        *dbsqlc.Queries
 }
+
+func (s *AuthService) SetQueries(q *dbsqlc.Queries) { s.q = q }
 
 func NewAuthService(
 	pool *pgxpool.Pool,
@@ -120,7 +124,7 @@ func (s *AuthService) Register(ctx context.Context, in RegisterInput) (*entity.U
 	var verifyToken string
 	var outboxID uuid.UUID
 	err = persistence.WithinTx(ctx, s.pool, func(tx pgx.Tx) error {
-		created, token, err := s.ProvisionLocalUser(ctx, tx, KindPlayer, norm, in.Password)
+		created, token, err := s.ProvisionLocalUser(ctx, tx, KindPlayer, norm, in.Password, ProfileExtras{})
 		if err != nil {
 			return err
 		}
@@ -425,6 +429,9 @@ type UpdateProfileInput struct {
 	LastName              *string
 	FullName              *string
 	DisplayName           *string
+	AvatarFileID          *string
+	Gender                *string
+	DateOfBirth           *string
 	Phone                 *string
 	LocaleID              *string
 	Timezone              *string
@@ -453,6 +460,36 @@ func (s *AuthService) UpdateProfile(ctx context.Context, userID uuid.UUID, in Up
 	}
 	if in.DisplayName != nil {
 		profile.DisplayName = strings.TrimSpace(*in.DisplayName)
+	}
+	if in.AvatarFileID != nil {
+		raw := strings.TrimSpace(*in.AvatarFileID)
+		if raw == "" {
+			profile.AvatarFileID = nil
+		} else {
+			parsed, err := uuid.Parse(raw)
+			if err != nil {
+				return nil, nil, nil, apperr.Validation("invalid avatar_file_id")
+			}
+			profile.AvatarFileID = &parsed
+		}
+	}
+	if in.Gender != nil {
+		gender := strings.TrimSpace(*in.Gender)
+		switch gender {
+		case "", "male", "female", "other", "undisclosed":
+			profile.Gender = gender
+		default:
+			return nil, nil, nil, apperr.Validation("invalid gender")
+		}
+	}
+	if in.DateOfBirth != nil {
+		raw := strings.TrimSpace(*in.DateOfBirth)
+		if raw != "" {
+			if _, err := time.Parse("2006-01-02", raw); err != nil {
+				return nil, nil, nil, apperr.Validation("invalid date_of_birth")
+			}
+		}
+		profile.DateOfBirth = raw
 	}
 	if profile.FullName == "" {
 		profile.FullName = strings.TrimSpace(profile.FirstName + " " + profile.LastName)

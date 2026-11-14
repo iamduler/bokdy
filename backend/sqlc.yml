@@ -15,6 +15,7 @@ sql:
       - "internal/platform/persistence/queries/pricing/*.sql"
       - "internal/platform/persistence/queries/reference/*.sql"
       - "internal/platform/persistence/queries/platform/*.sql"
+      - "internal/platform/persistence/queries/membership/*.sql"
     schema: "db/schema.sql"
     gen:
       go:

@@ -549,6 +549,91 @@ func (ns NullIdentityDateFormat) Value() (driver.Value, error) {
 	return string(ns.IdentityDateFormat), nil
 }
 
+type IdentityEmploymentStatus string
+
+const (
+	IdentityEmploymentStatusActive      IdentityEmploymentStatus = "active"
+	IdentityEmploymentStatusLeave       IdentityEmploymentStatus = "leave"
+	IdentityEmploymentStatusDeactivated IdentityEmploymentStatus = "deactivated"
+)
+
+func (e *IdentityEmploymentStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = IdentityEmploymentStatus(s)
+	case string:
+		*e = IdentityEmploymentStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for IdentityEmploymentStatus: %T", src)
+	}
+	return nil
+}
+
+type NullIdentityEmploymentStatus struct {
+	IdentityEmploymentStatus IdentityEmploymentStatus `json:"identity_employment_status"`
+	Valid                    bool                     `json:"valid"` // Valid is true if IdentityEmploymentStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullIdentityEmploymentStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.IdentityEmploymentStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.IdentityEmploymentStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullIdentityEmploymentStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.IdentityEmploymentStatus), nil
+}
+
+type IdentityFavoriteTarget string
+
+const (
+	IdentityFavoriteTargetBranch IdentityFavoriteTarget = "branch"
+	IdentityFavoriteTargetCourt  IdentityFavoriteTarget = "court"
+)
+
+func (e *IdentityFavoriteTarget) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = IdentityFavoriteTarget(s)
+	case string:
+		*e = IdentityFavoriteTarget(s)
+	default:
+		return fmt.Errorf("unsupported scan type for IdentityFavoriteTarget: %T", src)
+	}
+	return nil
+}
+
+type NullIdentityFavoriteTarget struct {
+	IdentityFavoriteTarget IdentityFavoriteTarget `json:"identity_favorite_target"`
+	Valid                  bool                   `json:"valid"` // Valid is true if IdentityFavoriteTarget is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullIdentityFavoriteTarget) Scan(value interface{}) error {
+	if value == nil {
+		ns.IdentityFavoriteTarget, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.IdentityFavoriteTarget.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullIdentityFavoriteTarget) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.IdentityFavoriteTarget), nil
+}
+
 type IdentityGender string
 
 const (
@@ -684,6 +769,49 @@ func (ns NullIdentityMfaType) Value() (driver.Value, error) {
 	return string(ns.IdentityMfaType), nil
 }
 
+type IdentityProfileVisibility string
+
+const (
+	IdentityProfileVisibilityPublic  IdentityProfileVisibility = "public"
+	IdentityProfileVisibilityMembers IdentityProfileVisibility = "members"
+	IdentityProfileVisibilityPrivate IdentityProfileVisibility = "private"
+)
+
+func (e *IdentityProfileVisibility) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = IdentityProfileVisibility(s)
+	case string:
+		*e = IdentityProfileVisibility(s)
+	default:
+		return fmt.Errorf("unsupported scan type for IdentityProfileVisibility: %T", src)
+	}
+	return nil
+}
+
+type NullIdentityProfileVisibility struct {
+	IdentityProfileVisibility IdentityProfileVisibility `json:"identity_profile_visibility"`
+	Valid                     bool                      `json:"valid"` // Valid is true if IdentityProfileVisibility is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullIdentityProfileVisibility) Scan(value interface{}) error {
+	if value == nil {
+		ns.IdentityProfileVisibility, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.IdentityProfileVisibility.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullIdentityProfileVisibility) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.IdentityProfileVisibility), nil
+}
+
 type IdentityRoleScope string
 
 const (
@@ -815,11 +943,12 @@ func (ns NullIdentityTheme) Value() (driver.Value, error) {
 type IdentityUserStatus string
 
 const (
-	IdentityUserStatusPending   IdentityUserStatus = "pending"
-	IdentityUserStatusActive    IdentityUserStatus = "active"
-	IdentityUserStatusSuspended IdentityUserStatus = "suspended"
-	IdentityUserStatusLocked    IdentityUserStatus = "locked"
-	IdentityUserStatusDeleted   IdentityUserStatus = "deleted"
+	IdentityUserStatusPending     IdentityUserStatus = "pending"
+	IdentityUserStatusActive      IdentityUserStatus = "active"
+	IdentityUserStatusSuspended   IdentityUserStatus = "suspended"
+	IdentityUserStatusLocked      IdentityUserStatus = "locked"
+	IdentityUserStatusDeleted     IdentityUserStatus = "deleted"
+	IdentityUserStatusDeactivated IdentityUserStatus = "deactivated"
 )
 
 func (e *IdentityUserStatus) Scan(src interface{}) error {
@@ -942,6 +1071,49 @@ func (ns NullInfrastructureEventStatus) Value() (driver.Value, error) {
 		return nil, nil
 	}
 	return string(ns.InfrastructureEventStatus), nil
+}
+
+type MembershipAccountStatus string
+
+const (
+	MembershipAccountStatusActive   MembershipAccountStatus = "active"
+	MembershipAccountStatusExpired  MembershipAccountStatus = "expired"
+	MembershipAccountStatusCanceled MembershipAccountStatus = "canceled"
+)
+
+func (e *MembershipAccountStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = MembershipAccountStatus(s)
+	case string:
+		*e = MembershipAccountStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for MembershipAccountStatus: %T", src)
+	}
+	return nil
+}
+
+type NullMembershipAccountStatus struct {
+	MembershipAccountStatus MembershipAccountStatus `json:"membership_account_status"`
+	Valid                   bool                    `json:"valid"` // Valid is true if MembershipAccountStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullMembershipAccountStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.MembershipAccountStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.MembershipAccountStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullMembershipAccountStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.MembershipAccountStatus), nil
 }
 
 type OrganizationBranchStatus string
@@ -1073,6 +1245,50 @@ func (ns NullOrganizationInvitationStatus) Value() (driver.Value, error) {
 		return nil, nil
 	}
 	return string(ns.OrganizationInvitationStatus), nil
+}
+
+type OrganizationKycStatus string
+
+const (
+	OrganizationKycStatusDraft    OrganizationKycStatus = "draft"
+	OrganizationKycStatusPending  OrganizationKycStatus = "pending"
+	OrganizationKycStatusApproved OrganizationKycStatus = "approved"
+	OrganizationKycStatusRejected OrganizationKycStatus = "rejected"
+)
+
+func (e *OrganizationKycStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = OrganizationKycStatus(s)
+	case string:
+		*e = OrganizationKycStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for OrganizationKycStatus: %T", src)
+	}
+	return nil
+}
+
+type NullOrganizationKycStatus struct {
+	OrganizationKycStatus OrganizationKycStatus `json:"organization_kyc_status"`
+	Valid                 bool                  `json:"valid"` // Valid is true if OrganizationKycStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullOrganizationKycStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.OrganizationKycStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.OrganizationKycStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullOrganizationKycStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.OrganizationKycStatus), nil
 }
 
 type OrganizationOrganizationStatus string
@@ -2147,6 +2363,17 @@ type CatalogSport struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
+type CatalogSportSkillLevel struct {
+	ID        uuid.UUID `json:"id"`
+	SportID   uuid.UUID `json:"sport_id"`
+	Code      string    `json:"code"`
+	NameEn    string    `json:"name_en"`
+	NameVi    string    `json:"name_vi"`
+	SortOrder int32     `json:"sort_order"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
 type CrmCustomer struct {
 	ID               uuid.UUID         `json:"id"`
 	PublicID         string            `json:"public_id"`
@@ -2297,6 +2524,57 @@ type IdentityPermission struct {
 	UpdatedAt     time.Time `json:"updated_at"`
 }
 
+type IdentityPlatformAdminProfile struct {
+	ID               uuid.UUID                `json:"id"`
+	UserID           uuid.UUID                `json:"user_id"`
+	EmployeeCode     *string                  `json:"employee_code"`
+	Department       *string                  `json:"department"`
+	JobTitle         *string                  `json:"job_title"`
+	ManagerUserID    *uuid.UUID               `json:"manager_user_id"`
+	WorkEmail        *string                  `json:"work_email"`
+	WorkPhone        *string                  `json:"work_phone"`
+	EmploymentStatus IdentityEmploymentStatus `json:"employment_status"`
+	IsMfaRequired    bool                     `json:"is_mfa_required"`
+	AssignedAt       *time.Time               `json:"assigned_at"`
+	DeactivatedAt    *time.Time               `json:"deactivated_at"`
+	CreatedAt        time.Time                `json:"created_at"`
+	UpdatedAt        time.Time                `json:"updated_at"`
+}
+
+type IdentityPlayerFavorite struct {
+	ID         uuid.UUID              `json:"id"`
+	UserID     uuid.UUID              `json:"user_id"`
+	TargetType IdentityFavoriteTarget `json:"target_type"`
+	TargetID   uuid.UUID              `json:"target_id"`
+	CreatedAt  time.Time              `json:"created_at"`
+}
+
+type IdentityPlayerProfile struct {
+	ID                    uuid.UUID                 `json:"id"`
+	UserID                uuid.UUID                 `json:"user_id"`
+	Bio                   *string                   `json:"bio"`
+	PreferredPlayingTimes *string                   `json:"preferred_playing_times"`
+	PreferredLocations    *string                   `json:"preferred_locations"`
+	Visibility            IdentityProfileVisibility `json:"visibility"`
+	IsOpenToInvitations   bool                      `json:"is_open_to_invitations"`
+	IsDiscoverable        bool                      `json:"is_discoverable"`
+	IsActivityVisible     bool                      `json:"is_activity_visible"`
+	CreatedAt             time.Time                 `json:"created_at"`
+	UpdatedAt             time.Time                 `json:"updated_at"`
+}
+
+type IdentityPlayerSportProfile struct {
+	ID           uuid.UUID `json:"id"`
+	UserID       uuid.UUID `json:"user_id"`
+	SportID      uuid.UUID `json:"sport_id"`
+	SkillLevelID uuid.UUID `json:"skill_level_id"`
+	DominantHand *string   `json:"dominant_hand"`
+	PlayingStyle *string   `json:"playing_style"`
+	Experience   *string   `json:"experience"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+}
+
 type IdentityRefreshToken struct {
 	ID        uuid.UUID  `json:"id"`
 	SessionID uuid.UUID  `json:"session_id"`
@@ -2333,6 +2611,7 @@ type IdentitySession struct {
 	LastActivityAt *time.Time            `json:"last_activity_at"`
 	ExpiresAt      time.Time             `json:"expires_at"`
 	CreatedAt      time.Time             `json:"created_at"`
+	MfaVerifiedAt  *time.Time            `json:"mfa_verified_at"`
 }
 
 type IdentityUser struct {
@@ -2366,6 +2645,10 @@ type IdentityUserProfile struct {
 	PreferredCurrencyCode *string            `json:"preferred_currency_code"`
 	Theme                 IdentityTheme      `json:"theme"`
 	DateFormat            IdentityDateFormat `json:"date_format"`
+	ProvinceID            *uuid.UUID         `json:"province_id"`
+	WardID                *uuid.UUID         `json:"ward_id"`
+	AddressLine           *string            `json:"address_line"`
+	BannerFileID          *uuid.UUID         `json:"banner_file_id"`
 }
 
 type IdentityUserRole struct {
@@ -2411,6 +2694,38 @@ type InfrastructureOutboxEvent struct {
 	Attempts    int32                     `json:"attempts"`
 	AvailableAt time.Time                 `json:"available_at"`
 	CreatedAt   time.Time                 `json:"created_at"`
+}
+
+type MembershipAccount struct {
+	ID             uuid.UUID               `json:"id"`
+	PublicID       string                  `json:"public_id"`
+	OrganizationID uuid.UUID               `json:"organization_id"`
+	UserID         uuid.UUID               `json:"user_id"`
+	TierName       string                  `json:"tier_name"`
+	Status         MembershipAccountStatus `json:"status"`
+	PointsBalance  int32                   `json:"points_balance"`
+	ValidUntil     pgtype.Date             `json:"valid_until"`
+	CreatedAt      time.Time               `json:"created_at"`
+	UpdatedAt      time.Time               `json:"updated_at"`
+}
+
+type MembershipPointLedger struct {
+	ID        uuid.UUID  `json:"id"`
+	AccountID uuid.UUID  `json:"account_id"`
+	BookingID *uuid.UUID `json:"booking_id"`
+	Points    int32      `json:"points"`
+	Reason    string     `json:"reason"`
+	CreatedAt time.Time  `json:"created_at"`
+}
+
+type MembershipVoucher struct {
+	ID        uuid.UUID `json:"id"`
+	PublicID  string    `json:"public_id"`
+	AccountID uuid.UUID `json:"account_id"`
+	Code      string    `json:"code"`
+	Title     string    `json:"title"`
+	Status    string    `json:"status"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 type OrganizationBranch struct {
@@ -2501,6 +2816,27 @@ type OrganizationBusinessUnit struct {
 	Status         OrganizationBusinessUnitStatus `json:"status"`
 	CreatedAt      time.Time                      `json:"created_at"`
 	UpdatedAt      time.Time                      `json:"updated_at"`
+}
+
+type OrganizationKycCase struct {
+	ID              uuid.UUID             `json:"id"`
+	PublicID        string                `json:"public_id"`
+	OrganizationID  uuid.UUID             `json:"organization_id"`
+	Status          OrganizationKycStatus `json:"status"`
+	SubmittedAt     *time.Time            `json:"submitted_at"`
+	VerifiedAt      *time.Time            `json:"verified_at"`
+	RejectionReason *string               `json:"rejection_reason"`
+	ReviewerUserID  *uuid.UUID            `json:"reviewer_user_id"`
+	CreatedAt       time.Time             `json:"created_at"`
+	UpdatedAt       time.Time             `json:"updated_at"`
+}
+
+type OrganizationKycDocument struct {
+	ID           uuid.UUID `json:"id"`
+	KycCaseID    uuid.UUID `json:"kyc_case_id"`
+	FileID       uuid.UUID `json:"file_id"`
+	DocumentType string    `json:"document_type"`
+	CreatedAt    time.Time `json:"created_at"`
 }
 
 type OrganizationOrganization struct {

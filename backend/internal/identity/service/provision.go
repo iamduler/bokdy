@@ -7,6 +7,7 @@ import (
 
 	"bokdy/internal/identity/entity"
 	iderrors "bokdy/internal/identity/errors"
+	"bokdy/internal/identity/repository"
 	"bokdy/internal/platform/apperr"
 	"bokdy/internal/platform/i18n"
 	"bokdy/internal/platform/id"
@@ -37,6 +38,24 @@ type AccountInput struct {
 	LastName    string
 	Phone       string
 	DisplayName string
+	Extras      ProfileExtras
+}
+
+// ProfileExtras carries the optional identity profile columns an admin form edits.
+// Names stay on AccountInput and are still composed by normalizeAccount.
+type ProfileExtras struct {
+	Set                   bool
+	Gender                string
+	DateOfBirth           string
+	LocaleID              string
+	Timezone              string
+	CountryID             string
+	PreferredCurrencyCode string
+	Theme                 string
+	DateFormat            string
+	ProvinceID            string
+	WardID                string
+	AddressLine           string
 }
 
 type NormalizedAccount struct {
@@ -111,7 +130,7 @@ func BuildProvisionedUser(kind AccountKind, now time.Time) *entity.User {
 
 type LocalProvisioner interface {
 	AccountAvailable(ctx context.Context, email, phone string, self uuid.UUID) error
-	ProvisionLocalUser(ctx context.Context, tx pgx.Tx, kind AccountKind, norm NormalizedAccount, password string) (*entity.User, string, error)
+	ProvisionLocalUser(ctx context.Context, tx pgx.Tx, kind AccountKind, norm NormalizedAccount, password string, extras ProfileExtras) (*entity.User, string, error)
 	SendVerification(ctx context.Context, email, token string)
 }
 
@@ -130,7 +149,7 @@ func (s *AuthService) AccountAvailable(ctx context.Context, email, phone string,
 	return RejectTakenContact(self, existing, phone, phoneOwner)
 }
 
-func (s *AuthService) ProvisionLocalUser(ctx context.Context, tx pgx.Tx, kind AccountKind, norm NormalizedAccount, password string) (*entity.User, string, error) {
+func (s *AuthService) ProvisionLocalUser(ctx context.Context, tx pgx.Tx, kind AccountKind, norm NormalizedAccount, password string, extras ProfileExtras) (*entity.User, string, error) {
 	now := time.Now().UTC()
 	user := BuildProvisionedUser(kind, now)
 	user.ID = id.MustNewUUID()
@@ -144,6 +163,12 @@ func (s *AuthService) ProvisionLocalUser(ctx context.Context, tx pgx.Tx, kind Ac
 		PreferredCurrencyCode: i18n.DefaultCurrencyCode,
 		Theme:                 entity.ThemeSystem, DateFormat: entity.DateFormatDMY,
 		CreatedAt: now, UpdatedAt: now,
+	}
+	if err := ValidateProfilePlace(ctx, s.users, extras); err != nil {
+		return nil, "", err
+	}
+	if err := ApplyProfileExtras(profile, extras); err != nil {
+		return nil, "", err
 	}
 	ident := &entity.Identity{
 		ID: id.MustNewUUID(), UserID: user.ID, Provider: entity.ProviderLocal,
@@ -168,6 +193,141 @@ func (s *AuthService) ProvisionLocalUser(ctx context.Context, tx pgx.Tx, kind Ac
 		return nil, "", err
 	}
 	return user, verifyToken, nil
+}
+
+func ApplyProfileExtras(profile *entity.UserProfile, in ProfileExtras) error {
+	if !in.Set || profile == nil {
+		return nil
+	}
+	gender := strings.TrimSpace(in.Gender)
+	switch gender {
+	case "", "male", "female", "other", "undisclosed":
+		profile.Gender = gender
+	default:
+		return apperr.Validation("invalid gender")
+	}
+	dob := strings.TrimSpace(in.DateOfBirth)
+	if dob != "" {
+		if _, err := time.Parse("2006-01-02", dob); err != nil {
+			return apperr.Validation("invalid date_of_birth")
+		}
+	}
+	profile.DateOfBirth = dob
+	localeID, err := optionalUUID(in.LocaleID, "invalid locale_id")
+	if err != nil {
+		return err
+	}
+	if localeID != nil {
+		profile.LocaleID = localeID
+	}
+	countryID, err := optionalUUID(in.CountryID, "invalid country_id")
+	if err != nil {
+		return err
+	}
+	if countryID != nil {
+		profile.CountryID = countryID
+	}
+	if tz := strings.TrimSpace(in.Timezone); tz != "" {
+		if _, err := time.LoadLocation(tz); err != nil {
+			return apperr.Validation("invalid timezone")
+		}
+		profile.Timezone = tz
+	}
+	provinceID, err := optionalUUID(in.ProvinceID, "invalid province_id")
+	if err != nil {
+		return err
+	}
+	wardID, err := optionalUUID(in.WardID, "invalid ward_id")
+	if err != nil {
+		return err
+	}
+	if wardID != nil && provinceID == nil {
+		return apperr.Validation("ward requires a province")
+	}
+	profile.ProvinceID = provinceID
+	profile.WardID = wardID
+	profile.AddressLine = strings.TrimSpace(in.AddressLine)
+	currency := strings.ToUpper(strings.TrimSpace(in.PreferredCurrencyCode))
+	if currency != "" && len(currency) != 3 {
+		return apperr.Validation("invalid currency")
+	}
+	if currency != "" {
+		profile.PreferredCurrencyCode = currency
+	}
+	if theme := strings.TrimSpace(in.Theme); theme != "" {
+		parsed, ok := entity.ParseTheme(theme)
+		if !ok {
+			return apperr.Validation("invalid theme")
+		}
+		profile.Theme = parsed
+	}
+	if format := strings.TrimSpace(in.DateFormat); format != "" {
+		parsed, ok := entity.ParseDateFormat(format)
+		if !ok {
+			return apperr.Validation("invalid date_format")
+		}
+		profile.DateFormat = parsed
+	}
+	return nil
+}
+
+func ValidateProfilePlace(ctx context.Context, users repository.UserRepository, in ProfileExtras) error {
+	if !in.Set || users == nil {
+		return nil
+	}
+	if code := strings.ToUpper(strings.TrimSpace(in.PreferredCurrencyCode)); code != "" {
+		ok, err := users.CurrencyActive(ctx, code)
+		if err != nil {
+			return apperr.Wrap(err, apperr.CodeInternal, "lookup currency")
+		}
+		if !ok {
+			return apperr.Validation("invalid currency")
+		}
+	}
+	var provinceID uuid.UUID
+	if raw := strings.TrimSpace(in.ProvinceID); raw != "" {
+		parsed, err := uuid.Parse(raw)
+		if err != nil {
+			return apperr.Validation("invalid province_id")
+		}
+		ok, err := users.ProvinceActive(ctx, parsed)
+		if err != nil {
+			return apperr.Wrap(err, apperr.CodeInternal, "lookup province")
+		}
+		if !ok {
+			return apperr.Validation("invalid province_id")
+		}
+		provinceID = parsed
+	}
+	if raw := strings.TrimSpace(in.WardID); raw != "" {
+		if provinceID == uuid.Nil {
+			return apperr.Validation("ward requires a province")
+		}
+		parsed, err := uuid.Parse(raw)
+		if err != nil {
+			return apperr.Validation("invalid ward_id")
+		}
+		owner, err := users.WardProvince(ctx, parsed)
+		if err != nil {
+			return apperr.Wrap(err, apperr.CodeInternal, "lookup ward")
+		}
+		if owner == nil || *owner != provinceID {
+			return apperr.Validation("ward does not belong to the province")
+		}
+	}
+	return nil
+}
+
+func optionalUUID(raw, message string) (*uuid.UUID, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return nil, nil
+	}
+	parsed, err := uuid.Parse(raw)
+	if err != nil {
+		return nil, apperr.Validation(message)
+	}
+	return &parsed, nil
 }
 
 func (s *AuthService) SendVerification(ctx context.Context, email, token string) {

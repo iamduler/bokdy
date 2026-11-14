@@ -5,7 +5,7 @@ import { Button } from "@bokdy/ui";
 import { useTranslations } from "next-intl";
 
 import { useLogout } from "@/hooks/use-auth";
-import { useRouter } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 
 export default function DashboardPage() {
   const t = useTranslations("shell");
@@ -27,9 +27,14 @@ export default function DashboardPage() {
           <h1 className="text-2xl font-semibold tracking-tight">{t("welcome")}</h1>
           <p className="mt-1 text-muted-foreground">{t("subtitle")}</p>
         </div>
-        <Button variant="outline" onClick={onLogout} disabled={logout.isPending}>
-          {tc("logout")}
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" asChild>
+            <Link href="/profile">{t("profile")}</Link>
+          </Button>
+          <Button variant="outline" onClick={onLogout} disabled={logout.isPending}>
+            {tc("logout")}
+          </Button>
+        </div>
       </header>
     </main>
   );

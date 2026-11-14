@@ -454,6 +454,12 @@
   padding: 0.25rem;
 }
 
+.select-panel.select-caption .select-viewport-popper {
+  height: auto;
+  max-height: 13rem;
+  overflow-y: auto;
+}
+
 .select-item,
 .command-item {
   position: relative;

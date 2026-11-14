@@ -1,6 +1,7 @@
 package wiring
 
 import (
+	"bokdy/db/generated/sqlc"
 	bookinghandler "bokdy/internal/booking/handler"
 	bookingpg "bokdy/internal/booking/infrastructure/postgres"
 	bookingservice "bokdy/internal/booking/service"
@@ -14,6 +15,8 @@ import (
 	identityhandler "bokdy/internal/identity/handler"
 	identitypg "bokdy/internal/identity/infrastructure/postgres"
 	identityservice "bokdy/internal/identity/service"
+	membershiphandler "bokdy/internal/membership/handler"
+	membershipservice "bokdy/internal/membership/service"
 	orghandler "bokdy/internal/organization/handler"
 	orgpg "bokdy/internal/organization/infrastructure/postgres"
 	orgservice "bokdy/internal/organization/service"
@@ -61,6 +64,8 @@ func RegisterRoutes(api *gin.RouterGroup, app *server.Application) {
 		app.DB.Pool, userRepo, identRepo, credRepo, sessionRepo, roleRepo,
 		app.Tokens, app.Mailer, app.Config, outbox,
 	)
+	queries := dbsqlc.New(app.DB.Pool)
+	authSvc.SetQueries(queries)
 	authHandler := identityhandler.NewAuthHandler(authSvc)
 
 	orgRepo := orgpg.NewOrgRepo(app.DB.Pool)
@@ -71,10 +76,13 @@ func RegisterRoutes(api *gin.RouterGroup, app *server.Application) {
 	orgSvc := orgservice.NewOrganizationService(
 		app.DB.Pool, orgRepo, staffRepo, inviteRepo, roleRepo, userRepo, app.Mailer, outbox, authSvc,
 	)
+	orgSvc.SetQueries(queries)
 	branchSvc := orgservice.NewBranchService(app.DB.Pool, orgRepo, branchRepo, sportRepo, orgSvc, outbox)
 	customerRepo := crmpg.NewCustomerRepo(app.DB.Pool)
 	customerSvc := crmservice.NewCustomerService(app.DB.Pool, customerRepo, orgRepo, orgSvc, outbox)
 	orgHandler := orghandler.NewOrganizationHandler(orgSvc)
+	membershipSvc := membershipservice.New(queries)
+	orgHandler.SetMembership(membershipSvc)
 	branchHandler := orghandler.NewBranchHandler(branchSvc)
 	customerHandler := crmhandler.NewCustomerHandler(customerSvc)
 
@@ -98,6 +106,8 @@ func RegisterRoutes(api *gin.RouterGroup, app *server.Application) {
 	adminUnitRepo := refredis.NewCachedAdminUnitRepo(refpg.NewAdminUnitRepo(app.DB.Pool), app.Redis)
 	refhandler.NewReferenceHandler(
 		refservice.NewLocaleService(localeRepo),
+		refservice.NewCountryService(refpg.NewCountryRepo(app.DB.Pool)),
+		refservice.NewCurrencyService(refpg.NewCurrencyRepo(app.DB.Pool)),
 		refservice.NewAdminUnitService(adminUnitRepo),
 	).RegisterRoutes(api)
 
@@ -128,7 +138,9 @@ func RegisterRoutes(api *gin.RouterGroup, app *server.Application) {
 		customerRepo, orgRepo, orgSvc, occupancySvc, pricingSvc, outbox,
 	)
 	bookingHandler := bookinghandler.NewBookingHandler(bookingSvc)
+	bookingSvc.SetLoyalty(membershipSvc)
 	bookingHandler.RegisterRoutes(api, jwt)
+	membershiphandler.New(membershipSvc).RegisterRoutes(api, jwt)
 
 	reservationSvc := reservationservice.NewReservationService(
 		app.DB.Pool, reservationpg.NewReservationRepo(app.DB.Pool),
@@ -146,7 +158,7 @@ func RegisterRoutes(api *gin.RouterGroup, app *server.Application) {
 	)
 	paymenthandler.NewPaymentHandler(paymentSvc).RegisterRoutes(api, jwt)
 
-	admin := api.Group("/admin", jwt, middleware.RequireSystemAdmin())
+	admin := api.Group("/admin", jwt, middleware.RequireSystemAdmin(), authHandler.RequireMFA())
 	pricingHandler.RegisterAdminRoutes(admin)
 	orgHandler.RegisterAdminRoutes(admin)
 	bookingHandler.RegisterAdminRoutes(admin)
@@ -154,5 +166,6 @@ func RegisterRoutes(api *gin.RouterGroup, app *server.Application) {
 	adminUserSvc := identityservice.NewAdminUserService(
 		app.DB.Pool, userRepo, adminUserRepo, sessionRepo, roleRepo, authSvc,
 	)
+	adminUserSvc.SetFileDir(orgSvc.FileDir())
 	identityhandler.NewAdminUserHandler(adminUserSvc, orgSvc, bookingHandler).RegisterAdminRoutes(admin)
 }

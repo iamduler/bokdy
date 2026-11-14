@@ -26,6 +26,8 @@ Foundation sequence:
 | `00038_pricing_profile_audience.sql` | Price-list code, customer type, named day groups, holiday windows, unlimited duration |
 | `00039_pricing_active_per_audience.sql` | Allow one active price version per profile; org hourly stays one active per list |
 | `00040_pricing_holiday_layers.sql` | System holiday calendar, organization include/exclude overlay, branch holiday effect |
+| `00042_user_profile_place.sql` | User address, banner, and extra country and currency seeds |
+| `00041_shared_profiles.sql` | Shared player, admin employee, KYC, and organization membership profiles |
 | `00011_crm_w3_customers.sql` | crm.customers, customer_profiles, customer_contacts |
 | `00017_locales_emoji.sql` | locales.emoji; en native_name → English |
 

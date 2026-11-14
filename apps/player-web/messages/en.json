@@ -19,7 +19,55 @@
   "shell": {
     "dashboard": "Dashboard",
     "welcome": "Welcome to Bokdy Player",
-    "subtitle": "Foundation scaffold — no business domain yet."
+    "subtitle": "Foundation scaffold — no business domain yet.",
+    "profile": "Profile"
+  },
+  "profile": {
+    "title": "Profile",
+    "dashboard": "Dashboard",
+    "personal": "Personal information",
+    "firstName": "Given name",
+    "lastName": "Family name",
+    "displayName": "Display name",
+    "gender": "Gender",
+    "dateOfBirth": "Date of birth",
+    "save": "Save",
+    "saved": "Saved.",
+    "sports": "Sports",
+    "sport": "Sport",
+    "skill": "Skill level",
+    "saveSport": "Save sport",
+    "activity": "Activity",
+    "bookings": "{count, number} bookings",
+    "completed": "{count, number} completed",
+    "hours": "{count, number} hours played",
+    "spending": "{amount, number} spent",
+    "membership": "Membership",
+    "noMembership": "No organization membership yet.",
+    "favorites": "Favorites",
+    "noFavorites": "No favorites yet.",
+    "privacy": "Privacy",
+    "bio": "Bio",
+    "visibility": "Visibility",
+    "discoverable": "Allow discovery",
+    "invitations": "Allow invitations",
+    "activityVisible": "Show activity",
+    "security": "Security",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "changePassword": "Change password",
+    "passwordSaved": "Password changed.",
+    "genderOptions": {
+      "male": "Male",
+      "female": "Female",
+      "other": "Other",
+      "undisclosed": "Prefer not to say"
+    },
+    "visibilityOptions": {
+      "public": "Public",
+      "members": "Members",
+      "private": "Private"
+    }
   },
   "errors": {
     "UNAUTHORIZED": "Please sign in to continue",

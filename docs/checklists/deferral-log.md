@@ -19,6 +19,16 @@ Do not delete entries. If a deferred item returns to MVP, add a new entry that r
 
 ---
 
+### DEF-20261112-02
+
+- Date: 2026-11-12
+- From flow/ID: F-KYC (DEF-20260808-08); F-MEMBERSHIP (DEF-20260808-05)
+- New post-mvp ID: both return for the shared profile slice
+- Reason: the shared user profile covers KYC submission and organization-scoped loyalty
+- MVP workaround: none — PSP purchase stays deferred; an owner opens an active account with a tier, points, and end date
+- Unblocks later wave: player membership, owner KYC
+- Decided in: plan `shared_user_profiles`
+
 ### DEF-20261112-01
 
 - Date: 2026-11-12

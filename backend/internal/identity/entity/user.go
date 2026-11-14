@@ -9,11 +9,12 @@ import (
 type UserStatus string
 
 const (
-	UserStatusPending   UserStatus = "pending"
-	UserStatusActive    UserStatus = "active"
-	UserStatusSuspended UserStatus = "suspended"
-	UserStatusLocked    UserStatus = "locked"
-	UserStatusDeleted   UserStatus = "deleted"
+	UserStatusPending     UserStatus = "pending"
+	UserStatusActive      UserStatus = "active"
+	UserStatusSuspended   UserStatus = "suspended"
+	UserStatusLocked      UserStatus = "locked"
+	UserStatusDeactivated UserStatus = "deactivated"
+	UserStatusDeleted     UserStatus = "deleted"
 )
 
 type User struct {
@@ -35,9 +36,16 @@ type UserProfile struct {
 	LastName              string
 	FullName              string
 	DisplayName           string
+	AvatarFileID          *uuid.UUID
+	Gender                string
+	DateOfBirth           string
 	LocaleID              *uuid.UUID
 	Timezone              string
 	CountryID             *uuid.UUID
+	ProvinceID            *uuid.UUID
+	WardID                *uuid.UUID
+	AddressLine           string
+	BannerFileID          *uuid.UUID
 	PreferredCurrencyCode string
 	Theme                 Theme
 	DateFormat            DateFormat

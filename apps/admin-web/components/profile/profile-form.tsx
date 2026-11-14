@@ -1,6 +1,6 @@
 "use client";
 
-import { applyBokdyTheme, Button, formatUserDateTime, Input, Label, Spinner, THEME_STORAGE_KEY, type BokdyTheme, useUserDateTimePrefs } from "@bokdy/ui";
+import { applyBokdyTheme, Button, DatePicker, FieldError, FieldLabel, formatUserDateTime, Input, Label, Spinner, THEME_STORAGE_KEY, type BokdyTheme, useUserDateTimePrefs } from "@bokdy/ui";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
@@ -11,6 +11,7 @@ import { useMe } from "@/hooks/use-me";
 import { useUpdateMe } from "@/hooks/use-update-me";
 import { ApiError, errorMessageKey } from "@/lib/api/errors";
 import { profileSchema, type ProfileFormValues } from "@/lib/validation/profile";
+import { useLocale } from "next-intl";
 
 const THEMES: BokdyTheme[] = ["light", "dark", "system"];
 const DATE_FORMATS = ["dmy", "mdy", "ymd"] as const;
@@ -20,6 +21,7 @@ export function ProfileForm() {
   const tc = useTranslations("common");
   const te = useTranslations("errors");
   const prefs = useUserDateTimePrefs();
+  const locale = useLocale();
   const { data, isLoading, isError, refetch, isFetching } = useMe();
   const updateMe = useUpdateMe();
   const user = data?.user;
@@ -27,7 +29,7 @@ export function ProfileForm() {
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
-  const schema = useMemo(() => profileSchema({ currencyInvalid: te("INVALID") }), [te]);
+    const schema = useMemo(() => profileSchema({ currencyInvalid: te("INVALID"), required: te("REQUIRED") }), [te]);
 
   const {
     register,
@@ -38,6 +40,11 @@ export function ProfileForm() {
   } = useForm<ProfileFormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
+      first_name: "",
+      last_name: "",
+      display_name: "",
+      gender: "",
+      date_of_birth: "",
       theme: "system",
       date_format: "dmy",
       timezone: "",
@@ -47,7 +54,13 @@ export function ProfileForm() {
 
   useEffect(() => {
     if (!user) return;
+    const profile = user as typeof user & { gender?: string; date_of_birth?: string };
     reset({
+      first_name: user.first_name ?? "",
+      last_name: user.last_name ?? "",
+      display_name: user.display_name ?? "",
+      gender: (profile.gender as ProfileFormValues["gender"]) ?? "",
+      date_of_birth: profile.date_of_birth ?? "",
       theme: (user.theme as BokdyTheme) ?? "system",
       date_format: (user.date_format as ProfileFormValues["date_format"]) ?? "dmy",
       timezone: user.timezone ?? "",
@@ -76,6 +89,11 @@ export function ProfileForm() {
 
     try {
       await updateMe.mutateAsync({
+        first_name: values.first_name,
+        last_name: values.last_name,
+        display_name: values.display_name,
+        gender: values.gender,
+        date_of_birth: values.date_of_birth,
         theme: values.theme,
         date_format: values.date_format,
         timezone: values.timezone.trim() || undefined,
@@ -114,6 +132,51 @@ export function ProfileForm() {
       </div>
 
       <div className="space-y-4">
+        <div className="space-y-1.5">
+          <FieldLabel htmlFor="profile-first" required>{t("firstName")}</FieldLabel>
+          <Input id="profile-first" {...register("first_name")} />
+          <FieldError>{errors.first_name?.message}</FieldError>
+        </div>
+        <div className="space-y-1.5">
+          <FieldLabel htmlFor="profile-last">{t("lastName")}</FieldLabel>
+          <Input id="profile-last" {...register("last_name")} />
+        </div>
+        <div className="space-y-1.5">
+          <FieldLabel htmlFor="profile-display">{t("displayName")}</FieldLabel>
+          <Input id="profile-display" {...register("display_name")} />
+        </div>
+        <div className="space-y-1.5">
+          <FieldLabel>{t("gender")}</FieldLabel>
+          <Controller
+            control={control}
+            name="gender"
+            render={({ field }) => (
+              <PopoverCommandSelect
+                value={field.value}
+                onValueChange={field.onChange}
+                options={["", "male", "female", "other", "undisclosed"].map((value) => ({
+                  value,
+                  label: t(`genderOptions.${value || "unspecified"}`),
+                  keywords: value || "unspecified",
+                }))}
+                aria-label={t("gender")}
+                searchable={false}
+                align="start"
+                className="w-full border border-input bg-background"
+              />
+            )}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <FieldLabel>{t("dateOfBirth")}</FieldLabel>
+          <Controller
+            control={control}
+            name="date_of_birth"
+            render={({ field }) => (
+              <DatePicker value={field.value} onChange={field.onChange} locale={locale} placeholder={t("dateOfBirth")} />
+            )}
+          />
+        </div>
         <div className="space-y-1.5">
           <Label>{t("theme")}</Label>
           <Controller

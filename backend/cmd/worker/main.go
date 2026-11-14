@@ -7,10 +7,12 @@ import (
 	"path/filepath"
 	"time"
 
+	"bokdy/db/generated/sqlc"
 	bookingpg "bokdy/internal/booking/infrastructure/postgres"
 	bookingservice "bokdy/internal/booking/service"
 	crmpg "bokdy/internal/crm/infrastructure/postgres"
 	identitypg "bokdy/internal/identity/infrastructure/postgres"
+	membershipservice "bokdy/internal/membership/service"
 	orgpg "bokdy/internal/organization/infrastructure/postgres"
 	orgservice "bokdy/internal/organization/service"
 	paymentpg "bokdy/internal/payment/infrastructure/postgres"
@@ -110,6 +112,7 @@ func main() {
 		pool, bookingpg.NewBookingRepo(pool), bookingpg.NewInvoiceRepo(pool), intentRepo,
 		customerRepo, orgRepo, orgSvc, occupancySvc, pricingSvc, outbox,
 	)
+	bookingSvc.SetLoyalty(membershipservice.New(dbsqlc.New(pool)))
 	reservationSvc := reservationservice.NewReservationService(
 		pool, reservationpg.NewReservationRepo(pool),
 		customerRepo, orgRepo, orgSvc, occupancySvc, pricingSvc, bookingSvc, outbox,

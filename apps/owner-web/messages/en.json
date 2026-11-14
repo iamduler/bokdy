@@ -19,7 +19,31 @@
   "shell": {
     "dashboard": "Dashboard",
     "welcome": "Welcome to Bokdy Owner",
-    "subtitle": "Foundation scaffold — no business domain yet."
+    "subtitle": "Foundation scaffold — no business domain yet.",
+    "profile": "Profile"
+  },
+  "profile": {
+    "title": "Profile",
+    "dashboard": "Dashboard",
+    "personal": "Personal information",
+    "firstName": "Given name",
+    "lastName": "Family name",
+    "displayName": "Display name",
+    "save": "Save",
+    "saved": "Saved.",
+    "organizations": "Organizations",
+    "chooseOrganization": "Choose organization",
+    "successor": "New owner",
+    "transfer": "Transfer ownership",
+    "transferred": "Ownership transferred.",
+    "kycFile": "KYC file id",
+    "submitKyc": "Submit KYC",
+    "kycSubmitted": "KYC submitted.",
+    "security": "Security",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "changePassword": "Change password",
+    "passwordSaved": "Password changed."
   },
   "branch": {
     "address": {

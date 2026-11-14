@@ -41,7 +41,13 @@ export function UserDetailHeader() {
       <EntityIdentityHeader
         backHref={`/users/${audience}`}
         backLabel={tShell("menuBack")}
-        avatar={<EntityAvatar name={name} size="lg" />}
+        avatar={
+          <EntityAvatar
+            name={name}
+            size="lg"
+            src={user.avatar_file_id ? `/api/go/files/${user.avatar_file_id}` : undefined}
+          />
+        }
         title={name}
         badges={<UserStatusBadge status={user.status} />}
         meta={

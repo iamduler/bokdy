@@ -19,7 +19,55 @@
   "shell": {
     "dashboard": "Bảng điều khiển",
     "welcome": "Chào mừng đến Bokdy Player",
-    "subtitle": "Scaffold nền tảng — chưa có domain nghiệp vụ."
+    "subtitle": "Scaffold nền tảng — chưa có domain nghiệp vụ.",
+    "profile": "Hồ sơ"
+  },
+  "profile": {
+    "title": "Hồ sơ",
+    "dashboard": "Bảng điều khiển",
+    "personal": "Thông tin cá nhân",
+    "firstName": "Tên",
+    "lastName": "Họ",
+    "displayName": "Tên hiển thị",
+    "gender": "Giới tính",
+    "dateOfBirth": "Ngày sinh",
+    "save": "Lưu",
+    "saved": "Đã lưu.",
+    "sports": "Môn thể thao",
+    "sport": "Môn",
+    "skill": "Trình độ",
+    "saveSport": "Lưu môn",
+    "activity": "Hoạt động",
+    "bookings": "{count, number} lượt đặt",
+    "completed": "{count, number} đã hoàn tất",
+    "hours": "{count, number} giờ chơi",
+    "spending": "{amount, number} đã chi",
+    "membership": "Hạng thành viên",
+    "noMembership": "Chưa có hạng thành viên theo tổ chức.",
+    "favorites": "Yêu thích",
+    "noFavorites": "Chưa có mục yêu thích.",
+    "privacy": "Riêng tư",
+    "bio": "Giới thiệu",
+    "visibility": "Hiển thị",
+    "discoverable": "Cho phép khám phá",
+    "invitations": "Cho phép lời mời",
+    "activityVisible": "Hiện hoạt động",
+    "security": "Bảo mật",
+    "currentPassword": "Mật khẩu hiện tại",
+    "newPassword": "Mật khẩu mới",
+    "changePassword": "Đổi mật khẩu",
+    "passwordSaved": "Đã đổi mật khẩu.",
+    "genderOptions": {
+      "male": "Nam",
+      "female": "Nữ",
+      "other": "Khác",
+      "undisclosed": "Không muốn nói"
+    },
+    "visibilityOptions": {
+      "public": "Công khai",
+      "members": "Thành viên",
+      "private": "Riêng tư"
+    }
   },
   "errors": {
     "UNAUTHORIZED": "Vui lòng đăng nhập để tiếp tục",

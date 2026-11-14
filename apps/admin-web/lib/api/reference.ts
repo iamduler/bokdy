@@ -3,11 +3,21 @@ import type { components } from "@bokdy/sdk/schema";
 import { apiGo } from "@/lib/api/client";
 
 export type Locale = components["schemas"]["Locale"];
+export type Country = components["schemas"]["Country"];
+export type Currency = components["schemas"]["Currency"];
 export type AdminUnit = components["schemas"]["AdminUnit"];
 export type AdminDivisionScheme = components["schemas"]["AdminDivisionScheme"];
 
 export function listLocales() {
   return apiGo<Locale[]>("reference/locales");
+}
+
+export function listCountries() {
+  return apiGo<Country[]>("reference/countries");
+}
+
+export function listCurrencies() {
+  return apiGo<Currency[]>("reference/currencies");
 }
 
 export function listProvinces(scheme: AdminDivisionScheme) {

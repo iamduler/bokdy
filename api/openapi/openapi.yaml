@@ -95,6 +95,46 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/Locale"
+  /api/v1/reference/countries:
+    get:
+      tags: [Reference]
+      summary: List active countries
+      description: |
+        Public catalog of active countries from `reference.countries`.
+        `name` follows the request locale.
+      responses:
+        "200":
+          description: Active countries
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Country"
+  /api/v1/reference/currencies:
+    get:
+      tags: [Reference]
+      summary: List active currencies
+      description: |
+        Public catalog of active currencies from `reference.currencies`.
+        `name` follows the request locale.
+      responses:
+        "200":
+          description: Active currencies
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Currency"
   /api/v1/reference/admin-units/provinces:
     get:
       tags: [Reference]
@@ -575,6 +615,217 @@ paths:
           $ref: "#/components/responses/Error"
         "422":
           $ref: "#/components/responses/ValidationFailed"
+  /api/v1/identity/password:
+    post:
+      tags: [Identity]
+      summary: Change password while signed in
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [current_password, password]
+              properties:
+                current_password: { type: string }
+                password: { type: string }
+      responses:
+        "204": { description: Password changed }
+        "401": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /api/v1/identity/email:
+    post:
+      tags: [Identity]
+      summary: Change email and require verification again
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [current_password, email]
+              properties:
+                current_password: { type: string }
+                email: { type: string, format: email }
+      responses:
+        "204": { description: Verification sent. The token is not returned. }
+        "401": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /api/v1/identity/phone:
+    post:
+      tags: [Identity]
+      summary: Change phone and clear phone verification
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [current_password, phone]
+              properties:
+                current_password: { type: string }
+                phone: { type: string }
+      responses:
+        "204": { description: Phone updated }
+        "401": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /api/v1/identity/deactivate:
+    post:
+      tags: [Identity]
+      summary: Deactivate the signed-in account
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [current_password]
+              properties:
+                current_password: { type: string }
+      responses:
+        "204": { description: Deactivated }
+        "401": { $ref: "#/components/responses/Error" }
+  /api/v1/identity/mfa:
+    get:
+      tags: [Identity]
+      summary: TOTP status for the current session
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: OK }
+        "401": { $ref: "#/components/responses/Error" }
+  /api/v1/identity/mfa/enroll:
+    post:
+      tags: [Identity]
+      summary: Start TOTP enrollment
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Secret returned once for enrollment }
+        "401": { $ref: "#/components/responses/Error" }
+  /api/v1/identity/mfa/confirm:
+    post:
+      tags: [Identity]
+      summary: Confirm TOTP and mark the session
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code]
+              properties:
+                code: { type: string }
+      responses:
+        "204": { description: Confirmed }
+        "401": { $ref: "#/components/responses/Error" }
+  /api/v1/identity/player:
+    get:
+      tags: [Identity]
+      summary: Player profile and privacy
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: OK }
+        "401": { $ref: "#/components/responses/Error" }
+    put:
+      tags: [Identity]
+      summary: Save player profile and privacy
+      security: [{ bearerAuth: [] }]
+      responses:
+        "204": { description: Saved }
+        "401": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /api/v1/identity/skill-catalog:
+    get:
+      tags: [Identity]
+      summary: Sports and skill levels
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: OK }
+        "401": { $ref: "#/components/responses/Error" }
+  /api/v1/identity/sports:
+    get:
+      tags: [Identity]
+      summary: Sport profiles
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: OK }
+        "401": { $ref: "#/components/responses/Error" }
+    put:
+      tags: [Identity]
+      summary: Save one sport profile
+      security: [{ bearerAuth: [] }]
+      responses:
+        "204": { description: Saved }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /api/v1/identity/sports/{sportId}:
+    delete:
+      tags: [Identity]
+      summary: Remove a sport profile
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: sportId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204": { description: Removed }
+  /api/v1/identity/favorites:
+    get:
+      tags: [Identity]
+      summary: Favorite branches and courts
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: OK }
+    post:
+      tags: [Identity]
+      summary: Add a favorite
+      security: [{ bearerAuth: [] }]
+      responses:
+        "204": { description: Added }
+    delete:
+      tags: [Identity]
+      summary: Remove a favorite
+      security: [{ bearerAuth: [] }]
+      responses:
+        "204": { description: Removed }
+  /api/v1/identity/activity:
+    get:
+      tags: [Identity]
+      summary: Activity computed from bookings
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: OK }
+  /api/v1/identity/players/{userId}:
+    get:
+      tags: [Identity]
+      summary: View another player profile with privacy applied
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200": { description: OK }
+        "401": { $ref: "#/components/responses/Error" }
+  /api/v1/identity/employee:
+    get:
+      tags: [Identity]
+      summary: Platform employee profile
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: OK }
+    put:
+      tags: [Identity]
+      summary: Save platform employee profile
+      security: [{ bearerAuth: [] }]
+      responses:
+        "204": { description: Saved }
+        "403": { $ref: "#/components/responses/Error" }
   /api/v1/identity/sessions:
     get:
       tags: [Identity]
@@ -1099,6 +1350,124 @@ paths:
           $ref: "#/components/responses/Error"
         "404":
           $ref: "#/components/responses/Error"
+  /api/v1/organizations/{id}/ownership/transfer:
+    post:
+      tags: [Organizations]
+      summary: Transfer organization ownership
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [successor_user_id]
+              properties:
+                successor_user_id: { type: string, format: uuid }
+      responses:
+        "204": { description: Transferred }
+        "403": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/ValidationFailed" }
+  /api/v1/organizations/{id}/kyc:
+    get:
+      tags: [Organizations]
+      summary: List KYC cases for an organization
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+      responses:
+        "200": { description: OK }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [Organizations]
+      summary: Submit a KYC case
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [documents]
+              properties:
+                documents:
+                  type: array
+                  items:
+                    type: object
+                    required: [file_id, document_type]
+                    properties:
+                      file_id: { type: string, format: uuid }
+                      document_type: { type: string }
+      responses:
+        "201": { description: Created }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/organizations/{id}/memberships:
+    post:
+      tags: [Organizations]
+      summary: Open an organization membership account
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_id, tier_name]
+              properties:
+                user_id: { type: string, format: uuid }
+                tier_name: { type: string }
+                points: { type: integer }
+                valid_until: { type: string, format: date }
+      responses:
+        "201": { description: Created }
+  /api/v1/membership/accounts:
+    get:
+      tags: [Identity]
+      summary: Membership accounts for the signed-in user
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: OK }
+  /api/v1/membership/accounts/{id}/ledger:
+    get:
+      tags: [Identity]
+      summary: Point ledger
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200": { description: OK }
+  /api/v1/membership/accounts/{id}/vouchers:
+    get:
+      tags: [Identity]
+      summary: Vouchers
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200": { description: OK }
+    post:
+      tags: [Identity]
+      summary: Issue a voucher
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "204": { description: Issued }
   /api/v1/organizations/invitations/accept:
     post:
       tags: [Organizations]
@@ -4703,6 +5072,42 @@ paths:
           $ref: "#/components/responses/Error"
         "422":
           $ref: "#/components/responses/ValidationFailed"
+  /api/v1/admin/users/{id}/media:
+    post:
+      tags: [Admin]
+      summary: Upload a cropped user avatar or banner
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [kind, file]
+              properties:
+                kind: { type: string, enum: [avatar, banner] }
+                file: { type: string, format: binary }
+      responses:
+        "200":
+          description: User with the new file id
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/AdminUser"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
   /api/v1/admin/users/{id}/reset-password:
     post:
       tags: [Admin]
@@ -4720,6 +5125,48 @@ paths:
           $ref: "#/components/responses/Error"
         "404":
           $ref: "#/components/responses/Error"
+  /api/v1/admin/users/{id}/platform-roles:
+    post:
+      tags: [Admin]
+      summary: Assign a system role to another user
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role_id]
+              properties:
+                role_id: { type: string, format: uuid }
+      responses:
+        "204": { description: Assigned }
+        "403": { $ref: "#/components/responses/Error" }
+  /api/v1/admin/kyc/{id}/review:
+    post:
+      tags: [Admin]
+      summary: Approve or reject a KYC case
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [approve]
+              properties:
+                approve: { type: boolean }
+                reason: { type: string }
+      responses:
+        "204": { description: Reviewed }
+        "403": { $ref: "#/components/responses/Error" }
   /api/v1/admin/users/{id}/force-email-verify:
     post:
       tags: [Admin]
@@ -5175,6 +5622,19 @@ components:
         first_name: { type: string }
         last_name: { type: string }
         phone: { type: string }
+        gender: { type: string, enum: [male, female, other, undisclosed] }
+        date_of_birth: { type: string, format: date }
+        locale_id: { type: string, format: uuid }
+        timezone: { type: string }
+        country_id: { type: string, format: uuid }
+        preferred_currency_code: { type: string, minLength: 3, maxLength: 3 }
+        theme: { type: string, enum: [light, dark, system] }
+        date_format: { type: string, enum: [dmy, mdy, ymd] }
+        province_id: { type: string, format: uuid }
+        ward_id: { type: string, format: uuid }
+        address_line: { type: string }
+        avatar_file_id: { type: string, format: uuid }
+        banner_file_id: { type: string, format: uuid }
         status: { type: string, enum: [pending, active, suspended, locked, deleted] }
         is_system_admin: { type: boolean }
         last_login_at: { type: string, format: date-time, description: UTC }
@@ -5301,6 +5761,17 @@ components:
         first_name: { type: string }
         last_name: { type: string }
         phone: { type: string }
+        gender: { type: string, enum: [male, female, other, undisclosed] }
+        date_of_birth: { type: string, format: date }
+        locale_id: { type: string, format: uuid }
+        timezone: { type: string }
+        country_id: { type: string, format: uuid }
+        preferred_currency_code: { type: string, minLength: 3, maxLength: 3 }
+        theme: { type: string, enum: [light, dark, system] }
+        date_format: { type: string, enum: [dmy, mdy, ymd] }
+        province_id: { type: string, format: uuid }
+        ward_id: { type: string, format: uuid }
+        address_line: { type: string }
     AdminUserProfileRequest:
       type: object
       description: full_name and display_name are derived as last name then first name.
@@ -5310,6 +5781,17 @@ components:
         first_name: { type: string }
         last_name: { type: string }
         phone: { type: string }
+        gender: { type: string, enum: [male, female, other, undisclosed] }
+        date_of_birth: { type: string, format: date }
+        locale_id: { type: string, format: uuid }
+        timezone: { type: string }
+        country_id: { type: string, format: uuid }
+        preferred_currency_code: { type: string, minLength: 3, maxLength: 3 }
+        theme: { type: string, enum: [light, dark, system] }
+        date_format: { type: string, enum: [dmy, mdy, ymd] }
+        province_id: { type: string, format: uuid }
+        ward_id: { type: string, format: uuid }
+        address_line: { type: string }
     AdminOwnerCreateRequest:
       allOf:
         - $ref: "#/components/schemas/AdminUserAccountRequest"
@@ -6002,6 +6484,21 @@ components:
         native_name: { type: string, description: "Endonym (Tiếng Việt, English)" }
         emoji: { type: string, description: Flag emoji }
         is_default: { type: boolean }
+    Country:
+      type: object
+      required: [id, iso2, name]
+      properties:
+        id: { type: string, format: uuid }
+        iso2: { type: string, minLength: 2, maxLength: 2 }
+        name: { type: string, description: Locale-resolved country name }
+    Currency:
+      type: object
+      required: [code, name, symbol, is_default]
+      properties:
+        code: { type: string, minLength: 3, maxLength: 3 }
+        name: { type: string, description: Locale-resolved currency name }
+        symbol: { type: string }
+        is_default: { type: boolean }
     MarketplaceBranch:
       type: object
       required: [public_id, organization_id, code, name, status]
@@ -6545,6 +7042,9 @@ components:
         last_name: { type: string }
         display_name: { type: string }
         phone: { type: string }
+        avatar_file_id: { type: string, format: uuid }
+        gender: { type: string }
+        date_of_birth: { type: string, format: date }
         status: { type: string }
         is_system_admin: { type: boolean }
         email_verified_at: { type: string, format: date-time, description: UTC }
@@ -6565,7 +7065,9 @@ components:
         last_name: { type: string }
         full_name: { type: string }
         display_name: { type: string }
-        phone: { type: string }
+        avatar_file_id: { type: string, format: uuid }
+        gender: { type: string, enum: ["", male, female, other, undisclosed] }
+        date_of_birth: { type: string, format: date }
         locale_id: { type: string, format: uuid }
         timezone: { type: string }
         country_id: { type: string, format: uuid }

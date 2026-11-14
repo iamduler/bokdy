@@ -153,6 +153,11 @@ func (s *BookingService) Complete(ctx context.Context, bookingID, actor uuid.UUI
 		if err := s.repo.Complete(ctx, tx, locked.ID, now); err != nil {
 			return err
 		}
+		if s.loyalty != nil {
+			if err := s.loyalty.AwardBooking(ctx, tx, locked.ID); err != nil {
+				return err
+			}
+		}
 		outboxID, err = events.Append(ctx, tx, s.event("BookingCompleted", locked, caller.actorType(), actor, now, nil))
 		return err
 	})

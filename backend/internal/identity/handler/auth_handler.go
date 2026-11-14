@@ -42,6 +42,7 @@ func (h *AuthHandler) RegisterRoutes(rg *gin.RouterGroup, jwt gin.HandlerFunc) {
 		identity.GET("/sessions", h.ListSessions)
 		identity.DELETE("/sessions/:id", h.RevokeSession)
 		identity.POST("/sessions/revoke-all", h.RevokeAllSessions)
+		h.registerProfileRoutes(identity)
 	}
 }
 
@@ -195,6 +196,7 @@ func (h *AuthHandler) UpdateMe(c *gin.Context) {
 	}
 	user, profile, ident, err := h.auth.UpdateProfile(c.Request.Context(), uid, service.UpdateProfileInput{
 		FirstName: req.FirstName, LastName: req.LastName, FullName: req.FullName, DisplayName: req.DisplayName,
+		AvatarFileID: req.AvatarFileID, Gender: req.Gender, DateOfBirth: req.DateOfBirth,
 		Phone: req.Phone, LocaleID: req.LocaleID, Timezone: req.Timezone, CountryID: req.CountryID,
 		PreferredCurrencyCode: req.PreferredCurrencyCode, Theme: req.Theme, DateFormat: req.DateFormat,
 	})
@@ -274,6 +276,11 @@ func toUserDTO(user *entity.User, profile *entity.UserProfile, ident *entity.Ide
 		out.FirstName = profile.FirstName
 		out.LastName = profile.LastName
 		out.DisplayName = profile.DisplayName
+		out.Gender = profile.Gender
+		out.DateOfBirth = profile.DateOfBirth
+		if profile.AvatarFileID != nil {
+			out.AvatarFileID = profile.AvatarFileID.String()
+		}
 		out.Timezone = profile.Timezone
 		out.PreferredCurrencyCode = profile.PreferredCurrencyCode
 		out.Theme = string(profile.Theme)

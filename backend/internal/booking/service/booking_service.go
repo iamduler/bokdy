@@ -43,7 +43,15 @@ type BookingService struct {
 	occupancy schedservice.OccupancyWriter
 	prices    PriceCalculator
 	outbox    events.Enqueuer
+	loyalty   LoyaltyAwarder
 }
+
+// LoyaltyAwarder grants organization points inside the booking transaction.
+type LoyaltyAwarder interface {
+	AwardBooking(ctx context.Context, tx pgx.Tx, bookingID uuid.UUID) error
+}
+
+func (s *BookingService) SetLoyalty(a LoyaltyAwarder) { s.loyalty = a }
 
 func NewBookingService(
 	pool *pgxpool.Pool,

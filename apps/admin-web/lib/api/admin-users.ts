@@ -146,7 +146,28 @@ export type UserAccountWrite = {
   first_name: string;
   last_name?: string;
   phone?: string;
+  gender?: string;
+  date_of_birth?: string;
+  locale_id?: string;
+  timezone?: string;
+  country_id?: string;
+  preferred_currency_code?: string;
+  theme?: string;
+  date_format?: string;
+  province_id?: string;
+  ward_id?: string;
+  address_line?: string;
 };
+
+export function uploadUserMedia(userId: string, kind: "avatar" | "banner", file: Blob) {
+  const body = new FormData();
+  body.set("kind", kind);
+  body.set("file", file, `${kind}.jpg`);
+  return apiGo<AdminUser>(`admin/users/${encodeURIComponent(userId)}/media`, {
+    method: "POST",
+    body,
+  });
+}
 
 export type CreateUserAccountInput = UserAccountWrite & { password: string };
 

@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"bokdy/db/generated/sqlc"
+
 	identityentity "bokdy/internal/identity/entity"
 	idrepo "bokdy/internal/identity/repository"
 	idservice "bokdy/internal/identity/service"
@@ -38,6 +40,7 @@ type OrganizationService struct {
 	outbox   events.Enqueuer
 	fileDir  string
 	accounts idservice.LocalProvisioner
+	q        *dbsqlc.Queries
 }
 
 func NewOrganizationService(
@@ -1122,7 +1125,7 @@ func (s *OrganizationService) CreateStaffUser(ctx context.Context, actor uuid.UU
 	var token string
 	var outboxIDs []uuid.UUID
 	err = persistence.WithinTx(ctx, s.pool, func(tx pgx.Tx) error {
-		user, verifyToken, err := s.accounts.ProvisionLocalUser(ctx, tx, idservice.KindOwner, norm, in.Account.Password)
+		user, verifyToken, err := s.accounts.ProvisionLocalUser(ctx, tx, idservice.KindOwner, norm, in.Account.Password, in.Account.Extras)
 		if err != nil {
 			return err
 		}

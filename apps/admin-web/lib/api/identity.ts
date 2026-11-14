@@ -3,7 +3,11 @@ import type { components } from "@bokdy/sdk/schema";
 import { apiGo } from "@/lib/api/client";
 
 export type MeResponse = components["schemas"]["MeResponse"];
-export type UpdateProfileInput = components["schemas"]["UpdateProfileRequest"];
+export type UpdateProfileInput = components["schemas"]["UpdateProfileRequest"] & {
+  gender?: "" | "male" | "female" | "other" | "undisclosed";
+  date_of_birth?: string;
+  avatar_file_id?: string;
+};
 
 export function getMe() {
   return apiGo<MeResponse>("identity/me");

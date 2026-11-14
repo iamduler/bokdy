@@ -27,7 +27,7 @@ export function UserAccountFormSheet(props: UserAccountFormSheetProps) {
         leaveRef.current();
       }}
     >
-      <SheetContent side="right" className="flex h-full w-full flex-col gap-0 p-0 sm:max-w-xl">
+      <SheetContent side="right" className="flex h-full w-full flex-col gap-0 p-0 sm:max-w-2xl">
         <SheetHeader className="space-y-0 border-b border-border px-4 py-3 pr-12">
           <SheetTitle className="text-base">{title}</SheetTitle>
           <SheetDescription className="sr-only">{title}</SheetDescription>

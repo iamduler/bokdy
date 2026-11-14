@@ -27,4 +27,22 @@ type UserRepository interface {
 	TouchLastLogin(ctx context.Context, tx pgx.Tx, id uuid.UUID, at time.Time) error
 	GetProfile(ctx context.Context, userID uuid.UUID) (*entity.UserProfile, error)
 	UpdateProfile(ctx context.Context, tx pgx.Tx, profile *entity.UserProfile) error
+	UpdateProfileMedia(ctx context.Context, tx pgx.Tx, userID uuid.UUID, avatarID, bannerID *uuid.UUID) error
+	InsertUserFile(ctx context.Context, tx pgx.Tx, file UserFile) error
+	CurrencyActive(ctx context.Context, code string) (bool, error)
+	ProvinceActive(ctx context.Context, id uuid.UUID) (bool, error)
+	WardProvince(ctx context.Context, wardID uuid.UUID) (*uuid.UUID, error)
+}
+
+type UserFile struct {
+	ID        uuid.UUID
+	TenantID  uuid.UUID
+	UserID    uuid.UUID
+	Path      string
+	Filename  string
+	MimeType  string
+	Extension string
+	Size      int64
+	Checksum  string
+	CreatedBy uuid.UUID
 }

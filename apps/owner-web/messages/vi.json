@@ -19,7 +19,31 @@
   "shell": {
     "dashboard": "Bảng điều khiển",
     "welcome": "Chào mừng đến Bokdy Owner",
-    "subtitle": "Scaffold nền tảng — chưa có domain nghiệp vụ."
+    "subtitle": "Scaffold nền tảng — chưa có domain nghiệp vụ.",
+    "profile": "Hồ sơ"
+  },
+  "profile": {
+    "title": "Hồ sơ",
+    "dashboard": "Bảng điều khiển",
+    "personal": "Thông tin cá nhân",
+    "firstName": "Tên",
+    "lastName": "Họ",
+    "displayName": "Tên hiển thị",
+    "save": "Lưu",
+    "saved": "Đã lưu.",
+    "organizations": "Tổ chức",
+    "chooseOrganization": "Chọn tổ chức",
+    "successor": "Chủ sở hữu mới",
+    "transfer": "Chuyển quyền sở hữu",
+    "transferred": "Đã chuyển quyền sở hữu.",
+    "kycFile": "Mã tệp KYC",
+    "submitKyc": "Nộp KYC",
+    "kycSubmitted": "Đã nộp KYC.",
+    "security": "Bảo mật",
+    "currentPassword": "Mật khẩu hiện tại",
+    "newPassword": "Mật khẩu mới",
+    "changePassword": "Đổi mật khẩu",
+    "passwordSaved": "Đã đổi mật khẩu."
   },
   "branch": {
     "address": {

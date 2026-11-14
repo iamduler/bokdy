@@ -44,6 +44,7 @@ func (h *OrganizationHandler) RegisterAdminRoutes(admin *gin.RouterGroup) {
 	admin.POST("/organizations/:id/activate", h.AdminActivate)
 	admin.POST("/organizations/:id/suspend", h.AdminSuspend)
 	admin.POST("/organizations/:id/restore", h.AdminRestore)
+	admin.POST("/kyc/:id/review", h.ReviewKYC)
 }
 
 func (h *OrganizationHandler) AdminHealth(c *gin.Context) {

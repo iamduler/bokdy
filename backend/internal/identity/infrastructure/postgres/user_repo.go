@@ -8,6 +8,7 @@ import (
 	"bokdy/db/generated/sqlc"
 	"bokdy/internal/identity/entity"
 	"bokdy/internal/identity/repository"
+	"bokdy/internal/platform/id"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -44,8 +45,10 @@ func (r *UserRepo) Create(ctx context.Context, tx pgx.Tx, user *entity.User, pro
 	}
 	return q.CreateUserProfile(ctx, dbsqlc.CreateUserProfileParams{
 		ID: profile.ID, UserID: profile.UserID, FirstName: nullStr(profile.FirstName), LastName: nullStr(profile.LastName),
-		FullName: profile.FullName, DisplayName: nullStr(profile.DisplayName), LocaleID: profile.LocaleID,
+		FullName: profile.FullName, DisplayName: nullStr(profile.DisplayName),
+		Column7: profile.Gender, Column8: profile.DateOfBirth, LocaleID: profile.LocaleID,
 		Timezone: nullStr(profile.Timezone), CountryID: profile.CountryID,
+		ProvinceID: profile.ProvinceID, WardID: profile.WardID, AddressLine: nullStr(profile.AddressLine),
 		PreferredCurrencyCode: nullStr(profile.PreferredCurrencyCode),
 		Theme:                 dbsqlc.IdentityTheme(theme), DateFormat: dbsqlc.IdentityDateFormat(dateFmt),
 		CreatedAt: profile.CreatedAt, UpdatedAt: profile.UpdatedAt,
@@ -121,7 +124,9 @@ func (r *UserRepo) GetProfile(ctx context.Context, userID uuid.UUID) (*entity.Us
 	}
 	return &entity.UserProfile{
 		ID: row.ID, UserID: row.UserID, FirstName: row.FirstName, LastName: row.LastName, FullName: row.FullName,
-		DisplayName: row.DisplayName, LocaleID: row.LocaleID, Timezone: row.Timezone, CountryID: row.CountryID,
+		DisplayName: row.DisplayName, AvatarFileID: row.AvatarFileID, Gender: textOf(row.Gender), DateOfBirth: textOf(row.DateOfBirth),
+		LocaleID: row.LocaleID, Timezone: row.Timezone, CountryID: row.CountryID,
+		ProvinceID: row.ProvinceID, WardID: row.WardID, AddressLine: row.AddressLine, BannerFileID: row.BannerFileID,
 		PreferredCurrencyCode: row.PreferredCurrencyCode, Theme: entity.Theme(row.Theme),
 		DateFormat: entity.DateFormat(row.DateFormat), CreatedAt: row.CreatedAt, UpdatedAt: row.UpdatedAt,
 	}, nil
@@ -130,11 +135,57 @@ func (r *UserRepo) GetProfile(ctx context.Context, userID uuid.UUID) (*entity.Us
 func (r *UserRepo) UpdateProfile(ctx context.Context, tx pgx.Tx, profile *entity.UserProfile) error {
 	return r.q.WithTx(tx).UpdateUserProfile(ctx, dbsqlc.UpdateUserProfileParams{
 		UserID: profile.UserID, FirstName: nullStr(profile.FirstName), LastName: nullStr(profile.LastName),
-		FullName: profile.FullName, DisplayName: nullStr(profile.DisplayName), LocaleID: profile.LocaleID,
+		FullName: profile.FullName, DisplayName: nullStr(profile.DisplayName),
+		AvatarFileID: profile.AvatarFileID, Column7: profile.Gender, Column8: profile.DateOfBirth,
+		LocaleID: profile.LocaleID,
 		Timezone: nullStr(profile.Timezone), CountryID: profile.CountryID,
 		PreferredCurrencyCode: nullStr(profile.PreferredCurrencyCode),
 		Theme:                 dbsqlc.IdentityTheme(profile.Theme), DateFormat: dbsqlc.IdentityDateFormat(profile.DateFormat),
+		ProvinceID: profile.ProvinceID, WardID: profile.WardID, AddressLine: nullStr(profile.AddressLine),
 	})
+}
+
+func (r *UserRepo) UpdateProfileMedia(ctx context.Context, tx pgx.Tx, userID uuid.UUID, avatarID, bannerID *uuid.UUID) error {
+	return r.q.WithTx(tx).UpdateUserProfileMedia(ctx, dbsqlc.UpdateUserProfileMediaParams{
+		UserID: userID, AvatarFileID: avatarID, BannerFileID: bannerID,
+	})
+}
+
+func (r *UserRepo) InsertUserFile(ctx context.Context, tx pgx.Tx, file repository.UserFile) error {
+	q := r.q.WithTx(tx)
+	size := file.Size
+	now := time.Now().UTC()
+	if err := q.CreateFile(ctx, dbsqlc.CreateFileParams{
+		ID: file.ID, TenantID: file.TenantID, Storage: dbsqlc.PlatformFileStorageLocal, Path: file.Path,
+		OriginalName: nullStr(file.Filename), Filename: nullStr(file.Filename), MimeType: nullStr(file.MimeType),
+		Extension: nullStr(file.Extension), Size: &size, Checksum: nullStr(file.Checksum),
+		Visibility: dbsqlc.PlatformFileVisibilityPublic, Status: dbsqlc.PlatformFileStatusActive,
+		CreatedBy: &file.CreatedBy, CreatedAt: now,
+	}); err != nil {
+		return err
+	}
+	return q.CreateFileReference(ctx, dbsqlc.CreateFileReferenceParams{
+		ID: id.MustNewUUID(), FileID: file.ID, EntityType: "user", EntityID: file.UserID, CreatedAt: now,
+	})
+}
+
+func (r *UserRepo) CurrencyActive(ctx context.Context, code string) (bool, error) {
+	return r.q.ActiveCurrencyExists(ctx, code)
+}
+
+func (r *UserRepo) ProvinceActive(ctx context.Context, id uuid.UUID) (bool, error) {
+	return r.q.ActiveProvinceExists(ctx, id)
+}
+
+func (r *UserRepo) WardProvince(ctx context.Context, wardID uuid.UUID) (*uuid.UUID, error) {
+	provinceID, err := r.q.ActiveWardProvince(ctx, wardID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &provinceID, nil
 }
 
 func mapUser(
@@ -145,5 +196,16 @@ func mapUser(
 		ID: id, PublicID: publicID, Status: entity.UserStatus(status), IsSystemAdmin: isAdmin,
 		LastLoginAt: lastLogin, EmailVerifiedAt: emailVerified, PhoneVerifiedAt: phoneVerified,
 		CreatedAt: createdAt, UpdatedAt: updatedAt,
+	}
+}
+
+func textOf(value any) string {
+	switch typed := value.(type) {
+	case string:
+		return typed
+	case []byte:
+		return string(typed)
+	default:
+		return ""
 	}
 }

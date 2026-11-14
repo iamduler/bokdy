@@ -11,11 +11,27 @@ const membership = z.object({
   title: z.string(),
 });
 
+const genders = ["", "male", "female", "other", "undisclosed"] as const;
+const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+const currencyPattern = /^[A-Za-z]{3}$/;
+
 const formFields = z.object({
   email: z.string(),
   first_name: z.string(),
   last_name: z.string(),
+  full_name: z.string(),
   phone: z.string(),
+  gender: z.string(),
+  date_of_birth: z.string(),
+  locale_id: z.string(),
+  timezone: z.string(),
+  country_id: z.string(),
+  preferred_currency_code: z.string(),
+  theme: z.string(),
+  date_format: z.string(),
+  province_id: z.string(),
+  ward_id: z.string(),
+  address_line: z.string(),
   password: z.string(),
   confirm_password: z.string(),
   organization_id: z.string(),
@@ -33,7 +49,19 @@ export function emptyUserAccount(): UserAccountFormValues {
     email: "",
     first_name: "",
     last_name: "",
+    full_name: "",
     phone: "",
+    gender: "",
+    date_of_birth: "",
+    locale_id: "",
+    timezone: "Asia/Ho_Chi_Minh",
+    country_id: "",
+    preferred_currency_code: "VND",
+    theme: "system",
+    date_format: "dmy",
+    province_id: "",
+    ward_id: "",
+    address_line: "",
     password: "",
     confirm_password: "",
     organization_id: "",
@@ -53,6 +81,10 @@ export function userAccountSchema(
     emailInvalid: string;
     passwordPolicy: string;
     passwordMismatch: string;
+    dateInvalid: string;
+    genderInvalid: string;
+    currencyInvalid: string;
+    wardRequiresProvince: string;
   },
   options: { mode: UserAccountMode; audience: UserAccountAudience },
 ) {
@@ -65,6 +97,28 @@ export function userAccountSchema(
     }
     if (!value.first_name.trim()) {
       ctx.addIssue({ code: "custom", path: ["first_name"], message: messages.required });
+    }
+    const dob = value.date_of_birth.trim();
+    if (dob && !datePattern.test(dob)) {
+      ctx.addIssue({ code: "custom", path: ["date_of_birth"], message: messages.dateInvalid });
+    }
+    if (!(genders as readonly string[]).includes(value.gender)) {
+      ctx.addIssue({ code: "custom", path: ["gender"], message: messages.genderInvalid });
+    }
+    const currency = value.preferred_currency_code.trim();
+    if (currency && !currencyPattern.test(currency)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["preferred_currency_code"],
+        message: messages.currencyInvalid,
+      });
+    }
+    if (value.ward_id.trim() && !value.province_id.trim()) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["ward_id"],
+        message: messages.wardRequiresProvince,
+      });
     }
     if (options.mode === "create") {
       if (!value.password) {

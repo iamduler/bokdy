@@ -17,11 +17,13 @@ const adminUnitsCacheControl = "public, max-age=86400"
 
 type ReferenceHandler struct {
 	locales    *service.LocaleService
+	countries  *service.CountryService
+	currencies *service.CurrencyService
 	adminUnits *service.AdminUnitService
 }
 
-func NewReferenceHandler(locales *service.LocaleService, adminUnits *service.AdminUnitService) *ReferenceHandler {
-	return &ReferenceHandler{locales: locales, adminUnits: adminUnits}
+func NewReferenceHandler(locales *service.LocaleService, countries *service.CountryService, currencies *service.CurrencyService, adminUnits *service.AdminUnitService) *ReferenceHandler {
+	return &ReferenceHandler{locales: locales, countries: countries, currencies: currencies, adminUnits: adminUnits}
 }
 
 type localeDTO struct {
@@ -44,6 +46,8 @@ type adminUnitDTO struct {
 func (h *ReferenceHandler) RegisterRoutes(rg *gin.RouterGroup) {
 	ref := rg.Group("/reference")
 	ref.GET("/locales", h.ListLocales)
+	ref.GET("/countries", h.ListCountries)
+	ref.GET("/currencies", h.ListCurrencies)
 	units := ref.Group("/admin-units")
 	units.GET("/provinces", h.ListProvinces)
 	units.GET("/districts", h.ListDistricts)
@@ -57,6 +61,61 @@ func (h *ReferenceHandler) ListLocales(c *gin.Context) {
 		return
 	}
 	httpx.OK(c, toLocaleDTOs(items))
+}
+
+type countryDTO struct {
+	ID   string `json:"id"`
+	ISO2 string `json:"iso2"`
+	Name string `json:"name"`
+}
+
+func (h *ReferenceHandler) ListCountries(c *gin.Context) {
+	if h.countries == nil {
+		httpx.OK(c, []countryDTO{})
+		return
+	}
+	items, err := h.countries.ListActive(c.Request.Context())
+	if err != nil {
+		httpx.Error(c, err)
+		return
+	}
+	locale := i18n.FromContext(c.Request.Context())
+	out := make([]countryDTO, 0, len(items))
+	for _, item := range items {
+		out = append(out, countryDTO{
+			ID: item.ID.String(), ISO2: item.ISO2,
+			Name: i18n.DisplayName(locale, item.NameEn, item.NameVi),
+		})
+	}
+	httpx.OK(c, out)
+}
+
+type currencyDTO struct {
+	Code      string `json:"code"`
+	Name      string `json:"name"`
+	Symbol    string `json:"symbol"`
+	IsDefault bool   `json:"is_default"`
+}
+
+func (h *ReferenceHandler) ListCurrencies(c *gin.Context) {
+	if h.currencies == nil {
+		httpx.OK(c, []currencyDTO{})
+		return
+	}
+	items, err := h.currencies.ListActive(c.Request.Context())
+	if err != nil {
+		httpx.Error(c, err)
+		return
+	}
+	locale := i18n.FromContext(c.Request.Context())
+	out := make([]currencyDTO, 0, len(items))
+	for _, item := range items {
+		out = append(out, currencyDTO{
+			Code: item.Code, Symbol: item.Symbol, IsDefault: item.IsDefault,
+			Name: i18n.DisplayName(locale, item.NameEn, item.NameVi),
+		})
+	}
+	httpx.OK(c, out)
 }
 
 func (h *ReferenceHandler) ListProvinces(c *gin.Context) {
@@ -148,7 +207,7 @@ func toAdminUnitDTOs(c *gin.Context, items []refrepo.AdminUnit) []adminUnitDTO {
 	for _, item := range items {
 		out = append(out, adminUnitDTO{
 			ID: item.ID.String(), Code: item.Code,
-			Name: i18n.DisplayName(locale, item.NameEn, item.NameVi),
+			Name:   i18n.DisplayName(locale, item.NameEn, item.NameVi),
 			NameEn: item.NameEn, NameVi: item.NameVi,
 		})
 	}
@@ -159,5 +218,5 @@ func toAdminUnitDTOs(c *gin.Context, items []refrepo.AdminUnit) []adminUnitDTO {
 type LocaleHandler = ReferenceHandler
 
 func NewLocaleHandler(locales *service.LocaleService) *ReferenceHandler {
-	return NewReferenceHandler(locales, nil)
+	return NewReferenceHandler(locales, nil, nil, nil)
 }

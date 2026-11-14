@@ -585,7 +585,38 @@ Enum user_status {
   active
   suspended
   locked
+  deactivated
   deleted
+}
+
+Enum profile_visibility {
+  public
+  members
+  private
+}
+
+Enum favorite_target {
+  branch
+  court
+}
+
+Enum employment_status {
+  active
+  leave
+  deactivated
+}
+
+Enum kyc_status {
+  draft
+  pending
+  approved
+  rejected
+}
+
+Enum account_status {
+  active
+  expired
+  canceled
 }
 
 Enum gender {
@@ -707,6 +738,14 @@ Table identity.user_profiles {
 
   country_id uuid
 
+  province_id uuid
+
+  ward_id uuid
+
+  address_line varchar(255)
+
+  banner_file_id uuid
+
   preferred_currency_code varchar(3)
 
   theme theme [not null, default: 'system']
@@ -716,6 +755,139 @@ Table identity.user_profiles {
   created_at timestamptz [not null]
 
   updated_at timestamptz [not null]
+}
+
+Table identity.player_profiles {
+  id uuid [pk]
+  user_id uuid [not null, unique, ref: > identity.users.id]
+  bio text
+  preferred_playing_times text
+  preferred_locations text
+  visibility profile_visibility [not null, default: 'members']
+  is_open_to_invitations boolean [not null, default: true]
+  is_discoverable boolean [not null, default: true]
+  is_activity_visible boolean [not null, default: true]
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+}
+
+Table catalog.sport_skill_levels {
+  id uuid [pk]
+  sport_id uuid [not null, ref: > catalog.sports.id]
+  code varchar(100) [not null]
+  name_en varchar(255) [not null]
+  name_vi varchar(255) [not null]
+  sort_order int [not null]
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+
+  indexes {
+    (sport_id, code) [unique]
+    (id, sport_id) [unique]
+  }
+}
+
+Table identity.player_sport_profiles {
+  id uuid [pk]
+  user_id uuid [not null, ref: > identity.users.id]
+  sport_id uuid [not null, ref: > catalog.sports.id]
+  skill_level_id uuid [not null]
+  dominant_hand varchar(20)
+  playing_style varchar(100)
+  experience text
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+
+  indexes {
+    (user_id, sport_id) [unique]
+    (skill_level_id, sport_id) [unique]
+  }
+}
+
+Table identity.player_favorites {
+  id uuid [pk]
+  user_id uuid [not null, ref: > identity.users.id]
+  target_type favorite_target [not null]
+  target_id uuid [not null]
+  created_at timestamptz [not null]
+
+  indexes {
+    (user_id, target_type, target_id) [unique]
+  }
+}
+
+Table identity.platform_admin_profiles {
+  id uuid [pk]
+  user_id uuid [not null, unique, ref: > identity.users.id]
+  employee_code varchar(50)
+  department varchar(100)
+  job_title varchar(100)
+  manager_user_id uuid [ref: > identity.users.id]
+  work_email varchar(255)
+  work_phone varchar(30)
+  employment_status employment_status [not null, default: 'active']
+  is_mfa_required boolean [not null, default: false]
+  assigned_at timestamptz
+  deactivated_at timestamptz
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+}
+
+Table organization.kyc_cases {
+  id uuid [pk]
+  public_id varchar(26) [not null, unique]
+  organization_id uuid [not null, ref: > organization.organizations.id]
+  status kyc_status [not null]
+  submitted_at timestamptz
+  verified_at timestamptz
+  rejection_reason text
+  reviewer_user_id uuid [ref: > identity.users.id]
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+}
+
+Table organization.kyc_documents {
+  id uuid [pk]
+  kyc_case_id uuid [not null, ref: > organization.kyc_cases.id]
+  file_id uuid [not null]
+  document_type varchar(50) [not null]
+  created_at timestamptz [not null]
+}
+
+Table membership.accounts {
+  id uuid [pk]
+  public_id varchar(26) [not null, unique]
+  organization_id uuid [not null, ref: > organization.organizations.id]
+  user_id uuid [not null, ref: > identity.users.id]
+  tier_name varchar(100) [not null]
+  status account_status [not null]
+  points_balance int [not null, default: 0]
+  valid_until date
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+}
+
+Table membership.point_ledger {
+  id uuid [pk]
+  account_id uuid [not null, ref: > membership.accounts.id]
+  booking_id uuid [ref: > booking.bookings.id]
+  points int [not null]
+  reason varchar(100) [not null]
+  created_at timestamptz [not null]
+
+  indexes {
+    booking_id [unique]
+  }
+}
+
+Table membership.vouchers {
+  id uuid [pk]
+  public_id varchar(26) [not null, unique]
+  account_id uuid [not null, ref: > membership.accounts.id]
+  code varchar(50) [not null]
+  title varchar(255) [not null]
+  status varchar(20) [not null]
+  created_at timestamptz [not null]
 }
 
 //////////////////////////////////////////////////////////////
@@ -913,6 +1085,8 @@ Table identity.sessions {
   last_activity_at timestamptz
 
   expires_at timestamptz [not null]
+
+  mfa_verified_at timestamptz
 
   created_at timestamptz [not null]
 

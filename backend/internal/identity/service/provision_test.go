@@ -116,3 +116,38 @@ func TestContactVerificationReset(t *testing.T) {
 		t.Fatalf("%+v", same)
 	}
 }
+
+func TestApplyProfileExtrasKeepsDefaultsUntilSet(t *testing.T) {
+	locale := uuid.MustParse("01900000-0000-7000-8000-000000000010")
+	profile := &entity.UserProfile{
+		LocaleID: &locale, Timezone: "Asia/Ho_Chi_Minh",
+		PreferredCurrencyCode: "VND", Theme: entity.ThemeSystem, DateFormat: entity.DateFormatDMY,
+	}
+	if err := ApplyProfileExtras(profile, ProfileExtras{}); err != nil {
+		t.Fatal(err)
+	}
+	if profile.Gender != "" || profile.Theme != entity.ThemeSystem || profile.LocaleID == nil {
+		t.Fatalf("unset extras changed the profile: %+v", profile)
+	}
+	if err := ApplyProfileExtras(profile, ProfileExtras{
+		Set: true, Gender: "female", DateOfBirth: "1990-01-02",
+		Timezone: "Asia/Bangkok", PreferredCurrencyCode: "usd",
+		Theme: "dark", DateFormat: "ymd",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if profile.Gender != "female" || profile.DateOfBirth != "1990-01-02" || profile.Timezone != "Asia/Bangkok" {
+		t.Fatalf("%+v", profile)
+	}
+	if profile.PreferredCurrencyCode != "USD" || profile.Theme != entity.ThemeDark || profile.DateFormat != entity.DateFormatYMD {
+		t.Fatalf("%+v", profile)
+	}
+	if profile.LocaleID.String() != locale.String() {
+		t.Fatal("empty locale cleared the existing locale")
+	}
+	err := ApplyProfileExtras(profile, ProfileExtras{Set: true, Gender: "nope"})
+	var appErr *apperr.Error
+	if !errors.As(err, &appErr) || appErr.Message != "invalid gender" {
+		t.Fatalf("%v", err)
+	}
+}

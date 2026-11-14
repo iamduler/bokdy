@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -57,25 +58,40 @@ func (h *AdminUserHandler) RegisterAdminRoutes(admin *gin.RouterGroup) {
 	admin.GET("/users/:id/permissions", h.ListPermissions)
 	admin.GET("/users/:id/activity", h.ListActivity)
 	admin.POST("/users/:id/reset-password", h.ResetPassword)
+	admin.POST("/users/:id/platform-roles", h.AssignPlatformRole)
 	admin.POST("/users/:id/force-email-verify", h.ForceEmailVerify)
 	admin.PATCH("/users/:id", h.UpdateProfile)
+	admin.POST("/users/:id/media", h.UploadMedia)
 }
 
 type adminUserDTO struct {
-	ID              string  `json:"id"`
-	PublicID        string  `json:"public_id"`
-	Email           string  `json:"email,omitempty"`
-	DisplayName     string  `json:"display_name,omitempty"`
-	FullName        string  `json:"full_name,omitempty"`
-	FirstName       string  `json:"first_name,omitempty"`
-	LastName        string  `json:"last_name,omitempty"`
-	Phone           string  `json:"phone,omitempty"`
-	Status          string  `json:"status"`
-	IsSystemAdmin   bool    `json:"is_system_admin"`
-	LastLoginAt     *string `json:"last_login_at,omitempty"`
-	EmailVerifiedAt *string `json:"email_verified_at,omitempty"`
-	PhoneVerifiedAt *string `json:"phone_verified_at,omitempty"`
-	CreatedAt       string  `json:"created_at,omitempty"`
+	ID                    string  `json:"id"`
+	PublicID              string  `json:"public_id"`
+	Email                 string  `json:"email,omitempty"`
+	DisplayName           string  `json:"display_name,omitempty"`
+	FullName              string  `json:"full_name,omitempty"`
+	FirstName             string  `json:"first_name,omitempty"`
+	LastName              string  `json:"last_name,omitempty"`
+	Phone                 string  `json:"phone,omitempty"`
+	Gender                string  `json:"gender,omitempty"`
+	DateOfBirth           string  `json:"date_of_birth,omitempty"`
+	LocaleID              string  `json:"locale_id,omitempty"`
+	Timezone              string  `json:"timezone,omitempty"`
+	CountryID             string  `json:"country_id,omitempty"`
+	PreferredCurrencyCode string  `json:"preferred_currency_code,omitempty"`
+	Theme                 string  `json:"theme,omitempty"`
+	DateFormat            string  `json:"date_format,omitempty"`
+	ProvinceID            string  `json:"province_id,omitempty"`
+	WardID                string  `json:"ward_id,omitempty"`
+	AddressLine           string  `json:"address_line,omitempty"`
+	AvatarFileID          string  `json:"avatar_file_id,omitempty"`
+	BannerFileID          string  `json:"banner_file_id,omitempty"`
+	Status                string  `json:"status"`
+	IsSystemAdmin         bool    `json:"is_system_admin"`
+	LastLoginAt           *string `json:"last_login_at,omitempty"`
+	EmailVerifiedAt       *string `json:"email_verified_at,omitempty"`
+	PhoneVerifiedAt       *string `json:"phone_verified_at,omitempty"`
+	CreatedAt             string  `json:"created_at,omitempty"`
 }
 
 type adminOwnerUserDTO struct {
@@ -287,11 +303,22 @@ func (h *AdminUserHandler) GetAdmin(c *gin.Context) {
 }
 
 type adminAccountBody struct {
-	Email     string `json:"email"`
-	Password  string `json:"password"`
-	FirstName string `json:"first_name"`
-	LastName  string `json:"last_name"`
-	Phone     string `json:"phone"`
+	Email                 string `json:"email"`
+	Password              string `json:"password"`
+	FirstName             string `json:"first_name"`
+	LastName              string `json:"last_name"`
+	Phone                 string `json:"phone"`
+	Gender                string `json:"gender"`
+	DateOfBirth           string `json:"date_of_birth"`
+	LocaleID              string `json:"locale_id"`
+	Timezone              string `json:"timezone"`
+	CountryID             string `json:"country_id"`
+	PreferredCurrencyCode string `json:"preferred_currency_code"`
+	Theme                 string `json:"theme"`
+	DateFormat            string `json:"date_format"`
+	ProvinceID            string `json:"province_id"`
+	WardID                string `json:"ward_id"`
+	AddressLine           string `json:"address_line"`
 }
 
 type adminOwnerCreateBody struct {
@@ -310,6 +337,13 @@ func accountInput(body adminAccountBody) service.AccountInput {
 	return service.AccountInput{
 		Email: body.Email, Password: body.Password,
 		FirstName: body.FirstName, LastName: body.LastName, Phone: body.Phone,
+		Extras: service.ProfileExtras{
+			Set: true, Gender: body.Gender, DateOfBirth: body.DateOfBirth,
+			LocaleID: body.LocaleID, Timezone: body.Timezone, CountryID: body.CountryID,
+			PreferredCurrencyCode: body.PreferredCurrencyCode,
+			Theme:                 body.Theme, DateFormat: body.DateFormat,
+			ProvinceID: body.ProvinceID, WardID: body.WardID, AddressLine: body.AddressLine,
+		},
 	}
 }
 
@@ -352,11 +386,16 @@ func (h *AdminUserHandler) CreateOwner(c *gin.Context) {
 		return
 	}
 	actor, _ := requestctx.UserID(c.Request.Context())
+	account := accountInput(req.adminAccountBody)
+	if err := h.admin.CheckExtras(c.Request.Context(), account); err != nil {
+		httpx.Error(c, err)
+		return
+	}
 	userID, err := h.orgs.CreateStaffUser(c.Request.Context(), actor, orgservice.CreateStaffUserInput{
 		OrganizationID: orgID,
 		RoleCode:       req.StaffRole,
 		Title:          req.Title,
-		Account:        accountInput(req.adminAccountBody),
+		Account:        account,
 	})
 	if err != nil {
 		httpx.Error(c, err)
@@ -380,6 +419,32 @@ func (h *AdminUserHandler) UpdateProfile(c *gin.Context) {
 		return
 	}
 	row, err := h.admin.UpdateProfile(c.Request.Context(), id, accountInput(req))
+	if err != nil {
+		httpx.Error(c, err)
+		return
+	}
+	httpx.OK(c, toAdminUserDTO(*row))
+}
+
+func (h *AdminUserHandler) UploadMedia(c *gin.Context) {
+	id, ok := parseUserID(c)
+	if !ok {
+		return
+	}
+	actor, _ := requestctx.UserID(c.Request.Context())
+	file, header, err := c.Request.FormFile("file")
+	if err != nil {
+		httpx.Fail(c, apperr.CodeValidation, "file is required")
+		return
+	}
+	defer file.Close()
+	body, err := io.ReadAll(io.LimitReader(file, 5<<20+1))
+	if err != nil {
+		httpx.Error(c, apperr.Wrap(err, apperr.CodeBadRequest, "read file"))
+		return
+	}
+	mimeType := header.Header.Get("Content-Type")
+	row, err := h.admin.SaveImage(c.Request.Context(), id, actor, c.PostForm("kind"), header.Filename, mimeType, body)
 	if err != nil {
 		httpx.Error(c, err)
 		return
@@ -677,6 +742,12 @@ func toAdminUserDTO(row repository.AdminUserRow) adminUserDTO {
 		ID: row.ID.String(), PublicID: row.PublicID, Email: row.Email,
 		DisplayName: row.DisplayName, FullName: row.FullName,
 		FirstName: row.FirstName, LastName: row.LastName, Phone: row.Phone,
+		Gender: row.Gender, DateOfBirth: row.DateOfBirth, LocaleID: row.LocaleID,
+		Timezone: row.Timezone, CountryID: row.CountryID,
+		PreferredCurrencyCode: row.PreferredCurrencyCode,
+		Theme:                 row.Theme, DateFormat: row.DateFormat,
+		ProvinceID: row.ProvinceID, WardID: row.WardID, AddressLine: row.AddressLine,
+		AvatarFileID: row.AvatarFileID, BannerFileID: row.BannerFileID,
 		Status: row.Status, IsSystemAdmin: row.IsSystemAdmin,
 		LastLoginAt: row.LastLoginAt, EmailVerifiedAt: row.EmailVerifiedAt,
 		PhoneVerifiedAt: row.PhoneVerifiedAt, CreatedAt: row.CreatedAt,

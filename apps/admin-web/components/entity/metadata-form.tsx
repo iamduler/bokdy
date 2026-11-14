@@ -1,8 +1,10 @@
 "use client";
 
-import { cn, Field, FieldError, FieldGroup, FieldLabel, Input } from "@bokdy/ui";
+import { cn, DatePicker, Field, FieldError, FieldGroup, FieldLabel, Input } from "@bokdy/ui";
+import { useLocale } from "next-intl";
 import type { ReactNode } from "react";
 import {
+  Controller,
   useFormContext,
   type FieldErrors,
   type FieldPath,
@@ -62,10 +64,22 @@ export type EntityMultiSelectField<T extends FieldValues> = FieldBase<T> & {
   onValueChange?: (value: string[], form: UseFormReturn<T>) => void;
 };
 
+export type EntityDateField<T extends FieldValues> = FieldBase<T> & {
+  kind: "date";
+  placeholder?: string;
+};
+
+export type EntityReadonlyField<T extends FieldValues> = FieldBase<T> & {
+  kind: "readonly";
+  text: (values: T) => string;
+};
+
 export type EntityFormField<T extends FieldValues> =
   | EntityTextField<T>
   | EntitySelectField<T>
-  | EntityMultiSelectField<T>;
+  | EntityMultiSelectField<T>
+  | EntityDateField<T>
+  | EntityReadonlyField<T>;
 
 export type EntityFormBlock<T extends FieldValues> = {
   id: string;
@@ -132,6 +146,7 @@ function MetadataField<T extends FieldValues>({
   values: T;
   form: UseFormReturn<T>;
 }) {
+  const locale = useLocale();
   const error = messageOf(form.formState.errors, field.name, field.error);
   const disabled = isDisabled(field.disabled, values);
   const id = `field-${field.name}`;
@@ -178,6 +193,27 @@ function MetadataField<T extends FieldValues>({
         }}
       />
     );
+  } else if (field.kind === "date") {
+    control = (
+      <Controller
+        control={form.control}
+        name={field.name}
+        render={({ field: input }) => (
+          <DatePicker
+            id={id}
+            value={String(input.value ?? "")}
+            onChange={input.onChange}
+            locale={locale}
+            placeholder={field.placeholder}
+            disabled={disabled}
+            aria-label={field.label}
+            aria-invalid={Boolean(error) || undefined}
+          />
+        )}
+      />
+    );
+  } else if (field.kind === "readonly") {
+    control = <p className="text-sm text-foreground">{field.text(values) || "—"}</p>;
   } else {
     const { onChange: registerOnChange, ...registerRest } = form.register(field.name);
     control = (
@@ -209,7 +245,7 @@ function MetadataField<T extends FieldValues>({
       className={cn(field.span === 2 && "sm:col-span-2")}
     >
       <div className="flex items-center gap-1.5">
-        <FieldLabel htmlFor={field.kind === "text" ? id : undefined} required={field.required}>
+        <FieldLabel htmlFor={field.kind === "text" || field.kind === "date" ? id : undefined} required={field.required}>
           {field.label}
         </FieldLabel>
         {field.description ? <InfoHint text={field.description} /> : null}

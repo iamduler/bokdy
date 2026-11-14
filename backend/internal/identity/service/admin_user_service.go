@@ -40,6 +40,7 @@ type AdminUserService struct {
 	sessions repository.SessionRepository
 	roles    repository.RoleRepository
 	auth     *AuthService
+	fileDir  string
 }
 
 func NewAdminUserService(
@@ -138,7 +139,7 @@ func (s *AdminUserService) GetPlayer(ctx context.Context, id uuid.UUID) (*reposi
 	if hasStaff {
 		return nil, identityerrors.ErrUserNotFound
 	}
-	s.attachNames(ctx, row)
+	s.attachProfile(ctx, row)
 	return row, nil
 }
 
@@ -168,7 +169,7 @@ func (s *AdminUserService) GetOwner(ctx context.Context, id uuid.UUID) (*reposit
 	out.PrimaryOrgCode = staff.PrimaryOrgCode
 	out.PrimaryOrgNameEn = staff.PrimaryOrgNameEn
 	out.PrimaryOrgNameVi = staff.PrimaryOrgNameVi
-	s.attachNames(ctx, &out.AdminUserRow)
+	s.attachProfile(ctx, &out.AdminUserRow)
 	return out, nil
 }
 
@@ -180,7 +181,7 @@ func (s *AdminUserService) GetAdmin(ctx context.Context, id uuid.UUID) (*reposit
 	if row == nil || !row.IsSystemAdmin {
 		return nil, identityerrors.ErrUserNotFound
 	}
-	s.attachNames(ctx, row)
+	s.attachProfile(ctx, row)
 	return row, nil
 }
 
@@ -406,11 +407,14 @@ func (s *AdminUserService) createAccount(ctx context.Context, actor uuid.UUID, k
 	if err := s.auth.AccountAvailable(ctx, norm.Email, norm.Phone, uuid.Nil); err != nil {
 		return nil, err
 	}
+	if err := s.CheckExtras(ctx, in); err != nil {
+		return nil, err
+	}
 	var created *entity.User
 	var token string
 	var outboxID uuid.UUID
 	err = persistence.WithinTx(ctx, s.pool, func(tx pgx.Tx) error {
-		user, verifyToken, err := s.auth.ProvisionLocalUser(ctx, tx, kind, norm, in.Password)
+		user, verifyToken, err := s.auth.ProvisionLocalUser(ctx, tx, kind, norm, in.Password, in.Extras)
 		if err != nil {
 			return err
 		}
@@ -466,6 +470,12 @@ func (s *AdminUserService) UpdateProfile(ctx context.Context, id uuid.UUID, in A
 	profile.LastName = norm.LastName
 	profile.FullName = norm.FullName
 	profile.DisplayName = norm.DisplayName
+	if err := ValidateProfilePlace(ctx, s.users, in.Extras); err != nil {
+		return nil, err
+	}
+	if err := ApplyProfileExtras(profile, in.Extras); err != nil {
+		return nil, err
+	}
 	var outboxID uuid.UUID
 	err = persistence.WithinTx(ctx, s.pool, func(tx pgx.Tx) error {
 		if err := s.users.UpdateProfile(ctx, tx, profile); err != nil {
@@ -503,11 +513,18 @@ func (s *AdminUserService) UpdateProfile(ctx context.Context, id uuid.UUID, in A
 	if err != nil {
 		return nil, err
 	}
-	s.attachNames(ctx, updated)
+	s.attachProfile(ctx, updated)
 	return updated, nil
 }
 
-func (s *AdminUserService) attachNames(ctx context.Context, row *repository.AdminUserRow) {
+func (s *AdminUserService) CheckExtras(ctx context.Context, in AccountInput) error {
+	if err := ApplyProfileExtras(&entity.UserProfile{}, in.Extras); err != nil {
+		return err
+	}
+	return ValidateProfilePlace(ctx, s.users, in.Extras)
+}
+
+func (s *AdminUserService) attachProfile(ctx context.Context, row *repository.AdminUserRow) {
 	if s.users == nil || row == nil {
 		return
 	}
@@ -517,6 +534,31 @@ func (s *AdminUserService) attachNames(ctx context.Context, row *repository.Admi
 	}
 	row.FirstName = profile.FirstName
 	row.LastName = profile.LastName
+	row.Gender = profile.Gender
+	row.DateOfBirth = profile.DateOfBirth
+	if profile.LocaleID != nil {
+		row.LocaleID = profile.LocaleID.String()
+	}
+	row.Timezone = profile.Timezone
+	if profile.CountryID != nil {
+		row.CountryID = profile.CountryID.String()
+	}
+	row.PreferredCurrencyCode = profile.PreferredCurrencyCode
+	row.Theme = string(profile.Theme)
+	row.DateFormat = string(profile.DateFormat)
+	if profile.ProvinceID != nil {
+		row.ProvinceID = profile.ProvinceID.String()
+	}
+	if profile.WardID != nil {
+		row.WardID = profile.WardID.String()
+	}
+	row.AddressLine = profile.AddressLine
+	if profile.AvatarFileID != nil {
+		row.AvatarFileID = profile.AvatarFileID.String()
+	}
+	if profile.BannerFileID != nil {
+		row.BannerFileID = profile.BannerFileID.String()
+	}
 }
 
 func ParseUserStatus(raw string) (entity.UserStatus, bool) {

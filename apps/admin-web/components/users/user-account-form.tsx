@@ -1,12 +1,14 @@
 "use client";
 
 import { Field, FieldError, FieldLabel, Input, toast } from "@bokdy/ui";
+import { useQueryClient } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { KeyRound, UserRound, Users } from "lucide-react";
+import { IdCard, KeyRound, MapPin, SlidersHorizontal, UserRound, Users } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 
+import { EntityCover } from "@/components/entity/cover";
 import { EntityFormFrame } from "@/components/entity/form-frame";
 import { EntityFormSection } from "@/components/entity/form-section";
 import { EntityRelationLink } from "@/components/entity/relation-link";
@@ -19,7 +21,12 @@ import {
   type PopoverCommandOption,
 } from "@/components/popover-command-select";
 import { useUserDetail, type UserDetailRecord } from "@/components/users/detail/user-detail-context";
+import { ImageCropDialog } from "@/components/media/image-crop-dialog";
 import { useAdminOrganizations } from "@/hooks/use-admin-organizations";
+import { useProvinces, useWards } from "@/hooks/use-admin-units";
+import { useCountries } from "@/hooks/use-countries";
+import { useCurrencies } from "@/hooks/use-currencies";
+import { useLocales } from "@/hooks/use-locales";
 import {
   useCreateAdminUser,
   useCreateOwnerUser,
@@ -27,8 +34,11 @@ import {
   useOwnerOrganizations,
   useReplaceOwnerStaffRole,
   useUpdateUserProfile,
+  adminUserKeys,
 } from "@/hooks/use-admin-users";
 import type { AdminUserOrganization, UserAudience } from "@/lib/api/admin-users";
+import { uploadUserMedia } from "@/lib/api/admin-users";
+import { ianaTimeZones } from "@/lib/time-zones";
 import { ApiError, errorMessageKey } from "@/lib/api/errors";
 import {
   emptyUserAccount,
@@ -125,11 +135,23 @@ function UserAccountFields({
   const t = useTranslations("users.accountForm");
   const tu = useTranslations("users");
   const te = useTranslations("errors");
+  const queryClient = useQueryClient();
   const createPlayer = useCreatePlayerUser();
   const createAdmin = useCreateAdminUser();
   const createOwner = useCreateOwnerUser();
   const updateProfile = useUpdateUserProfile();
   const replaceRole = useReplaceOwnerStaffRole(userId);
+  const locales = useLocales();
+  const countries = useCountries();
+  const currencies = useCurrencies();
+  const [avatar, setAvatar] = useState<Blob | null>(null);
+  const [banner, setBanner] = useState<Blob | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+  const [cropTarget, setCropTarget] = useState<"avatar" | "banner" | null>(null);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const mediaDirty = Boolean(avatar || banner);
   const organizations = useAdminOrganizations(
     { limit: 100 },
     mode === "create" && audience === "owners",
@@ -142,6 +164,10 @@ function UserAccountFields({
           emailInvalid: te("EMAIL_INVALID"),
           passwordPolicy: te("PASSWORD_POLICY"),
           passwordMismatch: t("passwordMismatch"),
+          dateInvalid: t("invalidDate"),
+          genderInvalid: t("invalidGender"),
+          currencyInvalid: t("invalidCurrency"),
+          wardRequiresProvince: t("wardRequiresProvince"),
         },
         { mode, audience },
       ),
@@ -152,6 +178,9 @@ function UserAccountFields({
     defaultValues: emptyUserAccount(),
   });
   const { isDirty } = form.formState;
+  const provinceId = form.watch("province_id");
+  const provinces = useProvinces("current_v2");
+  const wards = useWards({ scheme: "current_v2", provinceId: provinceId || undefined });
   const leaveConfirmed = useRef(false);
 
   const membershipKey = memberships.map((row) => row.staff_id).join(",");
@@ -163,6 +192,17 @@ function UserAccountFields({
       first_name: givenName(user),
       last_name: user.last_name ?? "",
       phone: user.phone ?? "",
+      gender: user.gender ?? "",
+      date_of_birth: user.date_of_birth ?? "",
+      locale_id: user.locale_id ?? "",
+      timezone: user.timezone || "Asia/Ho_Chi_Minh",
+      country_id: user.country_id ?? "",
+      preferred_currency_code: user.preferred_currency_code || "VND",
+      theme: user.theme || "system",
+      date_format: user.date_format || "dmy",
+      province_id: user.province_id ?? "",
+      ward_id: user.ward_id ?? "",
+      address_line: user.address_line ?? "",
       memberships: memberships.map((row) => ({
         staff_id: row.staff_id,
         organization_id: row.organization_id,
@@ -176,6 +216,18 @@ function UserAccountFields({
   useEffect(() => {
     if (!isDirty) leaveConfirmed.current = false;
   }, [isDirty]);
+
+  useEffect(() => {
+    if (mode !== "create" || form.getValues("locale_id")) return;
+    const fallback = locales.data?.find((item) => item.is_default) ?? locales.data?.[0];
+    if (fallback) form.setValue("locale_id", fallback.id, { shouldDirty: false });
+  }, [form, locales.data, mode]);
+
+  useEffect(() => {
+    if (mode !== "create" || form.getValues("country_id")) return;
+    const fallback = countries.data?.find((item) => item.iso2 === "VN") ?? countries.data?.[0];
+    if (fallback) form.setValue("country_id", fallback.id, { shouldDirty: false });
+  }, [form, countries.data, mode]);
 
   const roleOptions = useMemo<PopoverCommandOption[]>(
     () =>
@@ -196,18 +248,205 @@ function UserAccountFields({
     [organizations.data?.items],
   );
 
+  const genderOptions = useMemo<PopoverCommandOption[]>(
+    () =>
+      ["", "male", "female", "other", "undisclosed"].map((value) => ({
+        value,
+        label: t(`genderOptions.${value || "unspecified"}`),
+        keywords: value || "unspecified",
+      })),
+    [t],
+  );
+  const localeOptions = useMemo<PopoverCommandOption[]>(
+    () =>
+      (locales.data ?? []).map((item) => ({
+        value: item.id,
+        label: item.native_name || item.name,
+        keywords: `${item.code} ${item.name} ${item.native_name}`,
+      })),
+    [locales.data],
+  );
+  const countryOptions = useMemo<PopoverCommandOption[]>(
+    () =>
+      (countries.data ?? []).map((item) => ({
+        value: item.id,
+        label: item.name,
+        keywords: `${item.iso2} ${item.name}`,
+      })),
+    [countries.data],
+  );
+  const themeOptions = useMemo<PopoverCommandOption[]>(
+    () =>
+      (["light", "dark", "system"] as const).map((value) => ({
+        value,
+        label: t(`themeOptions.${value}`),
+        keywords: value,
+      })),
+    [t],
+  );
+  const dateFormatOptions = useMemo<PopoverCommandOption[]>(
+    () =>
+      (["dmy", "mdy", "ymd"] as const).map((value) => ({
+        value,
+        label: t(`dateFormatOptions.${value}`),
+        keywords: value,
+      })),
+    [t],
+  );
+  const timezoneOptions = useMemo<PopoverCommandOption[]>(
+    () => ianaTimeZones().map((zone) => ({ value: zone, label: zone, keywords: zone })),
+    [],
+  );
+  const currencyOptions = useMemo<PopoverCommandOption[]>(
+    () =>
+      (currencies.data ?? []).map((item) => ({
+        value: item.code,
+        label: `${item.code} · ${item.name}`,
+        keywords: `${item.code} ${item.name} ${item.symbol}`,
+      })),
+    [currencies.data],
+  );
+  const provinceOptions = useMemo<PopoverCommandOption[]>(
+    () =>
+      (provinces.data ?? []).map((item) => ({
+        value: item.id,
+        label: item.name,
+        keywords: `${item.code} ${item.name} ${item.name_en ?? ""} ${item.name_vi ?? ""}`,
+      })),
+    [provinces.data],
+  );
+  const wardOptions = useMemo<PopoverCommandOption[]>(
+    () =>
+      (wards.data ?? []).map((item) => ({
+        value: item.id,
+        label: item.name,
+        keywords: `${item.code} ${item.name} ${item.name_en ?? ""} ${item.name_vi ?? ""}`,
+      })),
+    [wards.data],
+  );
+
   const blocks = useMemo<EntityFormBlock<UserAccountFormValues>[]>(() => {
     const next: EntityFormBlock<UserAccountFormValues>[] = [
       {
-        id: "identity",
-        title: t("identity"),
+        id: "contact",
+        title: t("contact"),
         icon: <UserRound className="size-4" aria-hidden />,
         tone: "sky",
         fields: [
-          { kind: "text", name: "email", label: t("email"), required: true, inputType: "email", span: 2 },
-          { kind: "text", name: "first_name", label: t("firstName"), required: true },
+          { kind: "text", name: "email", label: t("email"), required: true, inputType: "email" },
+          { kind: "text", name: "phone", label: t("phone"), inputType: "tel" },
           { kind: "text", name: "last_name", label: t("lastName") },
-          { kind: "text", name: "phone", label: t("phone"), inputType: "tel", span: 2 },
+          { kind: "text", name: "first_name", label: t("firstName"), required: true },
+          {
+            kind: "readonly",
+            name: "full_name",
+            label: t("fullName"),
+            span: 2,
+            text: (values) =>
+              [values.last_name.trim(), values.first_name.trim()].filter(Boolean).join(" ") || "—",
+          },
+        ],
+      },
+      {
+        id: "personal",
+        title: t("personal"),
+        icon: <IdCard className="size-4" aria-hidden />,
+        tone: "emerald",
+        fields: [
+          {
+            kind: "select",
+            name: "gender",
+            label: t("gender"),
+            searchable: false,
+            options: genderOptions,
+            placeholder: t("pickGender"),
+          },
+          { kind: "date", name: "date_of_birth", label: t("dateOfBirth"), placeholder: t("pickDate") },
+        ],
+      },
+      {
+        id: "preferences",
+        title: t("preferences"),
+        icon: <SlidersHorizontal className="size-4" aria-hidden />,
+        tone: "amber",
+        fields: [
+          {
+            kind: "select",
+            name: "locale_id",
+            label: t("locale"),
+            searchable: true,
+            options: localeOptions,
+            placeholder: t("pickLocale"),
+          },
+          {
+            kind: "select",
+            name: "timezone",
+            label: t("timezone"),
+            searchable: true,
+            options: timezoneOptions,
+            placeholder: t("pickTimezone"),
+          },
+          {
+            kind: "select",
+            name: "country_id",
+            label: t("country"),
+            searchable: true,
+            options: countryOptions,
+            placeholder: t("pickCountry"),
+          },
+          {
+            kind: "select",
+            name: "preferred_currency_code",
+            label: t("currency"),
+            searchable: true,
+            options: currencyOptions,
+            placeholder: t("pickCurrency"),
+          },
+          {
+            kind: "select",
+            name: "theme",
+            label: t("theme"),
+            searchable: false,
+            options: themeOptions,
+            placeholder: t("pickTheme"),
+          },
+          {
+            kind: "select",
+            name: "date_format",
+            label: t("dateFormat"),
+            searchable: false,
+            options: dateFormatOptions,
+            placeholder: t("pickDateFormat"),
+          },
+        ],
+      },
+      {
+        id: "address",
+        title: t("address"),
+        icon: <MapPin className="size-4" aria-hidden />,
+        tone: "sky",
+        fields: [
+          {
+            kind: "select",
+            name: "province_id",
+            label: t("province"),
+            searchable: true,
+            options: provinceOptions,
+            placeholder: t("pickProvince"),
+            onValueChange: (_value, current) => {
+              current.setValue("ward_id", "", { shouldDirty: true, shouldValidate: true });
+            },
+          },
+          {
+            kind: "select",
+            name: "ward_id",
+            label: t("ward"),
+            searchable: true,
+            options: wardOptions,
+            placeholder: t("pickWard"),
+            disabled: (values) => !values.province_id,
+          },
+          { kind: "text", name: "address_line", label: t("addressLine"), span: 2 },
         ],
       },
     ];
@@ -268,17 +507,60 @@ function UserAccountFields({
       });
     }
     return next;
-  }, [audience, mode, organizationOptions, roleOptions, t]);
+  }, [
+    audience,
+    countryOptions,
+    currencyOptions,
+    dateFormatOptions,
+    genderOptions,
+    localeOptions,
+    mode,
+    organizationOptions,
+    provinceOptions,
+    roleOptions,
+    t,
+    themeOptions,
+    timezoneOptions,
+    wardOptions,
+  ]);
 
   const pending =
     createPlayer.isPending ||
     createAdmin.isPending ||
     createOwner.isPending ||
     updateProfile.isPending ||
-    replaceRole.isPending;
+    replaceRole.isPending ||
+    uploading;
+
+  function openCrop(target: "avatar" | "banner", file: File) {
+    const url = URL.createObjectURL(file);
+    setCropSrc((current) => {
+      if (current) URL.revokeObjectURL(current);
+      return url;
+    });
+    setCropTarget(target);
+  }
+
+  function storeCrop(blob: Blob) {
+    const url = URL.createObjectURL(blob);
+    if (cropTarget === "avatar") {
+      setAvatar(blob);
+      setAvatarPreview((current) => {
+        if (current?.startsWith("blob:")) URL.revokeObjectURL(current);
+        return url;
+      });
+    }
+    if (cropTarget === "banner") {
+      setBanner(blob);
+      setBannerPreview((current) => {
+        if (current?.startsWith("blob:")) URL.revokeObjectURL(current);
+        return url;
+      });
+    }
+  }
 
   function requestLeave() {
-    if (isDirty && !leaveConfirmed.current) {
+    if ((isDirty || mediaDirty) && !leaveConfirmed.current) {
       leaveConfirmed.current = true;
       toast.warning(t("unsavedWarning"));
       return;
@@ -296,24 +578,38 @@ function UserAccountFields({
       first_name: values.first_name.trim(),
       last_name: values.last_name.trim(),
       phone: values.phone.trim(),
+      gender: values.gender,
+      date_of_birth: values.date_of_birth,
+      locale_id: values.locale_id,
+      timezone: values.timezone.trim(),
+      country_id: values.country_id,
+      preferred_currency_code: values.preferred_currency_code.trim().toUpperCase(),
+      theme: values.theme,
+      date_format: values.date_format,
+      province_id: values.province_id,
+      ward_id: values.ward_id,
+      address_line: values.address_line.trim(),
     };
     try {
+      let savedId = userId;
       if (mode === "create") {
         if (audience === "admins") {
-          await createAdmin.mutateAsync({ ...profile, password: values.password });
+          savedId = (await createAdmin.mutateAsync({ ...profile, password: values.password })).id;
         } else if (audience === "owners") {
-          await createOwner.mutateAsync({
-            ...profile,
-            password: values.password,
-            organization_id: values.organization_id,
-            staff_role: values.staff_role as "org_owner" | "org_staff",
-            title: values.title.trim(),
-          });
+          savedId = (
+            await createOwner.mutateAsync({
+              ...profile,
+              password: values.password,
+              organization_id: values.organization_id,
+              staff_role: values.staff_role as "org_owner" | "org_staff",
+              title: values.title.trim(),
+            })
+          ).id;
         } else {
-          await createPlayer.mutateAsync({ ...profile, password: values.password });
+          savedId = (await createPlayer.mutateAsync({ ...profile, password: values.password })).id;
         }
       } else {
-        await updateProfile.mutateAsync({ id: userId, ...profile });
+        savedId = (await updateProfile.mutateAsync({ id: userId, ...profile })).id;
         if (audience === "owners") {
           const previous = new Map(memberships.map((row) => [row.staff_id, row]));
           for (const row of values.memberships) {
@@ -333,10 +629,18 @@ function UserAccountFields({
           }
         }
       }
+      if (avatar || banner) {
+        setUploading(true);
+        if (avatar) await uploadUserMedia(savedId, "avatar", avatar);
+        if (banner) await uploadUserMedia(savedId, "banner", banner);
+        await queryClient.invalidateQueries({ queryKey: adminUserKeys.all });
+      }
       leaveConfirmed.current = true;
       onDone();
     } catch (err) {
       toast.error(err instanceof ApiError ? te(errorMessageKey(err)) : te("INTERNAL"));
+    } finally {
+      setUploading(false);
     }
   }
 
@@ -350,9 +654,23 @@ function UserAccountFields({
           submitLabel={mode === "create" ? t("createSubmit") : t("save")}
           onCancel={requestLeave}
           pending={pending}
-          submitDisabled={mode === "edit" && !isDirty}
+          submitDisabled={mode === "edit" && !isDirty && !mediaDirty}
           actionsPlacement="inline"
           onSubmit={form.handleSubmit(onSubmit)}
+          cover={
+            <EntityCover
+              bannerLabel={t("banner")}
+              logoLabel={t("avatar")}
+              viewLabel={t("viewImage")}
+              pickLabel={t("pickImage")}
+              viewAvatarLabel={t("viewAvatar")}
+              changeImageLabel={t("changeImage")}
+              bannerPreview={bannerPreview ?? (user?.banner_file_id ? `/api/go/files/${user.banner_file_id}` : null)}
+              logoPreview={avatarPreview ?? (user?.avatar_file_id ? `/api/go/files/${user.avatar_file_id}` : null)}
+              onBanner={(file) => openCrop("banner", file)}
+              onLogo={(file) => openCrop("avatar", file)}
+            />
+          }
         >
           <EntityMetadataForm blocks={blocks} />
           {mode === "edit" && audience === "owners" ? (
@@ -403,6 +721,21 @@ function UserAccountFields({
             </EntityFormSection>
           ) : null}
         </EntityFormFrame>
+        <ImageCropDialog
+          open={cropTarget !== null}
+          title={cropTarget === "banner" ? t("banner") : t("avatar")}
+          imageSrc={cropSrc}
+          aspect={cropTarget === "banner" ? 3 : 1}
+          outputWidth={cropTarget === "banner" ? 1200 : 512}
+          outputHeight={cropTarget === "banner" ? 400 : 512}
+          zoomLabel={t("cropZoom")}
+          cancelLabel={t("cropCancel")}
+          applyLabel={t("cropApply")}
+          onOpenChange={(open) => {
+            if (!open) setCropTarget(null);
+          }}
+          onCropped={storeCrop}
+        />
       </div>
     </FormProvider>
   );

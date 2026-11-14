@@ -101,6 +101,9 @@ export const DatePicker = React.forwardRef<HTMLButtonElement, DatePickerProps>(f
       >
         <Calendar
           mode="single"
+          captionLayout="dropdown"
+          startMonth={new Date(1920, 0)}
+          endMonth={new Date(2100, 11)}
           locale={calendarLocale(locale)}
           selected={selected}
           defaultMonth={selected}

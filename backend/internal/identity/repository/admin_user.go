@@ -7,20 +7,33 @@ import (
 )
 
 type AdminUserRow struct {
-	ID              uuid.UUID
-	PublicID        string
-	Status          string
-	IsSystemAdmin   bool
-	LastLoginAt     *string
-	EmailVerifiedAt *string
-	PhoneVerifiedAt *string
-	CreatedAt       string
-	Email           string
-	DisplayName     string
-	FullName        string
-	FirstName       string
-	LastName        string
-	Phone           string
+	ID                    uuid.UUID
+	PublicID              string
+	Status                string
+	IsSystemAdmin         bool
+	LastLoginAt           *string
+	EmailVerifiedAt       *string
+	PhoneVerifiedAt       *string
+	CreatedAt             string
+	Email                 string
+	DisplayName           string
+	FullName              string
+	FirstName             string
+	LastName              string
+	Phone                 string
+	Gender                string
+	DateOfBirth           string
+	LocaleID              string
+	Timezone              string
+	CountryID             string
+	PreferredCurrencyCode string
+	Theme                 string
+	DateFormat            string
+	ProvinceID            string
+	WardID                string
+	AddressLine           string
+	AvatarFileID          string
+	BannerFileID          string
 }
 
 type AdminOwnerRow struct {

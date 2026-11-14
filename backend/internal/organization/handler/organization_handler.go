@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	membershipservice "bokdy/internal/membership/service"
 	"bokdy/internal/organization/entity"
 	"bokdy/internal/organization/service"
 	"bokdy/internal/platform/apperr"
@@ -19,7 +20,8 @@ import (
 )
 
 type OrganizationHandler struct {
-	orgs *service.OrganizationService
+	orgs       *service.OrganizationService
+	membership *membershipservice.Service
 }
 
 func NewOrganizationHandler(orgs *service.OrganizationService) *OrganizationHandler {
@@ -86,11 +88,11 @@ type assignRoleRequest struct {
 }
 
 type orgDTO struct {
-	ID       string `json:"id"`
-	PublicID string `json:"public_id"`
-	TenantID string `json:"tenant_id"`
-	Code     string `json:"code"`
-	Name     string `json:"name"`
+	ID               string `json:"id"`
+	PublicID         string `json:"public_id"`
+	TenantID         string `json:"tenant_id"`
+	Code             string `json:"code"`
+	Name             string `json:"name"`
 	NameEn           string `json:"name_en,omitempty"`
 	NameVi           string `json:"name_vi,omitempty"`
 	LegalName        string `json:"legal_name,omitempty"`
@@ -176,6 +178,10 @@ func (h *OrganizationHandler) RegisterRoutes(rg *gin.RouterGroup, jwt gin.Handle
 		orgs.GET("/:id/invitations", h.ListInvitations)
 		orgs.POST("/:id/invitations", h.Invite)
 		orgs.POST("/:id/invitations/:invitationId/revoke", h.RevokeInvitation)
+		orgs.POST("/:id/ownership/transfer", h.TransferOwnership)
+		orgs.POST("/:id/kyc", h.SubmitKYC)
+		orgs.GET("/:id/kyc", h.ListKYC)
+		orgs.POST("/:id/memberships", h.OpenMembership)
 	}
 }
 
@@ -497,7 +503,7 @@ func (h *OrganizationHandler) ListInvitations(c *gin.Context) {
 	for _, inv := range list {
 		out = append(out, invitationListDTO{
 			ID: inv.ID.String(), Email: inv.Email, RoleCode: inv.RoleCode,
-			Status: string(inv.Status),
+			Status:    string(inv.Status),
 			ExpiresAt: inv.ExpiresAt.UTC().Format(time.RFC3339),
 			CreatedAt: inv.CreatedAt.UTC().Format(time.RFC3339),
 		})
