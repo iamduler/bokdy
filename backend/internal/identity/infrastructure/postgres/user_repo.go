@@ -93,6 +93,12 @@ func (r *UserRepo) UpdateStatus(ctx context.Context, tx pgx.Tx, id uuid.UUID, st
 	})
 }
 
+func (r *UserRepo) SuspendWithReason(ctx context.Context, tx pgx.Tx, id uuid.UUID, reason string) error {
+	return r.q.WithTx(tx).SuspendUserWithReason(ctx, dbsqlc.SuspendUserWithReasonParams{
+		ID: id, SuspendReason: &reason,
+	})
+}
+
 func (r *UserRepo) MarkEmailVerified(ctx context.Context, tx pgx.Tx, id uuid.UUID, at time.Time) error {
 	return r.q.WithTx(tx).MarkUserEmailVerified(ctx, dbsqlc.MarkUserEmailVerifiedParams{
 		ID: id, Status: dbsqlc.IdentityUserStatusActive, EmailVerifiedAt: &at,

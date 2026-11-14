@@ -17,7 +17,8 @@ import { Controller, useFormContext, useWatch } from "react-hook-form";
 
 import {
   EntityFormSection,
-  entityFormFieldsClass,
+  useEntityFormFieldsClass,
+  useEntityFormFieldSpanClass,
 } from "@/components/entity/form-section";
 import {
   SHORT_INTRO_MAX_LENGTH,
@@ -28,6 +29,8 @@ import {
 export function BranchContentFields() {
   const t = useTranslations("organization.branch");
   const tr = useTranslations("organization.branch.richText");
+  const fieldsClass = useEntityFormFieldsClass();
+  const fullRowClass = useEntityFormFieldSpanClass(2);
   const { register, control, formState } = useFormContext<BranchFormValues>();
   const { errors } = formState;
   const shortIntroVi = useWatch({ control, name: "short_intro_vi" }) ?? "";
@@ -68,14 +71,14 @@ export function BranchContentFields() {
       icon={<FileText className="size-4" aria-hidden />}
       tone="amber"
     >
-      <FieldGroup className={entityFormFieldsClass}>
+      <FieldGroup className={fieldsClass}>
         {intros.map(({ name, label }) => {
           const message = errors[name]?.message;
           return (
             <Field
               key={name}
               data-invalid={Boolean(message) || undefined}
-              className="sm:col-span-2"
+              className={fullRowClass}
             >
               <FieldLabel htmlFor={`field-${name}`}>{label}</FieldLabel>
               <Textarea
@@ -101,7 +104,7 @@ export function BranchContentFields() {
             <Field
               key={name}
               data-invalid={Boolean(message) || undefined}
-              className="sm:col-span-2"
+              className={fullRowClass}
             >
               <FieldLabel htmlFor={`field-${name}`}>{label}</FieldLabel>
               <Controller

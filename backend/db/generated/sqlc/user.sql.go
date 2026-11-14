@@ -318,6 +318,24 @@ func (q *Queries) MarkUserEmailVerified(ctx context.Context, arg MarkUserEmailVe
 	return err
 }
 
+const suspendUserWithReason = `-- name: SuspendUserWithReason :exec
+UPDATE identity.users
+SET status = 'suspended'::identity.user_status,
+    suspend_reason = $2,
+    updated_at = now()
+WHERE id = $1
+`
+
+type SuspendUserWithReasonParams struct {
+	ID            uuid.UUID `json:"id"`
+	SuspendReason *string   `json:"suspend_reason"`
+}
+
+func (q *Queries) SuspendUserWithReason(ctx context.Context, arg SuspendUserWithReasonParams) error {
+	_, err := q.db.Exec(ctx, suspendUserWithReason, arg.ID, arg.SuspendReason)
+	return err
+}
+
 const touchUserLastLogin = `-- name: TouchUserLastLogin :exec
 UPDATE identity.users SET last_login_at = $2, updated_at = now() WHERE id = $1
 `
@@ -400,7 +418,14 @@ func (q *Queries) UpdateUserProfileMedia(ctx context.Context, arg UpdateUserProf
 }
 
 const updateUserStatus = `-- name: UpdateUserStatus :exec
-UPDATE identity.users SET status = $2, updated_at = now() WHERE id = $1
+UPDATE identity.users
+SET status = $2,
+    suspend_reason = CASE
+      WHEN $2::identity.user_status = 'suspended'::identity.user_status THEN suspend_reason
+      ELSE NULL
+    END,
+    updated_at = now()
+WHERE id = $1
 `
 
 type UpdateUserStatusParams struct {

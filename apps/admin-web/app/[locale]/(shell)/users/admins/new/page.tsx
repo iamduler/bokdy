@@ -1,16 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
+import { UserAccountCreatePage } from "@/components/users/user-account-form-pages";
 
-import { useRouter } from "@/i18n/navigation";
-
-/** Admin create is sheet-only — redirect to the directory. */
 export default function NewAdminPage() {
-  const router = useRouter();
-
-  useEffect(() => {
-    router.replace("/users/admins");
-  }, [router]);
-
-  return null;
+  return <UserAccountCreatePage audience="admins" />;
 }

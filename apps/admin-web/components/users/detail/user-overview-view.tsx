@@ -4,12 +4,30 @@
  * Hallmark · theme: bokdy-custom · design-system: design.md · Soft UI user detail
  */
 
-import { formatUserDate, formatUserDateTime, useUserDateTimePrefs } from "@bokdy/ui";
-import { CalendarCheck, IdCard, MapPin, Receipt, RotateCcw, SlidersHorizontal, UserRound, Wallet } from "lucide-react";
-import { useTranslations } from "next-intl";
+import {
+  cn,
+  formatUserDate,
+  formatUserDateTime,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  useUserDateTimePrefs,
+} from "@bokdy/ui";
+import {
+  CalendarCheck,
+  IdCard,
+  MapPin,
+  Receipt,
+  RotateCcw,
+  Shield,
+  SlidersHorizontal,
+  UserRound,
+  Wallet,
+} from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 
-import { DataListStats } from "@/components/data-list";
+import { DataListStats, softContentMaxW } from "@/components/data-list";
 import { EntityDetailPanel } from "@/components/entity/detail-panel";
 import { SoftStatusChip } from "@/components/entity/soft-status-chip";
 import { useUserDetail } from "@/components/users/detail/user-detail-context";
@@ -38,10 +56,60 @@ function optionLabel(
   return label(value);
 }
 
+function formatSpendMinor(
+  minor: number | undefined,
+  currency: string | undefined,
+  locale: string,
+) {
+  if (minor == null) return "—";
+  const code = (currency || "VND").toUpperCase();
+  try {
+    return new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency: code,
+      maximumFractionDigits: 0,
+    }).format(minor);
+  } catch {
+    return `${minor} ${code}`;
+  }
+}
+
+function VerificationChip({
+  verified,
+  verifiedAt,
+  verifiedLabel,
+  unverifiedLabel,
+  prefs,
+}: {
+  verified: boolean;
+  verifiedAt?: string | null;
+  verifiedLabel: string;
+  unverifiedLabel: string;
+  prefs: ReturnType<typeof useUserDateTimePrefs>;
+}) {
+  if (verified) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="inline-flex">
+            <SoftStatusChip label={verifiedLabel} tone="emerald" />
+          </span>
+        </TooltipTrigger>
+        <TooltipContent>
+          {verifiedAt ? formatUserDateTime(verifiedAt, prefs) : verifiedLabel}
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
+  return <SoftStatusChip label={unverifiedLabel} tone="muted" />;
+}
+
 export function UserOverviewView() {
   const t = useTranslations("users.overview");
   const tf = useTranslations("users.accountForm");
   const tu = useTranslations("users");
+  const ts = useTranslations("users.security");
+  const locale = useLocale();
   const prefs = useUserDateTimePrefs();
   const { user, audience, userId } = useUserDetail();
   const summary = usePlayerSummary(audience === "players" ? userId : "");
@@ -49,6 +117,8 @@ export function UserOverviewView() {
   const countries = useCountries();
   const provinces = useProvinces("current_v2");
   const wards = useWards({ scheme: "current_v2", provinceId: user.province_id || undefined });
+  const email = user.email?.trim() ?? "";
+  const phone = user.phone?.trim() ?? "";
   const emailVerified = Boolean(user.email_verified_at);
   const phoneVerified = Boolean(user.phone_verified_at);
   const localeName = locales.data?.find((item) => item.id === user.locale_id);
@@ -57,24 +127,38 @@ export function UserOverviewView() {
   const wardName = wards.data?.find((item) => item.id === user.ward_id)?.name;
 
   const contact: { label: string; value: ReactNode }[] = [
-    { label: t("email"), value: shown(user.email) },
-    { label: t("phone"), value: shown(user.phone) },
     {
-      label: t("emailVerified"),
-      value: (
-        <SoftStatusChip
-          label={emailVerified ? tu("verified") : tu("unverified")}
-          tone={emailVerified ? "emerald" : "muted"}
-        />
+      label: t("email"),
+      value: email ? (
+        <div className="space-y-1.5">
+          <p className="min-w-0 break-all">{email}</p>
+          <VerificationChip
+            verified={emailVerified}
+            verifiedAt={user.email_verified_at}
+            verifiedLabel={tu("verified")}
+            unverifiedLabel={tu("unverified")}
+            prefs={prefs}
+          />
+        </div>
+      ) : (
+        "—"
       ),
     },
     {
-      label: t("phoneVerified"),
-      value: (
-        <SoftStatusChip
-          label={phoneVerified ? tu("verified") : tu("unverified")}
-          tone={phoneVerified ? "emerald" : "muted"}
-        />
+      label: t("phone"),
+      value: phone ? (
+        <div className="space-y-1.5">
+          <p className="min-w-0 break-all">{phone}</p>
+          <VerificationChip
+            verified={phoneVerified}
+            verifiedAt={user.phone_verified_at}
+            verifiedLabel={tu("verified")}
+            unverifiedLabel={tu("unverified")}
+            prefs={prefs}
+          />
+        </div>
+      ) : (
+        "—"
       ),
     },
     {
@@ -119,107 +203,128 @@ export function UserOverviewView() {
     { label: t("addressLine"), value: shown(user.address_line) },
   ];
 
+  const spendCurrency =
+    summary.data?.currency_code || user.preferred_currency_code || undefined;
+
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-auto soft-scrollbar p-4 md:p-6">
-      {user.status === "suspended" ? (
-        <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm">
-          <p className="font-semibold text-destructive">{t("suspendedNotice")}</p>
-        </div>
-      ) : null}
-      {user.banner_file_id ? (
-        <img
-          src={`/api/go/files/${user.banner_file_id}`}
-          alt=""
-          className="h-40 w-full rounded-2xl object-cover"
-        />
-      ) : null}
-      <div className="grid gap-4 sm:grid-cols-2">
-      <ProfilePanel title={t("contact")} icon={<UserRound className="size-4" aria-hidden />} tone="sky" fields={contact}>
-        {audience === "players" ? (
-          <div className="mt-4 border-t border-border/60 pt-4">
-            <UserSecurityActions />
+      <div className={cn("mx-auto flex w-full flex-col gap-4", softContentMaxW)}>
+        {user.status === "suspended" ? (
+          <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm">
+            <p className="font-semibold text-destructive">{t("suspendedNotice")}</p>
+            {user.suspend_reason?.trim() ? (
+              <p className="mt-2 text-destructive/90">
+                <span className="font-medium">{t("suspendReason")}: </span>
+                {user.suspend_reason.trim()}
+              </p>
+            ) : null}
           </div>
         ) : null}
-      </ProfilePanel>
-      <ProfilePanel
-        title={t("personal")}
-        icon={<IdCard className="size-4" aria-hidden />}
-        tone="emerald"
-        fields={personal}
-      />
-      <ProfilePanel
-        title={t("preferences")}
-        icon={<SlidersHorizontal className="size-4" aria-hidden />}
-        tone="amber"
-        fields={preferences}
-      />
-      <ProfilePanel
-        title={t("address")}
-        icon={<MapPin className="size-4" aria-hidden />}
-        tone="sky"
-        fields={address}
-      />
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <ProfilePanel
+            title={t("contact")}
+            hint={t("hints.contact")}
+            icon={<UserRound className="size-4" aria-hidden />}
+            tone="sky"
+            fields={contact}
+          />
+          <ProfilePanel
+            title={t("personal")}
+            hint={t("hints.personal")}
+            icon={<IdCard className="size-4" aria-hidden />}
+            tone="emerald"
+            fields={personal}
+          />
+          <ProfilePanel
+            title={t("preferences")}
+            hint={t("hints.preferences")}
+            icon={<SlidersHorizontal className="size-4" aria-hidden />}
+            tone="amber"
+            fields={preferences}
+          />
+          <ProfilePanel
+            title={t("address")}
+            hint={t("hints.address")}
+            icon={<MapPin className="size-4" aria-hidden />}
+            tone="sky"
+            fields={address}
+          />
+        </div>
+
+        {audience === "players" ? (
+          <EntityDetailPanel
+            title={ts("dangerZone")}
+            hint={t("hints.security")}
+            icon={<Shield className="size-4" aria-hidden />}
+            tone="rose"
+          >
+            <div className="mt-3">
+              <UserSecurityActions />
+            </div>
+          </EntityDetailPanel>
+        ) : null}
+
+        {audience === "players" ? (
+          <DataListStats
+            isLoading={summary.isLoading}
+            items={[
+              {
+                key: "bookings",
+                label: t("bookings"),
+                value: summary.data?.booking_count ?? "—",
+                icon: <CalendarCheck className="size-4" aria-hidden />,
+                iconTone: "sky",
+              },
+              {
+                key: "transactions",
+                label: t("transactions"),
+                value: summary.data?.transaction_count ?? "—",
+                icon: <Receipt className="size-4" aria-hidden />,
+                iconTone: "amber",
+              },
+              {
+                key: "refunds",
+                label: t("refunds"),
+                value: summary.data?.refund_count ?? "—",
+                icon: <RotateCcw className="size-4" aria-hidden />,
+                iconTone: "rose",
+              },
+              {
+                key: "spend",
+                label: t("spend"),
+                value: formatSpendMinor(summary.data?.total_spend_minor, spendCurrency, locale),
+                icon: <Wallet className="size-4" aria-hidden />,
+                iconTone: "emerald",
+              },
+            ]}
+          />
+        ) : null}
       </div>
-      {audience === "players" ? (
-        <DataListStats
-          isLoading={summary.isLoading}
-          items={[
-            {
-              key: "bookings",
-              label: t("bookings"),
-              value: summary.data?.booking_count ?? "—",
-              icon: <CalendarCheck className="size-4" aria-hidden />,
-              iconTone: "sky",
-            },
-            {
-              key: "transactions",
-              label: t("transactions"),
-              value: "—",
-              icon: <Receipt className="size-4" aria-hidden />,
-              iconTone: "amber",
-            },
-            {
-              key: "refunds",
-              label: t("refunds"),
-              value: "—",
-              icon: <RotateCcw className="size-4" aria-hidden />,
-              iconTone: "rose",
-            },
-            {
-              key: "spend",
-              label: t("spend"),
-              value: "—",
-              icon: <Wallet className="size-4" aria-hidden />,
-              iconTone: "emerald",
-            },
-          ]}
-        />
-      ) : null}
     </div>
   );
 }
 
 function ProfilePanel({
   title,
+  hint,
   icon,
   tone,
   fields,
-  children,
 }: {
   title: string;
+  hint?: string;
   icon: ReactNode;
   tone: "sky" | "emerald" | "amber";
   fields: { label: string; value: ReactNode }[];
-  children?: ReactNode;
 }) {
   return (
-    <EntityDetailPanel title={title} icon={icon} tone={tone}>
+    <EntityDetailPanel title={title} hint={hint} icon={icon} tone={tone}>
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         {fields.map((field) => (
           <ProfileRow key={field.label} label={field.label} value={field.value} />
         ))}
       </div>
-      {children}
     </EntityDetailPanel>
   );
 }

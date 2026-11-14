@@ -57,6 +57,8 @@ export {
   DatePicker,
   DATE_PICKER_BIRTH_START_MONTH,
   DATE_PICKER_BIRTH_END_MONTH,
+  datePickerToday,
+  datePickerTodayISO,
 } from "./ui/date-picker";
 export type { DatePickerProps } from "./ui/date-picker";
 export type { CalendarProps } from "./ui/calendar";

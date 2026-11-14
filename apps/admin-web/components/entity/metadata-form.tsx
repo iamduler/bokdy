@@ -21,7 +21,11 @@ import {
   type UseFormReturn,
 } from "react-hook-form";
 
-import { EntityFormSection, entityFormFieldsClass } from "@/components/entity/form-section";
+import {
+  EntityFormSection,
+  useEntityFormFieldsClass,
+  useEntityFormFieldSpanClass,
+} from "@/components/entity/form-section";
 import { InfoHint } from "@/components/info-hint";
 import type { SoftIconToneKey } from "@/components/entity/soft-icon-chip";
 import { PopoverCommandMultiSelect } from "@/components/popover-command-multi-select";
@@ -36,7 +40,7 @@ const multiSelectClass = "w-full bg-background";
 type FieldBase<T extends FieldValues> = {
   name: FieldPath<T>;
   label: string;
-  /** Cells occupied in the Soft form grid (1 / sm:2 / lg:3). `2` = full row. Defaults to 1. */
+  /** Full-row field in the Soft form grid (`span: 2`). Defaults to 1. */
   span?: 1 | 2;
   required?: boolean;
   description?: string;
@@ -79,6 +83,8 @@ export type EntityDateField<T extends FieldValues> = FieldBase<T> & {
   startMonth?: Date;
   /** Last navigable month for the DatePicker caption. */
   endMonth?: Date;
+  /** Days after this date cannot be selected. */
+  maxDate?: Date;
 };
 
 export type EntityReadonlyField<T extends FieldValues> = FieldBase<T> & {
@@ -123,6 +129,7 @@ export function EntityMetadataForm<T extends FieldValues>({
 }) {
   const form = useFormContext<T>();
   const values = form.watch();
+  const fieldsClass = useEntityFormFieldsClass();
 
   return (
     <>
@@ -137,7 +144,7 @@ export function EntityMetadataForm<T extends FieldValues>({
             tone={block.tone}
             hint={block.description}
           >
-            <FieldGroup className={entityFormFieldsClass}>
+            <FieldGroup className={fieldsClass}>
               {fields.map((field) => (
                 <MetadataField key={String(field.name)} field={field} values={values} form={form} />
               ))}
@@ -222,6 +229,7 @@ function MetadataField<T extends FieldValues>({
             aria-invalid={Boolean(error) || undefined}
             startMonth={field.startMonth}
             endMonth={field.endMonth}
+            maxDate={field.maxDate}
           />
         )}
       />
@@ -253,10 +261,12 @@ function MetadataField<T extends FieldValues>({
     );
   }
 
+  const spanClass = useEntityFormFieldSpanClass(field.span);
+
   return (
     <Field
       data-invalid={Boolean(error) || undefined}
-      className={cn(field.span === 2 && "sm:col-span-2 lg:col-span-3")}
+      className={cn(spanClass)}
     >
       <div className="flex items-center gap-1.5">
         <FieldLabel htmlFor={field.kind === "text" || field.kind === "date" ? id : undefined} required={field.required}>

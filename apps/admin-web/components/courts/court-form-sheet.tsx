@@ -1,9 +1,10 @@
 "use client";
 
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@bokdy/ui";
+import { Sheet, SheetContent } from "@bokdy/ui";
 import { useTranslations } from "next-intl";
 import { useRef } from "react";
 
+import { EntityFormSheetHeader } from "@/components/entity/form-sheet-header";
 import type { Court } from "@/lib/api/courts";
 
 import { CourtForm } from "./court-form";
@@ -20,6 +21,15 @@ type CourtFormSheetProps = {
   | { mode: "duplicate"; court: Court }
 );
 
+function courtFullPageHref(props: CourtFormSheetProps): string | null {
+  if (props.mode === "edit") return `/courts/${props.court.id}/edit`;
+  if (props.mode === "duplicate") return null;
+  if (props.fixedBranchId) {
+    return `/branches/${props.fixedBranchId}/courts/new`;
+  }
+  return `/organizations/${props.organizationId}/courts/new`;
+}
+
 export function CourtFormSheet(props: CourtFormSheetProps) {
   const t = useTranslations("organization.court");
   const leaveRef = useRef<() => void>(() => props.onOpenChange(false));
@@ -29,6 +39,7 @@ export function CourtFormSheet(props: CourtFormSheetProps) {
       : props.mode === "duplicate"
         ? t("duplicateTitle")
         : t("editTitle");
+  const fullPageHref = courtFullPageHref(props);
 
   return (
     <Sheet
@@ -39,10 +50,13 @@ export function CourtFormSheet(props: CourtFormSheetProps) {
       }}
     >
       <SheetContent side="right" className="flex h-full w-full flex-col gap-0 p-0 sm:max-w-xl">
-        <SheetHeader className="space-y-0 border-b border-border px-4 py-3 pr-12">
-          <SheetTitle className="text-base">{title}</SheetTitle>
-          <SheetDescription className="sr-only">{title}</SheetDescription>
-        </SheetHeader>
+        {fullPageHref ? (
+          <EntityFormSheetHeader title={title} fullPageHref={fullPageHref} />
+        ) : (
+          <div className="border-b border-border px-4 py-3 pr-12">
+            <p className="text-base font-semibold text-foreground">{title}</p>
+          </div>
+        )}
         {props.open ? (
           <CourtForm
             {...(props.mode === "create"

@@ -52,7 +52,9 @@ New or edited Soft admin entity create/edit forms **must** use:
 
 ## Sheets
 
-Sheet wrappers mirror Branch: `SheetContent` + header + form with `layout="sheet"`. See `branch-form-sheet.tsx` / `court-form-sheet.tsx`.
+Sheet wrappers mirror Branch: `SheetContent` + [`EntityFormSheetHeader`](apps/admin-web/components/entity/form-sheet-header.tsx) (title + Maximize → full page) + form with `layout="sheet"`. See `branch-form-sheet.tsx` / `court-form-sheet.tsx`.
+
+Every Soft entity create/edit sheet **must** expose `fullPageHref` to the matching `/new` or `/edit` route. Do **not** ship sheet-only stubs that redirect those routes away. Full pages use `layout="page"` and `actionsPlacement="shell"`; edit routes sit **outside** the `(detail)` route group so hero/tabs do not wrap the form (Org pattern).
 
 ## Escape hatches (still inside the frame)
 

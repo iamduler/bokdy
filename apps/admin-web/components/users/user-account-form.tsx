@@ -3,6 +3,7 @@
 import {
   DATE_PICKER_BIRTH_END_MONTH,
   DATE_PICKER_BIRTH_START_MONTH,
+  datePickerToday,
   Field,
   FieldError,
   FieldLabel,
@@ -47,6 +48,7 @@ import {
 import type { AdminUserOrganization, UserAudience } from "@/lib/api/admin-users";
 import { uploadUserMedia } from "@/lib/api/admin-users";
 import { useTimezones } from "@/hooks/use-timezones";
+import { useRouter } from "@/i18n/navigation";
 import { ianaTimezoneOptions } from "@/lib/time-zones";
 import { ApiError, errorMessageKey } from "@/lib/api/errors";
 import {
@@ -77,8 +79,8 @@ function givenName(user: UserDetailRecord) {
 
 type UserAccountFormProps = {
   audience: UserAudience;
-  layout: "sheet";
-  onDone: () => void;
+  layout?: "page" | "sheet";
+  onDone?: () => void;
   onRegisterLeave?: (leave: () => void) => void;
 } & ({ mode: "create" } | { mode: "edit" });
 
@@ -133,8 +135,8 @@ function UserAccountFields({
 }: {
   audience: UserAudience;
   mode: UserAccountMode;
-  layout: "sheet";
-  onDone: () => void;
+  layout?: "page" | "sheet";
+  onDone?: () => void;
   onRegisterLeave?: (leave: () => void) => void;
   user: UserDetailRecord | null;
   userId: string;
@@ -144,6 +146,10 @@ function UserAccountFields({
   const t = useTranslations("users.accountForm");
   const tu = useTranslations("users");
   const te = useTranslations("errors");
+  const router = useRouter();
+  const formLayout = layout ?? "sheet";
+  const listHref = `/users/${audience}`;
+  const detailHref = userId ? `/users/${audience}/${userId}` : listHref;
   const queryClient = useQueryClient();
   const createPlayer = useCreatePlayerUser();
   const createAdmin = useCreateAdminUser();
@@ -175,6 +181,7 @@ function UserAccountFields({
           passwordPolicy: te("PASSWORD_POLICY"),
           passwordMismatch: t("passwordMismatch"),
           dateInvalid: t("invalidDate"),
+          dateFuture: t("dateFuture"),
           genderInvalid: t("invalidGender"),
           currencyInvalid: t("invalidCurrency"),
           wardRequiresProvince: t("wardRequiresProvince"),
@@ -347,14 +354,6 @@ function UserAccountFields({
           { kind: "text", name: "phone", label: t("phone"), inputType: "tel" },
           { kind: "text", name: "last_name", label: t("lastName") },
           { kind: "text", name: "first_name", label: t("firstName"), required: true },
-          {
-            kind: "readonly",
-            name: "full_name",
-            label: t("fullName"),
-            span: 2,
-            text: (values) =>
-              [values.last_name.trim(), values.first_name.trim()].filter(Boolean).join(" ") || "—",
-          },
         ],
       },
       {
@@ -378,6 +377,7 @@ function UserAccountFields({
             placeholder: t("pickDate"),
             startMonth: DATE_PICKER_BIRTH_START_MONTH,
             endMonth: DATE_PICKER_BIRTH_END_MONTH,
+            maxDate: datePickerToday(),
           },
         ],
       },
@@ -582,7 +582,11 @@ function UserAccountFields({
       toast.warning(t("unsavedWarning"));
       return;
     }
-    if (layout === "sheet") onDone();
+    if (formLayout === "sheet") {
+      onDone?.();
+      return;
+    }
+    router.push(mode === "edit" ? detailHref : listHref);
   }
 
   useEffect(() => {
@@ -653,7 +657,11 @@ function UserAccountFields({
         await queryClient.invalidateQueries({ queryKey: adminUserKeys.all });
       }
       leaveConfirmed.current = true;
-      onDone();
+      if (formLayout === "sheet") {
+        onDone?.();
+      } else {
+        router.push(`/users/${audience}/${savedId}`);
+      }
     } catch (err) {
       toast.error(err instanceof ApiError ? te(errorMessageKey(err)) : te("INTERNAL"));
     } finally {
@@ -665,14 +673,15 @@ function UserAccountFields({
 
   return (
     <FormProvider {...form}>
-      <div className="flex min-h-0 flex-1 flex-col">
+      <div className={formLayout === "sheet" ? "flex min-h-0 flex-1 flex-col" : undefined}>
         <EntityFormFrame
           cancelLabel={t("cancel")}
           submitLabel={mode === "create" ? t("createSubmit") : t("save")}
           onCancel={requestLeave}
           pending={pending}
           submitDisabled={mode === "edit" && !isDirty && !mediaDirty}
-          actionsPlacement="inline"
+          actionsPlacement={formLayout === "sheet" ? "inline" : "shell"}
+          contentWidth={formLayout === "page" ? "lg" : "md"}
           onSubmit={form.handleSubmit(onSubmit)}
           cover={
             <EntityCover
@@ -689,6 +698,17 @@ function UserAccountFields({
             />
           }
         >
+          {mode === "edit" && user?.status === "suspended" ? (
+            <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm">
+              <p className="font-semibold text-destructive">{t("suspendedNotice")}</p>
+              {user.suspend_reason?.trim() ? (
+                <p className="mt-2 text-destructive/90">
+                  <span className="font-medium">{t("suspendReason")}: </span>
+                  {user.suspend_reason.trim()}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
           <EntityMetadataForm blocks={blocks} />
           {mode === "edit" && audience === "owners" ? (
             <EntityFormSection

@@ -128,11 +128,25 @@ export function CourtForm(props: CourtFormProps) {
     setRemovedGalleryIds([]);
   }, [defaults, form]);
 
-  useEffect(() => {
-    props.onRegisterLeave?.(() => {
+  function requestLeave() {
+    if (layout === "sheet") {
       props.onDone?.();
-    });
-  }, [props]);
+      return;
+    }
+    if (props.mode === "edit") {
+      router.push(`/courts/${props.court.id}`);
+      return;
+    }
+    if (fixedBranchId) {
+      router.push(`/branches/${fixedBranchId}/courts`);
+      return;
+    }
+    router.push(`/organizations/${organizationId}/courts`);
+  }
+
+  useEffect(() => {
+    props.onRegisterLeave?.(requestLeave);
+  });
 
   const branchId = useWatch({ control: form.control, name: "branch_id" });
   const sportId = useWatch({ control: form.control, name: "sport_id" });
@@ -325,7 +339,7 @@ export function CourtForm(props: CourtFormProps) {
           }
         }
         if (uploadFailed) toast.error(t("images.uploadSomeFailed"));
-        props.onDone?.();
+        if (layout === "sheet") props.onDone?.();
         router.push(`/courts/${created.id}`);
         return;
       }
@@ -360,7 +374,8 @@ export function CourtForm(props: CourtFormProps) {
       if (galleryFailed) toast.error(t("images.saveSomeFailed"));
       setPendingImages([]);
       setRemovedGalleryIds([]);
-      props.onDone?.();
+      if (layout === "sheet") props.onDone?.();
+      else router.push(`/courts/${props.court.id}`);
     } catch (err) {
       form.setError("root", {
         message: err instanceof ApiError ? err.message : t("saveError"),
@@ -385,7 +400,7 @@ export function CourtForm(props: CourtFormProps) {
         <EntityFormFrame
           cancelLabel={t("cancel")}
           submitLabel={submitLabel}
-          onCancel={() => props.onDone?.()}
+          onCancel={requestLeave}
           pending={pending}
           onSubmit={form.handleSubmit(onSubmit)}
           actionsPlacement={layout === "sheet" ? "inline" : "shell"}

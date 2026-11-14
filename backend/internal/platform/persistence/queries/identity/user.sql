@@ -20,7 +20,21 @@ JOIN identity.identities i ON i.user_id = u.id
 WHERE i.provider = 'local' AND lower(i.email) = lower($1) AND u.deleted_at IS NULL;
 
 -- name: UpdateUserStatus :exec
-UPDATE identity.users SET status = $2, updated_at = now() WHERE id = $1;
+UPDATE identity.users
+SET status = $2,
+    suspend_reason = CASE
+      WHEN $2::identity.user_status = 'suspended'::identity.user_status THEN suspend_reason
+      ELSE NULL
+    END,
+    updated_at = now()
+WHERE id = $1;
+
+-- name: SuspendUserWithReason :exec
+UPDATE identity.users
+SET status = 'suspended'::identity.user_status,
+    suspend_reason = $2,
+    updated_at = now()
+WHERE id = $1;
 
 -- name: MarkUserEmailVerified :exec
 UPDATE identity.users SET status = $2, email_verified_at = $3, updated_at = now() WHERE id = $1;

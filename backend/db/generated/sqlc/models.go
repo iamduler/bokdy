@@ -2625,6 +2625,8 @@ type IdentityUser struct {
 	DeletedAt       *time.Time         `json:"deleted_at"`
 	EmailVerifiedAt *time.Time         `json:"email_verified_at"`
 	PhoneVerifiedAt *time.Time         `json:"phone_verified_at"`
+	// Set when status=suspended; cleared on restore/activate.
+	SuspendReason *string `json:"suspend_reason"`
 }
 
 type IdentityUserProfile struct {

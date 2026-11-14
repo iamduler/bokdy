@@ -8,6 +8,7 @@ const messages = {
   passwordPolicy: "policy",
   passwordMismatch: "mismatch",
   dateInvalid: "date",
+  dateFuture: "future",
   genderInvalid: "gender",
   currencyInvalid: "currency",
   wardRequiresProvince: "ward",
@@ -81,6 +82,7 @@ describe("userAccountSchema", () => {
     const schema = userAccountSchema(messages, { mode: "edit", audience: "players" });
     expect(schema.safeParse({ ...base(), password: "", confirm_password: "", gender: "female", date_of_birth: "1990-01-02" }).success).toBe(true);
     expect(schema.safeParse({ ...base(), password: "", confirm_password: "", date_of_birth: "02-01-1990" }).success).toBe(false);
+    expect(schema.safeParse({ ...base(), password: "", confirm_password: "", date_of_birth: "2099-01-01" }).success).toBe(false);
     expect(schema.safeParse({ ...base(), password: "", confirm_password: "", gender: "nope" }).success).toBe(false);
     expect(schema.safeParse({ ...base(), password: "", confirm_password: "", preferred_currency_code: "dong" }).success).toBe(false);
     expect(schema.safeParse({ ...base(), password: "", confirm_password: "", preferred_currency_code: "" }).success).toBe(true);

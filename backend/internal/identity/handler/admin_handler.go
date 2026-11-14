@@ -86,6 +86,7 @@ type adminUserDTO struct {
 	AvatarFileID          string  `json:"avatar_file_id,omitempty"`
 	BannerFileID          string  `json:"banner_file_id,omitempty"`
 	Status                string  `json:"status"`
+	SuspendReason         string  `json:"suspend_reason,omitempty"`
 	IsSystemAdmin         bool    `json:"is_system_admin"`
 	LastLoginAt           *string `json:"last_login_at,omitempty"`
 	EmailVerifiedAt       *string `json:"email_verified_at,omitempty"`
@@ -747,7 +748,7 @@ func toAdminUserDTO(row repository.AdminUserRow) adminUserDTO {
 		Theme:                 row.Theme, DateFormat: row.DateFormat,
 		ProvinceID: row.ProvinceID, WardID: row.WardID, AddressLine: row.AddressLine,
 		AvatarFileID: row.AvatarFileID, BannerFileID: row.BannerFileID,
-		Status: row.Status, IsSystemAdmin: row.IsSystemAdmin,
+		Status: row.Status, SuspendReason: row.SuspendReason, IsSystemAdmin: row.IsSystemAdmin,
 		LastLoginAt: row.LastLoginAt, EmailVerifiedAt: row.EmailVerifiedAt,
 		PhoneVerifiedAt: row.PhoneVerifiedAt, CreatedAt: row.CreatedAt,
 	}

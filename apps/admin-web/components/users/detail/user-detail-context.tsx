@@ -26,6 +26,7 @@ export type UserDetailRecord = {
   avatar_file_id?: string;
   banner_file_id?: string;
   status: string;
+  suspend_reason?: string;
   is_system_admin: boolean;
   last_login_at?: string | null;
   email_verified_at?: string | null;

@@ -21,6 +21,7 @@ type UserRepository interface {
 	FindByEmail(ctx context.Context, email string) (*entity.User, error)
 	FindContact(ctx context.Context, userID uuid.UUID) (*UserContact, error)
 	UpdateStatus(ctx context.Context, tx pgx.Tx, id uuid.UUID, status entity.UserStatus) error
+	SuspendWithReason(ctx context.Context, tx pgx.Tx, id uuid.UUID, reason string) error
 	MarkEmailVerified(ctx context.Context, tx pgx.Tx, id uuid.UUID, at time.Time) error
 	ClearPhoneVerified(ctx context.Context, tx pgx.Tx, id uuid.UUID) error
 	ClearEmailVerified(ctx context.Context, tx pgx.Tx, id uuid.UUID) error

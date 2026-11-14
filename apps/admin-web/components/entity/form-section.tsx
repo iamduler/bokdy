@@ -9,8 +9,20 @@ import type { SoftIconToneKey } from "@/components/entity/soft-icon-chip";
 export const entityFormSectionClass =
   "soft-elevated mb-2 space-y-3 rounded-2xl border-0 p-4 md:mb-4 [&_input]:bg-white dark:[&_input]:bg-background";
 
+/** Default page grid (1 / sm:2 / lg:3). Prefer `useEntityFormFieldsClass()` inside EntityFormFrame. */
 export const entityFormFieldsClass =
   "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3";
+
+/** Sheet grid — always two fields per row. */
+export const entityFormFieldsClassSheet = "grid grid-cols-2 gap-4";
+
+export {
+  EntityFormLayoutProvider,
+  useEntityFormLayout,
+  useEntityFormFieldsClass,
+  useEntityFormFieldSpanClass,
+  type EntityFormLayout,
+} from "@/components/entity/form-layout-context";
 
 export function EntityFormSection({
   title,

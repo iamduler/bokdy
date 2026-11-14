@@ -213,7 +213,7 @@ func (s *AdminUserService) Suspend(ctx context.Context, id uuid.UUID, reason str
 		if user.Status != entity.UserStatusActive {
 			return apperr.New(apperr.CodeConflict, "user is not active")
 		}
-		if err := s.users.UpdateStatus(ctx, tx, id, entity.UserStatusSuspended); err != nil {
+		if err := s.users.SuspendWithReason(ctx, tx, id, reason); err != nil {
 			return apperr.Wrap(err, apperr.CodeInternal, "suspend user")
 		}
 		if err := s.sessions.RevokeAllForUser(ctx, tx, id); err != nil {

@@ -272,6 +272,7 @@ SELECT
     u.phone_verified_at,
     u.created_at,
     u.updated_at,
+    COALESCE(u.suspend_reason, '') AS suspend_reason,
     COALESCE(i.email, '') AS email,
     COALESCE(p.full_name, '') AS full_name,
     COALESCE(i.phone, '') AS phone

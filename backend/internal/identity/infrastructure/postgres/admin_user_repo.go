@@ -133,6 +133,7 @@ func (r *AdminUserRepo) GetByID(ctx context.Context, id uuid.UUID) (*repository.
 	u := mapAdminUserRow(row.ID, row.PublicID, row.Status, row.IsSystemAdmin,
 		row.LastLoginAt, row.EmailVerifiedAt, row.PhoneVerifiedAt, row.CreatedAt,
 		row.Email, row.FullName, row.Phone)
+	u.SuspendReason = row.SuspendReason
 	return &u, nil
 }
 

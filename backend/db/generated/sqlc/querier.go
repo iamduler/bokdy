@@ -343,6 +343,7 @@ type Querier interface {
 	SearchWardsFormer(ctx context.Context, arg SearchWardsFormerParams) ([]SearchWardsFormerRow, error)
 	SessionMFAVerified(ctx context.Context, arg SessionMFAVerifiedParams) (*time.Time, error)
 	SucceedPaymentIntent(ctx context.Context, arg SucceedPaymentIntentParams) error
+	SuspendUserWithReason(ctx context.Context, arg SuspendUserWithReasonParams) error
 	TouchUserLastLogin(ctx context.Context, arg TouchUserLastLoginParams) error
 	UpdateBookingResourceSchedule(ctx context.Context, arg UpdateBookingResourceScheduleParams) error
 	UpdateBranchGalleryItem(ctx context.Context, arg UpdateBranchGalleryItemParams) error

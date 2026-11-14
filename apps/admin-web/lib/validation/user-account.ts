@@ -75,6 +75,13 @@ function isStaffRole(value: string): boolean {
   return (staffRoles as readonly string[]).includes(value);
 }
 
+function todayISODate(): string {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${now.getFullYear()}-${month}-${day}`;
+}
+
 export function userAccountSchema(
   messages: {
     required: string;
@@ -82,6 +89,7 @@ export function userAccountSchema(
     passwordPolicy: string;
     passwordMismatch: string;
     dateInvalid: string;
+    dateFuture: string;
     genderInvalid: string;
     currencyInvalid: string;
     wardRequiresProvince: string;
@@ -101,6 +109,8 @@ export function userAccountSchema(
     const dob = value.date_of_birth.trim();
     if (dob && !datePattern.test(dob)) {
       ctx.addIssue({ code: "custom", path: ["date_of_birth"], message: messages.dateInvalid });
+    } else if (dob && dob > todayISODate()) {
+      ctx.addIssue({ code: "custom", path: ["date_of_birth"], message: messages.dateFuture });
     }
     if (!(genders as readonly string[]).includes(value.gender)) {
       ctx.addIssue({ code: "custom", path: ["gender"], message: messages.genderInvalid });

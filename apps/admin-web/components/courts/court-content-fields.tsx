@@ -19,7 +19,8 @@ import {
 } from "@/components/courts/court-gallery-field";
 import {
   EntityFormSection,
-  entityFormFieldsClass,
+  useEntityFormFieldsClass,
+  useEntityFormFieldSpanClass,
 } from "@/components/entity/form-section";
 import type { CourtFormValues } from "@/lib/validation/court-form";
 
@@ -44,6 +45,8 @@ export function CourtContentFields(props: CourtContentFieldsProps) {
   const tr = useTranslations("organization.branch.richText");
   const { control, formState } = useFormContext<CourtFormValues>();
   const descriptionError = formState.errors.description_vi?.message;
+  const fieldsClass = useEntityFormFieldsClass();
+  const fullRowClass = useEntityFormFieldSpanClass(2);
 
   const editorLabels = useMemo<RichTextEditorLabels>(
     () => ({
@@ -68,10 +71,10 @@ export function CourtContentFields(props: CourtContentFieldsProps) {
         icon={<FileText className="size-4" aria-hidden />}
         tone="amber"
       >
-        <FieldGroup className={entityFormFieldsClass}>
+        <FieldGroup className={fieldsClass}>
           <Field
             data-invalid={Boolean(descriptionError) || undefined}
-            className="sm:col-span-2"
+            className={fullRowClass}
           >
             <FieldLabel htmlFor="field-description_vi">
               {t("fieldDescription")}
@@ -103,8 +106,8 @@ export function CourtContentFields(props: CourtContentFieldsProps) {
         icon={<Images className="size-4" aria-hidden />}
         tone="rose"
       >
-        <FieldGroup className={entityFormFieldsClass}>
-          <Field className="sm:col-span-2">
+        <FieldGroup className={fieldsClass}>
+          <Field className={fullRowClass}>
             <FieldLabel>{t("fieldImages")}</FieldLabel>
             {props.mode === "edit" ? (
               <CourtGalleryManager

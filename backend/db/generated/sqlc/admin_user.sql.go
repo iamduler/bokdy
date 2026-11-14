@@ -327,6 +327,7 @@ SELECT
     u.phone_verified_at,
     u.created_at,
     u.updated_at,
+    COALESCE(u.suspend_reason, '') AS suspend_reason,
     COALESCE(i.email, '') AS email,
     COALESCE(p.full_name, '') AS full_name,
     COALESCE(i.phone, '') AS phone
@@ -346,6 +347,7 @@ type GetAdminUserByIDRow struct {
 	PhoneVerifiedAt *time.Time         `json:"phone_verified_at"`
 	CreatedAt       time.Time          `json:"created_at"`
 	UpdatedAt       time.Time          `json:"updated_at"`
+	SuspendReason   string             `json:"suspend_reason"`
 	Email           string             `json:"email"`
 	FullName        string             `json:"full_name"`
 	Phone           string             `json:"phone"`
@@ -364,6 +366,7 @@ func (q *Queries) GetAdminUserByID(ctx context.Context, id uuid.UUID) (GetAdminU
 		&i.PhoneVerifiedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.SuspendReason,
 		&i.Email,
 		&i.FullName,
 		&i.Phone,

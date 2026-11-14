@@ -5668,6 +5668,7 @@ components:
         avatar_file_id: { type: string, format: uuid }
         banner_file_id: { type: string, format: uuid }
         status: { type: string, enum: [pending, active, suspended, locked, deleted] }
+        suspend_reason: { type: string, description: Present when status is suspended }
         is_system_admin: { type: boolean }
         last_login_at: { type: string, format: date-time, description: UTC }
         email_verified_at: { type: string, format: date-time, description: UTC }

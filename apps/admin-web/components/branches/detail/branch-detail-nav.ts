@@ -23,8 +23,9 @@ export function resolveBranchDetailTab(pathname: string, base: string): BranchDe
   return match?.id ?? "overview";
 }
 
-/** `edit` is a sheet-only route that redirects; no tab chrome. */
+/** Full-page edit (and nested form routes) skip branch tab chrome. */
 export function isBranchFormRoute(pathname: string, base: string): boolean {
   const rest = pathname.startsWith(base) ? pathname.slice(base.length) : "";
-  return rest.split("/").filter(Boolean)[0] === "edit";
+  const leaf = rest.split("/").filter(Boolean)[0] ?? "";
+  return leaf === "edit";
 }

@@ -1,16 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
+import { UserAccountCreatePage } from "@/components/users/user-account-form-pages";
 
-import { useRouter } from "@/i18n/navigation";
-
-/** Player create is sheet-only — redirect to the directory. */
 export default function NewPlayerPage() {
-  const router = useRouter();
-
-  useEffect(() => {
-    router.replace("/users/players");
-  }, [router]);
-
-  return null;
+  return <UserAccountCreatePage audience="players" />;
 }

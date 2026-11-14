@@ -15,6 +15,7 @@ type AdminUserRow struct {
 	EmailVerifiedAt       *string
 	PhoneVerifiedAt       *string
 	CreatedAt             string
+	SuspendReason         string
 	Email                 string
 	FullName              string
 	FirstName             string

@@ -16,7 +16,11 @@ import { FormProvider, useForm } from "react-hook-form";
 import { EntityCover } from "@/components/entity/cover";
 import { InfoHint } from "@/components/info-hint";
 import { EntityFormFrame } from "@/components/entity/form-frame";
-import { EntityFormSection } from "@/components/entity/form-section";
+import {
+  EntityFormSection,
+  entityFormFieldsClass,
+  entityFormFieldsClassSheet,
+} from "@/components/entity/form-section";
 import {
   EntityMetadataForm,
   type EntityFormBlock,
@@ -199,6 +203,8 @@ export function BranchForm(props: BranchFormProps) {
   const branch = props.mode === "edit" ? props.branch : undefined;
   const { organizationId, onDone, onRegisterLeave } = props;
   const layout = props.layout ?? "page";
+  const fieldsClass =
+    layout === "sheet" ? entityFormFieldsClassSheet : entityFormFieldsClass;
   const queryClient = useQueryClient();
   const create = useCreateBranch(organizationId);
   const update = useUpdateBranch(organizationId, branch?.id ?? "");
@@ -229,6 +235,9 @@ export function BranchForm(props: BranchFormProps) {
         nameRequired: t("nameRequired"),
         emailInvalid: t("emailInvalid"),
         websiteInvalid: t("websiteInvalid"),
+        phoneRequired: tb("phoneRequired"),
+        sportsRequired: tb("sportsRequired"),
+        googleMapsRequired: tb("googleMapsRequired"),
         addressRequired: tb("addressRequired"),
         coordsInvalid: tb("coordsInvalid"),
         foundedYearInvalid: tb("foundedYearInvalid"),
@@ -593,6 +602,7 @@ export function BranchForm(props: BranchFormProps) {
             placeholder: tb("fieldSportsPlaceholder"),
             options: sportOptions,
             searchable: true,
+            required: true,
             span: 2,
           },
           {
@@ -627,6 +637,7 @@ export function BranchForm(props: BranchFormProps) {
             label: t("fieldPhone"),
             inputType: "tel",
             autoComplete: "tel",
+            required: true,
           },
         ],
       },
@@ -654,6 +665,7 @@ export function BranchForm(props: BranchFormProps) {
             name: "google_maps_url",
             label: tb("fieldGoogleMaps"),
             inputType: "url",
+            required: true,
           },
           {
             kind: "text",
@@ -728,7 +740,7 @@ export function BranchForm(props: BranchFormProps) {
             icon={<MapPin className="size-4" aria-hidden />}
             tone="amber"
           >
-            <FieldGroup className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <FieldGroup className={fieldsClass}>
               <Field data-invalid={Boolean(provinceError) || undefined}>
                 <FieldLabel required>{t("fieldProvince")}</FieldLabel>
                 <PopoverCommandSelect

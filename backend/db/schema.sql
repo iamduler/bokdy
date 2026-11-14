@@ -37794,3 +37794,10 @@ SET full_name = COALESCE(
 ALTER TABLE identity.user_profiles DROP COLUMN IF EXISTS display_name;
 
 
+-- >>> 00045_user_suspend_reason.sql
+ALTER TABLE identity.users
+    ADD COLUMN suspend_reason text;
+
+COMMENT ON COLUMN identity.users.suspend_reason IS 'Set when status=suspended; cleared on restore/activate.';
+
+

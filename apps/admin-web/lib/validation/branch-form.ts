@@ -45,6 +45,9 @@ export function branchFormSchema(messages: {
   nameRequired: string;
   emailInvalid: string;
   websiteInvalid: string;
+  phoneRequired: string;
+  sportsRequired: string;
+  googleMapsRequired: string;
   addressRequired: string;
   coordsInvalid: string;
   foundedYearInvalid: string;
@@ -58,6 +61,20 @@ export function branchFormSchema(messages: {
         message: messages.nameRequired,
       });
     }
+    if (value.sport_ids.length === 0) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["sport_ids"],
+        message: messages.sportsRequired,
+      });
+    }
+    if (!value.phone.trim()) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["phone"],
+        message: messages.phoneRequired,
+      });
+    }
     if (value.email && !z.email().safeParse(value.email).success) {
       ctx.addIssue({
         code: "custom",
@@ -67,7 +84,15 @@ export function branchFormSchema(messages: {
     }
     optionalUrlIssue(value.website, "website", messages.websiteInvalid, ctx);
     optionalUrlIssue(value.facebook_url, "facebook_url", messages.websiteInvalid, ctx);
-    optionalUrlIssue(value.google_maps_url, "google_maps_url", messages.websiteInvalid, ctx);
+    if (!value.google_maps_url.trim()) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["google_maps_url"],
+        message: messages.googleMapsRequired,
+      });
+    } else {
+      optionalUrlIssue(value.google_maps_url, "google_maps_url", messages.websiteInvalid, ctx);
+    }
     for (const path of ["short_intro_en", "short_intro_vi"] as const) {
       if ([...value[path]].length > SHORT_INTRO_MAX_LENGTH) {
         ctx.addIssue({

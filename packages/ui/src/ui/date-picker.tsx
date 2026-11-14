@@ -27,6 +27,8 @@ export type DatePickerProps = {
   startMonth?: Date;
   /** Last navigable month (defaults to Dec of current year + 10). */
   endMonth?: Date;
+  /** Days after this calendar date cannot be selected (inclusive bound). */
+  maxDate?: Date;
 };
 
 function parseISODate(value: string): Date | undefined {
@@ -59,6 +61,16 @@ export const DATE_PICKER_BIRTH_END_MONTH = (() => {
   return new Date(now.getFullYear(), now.getMonth());
 })();
 
+/** Local calendar date at 00:00 — use for DOB `maxDate` / Zod “not in the future”. */
+export function datePickerToday(): Date {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+}
+
+export function datePickerTodayISO(): string {
+  return toISODate(datePickerToday());
+}
+
 /** Grace after caption Select closes so late focus/pointer events do not dismiss the Popover. */
 const CAPTION_SELECT_DISMISS_GRACE_MS = 150;
 
@@ -84,6 +96,7 @@ export const DatePicker = React.forwardRef<HTMLButtonElement, DatePickerProps>(f
     "aria-invalid": ariaInvalid,
     startMonth = CALENDAR_START_MONTH,
     endMonth = CALENDAR_END_MONTH,
+    maxDate,
   },
   ref,
 ) {
@@ -97,6 +110,10 @@ export const DatePicker = React.forwardRef<HTMLButtonElement, DatePickerProps>(f
   const prefs = useUserDateTimePrefs();
   const label = selected ? formatUserDate(value, prefs) : "";
   const dayPickerLocale = React.useMemo(() => calendarLocale(locale), [locale]);
+  const dayDisabled = React.useMemo(
+    () => (maxDate ? { after: maxDate } : undefined),
+    [maxDate],
+  );
 
   React.useImperativeHandle(ref, () => triggerRef.current as HTMLButtonElement);
 
@@ -177,6 +194,7 @@ export const DatePicker = React.forwardRef<HTMLButtonElement, DatePickerProps>(f
           captionLayout="dropdown"
           startMonth={startMonth}
           endMonth={endMonth}
+          disabled={dayDisabled}
           locale={dayPickerLocale}
           selected={selected}
           month={month}

@@ -9165,6 +9165,8 @@ export interface components {
             banner_file_id?: string;
             /** @enum {string} */
             status: "pending" | "active" | "suspended" | "locked" | "deleted";
+            /** @description Present when status is suspended */
+            suspend_reason?: string;
             is_system_admin: boolean;
             /**
              * Format: date-time
