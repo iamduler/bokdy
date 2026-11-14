@@ -28,7 +28,6 @@
     "personal": "Personal information",
     "firstName": "Given name",
     "lastName": "Family name",
-    "displayName": "Display name",
     "save": "Save",
     "saved": "Saved.",
     "organizations": "Organizations",

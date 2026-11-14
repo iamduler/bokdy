@@ -68,7 +68,6 @@ type adminUserDTO struct {
 	ID                    string  `json:"id"`
 	PublicID              string  `json:"public_id"`
 	Email                 string  `json:"email,omitempty"`
-	DisplayName           string  `json:"display_name,omitempty"`
 	FullName              string  `json:"full_name,omitempty"`
 	FirstName             string  `json:"first_name,omitempty"`
 	LastName              string  `json:"last_name,omitempty"`
@@ -740,7 +739,7 @@ func parseBoolQuery(c *gin.Context, key string) *bool {
 func toAdminUserDTO(row repository.AdminUserRow) adminUserDTO {
 	return adminUserDTO{
 		ID: row.ID.String(), PublicID: row.PublicID, Email: row.Email,
-		DisplayName: row.DisplayName, FullName: row.FullName,
+		FullName:  row.FullName,
 		FirstName: row.FirstName, LastName: row.LastName, Phone: row.Phone,
 		Gender: row.Gender, DateOfBirth: row.DateOfBirth, LocaleID: row.LocaleID,
 		Timezone: row.Timezone, CountryID: row.CountryID,

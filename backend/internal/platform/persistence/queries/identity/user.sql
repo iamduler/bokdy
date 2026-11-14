@@ -4,9 +4,9 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8);
 
 -- name: CreateUserProfile :exec
 INSERT INTO identity.user_profiles (
-    id, user_id, first_name, last_name, full_name, display_name, gender, date_of_birth, locale_id, timezone,
+    id, user_id, first_name, last_name, full_name, gender, date_of_birth, locale_id, timezone,
     country_id, province_id, ward_id, address_line, preferred_currency_code, theme, date_format, created_at, updated_at)
-VALUES ($1, $2, $3, $4, $5, $6, NULLIF($7::text, '')::identity.gender, NULLIF($8::text, '')::date, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19);
+VALUES ($1, $2, $3, $4, $5, NULLIF($6::text, '')::identity.gender, NULLIF($7::text, '')::date, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18);
 
 -- name: FindUserByID :one
 SELECT id, public_id, status, is_system_admin, last_login_at, email_verified_at, phone_verified_at, created_at, updated_at
@@ -36,7 +36,7 @@ UPDATE identity.users SET last_login_at = $2, updated_at = now() WHERE id = $1;
 
 -- name: GetUserProfile :one
 SELECT id, user_id, COALESCE(first_name, '') AS first_name, COALESCE(last_name, '') AS last_name, full_name,
-       COALESCE(display_name, '') AS display_name, avatar_file_id, COALESCE(gender::text, '') AS gender,
+       avatar_file_id, COALESCE(gender::text, '') AS gender,
        COALESCE(date_of_birth::text, '') AS date_of_birth,
        locale_id, COALESCE(timezone, '') AS timezone, country_id,
        province_id, ward_id, COALESCE(address_line, '') AS address_line, banner_file_id,
@@ -46,11 +46,7 @@ WHERE user_id = $1;
 
 -- name: FindUserContactByID :one
 SELECT COALESCE(i.email, '')::text AS email,
-       CASE
-         WHEN COALESCE(p.display_name, '') <> '' THEN p.display_name
-         WHEN COALESCE(p.full_name, '') <> '' THEN p.full_name
-         ELSE ''
-       END::text AS display_name
+       COALESCE(NULLIF(btrim(p.full_name), ''), '')::text AS full_name
 FROM identity.users u
 LEFT JOIN identity.identities i ON i.user_id = u.id AND i.is_primary = true
 LEFT JOIN identity.user_profiles p ON p.user_id = u.id
@@ -58,10 +54,10 @@ WHERE u.id = $1 AND u.deleted_at IS NULL;
 
 -- name: UpdateUserProfile :exec
 UPDATE identity.user_profiles SET
-    first_name = $2, last_name = $3, full_name = $4, display_name = $5, avatar_file_id = $6,
-    gender = NULLIF($7::text, '')::identity.gender, date_of_birth = NULLIF($8::text, '')::date, locale_id = $9, timezone = $10,
-    country_id = $11, province_id = $15, ward_id = $16, address_line = $17,
-    preferred_currency_code = $12, theme = $13, date_format = $14, updated_at = now()
+    first_name = $2, last_name = $3, full_name = $4, avatar_file_id = $5,
+    gender = NULLIF($6::text, '')::identity.gender, date_of_birth = NULLIF($7::text, '')::date, locale_id = $8, timezone = $9,
+    country_id = $10, province_id = $14, ward_id = $15, address_line = $16,
+    preferred_currency_code = $11, theme = $12, date_format = $13, updated_at = now()
 WHERE user_id = $1;
 
 -- name: UpdateUserProfileMedia :exec

@@ -234,6 +234,7 @@ type Querier interface {
 	ListActiveCourtIDsByLocation(ctx context.Context, branchID uuid.UUID) ([]uuid.UUID, error)
 	ListActiveCurrencies(ctx context.Context) ([]ListActiveCurrenciesRow, error)
 	ListActiveLocales(ctx context.Context) ([]ListActiveLocalesRow, error)
+	ListActiveTimezones(ctx context.Context) ([]ListActiveTimezonesRow, error)
 	ListAdminBookings(ctx context.Context, arg ListAdminBookingsParams) ([]ListAdminBookingsRow, error)
 	ListAdminOwners(ctx context.Context, arg ListAdminOwnersParams) ([]ListAdminOwnersRow, error)
 	ListAdminPlayers(ctx context.Context, arg ListAdminPlayersParams) ([]ListAdminPlayersRow, error)

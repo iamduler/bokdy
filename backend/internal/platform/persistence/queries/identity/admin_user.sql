@@ -10,7 +10,6 @@ SELECT
     u.created_at,
     u.updated_at,
     COALESCE(i.email, '') AS email,
-    COALESCE(p.display_name, '') AS display_name,
     COALESCE(p.full_name, '') AS full_name,
     COALESCE(i.phone, '') AS phone
 FROM identity.users u
@@ -32,13 +31,12 @@ WHERE u.deleted_at IS NULL
       sqlc.narg(q)::text IS NULL OR btrim(sqlc.narg(q)::text) = ''
       OR lower(COALESCE(i.email, '')) LIKE '%' || lower(btrim(sqlc.narg(q)::text)) || '%'
       OR lower(COALESCE(p.full_name, '')) LIKE '%' || lower(btrim(sqlc.narg(q)::text)) || '%'
-      OR lower(COALESCE(p.display_name, '')) LIKE '%' || lower(btrim(sqlc.narg(q)::text)) || '%'
   )
 ORDER BY
   CASE WHEN sqlc.arg(sort_key)::text = 'name' AND NOT sqlc.arg(sort_desc)::bool
-    THEN lower(COALESCE(NULLIF(p.display_name, ''), NULLIF(p.full_name, ''), i.email, '')) END ASC,
+    THEN lower(COALESCE(NULLIF(p.full_name, ''), i.email, '')) END ASC,
   CASE WHEN sqlc.arg(sort_key)::text = 'name' AND sqlc.arg(sort_desc)::bool
-    THEN lower(COALESCE(NULLIF(p.display_name, ''), NULLIF(p.full_name, ''), i.email, '')) END DESC,
+    THEN lower(COALESCE(NULLIF(p.full_name, ''), i.email, '')) END DESC,
   CASE WHEN sqlc.arg(sort_key)::text = 'status' AND NOT sqlc.arg(sort_desc)::bool THEN u.status::text END ASC,
   CASE WHEN sqlc.arg(sort_key)::text = 'status' AND sqlc.arg(sort_desc)::bool THEN u.status::text END DESC,
   CASE WHEN sqlc.arg(sort_key)::text = 'last_login' AND NOT sqlc.arg(sort_desc)::bool THEN u.last_login_at END ASC,
@@ -70,7 +68,6 @@ WHERE u.deleted_at IS NULL
       sqlc.narg(q)::text IS NULL OR btrim(sqlc.narg(q)::text) = ''
       OR lower(COALESCE(i.email, '')) LIKE '%' || lower(btrim(sqlc.narg(q)::text)) || '%'
       OR lower(COALESCE(p.full_name, '')) LIKE '%' || lower(btrim(sqlc.narg(q)::text)) || '%'
-      OR lower(COALESCE(p.display_name, '')) LIKE '%' || lower(btrim(sqlc.narg(q)::text)) || '%'
   );
 
 -- name: CountAdminPlayers :one
@@ -113,7 +110,6 @@ SELECT DISTINCT ON (u.id)
     u.created_at,
     u.updated_at,
     COALESCE(i.email, '') AS email,
-    COALESCE(p.display_name, '') AS display_name,
     COALESCE(p.full_name, '') AS full_name,
     COALESCE(i.phone, '') AS phone,
     COALESCE(r.code, 'org_staff') AS staff_role,
@@ -139,7 +135,6 @@ WHERE u.deleted_at IS NULL
       sqlc.narg(q)::text IS NULL OR btrim(sqlc.narg(q)::text) = ''
       OR lower(COALESCE(i.email, '')) LIKE '%' || lower(btrim(sqlc.narg(q)::text)) || '%'
       OR lower(COALESCE(p.full_name, '')) LIKE '%' || lower(btrim(sqlc.narg(q)::text)) || '%'
-      OR lower(COALESCE(p.display_name, '')) LIKE '%' || lower(btrim(sqlc.narg(q)::text)) || '%'
       OR lower(o.name_en) LIKE '%' || lower(btrim(sqlc.narg(q)::text)) || '%'
       OR lower(o.name_vi) LIKE '%' || lower(btrim(sqlc.narg(q)::text)) || '%'
   )
@@ -147,9 +142,9 @@ ORDER BY u.id, sm.created_at ASC
 ) owners
 ORDER BY
   CASE WHEN sqlc.arg(sort_key)::text = 'name' AND NOT sqlc.arg(sort_desc)::bool
-    THEN lower(COALESCE(NULLIF(owners.display_name, ''), NULLIF(owners.full_name, ''), owners.email, '')) END ASC,
+    THEN lower(COALESCE(NULLIF(owners.full_name, ''), owners.email, '')) END ASC,
   CASE WHEN sqlc.arg(sort_key)::text = 'name' AND sqlc.arg(sort_desc)::bool
-    THEN lower(COALESCE(NULLIF(owners.display_name, ''), NULLIF(owners.full_name, ''), owners.email, '')) END DESC,
+    THEN lower(COALESCE(NULLIF(owners.full_name, ''), owners.email, '')) END DESC,
   CASE WHEN sqlc.arg(sort_key)::text = 'status' AND NOT sqlc.arg(sort_desc)::bool THEN owners.status::text END ASC,
   CASE WHEN sqlc.arg(sort_key)::text = 'status' AND sqlc.arg(sort_desc)::bool THEN owners.status::text END DESC,
   CASE WHEN sqlc.arg(sort_key)::text = 'last_login' AND NOT sqlc.arg(sort_desc)::bool THEN owners.last_login_at END ASC,
@@ -178,7 +173,6 @@ WHERE u.deleted_at IS NULL
       sqlc.narg(q)::text IS NULL OR btrim(sqlc.narg(q)::text) = ''
       OR lower(COALESCE(i.email, '')) LIKE '%' || lower(btrim(sqlc.narg(q)::text)) || '%'
       OR lower(COALESCE(p.full_name, '')) LIKE '%' || lower(btrim(sqlc.narg(q)::text)) || '%'
-      OR lower(COALESCE(p.display_name, '')) LIKE '%' || lower(btrim(sqlc.narg(q)::text)) || '%'
       OR lower(o.name_en) LIKE '%' || lower(btrim(sqlc.narg(q)::text)) || '%'
       OR lower(o.name_vi) LIKE '%' || lower(btrim(sqlc.narg(q)::text)) || '%'
   );
@@ -211,7 +205,6 @@ SELECT
     u.created_at,
     u.updated_at,
     COALESCE(i.email, '') AS email,
-    COALESCE(p.display_name, '') AS display_name,
     COALESCE(p.full_name, '') AS full_name,
     COALESCE(i.phone, '') AS phone
 FROM identity.users u
@@ -224,13 +217,12 @@ WHERE u.deleted_at IS NULL
       sqlc.narg(q)::text IS NULL OR btrim(sqlc.narg(q)::text) = ''
       OR lower(COALESCE(i.email, '')) LIKE '%' || lower(btrim(sqlc.narg(q)::text)) || '%'
       OR lower(COALESCE(p.full_name, '')) LIKE '%' || lower(btrim(sqlc.narg(q)::text)) || '%'
-      OR lower(COALESCE(p.display_name, '')) LIKE '%' || lower(btrim(sqlc.narg(q)::text)) || '%'
   )
 ORDER BY
   CASE WHEN sqlc.arg(sort_key)::text = 'name' AND NOT sqlc.arg(sort_desc)::bool
-    THEN lower(COALESCE(NULLIF(p.display_name, ''), NULLIF(p.full_name, ''), i.email, '')) END ASC,
+    THEN lower(COALESCE(NULLIF(p.full_name, ''), i.email, '')) END ASC,
   CASE WHEN sqlc.arg(sort_key)::text = 'name' AND sqlc.arg(sort_desc)::bool
-    THEN lower(COALESCE(NULLIF(p.display_name, ''), NULLIF(p.full_name, ''), i.email, '')) END DESC,
+    THEN lower(COALESCE(NULLIF(p.full_name, ''), i.email, '')) END DESC,
   CASE WHEN sqlc.arg(sort_key)::text = 'status' AND NOT sqlc.arg(sort_desc)::bool THEN u.status::text END ASC,
   CASE WHEN sqlc.arg(sort_key)::text = 'status' AND sqlc.arg(sort_desc)::bool THEN u.status::text END DESC,
   CASE WHEN sqlc.arg(sort_key)::text = 'last_login' AND NOT sqlc.arg(sort_desc)::bool THEN u.last_login_at END ASC,
@@ -253,7 +245,6 @@ WHERE u.deleted_at IS NULL
       sqlc.narg(q)::text IS NULL OR btrim(sqlc.narg(q)::text) = ''
       OR lower(COALESCE(i.email, '')) LIKE '%' || lower(btrim(sqlc.narg(q)::text)) || '%'
       OR lower(COALESCE(p.full_name, '')) LIKE '%' || lower(btrim(sqlc.narg(q)::text)) || '%'
-      OR lower(COALESCE(p.display_name, '')) LIKE '%' || lower(btrim(sqlc.narg(q)::text)) || '%'
   );
 
 -- name: CountAdminSystemUsers :one
@@ -282,7 +273,6 @@ SELECT
     u.created_at,
     u.updated_at,
     COALESCE(i.email, '') AS email,
-    COALESCE(p.display_name, '') AS display_name,
     COALESCE(p.full_name, '') AS full_name,
     COALESCE(i.phone, '') AS phone
 FROM identity.users u

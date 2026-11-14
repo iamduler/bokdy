@@ -9,7 +9,8 @@ import type { SoftIconToneKey } from "@/components/entity/soft-icon-chip";
 export const entityFormSectionClass =
   "soft-elevated mb-2 space-y-3 rounded-2xl border-0 p-4 md:mb-4 [&_input]:bg-white dark:[&_input]:bg-background";
 
-export const entityFormFieldsClass = "grid grid-cols-1 gap-4 sm:grid-cols-2";
+export const entityFormFieldsClass =
+  "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3";
 
 export function EntityFormSection({
   title,

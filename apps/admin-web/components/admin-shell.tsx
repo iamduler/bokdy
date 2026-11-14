@@ -27,13 +27,10 @@ function writeCollapsed(value: boolean) {
 }
 
 function displayNameFromMe(user: {
-  display_name?: string | null;
   full_name?: string | null;
   first_name?: string | null;
   last_name?: string | null;
 }): string | undefined {
-  const display = user.display_name?.trim();
-  if (display) return display;
   const full = user.full_name?.trim();
   if (full) return full;
   const parts = [user.first_name, user.last_name].filter(Boolean).join(" ").trim();

@@ -25,7 +25,7 @@ func TestValidateNewAccount(t *testing.T) {
 		{name: "email without at", in: AccountInput{Email: "not-an-email", Password: validPassword, FirstName: "An"}, wantErr: "invalid email"},
 		{name: "weak password", in: AccountInput{Email: "a@b.co", Password: "short", FirstName: "An"}, wantErr: iderrors.ErrWeakPassword.Message},
 		{name: "missing name", in: AccountInput{Email: "a@b.co", Password: validPassword, FullName: "Ignored"}, wantErr: "first name is required"},
-		{name: "name from parts", in: AccountInput{Email: " A@B.co ", Password: validPassword, FirstName: "An", LastName: "Le", FullName: "Ignored", DisplayName: "Nick"}, wantFull: "Le An"},
+		{name: "name from parts", in: AccountInput{Email: " A@B.co ", Password: validPassword, FirstName: "An", LastName: "Le", FullName: "Ignored"}, wantFull: "Le An"},
 		{name: "given name only", in: AccountInput{Email: "a@b.co", Password: validPassword, FirstName: " An "}, wantFull: "An"},
 	}
 	for _, tt := range tests {
@@ -35,7 +35,7 @@ func TestValidateNewAccount(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				if got.Email != "a@b.co" || got.FullName != tt.wantFull || got.DisplayName != tt.wantFull {
+				if got.Email != "a@b.co" || got.FullName != tt.wantFull {
 					t.Fatalf("normalized %+v", got)
 				}
 				return

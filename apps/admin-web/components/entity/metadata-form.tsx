@@ -1,6 +1,14 @@
 "use client";
 
-import { cn, DatePicker, Field, FieldError, FieldGroup, FieldLabel, Input } from "@bokdy/ui";
+import {
+  cn,
+  DatePicker,
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+  Input,
+} from "@bokdy/ui";
 import { useLocale } from "next-intl";
 import type { ReactNode } from "react";
 import {
@@ -28,7 +36,7 @@ const multiSelectClass = "w-full bg-background";
 type FieldBase<T extends FieldValues> = {
   name: FieldPath<T>;
   label: string;
-  /** Cells occupied in the two-column row. Defaults to 1. */
+  /** Cells occupied in the Soft form grid (1 / sm:2 / lg:3). `2` = full row. Defaults to 1. */
   span?: 1 | 2;
   required?: boolean;
   description?: string;
@@ -67,6 +75,10 @@ export type EntityMultiSelectField<T extends FieldValues> = FieldBase<T> & {
 export type EntityDateField<T extends FieldValues> = FieldBase<T> & {
   kind: "date";
   placeholder?: string;
+  /** First navigable month for the DatePicker caption. */
+  startMonth?: Date;
+  /** Last navigable month for the DatePicker caption. */
+  endMonth?: Date;
 };
 
 export type EntityReadonlyField<T extends FieldValues> = FieldBase<T> & {
@@ -208,6 +220,8 @@ function MetadataField<T extends FieldValues>({
             disabled={disabled}
             aria-label={field.label}
             aria-invalid={Boolean(error) || undefined}
+            startMonth={field.startMonth}
+            endMonth={field.endMonth}
           />
         )}
       />
@@ -242,7 +256,7 @@ function MetadataField<T extends FieldValues>({
   return (
     <Field
       data-invalid={Boolean(error) || undefined}
-      className={cn(field.span === 2 && "sm:col-span-2")}
+      className={cn(field.span === 2 && "sm:col-span-2 lg:col-span-3")}
     >
       <div className="flex items-center gap-1.5">
         <FieldLabel htmlFor={field.kind === "text" || field.kind === "date" ? id : undefined} required={field.required}>

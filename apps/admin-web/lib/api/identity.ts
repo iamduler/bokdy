@@ -19,3 +19,30 @@ export function updateMe(input: UpdateProfileInput) {
     body: JSON.stringify(input),
   });
 }
+
+export function changePassword(input: { password: string }) {
+  return apiGo<void>("identity/password", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function changeEmail(input: { current_password: string; email: string }) {
+  return apiGo<void>("identity/email", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function resendEmailVerification() {
+  return apiGo<void>("identity/email/resend-verification", {
+    method: "POST",
+  });
+}
+
+export function changePhone(input: { current_password: string; phone: string }) {
+  return apiGo<void>("identity/phone", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}

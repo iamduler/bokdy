@@ -99,9 +99,9 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
 
 const createUserProfile = `-- name: CreateUserProfile :exec
 INSERT INTO identity.user_profiles (
-    id, user_id, first_name, last_name, full_name, display_name, gender, date_of_birth, locale_id, timezone,
+    id, user_id, first_name, last_name, full_name, gender, date_of_birth, locale_id, timezone,
     country_id, province_id, ward_id, address_line, preferred_currency_code, theme, date_format, created_at, updated_at)
-VALUES ($1, $2, $3, $4, $5, $6, NULLIF($7::text, '')::identity.gender, NULLIF($8::text, '')::date, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+VALUES ($1, $2, $3, $4, $5, NULLIF($6::text, '')::identity.gender, NULLIF($7::text, '')::date, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
 `
 
 type CreateUserProfileParams struct {
@@ -110,9 +110,8 @@ type CreateUserProfileParams struct {
 	FirstName             *string            `json:"first_name"`
 	LastName              *string            `json:"last_name"`
 	FullName              string             `json:"full_name"`
-	DisplayName           *string            `json:"display_name"`
+	Column6               string             `json:"column_6"`
 	Column7               string             `json:"column_7"`
-	Column8               string             `json:"column_8"`
 	LocaleID              *uuid.UUID         `json:"locale_id"`
 	Timezone              *string            `json:"timezone"`
 	CountryID             *uuid.UUID         `json:"country_id"`
@@ -133,9 +132,8 @@ func (q *Queries) CreateUserProfile(ctx context.Context, arg CreateUserProfilePa
 		arg.FirstName,
 		arg.LastName,
 		arg.FullName,
-		arg.DisplayName,
+		arg.Column6,
 		arg.Column7,
-		arg.Column8,
 		arg.LocaleID,
 		arg.Timezone,
 		arg.CountryID,
@@ -224,11 +222,7 @@ func (q *Queries) FindUserByID(ctx context.Context, id uuid.UUID) (FindUserByIDR
 
 const findUserContactByID = `-- name: FindUserContactByID :one
 SELECT COALESCE(i.email, '')::text AS email,
-       CASE
-         WHEN COALESCE(p.display_name, '') <> '' THEN p.display_name
-         WHEN COALESCE(p.full_name, '') <> '' THEN p.full_name
-         ELSE ''
-       END::text AS display_name
+       COALESCE(NULLIF(btrim(p.full_name), ''), '')::text AS full_name
 FROM identity.users u
 LEFT JOIN identity.identities i ON i.user_id = u.id AND i.is_primary = true
 LEFT JOIN identity.user_profiles p ON p.user_id = u.id
@@ -236,20 +230,20 @@ WHERE u.id = $1 AND u.deleted_at IS NULL
 `
 
 type FindUserContactByIDRow struct {
-	Email       string `json:"email"`
-	DisplayName string `json:"display_name"`
+	Email    string `json:"email"`
+	FullName string `json:"full_name"`
 }
 
 func (q *Queries) FindUserContactByID(ctx context.Context, id uuid.UUID) (FindUserContactByIDRow, error) {
 	row := q.db.QueryRow(ctx, findUserContactByID, id)
 	var i FindUserContactByIDRow
-	err := row.Scan(&i.Email, &i.DisplayName)
+	err := row.Scan(&i.Email, &i.FullName)
 	return i, err
 }
 
 const getUserProfile = `-- name: GetUserProfile :one
 SELECT id, user_id, COALESCE(first_name, '') AS first_name, COALESCE(last_name, '') AS last_name, full_name,
-       COALESCE(display_name, '') AS display_name, avatar_file_id, COALESCE(gender::text, '') AS gender,
+       avatar_file_id, COALESCE(gender::text, '') AS gender,
        COALESCE(date_of_birth::text, '') AS date_of_birth,
        locale_id, COALESCE(timezone, '') AS timezone, country_id,
        province_id, ward_id, COALESCE(address_line, '') AS address_line, banner_file_id,
@@ -264,7 +258,6 @@ type GetUserProfileRow struct {
 	FirstName             string             `json:"first_name"`
 	LastName              string             `json:"last_name"`
 	FullName              string             `json:"full_name"`
-	DisplayName           string             `json:"display_name"`
 	AvatarFileID          *uuid.UUID         `json:"avatar_file_id"`
 	Gender                interface{}        `json:"gender"`
 	DateOfBirth           interface{}        `json:"date_of_birth"`
@@ -291,7 +284,6 @@ func (q *Queries) GetUserProfile(ctx context.Context, userID uuid.UUID) (GetUser
 		&i.FirstName,
 		&i.LastName,
 		&i.FullName,
-		&i.DisplayName,
 		&i.AvatarFileID,
 		&i.Gender,
 		&i.DateOfBirth,
@@ -342,10 +334,10 @@ func (q *Queries) TouchUserLastLogin(ctx context.Context, arg TouchUserLastLogin
 
 const updateUserProfile = `-- name: UpdateUserProfile :exec
 UPDATE identity.user_profiles SET
-    first_name = $2, last_name = $3, full_name = $4, display_name = $5, avatar_file_id = $6,
-    gender = NULLIF($7::text, '')::identity.gender, date_of_birth = NULLIF($8::text, '')::date, locale_id = $9, timezone = $10,
-    country_id = $11, province_id = $15, ward_id = $16, address_line = $17,
-    preferred_currency_code = $12, theme = $13, date_format = $14, updated_at = now()
+    first_name = $2, last_name = $3, full_name = $4, avatar_file_id = $5,
+    gender = NULLIF($6::text, '')::identity.gender, date_of_birth = NULLIF($7::text, '')::date, locale_id = $8, timezone = $9,
+    country_id = $10, province_id = $14, ward_id = $15, address_line = $16,
+    preferred_currency_code = $11, theme = $12, date_format = $13, updated_at = now()
 WHERE user_id = $1
 `
 
@@ -354,10 +346,9 @@ type UpdateUserProfileParams struct {
 	FirstName             *string            `json:"first_name"`
 	LastName              *string            `json:"last_name"`
 	FullName              string             `json:"full_name"`
-	DisplayName           *string            `json:"display_name"`
 	AvatarFileID          *uuid.UUID         `json:"avatar_file_id"`
+	Column6               string             `json:"column_6"`
 	Column7               string             `json:"column_7"`
-	Column8               string             `json:"column_8"`
 	LocaleID              *uuid.UUID         `json:"locale_id"`
 	Timezone              *string            `json:"timezone"`
 	CountryID             *uuid.UUID         `json:"country_id"`
@@ -375,10 +366,9 @@ func (q *Queries) UpdateUserProfile(ctx context.Context, arg UpdateUserProfilePa
 		arg.FirstName,
 		arg.LastName,
 		arg.FullName,
-		arg.DisplayName,
 		arg.AvatarFileID,
+		arg.Column6,
 		arg.Column7,
-		arg.Column8,
 		arg.LocaleID,
 		arg.Timezone,
 		arg.CountryID,

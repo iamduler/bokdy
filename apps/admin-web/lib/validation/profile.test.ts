@@ -2,7 +2,14 @@ import { describe, expect, it } from "vitest";
 
 import { passwordSchema as playerPassword, personalSchema as playerPersonal, privacySchema } from "../../../player-web/lib/validation/profile";
 import { personalSchema as ownerPersonal, transferSchema } from "../../../owner-web/lib/validation/profile";
-import { employeeSchema, passwordSchema } from "./profile-security";
+import {
+  changeEmailSchema,
+  changePasswordSchema,
+  changePhoneSchema,
+  employeeSchema,
+  mfaConfirmSchema,
+  passwordSchema,
+} from "./profile-security";
 import { profileSchema } from "./profile";
 
 describe("profile schemas", () => {
@@ -10,7 +17,7 @@ describe("profile schemas", () => {
     const parsed = profileSchema({ currencyInvalid: "bad", required: "required" }).safeParse({
       first_name: "",
       last_name: "",
-      display_name: "",
+      full_name: "",
       gender: "",
       date_of_birth: "",
       theme: "system",
@@ -31,13 +38,38 @@ describe("profile schemas", () => {
       employment_status: "active",
     }).success).toBe(true);
     expect(passwordSchema({ required: "required" }).safeParse({ current_password: "", password: "Abcdef1!" }).success).toBe(false);
+    expect(
+      changePasswordSchema({ required: "required", mismatch: "mismatch" }).safeParse({
+        password: "Abcdef1!",
+        password_confirm: "Abcdef2!",
+      }).success,
+    ).toBe(false);
+    expect(
+      changePasswordSchema({ required: "required", mismatch: "mismatch" }).safeParse({
+        password: "Abcdef1!",
+        password_confirm: "Abcdef1!",
+      }).success,
+    ).toBe(true);
+    expect(mfaConfirmSchema({ required: "required" }).safeParse({ code: "" }).success).toBe(false);
+    expect(mfaConfirmSchema({ required: "required" }).safeParse({ code: "123456" }).success).toBe(true);
+    expect(
+      changeEmailSchema({ required: "required", invalid: "bad" }).safeParse({
+        current_password: "x",
+        email: "not-an-email",
+      }).success,
+    ).toBe(false);
+    expect(
+      changePhoneSchema({ required: "required" }).safeParse({
+        current_password: "x",
+        phone: "0901234567",
+      }).success,
+    ).toBe(true);
   });
 
   it("requires a player given name and accepts private visibility", () => {
     expect(playerPersonal({ required: "required" }).safeParse({
       first_name: " ",
       last_name: "Nguyen",
-      display_name: "Nick",
       gender: "",
       date_of_birth: "",
     }).success).toBe(false);
@@ -57,7 +89,6 @@ describe("profile schemas", () => {
     expect(ownerPersonal({ required: "required" }).safeParse({
       first_name: "An",
       last_name: "Nguyen",
-      display_name: "An",
     }).success).toBe(true);
     expect(transferSchema({ required: "required" }).safeParse({
       organization_id: "not-a-uuid",

@@ -30,10 +30,7 @@ func (s *AuthService) requirePassword(ctx context.Context, userID uuid.UUID, cur
 	return nil
 }
 
-func (s *AuthService) ChangePassword(ctx context.Context, userID uuid.UUID, current, next string) error {
-	if err := s.requirePassword(ctx, userID, current); err != nil {
-		return err
-	}
+func (s *AuthService) ChangePassword(ctx context.Context, userID uuid.UUID, next string) error {
 	if err := entity.ValidatePassword(next); err != nil {
 		return err
 	}
@@ -95,6 +92,42 @@ func (s *AuthService) ChangePhone(ctx context.Context, userID uuid.UUID, current
 	}
 	_, _, _, err := s.UpdateProfile(ctx, userID, UpdateProfileInput{Phone: &phone})
 	return err
+}
+
+// ResendEmailVerification mints a new email verification token for the signed-in user.
+// Already verified or missing email is a no-op (204).
+func (s *AuthService) ResendEmailVerification(ctx context.Context, userID uuid.UUID) error {
+	user, err := s.users.FindByID(ctx, userID)
+	if err != nil {
+		return apperr.Wrap(err, apperr.CodeInternal, "lookup user")
+	}
+	if user == nil {
+		return iderrors.ErrUserNotFound
+	}
+	if user.EmailVerifiedAt != nil {
+		return nil
+	}
+	ident, err := s.idents.FindPrimaryByUserID(ctx, userID)
+	if err != nil {
+		return apperr.Wrap(err, apperr.CodeInternal, "lookup identity")
+	}
+	if ident == nil {
+		return iderrors.ErrUserNotFound
+	}
+	email := strings.ToLower(strings.TrimSpace(ident.Email))
+	if email == "" {
+		return nil
+	}
+	raw, tokenHash := randomToken()
+	expires := time.Now().UTC().Add(24 * time.Hour)
+	if err := persistence.WithinTx(ctx, s.pool, func(tx pgx.Tx) error {
+		_, err := s.idents.CreateVerification(ctx, tx, ident.ID, tokenHash, expires)
+		return err
+	}); err != nil {
+		return apperr.Wrap(err, apperr.CodeInternal, "resend email verification")
+	}
+	s.SendVerification(ctx, email, raw)
+	return nil
 }
 
 func (s *AuthService) Deactivate(ctx context.Context, userID uuid.UUID, currentPassword string) error {

@@ -35,7 +35,6 @@ type UserProfile struct {
 	FirstName             string
 	LastName              string
 	FullName              string
-	DisplayName           string
 	AvatarFileID          *uuid.UUID
 	Gender                string
 	DateOfBirth           string

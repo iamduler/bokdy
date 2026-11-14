@@ -1,8 +1,9 @@
 "use client";
 
-import { Button } from "@bokdy/ui";
+import { Button, cn } from "@bokdy/ui";
 import type { FormEventHandler, ReactNode } from "react";
 
+import { softContentMaxW } from "@/components/data-list";
 import { usePageShellActions } from "@/components/shell/shell-title";
 
 const ENTITY_FORM_ID = "entity-form";
@@ -18,6 +19,8 @@ type EntityFormFrameProps = {
   children: ReactNode;
   /** Shell portals actions into the page header. Inline keeps them under the fields. */
   actionsPlacement?: "shell" | "inline";
+  /** `lg` matches Soft detail pages (`softContentMaxW`). Default `md` is max-w-3xl. */
+  contentWidth?: "md" | "lg";
 };
 
 export function EntityFormFrame({
@@ -30,6 +33,7 @@ export function EntityFormFrame({
   cover,
   children,
   actionsPlacement = "shell",
+  contentWidth = "md",
 }: EntityFormFrameProps) {
   const inline = actionsPlacement === "inline";
   const buttons = (
@@ -43,6 +47,7 @@ export function EntityFormFrame({
     </>
   );
   const portaled = usePageShellActions(inline ? null : buttons);
+  const widthClass = contentWidth === "lg" ? softContentMaxW : "max-w-3xl";
 
   return (
     <div className={inline ? "flex min-h-0 flex-1 flex-col" : undefined}>
@@ -53,9 +58,15 @@ export function EntityFormFrame({
         onSubmit={onSubmit}
         noValidate
       >
-        <div className={inline ? "space-y-6 px-4 py-4" : "mx-auto w-full max-w-3xl space-y-6 px-4 py-8"}>
+        <div
+          className={
+            inline
+              ? "space-y-6 px-4 py-4"
+              : cn("mx-auto w-full space-y-6 py-4", widthClass)
+          }
+        >
           {cover}
-          <div className="space-y-10">{children}</div>
+          <div className={contentWidth === "lg" ? "space-y-4" : "space-y-10"}>{children}</div>
         </div>
       </form>
       {inline ? <div className="flex justify-end gap-2 border-t border-border p-4">{buttons}</div> : null}

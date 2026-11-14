@@ -11,8 +11,8 @@ import (
 )
 
 type UserContact struct {
-	Email       string
-	DisplayName string
+	Email    string
+	FullName string
 }
 
 type UserRepository interface {

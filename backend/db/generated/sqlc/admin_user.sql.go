@@ -75,7 +75,6 @@ WHERE u.deleted_at IS NULL
       $4::text IS NULL OR btrim($4::text) = ''
       OR lower(COALESCE(i.email, '')) LIKE '%' || lower(btrim($4::text)) || '%'
       OR lower(COALESCE(p.full_name, '')) LIKE '%' || lower(btrim($4::text)) || '%'
-      OR lower(COALESCE(p.display_name, '')) LIKE '%' || lower(btrim($4::text)) || '%'
       OR lower(o.name_en) LIKE '%' || lower(btrim($4::text)) || '%'
       OR lower(o.name_vi) LIKE '%' || lower(btrim($4::text)) || '%'
   )
@@ -175,7 +174,6 @@ WHERE u.deleted_at IS NULL
       $3::text IS NULL OR btrim($3::text) = ''
       OR lower(COALESCE(i.email, '')) LIKE '%' || lower(btrim($3::text)) || '%'
       OR lower(COALESCE(p.full_name, '')) LIKE '%' || lower(btrim($3::text)) || '%'
-      OR lower(COALESCE(p.display_name, '')) LIKE '%' || lower(btrim($3::text)) || '%'
   )
 `
 
@@ -246,7 +244,6 @@ WHERE u.deleted_at IS NULL
       $2::text IS NULL OR btrim($2::text) = ''
       OR lower(COALESCE(i.email, '')) LIKE '%' || lower(btrim($2::text)) || '%'
       OR lower(COALESCE(p.full_name, '')) LIKE '%' || lower(btrim($2::text)) || '%'
-      OR lower(COALESCE(p.display_name, '')) LIKE '%' || lower(btrim($2::text)) || '%'
   )
 `
 
@@ -331,7 +328,6 @@ SELECT
     u.created_at,
     u.updated_at,
     COALESCE(i.email, '') AS email,
-    COALESCE(p.display_name, '') AS display_name,
     COALESCE(p.full_name, '') AS full_name,
     COALESCE(i.phone, '') AS phone
 FROM identity.users u
@@ -351,7 +347,6 @@ type GetAdminUserByIDRow struct {
 	CreatedAt       time.Time          `json:"created_at"`
 	UpdatedAt       time.Time          `json:"updated_at"`
 	Email           string             `json:"email"`
-	DisplayName     string             `json:"display_name"`
 	FullName        string             `json:"full_name"`
 	Phone           string             `json:"phone"`
 }
@@ -370,7 +365,6 @@ func (q *Queries) GetAdminUserByID(ctx context.Context, id uuid.UUID) (GetAdminU
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Email,
-		&i.DisplayName,
 		&i.FullName,
 		&i.Phone,
 	)
@@ -392,7 +386,7 @@ func (q *Queries) HasActiveStaffMembership(ctx context.Context, userID uuid.UUID
 }
 
 const listAdminOwners = `-- name: ListAdminOwners :many
-SELECT id, public_id, status, is_system_admin, last_login_at, email_verified_at, phone_verified_at, created_at, updated_at, email, display_name, full_name, phone, staff_role, staff_title, staff_status, primary_org_id, primary_org_code, primary_org_name_en, primary_org_name_vi
+SELECT id, public_id, status, is_system_admin, last_login_at, email_verified_at, phone_verified_at, created_at, updated_at, email, full_name, phone, staff_role, staff_title, staff_status, primary_org_id, primary_org_code, primary_org_name_en, primary_org_name_vi
 FROM (
 SELECT DISTINCT ON (u.id)
     u.id,
@@ -405,7 +399,6 @@ SELECT DISTINCT ON (u.id)
     u.created_at,
     u.updated_at,
     COALESCE(i.email, '') AS email,
-    COALESCE(p.display_name, '') AS display_name,
     COALESCE(p.full_name, '') AS full_name,
     COALESCE(i.phone, '') AS phone,
     COALESCE(r.code, 'org_staff') AS staff_role,
@@ -431,7 +424,6 @@ WHERE u.deleted_at IS NULL
       $4::text IS NULL OR btrim($4::text) = ''
       OR lower(COALESCE(i.email, '')) LIKE '%' || lower(btrim($4::text)) || '%'
       OR lower(COALESCE(p.full_name, '')) LIKE '%' || lower(btrim($4::text)) || '%'
-      OR lower(COALESCE(p.display_name, '')) LIKE '%' || lower(btrim($4::text)) || '%'
       OR lower(o.name_en) LIKE '%' || lower(btrim($4::text)) || '%'
       OR lower(o.name_vi) LIKE '%' || lower(btrim($4::text)) || '%'
   )
@@ -439,9 +431,9 @@ ORDER BY u.id, sm.created_at ASC
 ) owners
 ORDER BY
   CASE WHEN $5::text = 'name' AND NOT $6::bool
-    THEN lower(COALESCE(NULLIF(owners.display_name, ''), NULLIF(owners.full_name, ''), owners.email, '')) END ASC,
+    THEN lower(COALESCE(NULLIF(owners.full_name, ''), owners.email, '')) END ASC,
   CASE WHEN $5::text = 'name' AND $6::bool
-    THEN lower(COALESCE(NULLIF(owners.display_name, ''), NULLIF(owners.full_name, ''), owners.email, '')) END DESC,
+    THEN lower(COALESCE(NULLIF(owners.full_name, ''), owners.email, '')) END DESC,
   CASE WHEN $5::text = 'status' AND NOT $6::bool THEN owners.status::text END ASC,
   CASE WHEN $5::text = 'status' AND $6::bool THEN owners.status::text END DESC,
   CASE WHEN $5::text = 'last_login' AND NOT $6::bool THEN owners.last_login_at END ASC,
@@ -475,7 +467,6 @@ type ListAdminOwnersRow struct {
 	CreatedAt        time.Time               `json:"created_at"`
 	UpdatedAt        time.Time               `json:"updated_at"`
 	Email            string                  `json:"email"`
-	DisplayName      string                  `json:"display_name"`
 	FullName         string                  `json:"full_name"`
 	Phone            string                  `json:"phone"`
 	StaffRole        string                  `json:"staff_role"`
@@ -516,7 +507,6 @@ func (q *Queries) ListAdminOwners(ctx context.Context, arg ListAdminOwnersParams
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.Email,
-			&i.DisplayName,
 			&i.FullName,
 			&i.Phone,
 			&i.StaffRole,
@@ -549,7 +539,6 @@ SELECT
     u.created_at,
     u.updated_at,
     COALESCE(i.email, '') AS email,
-    COALESCE(p.display_name, '') AS display_name,
     COALESCE(p.full_name, '') AS full_name,
     COALESCE(i.phone, '') AS phone
 FROM identity.users u
@@ -571,13 +560,12 @@ WHERE u.deleted_at IS NULL
       $3::text IS NULL OR btrim($3::text) = ''
       OR lower(COALESCE(i.email, '')) LIKE '%' || lower(btrim($3::text)) || '%'
       OR lower(COALESCE(p.full_name, '')) LIKE '%' || lower(btrim($3::text)) || '%'
-      OR lower(COALESCE(p.display_name, '')) LIKE '%' || lower(btrim($3::text)) || '%'
   )
 ORDER BY
   CASE WHEN $4::text = 'name' AND NOT $5::bool
-    THEN lower(COALESCE(NULLIF(p.display_name, ''), NULLIF(p.full_name, ''), i.email, '')) END ASC,
+    THEN lower(COALESCE(NULLIF(p.full_name, ''), i.email, '')) END ASC,
   CASE WHEN $4::text = 'name' AND $5::bool
-    THEN lower(COALESCE(NULLIF(p.display_name, ''), NULLIF(p.full_name, ''), i.email, '')) END DESC,
+    THEN lower(COALESCE(NULLIF(p.full_name, ''), i.email, '')) END DESC,
   CASE WHEN $4::text = 'status' AND NOT $5::bool THEN u.status::text END ASC,
   CASE WHEN $4::text = 'status' AND $5::bool THEN u.status::text END DESC,
   CASE WHEN $4::text = 'last_login' AND NOT $5::bool THEN u.last_login_at END ASC,
@@ -610,7 +598,6 @@ type ListAdminPlayersRow struct {
 	CreatedAt       time.Time          `json:"created_at"`
 	UpdatedAt       time.Time          `json:"updated_at"`
 	Email           string             `json:"email"`
-	DisplayName     string             `json:"display_name"`
 	FullName        string             `json:"full_name"`
 	Phone           string             `json:"phone"`
 }
@@ -643,7 +630,6 @@ func (q *Queries) ListAdminPlayers(ctx context.Context, arg ListAdminPlayersPara
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.Email,
-			&i.DisplayName,
 			&i.FullName,
 			&i.Phone,
 		); err != nil {
@@ -669,7 +655,6 @@ SELECT
     u.created_at,
     u.updated_at,
     COALESCE(i.email, '') AS email,
-    COALESCE(p.display_name, '') AS display_name,
     COALESCE(p.full_name, '') AS full_name,
     COALESCE(i.phone, '') AS phone
 FROM identity.users u
@@ -682,13 +667,12 @@ WHERE u.deleted_at IS NULL
       $2::text IS NULL OR btrim($2::text) = ''
       OR lower(COALESCE(i.email, '')) LIKE '%' || lower(btrim($2::text)) || '%'
       OR lower(COALESCE(p.full_name, '')) LIKE '%' || lower(btrim($2::text)) || '%'
-      OR lower(COALESCE(p.display_name, '')) LIKE '%' || lower(btrim($2::text)) || '%'
   )
 ORDER BY
   CASE WHEN $3::text = 'name' AND NOT $4::bool
-    THEN lower(COALESCE(NULLIF(p.display_name, ''), NULLIF(p.full_name, ''), i.email, '')) END ASC,
+    THEN lower(COALESCE(NULLIF(p.full_name, ''), i.email, '')) END ASC,
   CASE WHEN $3::text = 'name' AND $4::bool
-    THEN lower(COALESCE(NULLIF(p.display_name, ''), NULLIF(p.full_name, ''), i.email, '')) END DESC,
+    THEN lower(COALESCE(NULLIF(p.full_name, ''), i.email, '')) END DESC,
   CASE WHEN $3::text = 'status' AND NOT $4::bool THEN u.status::text END ASC,
   CASE WHEN $3::text = 'status' AND $4::bool THEN u.status::text END DESC,
   CASE WHEN $3::text = 'last_login' AND NOT $4::bool THEN u.last_login_at END ASC,
@@ -720,7 +704,6 @@ type ListAdminSystemUsersRow struct {
 	CreatedAt       time.Time          `json:"created_at"`
 	UpdatedAt       time.Time          `json:"updated_at"`
 	Email           string             `json:"email"`
-	DisplayName     string             `json:"display_name"`
 	FullName        string             `json:"full_name"`
 	Phone           string             `json:"phone"`
 }
@@ -752,7 +735,6 @@ func (q *Queries) ListAdminSystemUsers(ctx context.Context, arg ListAdminSystemU
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.Email,
-			&i.DisplayName,
 			&i.FullName,
 			&i.Phone,
 		); err != nil {

@@ -18,6 +18,7 @@ import { usePlayerSummary } from "@/hooks/use-admin-users";
 import { useProvinces, useWards } from "@/hooks/use-admin-units";
 import { useCountries } from "@/hooks/use-countries";
 import { useLocales } from "@/hooks/use-locales";
+import { timezoneLabel } from "@/lib/time-zones";
 
 const genders = ["male", "female", "other", "undisclosed"] as const;
 const themes = ["light", "dark", "system"] as const;
@@ -100,7 +101,7 @@ export function UserOverviewView() {
   ];
   const preferences: { label: string; value: ReactNode }[] = [
     { label: t("locale"), value: shown(localeName?.native_name || localeName?.name) },
-    { label: t("timezone"), value: shown(user.timezone) },
+    { label: t("timezone"), value: user.timezone?.trim() ? timezoneLabel(user.timezone) : "—" },
     { label: t("country"), value: shown(countryName?.name) },
     { label: t("currency"), value: shown(user.preferred_currency_code) },
     {

@@ -3,6 +3,8 @@
 import {
   Button,
   DatePicker,
+  DATE_PICKER_BIRTH_END_MONTH,
+  DATE_PICKER_BIRTH_START_MONTH,
   FieldError,
   FieldLabel,
   Input,
@@ -30,7 +32,7 @@ import {
   type PrivacyValues,
 } from "@/lib/validation/profile";
 
-type Me = { user?: { first_name?: string; last_name?: string; display_name?: string; gender?: string; date_of_birth?: string } };
+type Me = { user?: { first_name?: string; last_name?: string; gender?: string; date_of_birth?: string } };
 type SkillRow = {
   sport_id: string;
   sport_name_vi: string;
@@ -63,7 +65,6 @@ export function PlayerProfile() {
     values: {
       first_name: user?.first_name ?? "",
       last_name: user?.last_name ?? "",
-      display_name: user?.display_name ?? "",
       gender: (user?.gender as PersonalValues["gender"]) || "",
       date_of_birth: user?.date_of_birth ?? "",
     },
@@ -139,10 +140,6 @@ export function PlayerProfile() {
             <FieldLabel htmlFor="last-name">{t("lastName")}</FieldLabel>
             <Input id="last-name" {...personalForm.register("last_name")} />
           </div>
-          <div className="space-y-1.5 sm:col-span-2">
-            <FieldLabel htmlFor="display-name">{t("displayName")}</FieldLabel>
-            <Input id="display-name" {...personalForm.register("display_name")} />
-          </div>
           <div className="space-y-1.5">
             <FieldLabel>{t("gender")}</FieldLabel>
             <Controller control={personalForm.control} name="gender" render={({ field }) => (
@@ -159,7 +156,14 @@ export function PlayerProfile() {
           <div className="space-y-1.5">
             <FieldLabel>{t("dateOfBirth")}</FieldLabel>
             <Controller control={personalForm.control} name="date_of_birth" render={({ field }) => (
-              <DatePicker value={field.value} onChange={field.onChange} locale={locale} placeholder={t("dateOfBirth")} />
+              <DatePicker
+                value={field.value}
+                onChange={field.onChange}
+                locale={locale}
+                placeholder={t("dateOfBirth")}
+                startMonth={DATE_PICKER_BIRTH_START_MONTH}
+                endMonth={DATE_PICKER_BIRTH_END_MONTH}
+              />
             )} />
           </div>
           <Button className="sm:col-span-2" type="submit" disabled={savePersonal.isPending}>{t("save")}</Button>

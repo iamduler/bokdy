@@ -128,14 +128,14 @@ type staffRoleDTO struct {
 }
 
 type staffDTO struct {
-	ID          string         `json:"id"`
-	UserID      string         `json:"user_id"`
-	Email       string         `json:"email,omitempty"`
-	DisplayName string         `json:"display_name,omitempty"`
-	Title       string         `json:"title,omitempty"`
-	BranchID    string         `json:"branch_id,omitempty"`
-	Status      string         `json:"status"`
-	Roles       []staffRoleDTO `json:"roles"`
+	ID       string         `json:"id"`
+	UserID   string         `json:"user_id"`
+	Email    string         `json:"email,omitempty"`
+	FullName string         `json:"full_name,omitempty"`
+	Title    string         `json:"title,omitempty"`
+	BranchID string         `json:"branch_id,omitempty"`
+	Status   string         `json:"status"`
+	Roles    []staffRoleDTO `json:"roles"`
 }
 
 type inviteDTO struct {
@@ -451,7 +451,7 @@ func toStaffDTO(row service.StaffWithRoles) staffDTO {
 	}
 	dto := staffDTO{
 		ID: row.Member.ID.String(), UserID: row.Member.UserID.String(),
-		Email: row.Email, DisplayName: row.DisplayName, Title: row.Member.Title,
+		Email: row.Email, FullName: row.FullName, Title: row.Member.Title,
 		Status: string(row.Member.Status), Roles: roles,
 	}
 	if row.Member.BranchID != nil {

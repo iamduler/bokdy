@@ -28,7 +28,6 @@
     "personal": "Thông tin cá nhân",
     "firstName": "Tên",
     "lastName": "Họ",
-    "displayName": "Tên hiển thị",
     "gender": "Giới tính",
     "dateOfBirth": "Ngày sinh",
     "save": "Lưu",

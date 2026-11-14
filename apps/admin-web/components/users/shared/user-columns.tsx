@@ -21,7 +21,7 @@ import type {
 export type UserRow = AdminPlayerUser | AdminOwnerUser | AdminSystemUser;
 
 function displayName(user: UserRow) {
-  return user.display_name || user.full_name || user.email || user.public_id;
+  return user.full_name || user.email || user.public_id;
 }
 
 export function useUserColumns(audience: UserAudience) {

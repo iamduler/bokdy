@@ -195,7 +195,7 @@ func (h *AuthHandler) UpdateMe(c *gin.Context) {
 		return
 	}
 	user, profile, ident, err := h.auth.UpdateProfile(c.Request.Context(), uid, service.UpdateProfileInput{
-		FirstName: req.FirstName, LastName: req.LastName, FullName: req.FullName, DisplayName: req.DisplayName,
+		FirstName: req.FirstName, LastName: req.LastName,
 		AvatarFileID: req.AvatarFileID, Gender: req.Gender, DateOfBirth: req.DateOfBirth,
 		Phone: req.Phone, LocaleID: req.LocaleID, Timezone: req.Timezone, CountryID: req.CountryID,
 		PreferredCurrencyCode: req.PreferredCurrencyCode, Theme: req.Theme, DateFormat: req.DateFormat,
@@ -275,11 +275,13 @@ func toUserDTO(user *entity.User, profile *entity.UserProfile, ident *entity.Ide
 		out.FullName = profile.FullName
 		out.FirstName = profile.FirstName
 		out.LastName = profile.LastName
-		out.DisplayName = profile.DisplayName
 		out.Gender = profile.Gender
 		out.DateOfBirth = profile.DateOfBirth
 		if profile.AvatarFileID != nil {
 			out.AvatarFileID = profile.AvatarFileID.String()
+		}
+		if profile.BannerFileID != nil {
+			out.BannerFileID = profile.BannerFileID.String()
 		}
 		out.Timezone = profile.Timezone
 		out.PreferredCurrencyCode = profile.PreferredCurrencyCode

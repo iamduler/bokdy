@@ -48,7 +48,7 @@ func (r *AdminUserRepo) ListPlayers(ctx context.Context, filter repository.Admin
 	for _, row := range rows {
 		out = append(out, mapAdminUserRow(row.ID, row.PublicID, row.Status, row.IsSystemAdmin,
 			row.LastLoginAt, row.EmailVerifiedAt, row.PhoneVerifiedAt, row.CreatedAt,
-			row.Email, row.DisplayName, row.FullName, row.Phone))
+			row.Email, row.FullName, row.Phone))
 	}
 	return out, int(total), nil
 }
@@ -79,7 +79,7 @@ func (r *AdminUserRepo) ListOwners(ctx context.Context, filter repository.AdminU
 	for _, row := range rows {
 		base := mapAdminUserRow(row.ID, row.PublicID, row.Status, row.IsSystemAdmin,
 			row.LastLoginAt, row.EmailVerifiedAt, row.PhoneVerifiedAt, row.CreatedAt,
-			row.Email, row.DisplayName, row.FullName, row.Phone)
+			row.Email, row.FullName, row.Phone)
 		out = append(out, repository.AdminOwnerRow{
 			AdminUserRow:     base,
 			StaffRole:        row.StaffRole,
@@ -117,7 +117,7 @@ func (r *AdminUserRepo) ListAdmins(ctx context.Context, filter repository.AdminU
 	for _, row := range rows {
 		out = append(out, mapAdminUserRow(row.ID, row.PublicID, row.Status, row.IsSystemAdmin,
 			row.LastLoginAt, row.EmailVerifiedAt, row.PhoneVerifiedAt, row.CreatedAt,
-			row.Email, row.DisplayName, row.FullName, row.Phone))
+			row.Email, row.FullName, row.Phone))
 	}
 	return out, int(total), nil
 }
@@ -132,7 +132,7 @@ func (r *AdminUserRepo) GetByID(ctx context.Context, id uuid.UUID) (*repository.
 	}
 	u := mapAdminUserRow(row.ID, row.PublicID, row.Status, row.IsSystemAdmin,
 		row.LastLoginAt, row.EmailVerifiedAt, row.PhoneVerifiedAt, row.CreatedAt,
-		row.Email, row.DisplayName, row.FullName, row.Phone)
+		row.Email, row.FullName, row.Phone)
 	return &u, nil
 }
 
@@ -285,13 +285,13 @@ func qFilter(q string) *string {
 func mapAdminUserRow(
 	id uuid.UUID, publicID string, status dbsqlc.IdentityUserStatus, isAdmin bool,
 	lastLogin, emailVerified, phoneVerified *time.Time, createdAt time.Time,
-	email, displayName, fullName, phone string,
+	email, fullName, phone string,
 ) repository.AdminUserRow {
 	return repository.AdminUserRow{
 		ID: id, PublicID: publicID, Status: string(status), IsSystemAdmin: isAdmin,
 		LastLoginAt: formatOptTime(lastLogin), EmailVerifiedAt: formatOptTime(emailVerified),
 		PhoneVerifiedAt: formatOptTime(phoneVerified), CreatedAt: createdAt.UTC().Format(time.RFC3339),
-		Email: email, DisplayName: displayName, FullName: fullName, Phone: phone,
+		Email: email, FullName: fullName, Phone: phone,
 	}
 }
 

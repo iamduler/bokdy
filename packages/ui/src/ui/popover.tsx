@@ -23,6 +23,7 @@ export const PopoverContent = React.forwardRef<
       ref={ref}
       align={align}
       sideOffset={sideOffset}
+      data-slot="popover-content"
       className={cn("popover-panel w-72 p-4", className)}
       {...props}
     />

@@ -45,8 +45,7 @@ func (r *UserRepo) Create(ctx context.Context, tx pgx.Tx, user *entity.User, pro
 	}
 	return q.CreateUserProfile(ctx, dbsqlc.CreateUserProfileParams{
 		ID: profile.ID, UserID: profile.UserID, FirstName: nullStr(profile.FirstName), LastName: nullStr(profile.LastName),
-		FullName: profile.FullName, DisplayName: nullStr(profile.DisplayName),
-		Column7: profile.Gender, Column8: profile.DateOfBirth, LocaleID: profile.LocaleID,
+		FullName: profile.FullName, Column6: profile.Gender, Column7: profile.DateOfBirth, LocaleID: profile.LocaleID,
 		Timezone: nullStr(profile.Timezone), CountryID: profile.CountryID,
 		ProvinceID: profile.ProvinceID, WardID: profile.WardID, AddressLine: nullStr(profile.AddressLine),
 		PreferredCurrencyCode: nullStr(profile.PreferredCurrencyCode),
@@ -85,7 +84,7 @@ func (r *UserRepo) FindContact(ctx context.Context, userID uuid.UUID) (*reposito
 		}
 		return nil, err
 	}
-	return &repository.UserContact{Email: row.Email, DisplayName: row.DisplayName}, nil
+	return &repository.UserContact{Email: row.Email, FullName: row.FullName}, nil
 }
 
 func (r *UserRepo) UpdateStatus(ctx context.Context, tx pgx.Tx, id uuid.UUID, status entity.UserStatus) error {
@@ -124,7 +123,7 @@ func (r *UserRepo) GetProfile(ctx context.Context, userID uuid.UUID) (*entity.Us
 	}
 	return &entity.UserProfile{
 		ID: row.ID, UserID: row.UserID, FirstName: row.FirstName, LastName: row.LastName, FullName: row.FullName,
-		DisplayName: row.DisplayName, AvatarFileID: row.AvatarFileID, Gender: textOf(row.Gender), DateOfBirth: textOf(row.DateOfBirth),
+		AvatarFileID: row.AvatarFileID, Gender: textOf(row.Gender), DateOfBirth: textOf(row.DateOfBirth),
 		LocaleID: row.LocaleID, Timezone: row.Timezone, CountryID: row.CountryID,
 		ProvinceID: row.ProvinceID, WardID: row.WardID, AddressLine: row.AddressLine, BannerFileID: row.BannerFileID,
 		PreferredCurrencyCode: row.PreferredCurrencyCode, Theme: entity.Theme(row.Theme),
@@ -135,9 +134,8 @@ func (r *UserRepo) GetProfile(ctx context.Context, userID uuid.UUID) (*entity.Us
 func (r *UserRepo) UpdateProfile(ctx context.Context, tx pgx.Tx, profile *entity.UserProfile) error {
 	return r.q.WithTx(tx).UpdateUserProfile(ctx, dbsqlc.UpdateUserProfileParams{
 		UserID: profile.UserID, FirstName: nullStr(profile.FirstName), LastName: nullStr(profile.LastName),
-		FullName: profile.FullName, DisplayName: nullStr(profile.DisplayName),
-		AvatarFileID: profile.AvatarFileID, Column7: profile.Gender, Column8: profile.DateOfBirth,
-		LocaleID: profile.LocaleID,
+		FullName: profile.FullName, AvatarFileID: profile.AvatarFileID,
+		Column6: profile.Gender, Column7: profile.DateOfBirth, LocaleID: profile.LocaleID,
 		Timezone: nullStr(profile.Timezone), CountryID: profile.CountryID,
 		PreferredCurrencyCode: nullStr(profile.PreferredCurrencyCode),
 		Theme:                 dbsqlc.IdentityTheme(profile.Theme), DateFormat: dbsqlc.IdentityDateFormat(profile.DateFormat),

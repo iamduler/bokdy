@@ -10,7 +10,7 @@ import { useForm } from "react-hook-form";
 import { apiGo } from "@/lib/api/client";
 import { passwordSchema, personalSchema, transferSchema, type PasswordValues, type PersonalValues, type TransferValues } from "@/lib/validation/profile";
 
-type Me = { user?: { first_name?: string; last_name?: string; display_name?: string } };
+type Me = { user?: { first_name?: string; last_name?: string } };
 type Org = { id: string; name: string };
 type Staff = { id: string; user_id: string; title?: string; status: string };
 type Invitation = { id: string; email: string; status: string };
@@ -35,7 +35,7 @@ export function OwnerProfile() {
   const user = me.data?.user;
   const personal = useForm<PersonalValues>({
     resolver: zodResolver(useMemo(() => personalSchema({ required: te("REQUIRED") }), [te])),
-    values: { first_name: user?.first_name ?? "", last_name: user?.last_name ?? "", display_name: user?.display_name ?? "" },
+    values: { first_name: user?.first_name ?? "", last_name: user?.last_name ?? "" },
   });
   const password = useForm<PasswordValues>({
     resolver: zodResolver(useMemo(() => passwordSchema({ required: te("REQUIRED") }), [te])),
@@ -81,8 +81,6 @@ export function OwnerProfile() {
           <FieldError>{personal.formState.errors.first_name?.message}</FieldError>
           <FieldLabel htmlFor="last-name">{t("lastName")}</FieldLabel>
           <Input id="last-name" {...personal.register("last_name")} />
-          <FieldLabel htmlFor="display-name">{t("displayName")}</FieldLabel>
-          <Input id="display-name" {...personal.register("display_name")} />
           <Button type="submit" disabled={savePersonal.isPending}>{t("save")}</Button>
         </form>
       </section>

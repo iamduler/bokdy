@@ -16,7 +16,6 @@ type AdminUserRow struct {
 	PhoneVerifiedAt       *string
 	CreatedAt             string
 	Email                 string
-	DisplayName           string
 	FullName              string
 	FirstName             string
 	LastName              string

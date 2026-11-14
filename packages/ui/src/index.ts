@@ -53,8 +53,13 @@ export {
   AlertDialogCancel,
 } from "./ui/alert-dialog";
 export { Calendar } from "./ui/calendar";
-export { DatePicker } from "./ui/date-picker";
+export {
+  DatePicker,
+  DATE_PICKER_BIRTH_START_MONTH,
+  DATE_PICKER_BIRTH_END_MONTH,
+} from "./ui/date-picker";
 export type { DatePickerProps } from "./ui/date-picker";
+export type { CalendarProps } from "./ui/calendar";
 export { TimePicker } from "./ui/time-picker";
 export type { TimePickerProps } from "./ui/time-picker";
 export { InputGroup, InputGroupAddon, InputGroupInput } from "./ui/input-group";

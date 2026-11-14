@@ -135,6 +135,26 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/Currency"
+  /api/v1/reference/timezones:
+    get:
+      tags: [Reference]
+      summary: List active IANA timezones
+      description: |
+        Public catalog from `reference.timezones`, ordered by `sort_order`
+        (Asia/Ho_Chi_Minh first). Clients format UTC offset labels locally.
+      responses:
+        "200":
+          description: Active timezones
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Timezone"
   /api/v1/reference/admin-units/provinces:
     get:
       tags: [Reference]
@@ -619,6 +639,9 @@ paths:
     post:
       tags: [Identity]
       summary: Change password while signed in
+      description: |
+        Requires a valid access token. Does not re-check the previous password;
+        the client should confirm the new password in the UI.
       security: [{ bearerAuth: [] }]
       requestBody:
         required: true
@@ -626,10 +649,9 @@ paths:
           application/json:
             schema:
               type: object
-              required: [current_password, password]
+              required: [password]
               properties:
-                current_password: { type: string }
-                password: { type: string }
+                password: { type: string, minLength: 8, description: BR-806 }
       responses:
         "204": { description: Password changed }
         "401": { $ref: "#/components/responses/Error" }
@@ -653,6 +675,17 @@ paths:
         "204": { description: Verification sent. The token is not returned. }
         "401": { $ref: "#/components/responses/Error" }
         "422": { $ref: "#/components/responses/ValidationFailed" }
+  /api/v1/identity/email/resend-verification:
+    post:
+      tags: [Identity]
+      summary: Resend email verification for the signed-in user
+      description: |
+        No-op (204) when the email is already verified or the account has no email.
+        Otherwise mints a new verification token and sends the verification email.
+      security: [{ bearerAuth: [] }]
+      responses:
+        "204": { description: Verification sent or already verified }
+        "401": { $ref: "#/components/responses/Error" }
   /api/v1/identity/phone:
     post:
       tags: [Identity]
@@ -5617,7 +5650,6 @@ components:
         id: { type: string, format: uuid }
         public_id: { type: string, minLength: 26, maxLength: 26 }
         email: { type: string, format: email }
-        display_name: { type: string }
         full_name: { type: string }
         first_name: { type: string }
         last_name: { type: string }
@@ -5753,7 +5785,7 @@ components:
         created_at: { type: string, format: date-time, description: UTC }
     AdminUserAccountRequest:
       type: object
-      description: full_name and display_name are derived as last name then first name.
+      description: full_name is derived as last name then first name.
       required: [email, password, first_name]
       properties:
         email: { type: string, format: email }
@@ -5774,7 +5806,7 @@ components:
         address_line: { type: string }
     AdminUserProfileRequest:
       type: object
-      description: full_name and display_name are derived as last name then first name.
+      description: full_name is derived as last name then first name.
       required: [email, first_name]
       properties:
         email: { type: string, format: email }
@@ -5878,7 +5910,7 @@ components:
         id: { type: string, format: uuid }
         user_id: { type: string, format: uuid }
         email: { type: string, format: email }
-        display_name: { type: string }
+        full_name: { type: string }
         title: { type: string }
         branch_id: { type: string, format: uuid }
         status: { type: string, enum: [invited, active, suspended, resigned] }
@@ -6499,6 +6531,12 @@ components:
         name: { type: string, description: Locale-resolved currency name }
         symbol: { type: string }
         is_default: { type: boolean }
+    Timezone:
+      type: object
+      required: [name, sort_order]
+      properties:
+        name: { type: string, description: IANA timezone id }
+        sort_order: { type: integer, description: Lower values appear first }
     MarketplaceBranch:
       type: object
       required: [public_id, organization_id, code, name, status]
@@ -7040,9 +7078,9 @@ components:
         full_name: { type: string }
         first_name: { type: string }
         last_name: { type: string }
-        display_name: { type: string }
         phone: { type: string }
         avatar_file_id: { type: string, format: uuid }
+        banner_file_id: { type: string, format: uuid }
         gender: { type: string }
         date_of_birth: { type: string, format: date }
         status: { type: string }
@@ -7060,11 +7098,10 @@ components:
           items: { type: string }
     UpdateProfileRequest:
       type: object
+      description: full_name is derived as last name then first name.
       properties:
         first_name: { type: string }
         last_name: { type: string }
-        full_name: { type: string }
-        display_name: { type: string }
         avatar_file_id: { type: string, format: uuid }
         gender: { type: string, enum: ["", male, female, other, undisclosed] }
         date_of_birth: { type: string, format: date }

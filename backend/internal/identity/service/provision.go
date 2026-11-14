@@ -31,14 +31,13 @@ func SystemAdminFor(kind AccountKind) bool {
 }
 
 type AccountInput struct {
-	Email       string
-	Password    string
-	FullName    string
-	FirstName   string
-	LastName    string
-	Phone       string
-	DisplayName string
-	Extras      ProfileExtras
+	Email     string
+	Password  string
+	FullName  string
+	FirstName string
+	LastName  string
+	Phone     string
+	Extras    ProfileExtras
 }
 
 // ProfileExtras carries the optional identity profile columns an admin form edits.
@@ -59,12 +58,11 @@ type ProfileExtras struct {
 }
 
 type NormalizedAccount struct {
-	Email       string
-	FullName    string
-	FirstName   string
-	LastName    string
-	Phone       string
-	DisplayName string
+	Email     string
+	FullName  string
+	FirstName string
+	LastName  string
+	Phone     string
 }
 
 type ContactReset struct {
@@ -95,11 +93,15 @@ func normalizeAccount(in AccountInput, requirePassword bool) (NormalizedAccount,
 	if first == "" {
 		return NormalizedAccount{}, apperr.New(apperr.CodeValidation, "first name is required")
 	}
-	full := strings.TrimSpace(last + " " + first)
 	return NormalizedAccount{
-		Email: email, FullName: full, FirstName: first, LastName: last,
-		Phone: strings.TrimSpace(in.Phone), DisplayName: full,
+		Email: email, FullName: ComposeFullName(first, last), FirstName: first, LastName: last,
+		Phone: strings.TrimSpace(in.Phone),
 	}, nil
+}
+
+// ComposeFullName builds the stored full_name as last name then first name (Vietnamese order).
+func ComposeFullName(firstName, lastName string) string {
+	return strings.TrimSpace(strings.TrimSpace(lastName) + " " + strings.TrimSpace(firstName))
 }
 
 func RejectTakenContact(self uuid.UUID, emailOwner *entity.User, phone string, phoneOwner *entity.Identity) error {
@@ -158,7 +160,7 @@ func (s *AuthService) ProvisionLocalUser(ctx context.Context, tx pgx.Tx, kind Ac
 	countryID := i18n.CountryVNID
 	profile := &entity.UserProfile{
 		ID: id.MustNewUUID(), UserID: user.ID, FirstName: norm.FirstName, LastName: norm.LastName,
-		FullName: norm.FullName, DisplayName: norm.DisplayName, LocaleID: &localeID,
+		FullName: norm.FullName, LocaleID: &localeID,
 		Timezone: i18n.DefaultTimezone, CountryID: &countryID,
 		PreferredCurrencyCode: i18n.DefaultCurrencyCode,
 		Theme:                 entity.ThemeSystem, DateFormat: entity.DateFormatDMY,

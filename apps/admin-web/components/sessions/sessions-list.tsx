@@ -1,136 +1,137 @@
 "use client";
 
-import { AuthActionButton, AuthAlert, formatUserDateTime, SecurityRiskBadge, Spinner, useUserDateTimePrefs } from "@bokdy/ui";
+import { Button, formatUserDateTime, Spinner, useUserDateTimePrefs } from "@bokdy/ui";
 import { useTranslations } from "next-intl";
 
+import { EntityDetailPanel } from "@/components/entity/detail-panel";
+import {
+  SoftStatusChip,
+  type SoftStatusToneKey,
+} from "@/components/entity/soft-status-chip";
 import {
   useRevokeAllSessions,
   useRevokeSession,
   useSessions,
 } from "@/hooks/use-sessions";
 
-function riskForUserAgent(
-  userAgent?: string | null,
-): "low" | "medium" | "high" {
-  if (!userAgent) return "medium";
-  if (/unknown/i.test(userAgent)) return "high";
-  if (/iphone|android|windows|mac os|chrome|safari|firefox/i.test(userAgent))
-    return "low";
-  return "medium";
+const SESSION_STATUS_TONE: Record<string, SoftStatusToneKey> = {
+  active: "emerald",
+  expired: "amber",
+  revoked: "rose",
+};
+
+const SESSION_STATUSES = ["active", "expired", "revoked"] as const;
+
+type SessionStatus = (typeof SESSION_STATUSES)[number];
+
+function isSessionStatus(status: string): status is SessionStatus {
+  return (SESSION_STATUSES as readonly string[]).includes(status);
 }
 
-export function SessionsList() {
+export function SessionsList({ embedded = false }: { embedded?: boolean }) {
   const t = useTranslations("sessions");
   const tc = useTranslations("common");
   const prefs = useUserDateTimePrefs();
-  const { data, isLoading, isError } = useSessions();
+  const { data: allSessions = [], isLoading, isError, refetch, isFetching } = useSessions();
+  const sessions = allSessions.filter((session) => session.status !== "revoked");
   const revokeOne = useRevokeSession();
   const revokeAll = useRevokeAllSessions();
 
-  if (isLoading) {
-    return <p className="flex items-center gap-2 text-sm text-muted-foreground"><Spinner />{tc("loading")}</p>;
-  }
-
-  if (isError) {
-    return <AuthAlert tone="danger">{t("loadError")}</AuthAlert>;
-  }
-
-  if (!data?.length) {
-    return <AuthAlert>{t("empty")}</AuthAlert>;
-  }
+  const shell = embedded
+    ? "flex flex-col"
+    : "flex min-h-0 flex-1 flex-col";
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-3 rounded-md border border-border bg-background p-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h2 className="text-lg font-semibold">{t("title")}</h2>
-          <p className="text-sm text-muted-foreground">
-            {t("subtitle", { count: data.length })}
-          </p>
-        </div>
-        <div className="w-full sm:w-auto sm:min-w-48">
-          <AuthActionButton
-            tone="danger"
-            onClick={() => revokeAll.mutate()}
-            disabled={revokeAll.isPending}
-          >
-            {t("revokeAll")}
-          </AuthActionButton>
-        </div>
-      </div>
-
-      <div className="space-y-3">
-        {data.map((session) => {
-          const risk = riskForUserAgent(session.user_agent);
-          return (
-            <div
-              key={session.id}
-              className="rounded-md border border-border bg-background p-4"
+    <div className={shell}>
+      <EntityDetailPanel
+        title={
+          isLoading
+            ? undefined
+            : t("subtitle", { count: sessions.length })
+        }
+        hint={embedded ? undefined : t("pageDescription")}
+        actions={
+          !isLoading && !isError ? (
+            <Button
+              size="sm"
+              variant="destructive"
+              disabled={sessions.length === 0 || revokeAll.isPending}
+              onClick={() => revokeAll.mutate()}
             >
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              {t("revokeAll")}
+            </Button>
+          ) : null
+        }
+      >
+        {isLoading ? (
+          <p className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Spinner />
+            {tc("loading")}
+          </p>
+        ) : isError ? (
+          <div className="space-y-2">
+            <p className="text-sm text-destructive">{t("loadError")}</p>
+            <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
+              {tc("retry")}
+            </Button>
+          </div>
+        ) : sessions.length === 0 ? (
+          <p className="text-sm text-muted-foreground">{t("empty")}</p>
+        ) : (
+          <div>
+            {sessions.map((session) => (
+              <div
+                key={session.id}
+                className="flex flex-col gap-3 border-b border-border/40 py-3 last:border-b-0 sm:flex-row sm:items-center sm:justify-between"
+              >
                 <div className="min-w-0 space-y-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <p className="truncate text-sm font-semibold">
-                      {session.user_agent || t("unknownDevice")}
+                    <p className="text-sm font-medium text-foreground">
+                      {session.user_agent ?? t("unknownDevice")}
                     </p>
                     {session.is_current_session ? (
-                      <span className="rounded-md bg-primary/10 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-primary">
-                        {t("current")}
-                      </span>
+                      <SoftStatusChip label={t("current")} tone="sky" />
                     ) : null}
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    {session.ip_address || t("unknownIp")}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {t("lastSeen", {
-                      date: formatUserDateTime(session.last_activity_at || session.created_at, prefs),
-                    })}
-                  </p>
+                  <p className="text-sm text-muted-foreground">{session.ip_address ?? t("unknownIp")}</p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <SoftStatusChip
+                      label={
+                        isSessionStatus(session.status)
+                          ? t(`statusLabel.${session.status}`)
+                          : session.status
+                      }
+                      tone={SESSION_STATUS_TONE[session.status] ?? "muted"}
+                    />
+                    <span className="text-xs text-muted-foreground">
+                      {t("lastSeen", {
+                        date: formatUserDateTime(
+                          session.last_activity_at || session.created_at,
+                          prefs,
+                        ),
+                      })}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {t("expiresAt")}: {formatUserDateTime(session.expires_at, prefs)}
+                    </span>
+                  </div>
                 </div>
-
-                <div className="flex flex-col items-start gap-2 sm:items-end">
-                  <SecurityRiskBadge
-                    level={risk}
-                    labels={{
-                      low: t("risk.low"),
-                      medium: t("risk.medium"),
-                      high: t("risk.high"),
-                    }}
-                  />
-                  {!session.is_current_session ? (
-                    <button
-                      type="button"
-                      onClick={() => revokeOne.mutate(session.id)}
-                      className="text-sm font-medium text-destructive"
-                      disabled={revokeOne.isPending}
-                    >
-                      {t("revoke")}
-                    </button>
-                  ) : null}
-                </div>
+                {session.status === "active" && !session.is_current_session ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="shrink-0"
+                    disabled={revokeOne.isPending}
+                    onClick={() => revokeOne.mutate(session.id)}
+                  >
+                    {t("revoke")}
+                  </Button>
+                ) : null}
               </div>
-
-              <dl className="mt-4 grid gap-3 border-t border-border pt-4 text-sm sm:grid-cols-2">
-                <div>
-                  <dt className="text-xs uppercase tracking-wide text-muted-foreground">
-                    {t("status")}
-                  </dt>
-                  <dd className="mt-1 font-medium">{session.status}</dd>
-                </div>
-                <div>
-                  <dt className="text-xs uppercase tracking-wide text-muted-foreground">
-                    {t("expiresAt")}
-                  </dt>
-                  <dd className="mt-1 font-medium">
-                    {formatUserDateTime(session.expires_at, prefs)}
-                  </dd>
-                </div>
-              </dl>
-            </div>
-          );
-        })}
-      </div>
+            ))}
+          </div>
+        )}
+      </EntityDetailPanel>
     </div>
   );
 }

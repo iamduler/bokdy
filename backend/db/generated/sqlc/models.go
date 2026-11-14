@@ -2633,7 +2633,6 @@ type IdentityUserProfile struct {
 	FirstName             *string            `json:"first_name"`
 	LastName              *string            `json:"last_name"`
 	FullName              string             `json:"full_name"`
-	DisplayName           *string            `json:"display_name"`
 	AvatarFileID          *uuid.UUID         `json:"avatar_file_id"`
 	Gender                *IdentityGender    `json:"gender"`
 	DateOfBirth           pgtype.Date        `json:"date_of_birth"`
@@ -3205,6 +3204,15 @@ type ReferenceProvinceFormer struct {
 	Code      string    `json:"code"`
 	NameEn    string    `json:"name_en"`
 	NameVi    string    `json:"name_vi"`
+	IsActive  bool      `json:"is_active"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+type ReferenceTimezone struct {
+	ID        uuid.UUID `json:"id"`
+	Name      string    `json:"name"`
+	SortOrder int32     `json:"sort_order"`
 	IsActive  bool      `json:"is_active"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`

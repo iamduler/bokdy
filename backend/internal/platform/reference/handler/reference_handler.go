@@ -19,11 +19,21 @@ type ReferenceHandler struct {
 	locales    *service.LocaleService
 	countries  *service.CountryService
 	currencies *service.CurrencyService
+	timezones  *service.TimezoneService
 	adminUnits *service.AdminUnitService
 }
 
-func NewReferenceHandler(locales *service.LocaleService, countries *service.CountryService, currencies *service.CurrencyService, adminUnits *service.AdminUnitService) *ReferenceHandler {
-	return &ReferenceHandler{locales: locales, countries: countries, currencies: currencies, adminUnits: adminUnits}
+func NewReferenceHandler(
+	locales *service.LocaleService,
+	countries *service.CountryService,
+	currencies *service.CurrencyService,
+	timezones *service.TimezoneService,
+	adminUnits *service.AdminUnitService,
+) *ReferenceHandler {
+	return &ReferenceHandler{
+		locales: locales, countries: countries, currencies: currencies,
+		timezones: timezones, adminUnits: adminUnits,
+	}
 }
 
 type localeDTO struct {
@@ -48,6 +58,7 @@ func (h *ReferenceHandler) RegisterRoutes(rg *gin.RouterGroup) {
 	ref.GET("/locales", h.ListLocales)
 	ref.GET("/countries", h.ListCountries)
 	ref.GET("/currencies", h.ListCurrencies)
+	ref.GET("/timezones", h.ListTimezones)
 	units := ref.Group("/admin-units")
 	units.GET("/provinces", h.ListProvinces)
 	units.GET("/districts", h.ListDistricts)
@@ -114,6 +125,28 @@ func (h *ReferenceHandler) ListCurrencies(c *gin.Context) {
 			Code: item.Code, Symbol: item.Symbol, IsDefault: item.IsDefault,
 			Name: i18n.DisplayName(locale, item.NameEn, item.NameVi),
 		})
+	}
+	httpx.OK(c, out)
+}
+
+type timezoneDTO struct {
+	Name      string `json:"name"`
+	SortOrder int32  `json:"sort_order"`
+}
+
+func (h *ReferenceHandler) ListTimezones(c *gin.Context) {
+	if h.timezones == nil {
+		httpx.OK(c, []timezoneDTO{})
+		return
+	}
+	items, err := h.timezones.ListActive(c.Request.Context())
+	if err != nil {
+		httpx.Error(c, err)
+		return
+	}
+	out := make([]timezoneDTO, 0, len(items))
+	for _, item := range items {
+		out = append(out, timezoneDTO{Name: item.Name, SortOrder: item.SortOrder})
 	}
 	httpx.OK(c, out)
 }
@@ -218,5 +251,5 @@ func toAdminUnitDTOs(c *gin.Context, items []refrepo.AdminUnit) []adminUnitDTO {
 type LocaleHandler = ReferenceHandler
 
 func NewLocaleHandler(locales *service.LocaleService) *ReferenceHandler {
-	return NewReferenceHandler(locales, nil, nil, nil)
+	return NewReferenceHandler(locales, nil, nil, nil, nil)
 }

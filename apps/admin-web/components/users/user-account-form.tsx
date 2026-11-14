@@ -1,6 +1,14 @@
 "use client";
 
-import { Field, FieldError, FieldLabel, Input, toast } from "@bokdy/ui";
+import {
+  DATE_PICKER_BIRTH_END_MONTH,
+  DATE_PICKER_BIRTH_START_MONTH,
+  Field,
+  FieldError,
+  FieldLabel,
+  Input,
+  toast,
+} from "@bokdy/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { IdCard, KeyRound, MapPin, SlidersHorizontal, UserRound, Users } from "lucide-react";
@@ -38,7 +46,8 @@ import {
 } from "@/hooks/use-admin-users";
 import type { AdminUserOrganization, UserAudience } from "@/lib/api/admin-users";
 import { uploadUserMedia } from "@/lib/api/admin-users";
-import { ianaTimeZones } from "@/lib/time-zones";
+import { useTimezones } from "@/hooks/use-timezones";
+import { ianaTimezoneOptions } from "@/lib/time-zones";
 import { ApiError, errorMessageKey } from "@/lib/api/errors";
 import {
   emptyUserAccount,
@@ -144,6 +153,7 @@ function UserAccountFields({
   const locales = useLocales();
   const countries = useCountries();
   const currencies = useCurrencies();
+  const timezones = useTimezones();
   const [avatar, setAvatar] = useState<Blob | null>(null);
   const [banner, setBanner] = useState<Blob | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -294,8 +304,8 @@ function UserAccountFields({
     [t],
   );
   const timezoneOptions = useMemo<PopoverCommandOption[]>(
-    () => ianaTimeZones().map((zone) => ({ value: zone, label: zone, keywords: zone })),
-    [],
+    () => timezones.data ?? ianaTimezoneOptions(),
+    [timezones.data],
   );
   const currencyOptions = useMemo<PopoverCommandOption[]>(
     () =>
@@ -361,7 +371,14 @@ function UserAccountFields({
             options: genderOptions,
             placeholder: t("pickGender"),
           },
-          { kind: "date", name: "date_of_birth", label: t("dateOfBirth"), placeholder: t("pickDate") },
+          {
+            kind: "date",
+            name: "date_of_birth",
+            label: t("dateOfBirth"),
+            placeholder: t("pickDate"),
+            startMonth: DATE_PICKER_BIRTH_START_MONTH,
+            endMonth: DATE_PICKER_BIRTH_END_MONTH,
+          },
         ],
       },
       {

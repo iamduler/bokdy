@@ -7,7 +7,6 @@ describe("owner profile schema", () => {
     expect(personalSchema({ required: "required" }).safeParse({
       first_name: "An",
       last_name: "Nguyen",
-      display_name: "An",
     }).success).toBe(true);
     expect(transferSchema({ required: "required" }).safeParse({
       organization_id: "not-a-uuid",

@@ -6,7 +6,6 @@ export function personalSchema(messages: { required: string }) {
   return z.object({
     first_name: z.string().trim().min(1, messages.required),
     last_name: z.string(),
-    display_name: z.string(),
   });
 }
 

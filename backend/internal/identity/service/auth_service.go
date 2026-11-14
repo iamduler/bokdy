@@ -118,7 +118,7 @@ func (s *AuthService) Register(ctx context.Context, in RegisterInput) (*entity.U
 	}
 	norm := NormalizedAccount{
 		Email: email, FullName: fullName, FirstName: strings.TrimSpace(in.FirstName),
-		LastName: strings.TrimSpace(in.LastName), Phone: phone, DisplayName: fullName,
+		LastName: strings.TrimSpace(in.LastName), Phone: phone,
 	}
 	var user *entity.User
 	var verifyToken string
@@ -427,8 +427,6 @@ func (s *AuthService) Me(ctx context.Context, userID uuid.UUID) (*entity.User, *
 type UpdateProfileInput struct {
 	FirstName             *string
 	LastName              *string
-	FullName              *string
-	DisplayName           *string
 	AvatarFileID          *string
 	Gender                *string
 	DateOfBirth           *string
@@ -454,12 +452,6 @@ func (s *AuthService) UpdateProfile(ctx context.Context, userID uuid.UUID, in Up
 	}
 	if in.LastName != nil {
 		profile.LastName = strings.TrimSpace(*in.LastName)
-	}
-	if in.FullName != nil {
-		profile.FullName = strings.TrimSpace(*in.FullName)
-	}
-	if in.DisplayName != nil {
-		profile.DisplayName = strings.TrimSpace(*in.DisplayName)
 	}
 	if in.AvatarFileID != nil {
 		raw := strings.TrimSpace(*in.AvatarFileID)
@@ -491,9 +483,7 @@ func (s *AuthService) UpdateProfile(ctx context.Context, userID uuid.UUID, in Up
 		}
 		profile.DateOfBirth = raw
 	}
-	if profile.FullName == "" {
-		profile.FullName = strings.TrimSpace(profile.FirstName + " " + profile.LastName)
-	}
+	profile.FullName = ComposeFullName(profile.FirstName, profile.LastName)
 	if in.Timezone != nil {
 		profile.Timezone = strings.TrimSpace(*in.Timezone)
 	}

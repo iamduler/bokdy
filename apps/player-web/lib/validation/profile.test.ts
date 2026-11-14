@@ -9,7 +9,6 @@ describe("player profile schema", () => {
     const parsed = personalSchema(messages).safeParse({
       first_name: " ",
       last_name: "Nguyen",
-      display_name: "Nick",
       gender: "",
       date_of_birth: "",
     });

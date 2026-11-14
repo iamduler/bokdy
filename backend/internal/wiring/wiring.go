@@ -108,6 +108,7 @@ func RegisterRoutes(api *gin.RouterGroup, app *server.Application) {
 		refservice.NewLocaleService(localeRepo),
 		refservice.NewCountryService(refpg.NewCountryRepo(app.DB.Pool)),
 		refservice.NewCurrencyService(refpg.NewCurrencyRepo(app.DB.Pool)),
+		refservice.NewTimezoneService(refpg.NewTimezoneRepo(app.DB.Pool)),
 		refservice.NewAdminUnitService(adminUnitRepo),
 	).RegisterRoutes(api)
 

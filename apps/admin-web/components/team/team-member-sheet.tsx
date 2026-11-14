@@ -237,7 +237,7 @@ export function TeamMemberSheet({
   };
 
   const display =
-    member?.display_name?.trim() ||
+    member?.full_name?.trim() ||
     member?.email?.trim() ||
     member?.user_id ||
     "";

@@ -56,7 +56,7 @@ function initialsFrom(name: string) {
 }
 
 function memberLabel(m: StaffMember) {
-  return m.display_name?.trim() || m.email?.trim() || m.user_id;
+  return m.full_name?.trim() || m.email?.trim() || m.user_id;
 }
 
 function primaryRole(m: StaffMember): StaffRoleCode {
@@ -322,7 +322,7 @@ export function TeamView() {
                                 <p className="truncate text-xs text-muted-foreground">
                                   {m.title}
                                 </p>
-                              ) : m.email && m.display_name ? (
+                              ) : m.email && m.full_name ? (
                                 <p className="truncate text-xs text-muted-foreground">
                                   {m.email}
                                 </p>

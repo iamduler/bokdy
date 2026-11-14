@@ -136,7 +136,7 @@ func seedBootstrapAdmin(ctx context.Context, db *persistence.Database, cfg *conf
 		IsSystemAdmin: true, EmailVerifiedAt: &now, CreatedAt: now, UpdatedAt: now,
 	}
 	profile := &entity.UserProfile{
-		ID: id.MustNewUUID(), UserID: userID, FullName: cfg.Bootstrap.Name, DisplayName: cfg.Bootstrap.Name,
+		ID: id.MustNewUUID(), UserID: userID, FullName: cfg.Bootstrap.Name,
 		LocaleID: &localeID, CountryID: &countryID, Timezone: i18n.DefaultTimezone,
 		PreferredCurrencyCode: i18n.DefaultCurrencyCode, Theme: entity.ThemeSystem, DateFormat: entity.DateFormatDMY,
 		CreatedAt: now, UpdatedAt: now,

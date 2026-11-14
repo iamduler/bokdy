@@ -8,7 +8,6 @@ export type UserDetailRecord = {
   id: string;
   public_id: string;
   email?: string;
-  display_name?: string;
   full_name?: string;
   first_name?: string;
   last_name?: string;
@@ -65,5 +64,5 @@ export function useUserDetail() {
 }
 
 export function userDisplayName(user: UserDetailRecord) {
-  return user.display_name || user.full_name || user.email || user.public_id;
+  return user.full_name || user.email || user.public_id;
 }

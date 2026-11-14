@@ -7,6 +7,26 @@ import { DayPicker, type ChevronProps, type DayButtonProps, type DropdownProps }
 import { cn } from "../lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select";
 
+const CaptionSelectOpenContext = React.createContext<((open: boolean) => void) | undefined>(undefined);
+
+const CALENDAR_CLASS_NAMES = {
+  root: "w-fit",
+  months: "relative flex flex-col",
+  month: "flex flex-col gap-2",
+  month_caption: "relative z-10 flex h-8 w-full items-center justify-center px-8",
+  dropdowns: "relative z-10 flex h-8 w-full items-center justify-center gap-1.5 text-sm font-medium",
+  caption_label: "text-sm font-medium select-none",
+  // Full-width nav sits over the caption — disable hits except on the chevron buttons.
+  nav: "absolute inset-x-0 top-0 z-20 flex w-full items-center justify-between pointer-events-none",
+  button_previous:
+    "pointer-events-auto inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground aria-disabled:pointer-events-none aria-disabled:opacity-40",
+  button_next:
+    "pointer-events-auto inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground aria-disabled:pointer-events-none aria-disabled:opacity-40",
+  month_grid: "w-full border-collapse",
+  weekday: "size-8 pb-1 text-center text-xs font-normal text-muted-foreground",
+  day: "p-0 text-center",
+} as const;
+
 function CalendarChevron({ orientation, className }: ChevronProps) {
   const icon = cn("size-4", className);
   if (orientation === "left") return <ChevronLeft className={icon} />;
@@ -22,32 +42,35 @@ function CalendarDropdown({
   disabled,
   "aria-label": ariaLabel,
 }: DropdownProps) {
-  const triggerRef = React.useRef<HTMLButtonElement>(null);
-  const [container, setContainer] = React.useState<HTMLElement | null>(null);
+  const onCaptionSelectOpenChange = React.useContext(CaptionSelectOpenContext);
+  const [open, setOpen] = React.useState(false);
   const current = value == null || value === "" ? undefined : String(value);
 
-  React.useLayoutEffect(() => {
-    const node = triggerRef.current;
-    setContainer(
-      node?.closest<HTMLElement>("[data-radix-popper-content-wrapper]") ??
-        node?.closest<HTMLElement>("[role='dialog']") ??
-        null,
-    );
-  }, []);
+  // When closed, keep only the selected item so SelectValue still labels the trigger
+  // without reconciling ~100+ year options on every DayPicker re-render.
+  const visibleOptions = open
+    ? options
+    : options?.filter((option) => String(option.value) === current);
 
   return (
     <Select
       value={current}
       disabled={disabled}
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        onCaptionSelectOpenChange?.(next);
+      }}
       onValueChange={(next) => {
         onChange?.({ target: { value: next } } as React.ChangeEvent<HTMLSelectElement>);
       }}
     >
-      <SelectTrigger ref={triggerRef} size="sm" aria-label={ariaLabel} className="h-8 gap-1 px-2 font-medium">
+      <SelectTrigger size="sm" aria-label={ariaLabel} className="h-8 max-w-[7.5rem] gap-1 px-2 font-medium">
         <SelectValue />
       </SelectTrigger>
-      <SelectContent container={container} className="select-caption max-h-60">
-        {options?.map((option) => (
+      {/* Portal to body — nesting inside the DatePicker popover remounts/clips the list. */}
+      <SelectContent className="select-caption z-[80] max-h-60">
+        {visibleOptions?.map((option) => (
           <SelectItem key={option.value} value={String(option.value)} disabled={option.disabled}>
             {option.label}
           </SelectItem>
@@ -73,6 +96,17 @@ function CalendarDayButton({ day: _day, modifiers, className, ...props }: DayBut
   );
 }
 
+const CALENDAR_COMPONENTS = {
+  Chevron: CalendarChevron,
+  DayButton: CalendarDayButton,
+  Dropdown: CalendarDropdown,
+};
+
+export type CalendarProps = React.ComponentProps<typeof DayPicker> & {
+  /** Fired when a caption Month/Year Select opens or closes (DatePicker dismiss guard). */
+  onCaptionSelectOpenChange?: (open: boolean) => void;
+};
+
 export function Calendar({
   className,
   classNames,
@@ -80,44 +114,47 @@ export function Calendar({
   formatters,
   locale,
   components,
+  onCaptionSelectOpenChange,
   ...props
-}: React.ComponentProps<typeof DayPicker>) {
+}: CalendarProps) {
   const localeCode = locale && "code" in locale ? locale.code : undefined;
 
+  const mergedFormatters = React.useMemo(
+    () => ({
+      formatMonthDropdown: (month: Date) => month.toLocaleString(localeCode, { month: "short" }),
+      ...formatters,
+    }),
+    [localeCode, formatters],
+  );
+
+  const mergedClassNames = React.useMemo(
+    () => ({
+      ...CALENDAR_CLASS_NAMES,
+      ...classNames,
+    }),
+    [classNames],
+  );
+
+  const mergedComponents = React.useMemo(
+    () => ({
+      ...CALENDAR_COMPONENTS,
+      ...components,
+    }),
+    [components],
+  );
+
   return (
-    <DayPicker
-      showOutsideDays
-      captionLayout={captionLayout}
-      locale={locale}
-      formatters={{
-        formatMonthDropdown: (month) => month.toLocaleString(localeCode, { month: "short" }),
-        ...formatters,
-      }}
-      className={cn("p-3", className)}
-      classNames={{
-        root: "w-fit",
-        months: "relative flex flex-col",
-        month: "flex flex-col gap-2",
-        month_caption: "flex h-8 w-full items-center justify-center px-8",
-        dropdowns: "flex h-8 w-full items-center justify-center gap-1.5 text-sm font-medium",
-        caption_label: "text-sm font-medium select-none",
-        nav: "absolute inset-x-0 top-0 flex w-full items-center justify-between",
-        button_previous:
-          "inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground aria-disabled:pointer-events-none aria-disabled:opacity-40",
-        button_next:
-          "inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground aria-disabled:pointer-events-none aria-disabled:opacity-40",
-        month_grid: "w-full border-collapse",
-        weekday: "size-8 pb-1 text-center text-xs font-normal text-muted-foreground",
-        day: "p-0 text-center",
-        ...classNames,
-      }}
-      components={{
-        Chevron: CalendarChevron,
-        DayButton: CalendarDayButton,
-        Dropdown: CalendarDropdown,
-        ...components,
-      }}
-      {...props}
-    />
+    <CaptionSelectOpenContext.Provider value={onCaptionSelectOpenChange}>
+      <DayPicker
+        showOutsideDays
+        captionLayout={captionLayout}
+        locale={locale}
+        formatters={mergedFormatters}
+        className={cn("p-3", className)}
+        classNames={mergedClassNames}
+        components={mergedComponents}
+        {...props}
+      />
+    </CaptionSelectOpenContext.Provider>
   );
 }

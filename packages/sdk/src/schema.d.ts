@@ -246,6 +246,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reference/timezones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List active IANA timezones
+         * @description Public catalog from `reference.timezones`, ordered by `sort_order`
+         *     (Asia/Ho_Chi_Minh first). Clients format UTC offset labels locally.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Active timezones */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data: components["schemas"]["Timezone"][];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/reference/admin-units/provinces": {
         parameters: {
             query?: never;
@@ -1033,7 +1075,11 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Change password while signed in */
+        /**
+         * Change password while signed in
+         * @description Requires a valid access token. Does not re-check the previous password;
+         *     the client should confirm the new password in the UI.
+         */
         post: {
             parameters: {
                 query?: never;
@@ -1044,7 +1090,7 @@ export interface paths {
             requestBody: {
                 content: {
                     "application/json": {
-                        current_password: string;
+                        /** @description BR-806 */
                         password: string;
                     };
                 };
@@ -1103,6 +1149,45 @@ export interface paths {
                 };
                 401: components["responses"]["Error"];
                 422: components["responses"]["ValidationFailed"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/identity/email/resend-verification": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resend email verification for the signed-in user
+         * @description No-op (204) when the email is already verified or the account has no email.
+         *     Otherwise mints a new verification token and sends the verification email.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Verification sent or already verified */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                401: components["responses"]["Error"];
             };
         };
         delete?: never;
@@ -9051,7 +9136,6 @@ export interface components {
             public_id: string;
             /** Format: email */
             email?: string;
-            display_name?: string;
             full_name?: string;
             first_name?: string;
             last_name?: string;
@@ -9188,7 +9272,7 @@ export interface components {
              */
             created_at: string;
         };
-        /** @description full_name and display_name are derived as last name then first name. */
+        /** @description full_name is derived as last name then first name. */
         AdminUserAccountRequest: {
             /** Format: email */
             email: string;
@@ -9217,7 +9301,7 @@ export interface components {
             ward_id?: string;
             address_line?: string;
         };
-        /** @description full_name and display_name are derived as last name then first name. */
+        /** @description full_name is derived as last name then first name. */
         AdminUserProfileRequest: {
             /** Format: email */
             email: string;
@@ -9323,7 +9407,7 @@ export interface components {
             user_id: string;
             /** Format: email */
             email?: string;
-            display_name?: string;
+            full_name?: string;
             title?: string;
             /** Format: uuid */
             branch_id?: string;
@@ -9949,6 +10033,12 @@ export interface components {
             symbol: string;
             is_default: boolean;
         };
+        Timezone: {
+            /** @description IANA timezone id */
+            name: string;
+            /** @description Lower values appear first */
+            sort_order: number;
+        };
         MarketplaceBranch: {
             public_id: string;
             /** Format: uuid */
@@ -10460,10 +10550,11 @@ export interface components {
             full_name?: string;
             first_name?: string;
             last_name?: string;
-            display_name?: string;
             phone?: string;
             /** Format: uuid */
             avatar_file_id?: string;
+            /** Format: uuid */
+            banner_file_id?: string;
             gender?: string;
             /** Format: date */
             date_of_birth?: string;
@@ -10491,11 +10582,10 @@ export interface components {
             date_format?: "dmy" | "mdy" | "ymd";
             roles?: string[];
         };
+        /** @description full_name is derived as last name then first name. */
         UpdateProfileRequest: {
             first_name?: string;
             last_name?: string;
-            full_name?: string;
-            display_name?: string;
             /** Format: uuid */
             avatar_file_id?: string;
             /** @enum {string} */

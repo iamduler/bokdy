@@ -469,7 +469,6 @@ func (s *AdminUserService) UpdateProfile(ctx context.Context, id uuid.UUID, in A
 	profile.FirstName = norm.FirstName
 	profile.LastName = norm.LastName
 	profile.FullName = norm.FullName
-	profile.DisplayName = norm.DisplayName
 	if err := ValidateProfilePlace(ctx, s.users, in.Extras); err != nil {
 		return nil, err
 	}

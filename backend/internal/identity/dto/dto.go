@@ -34,8 +34,6 @@ type PasswordResetConfirmRequest struct {
 type UpdateProfileRequest struct {
 	FirstName             *string `json:"first_name"`
 	LastName              *string `json:"last_name"`
-	FullName              *string `json:"full_name"`
-	DisplayName           *string `json:"display_name"`
 	AvatarFileID          *string `json:"avatar_file_id"`
 	Gender                *string `json:"gender"`
 	DateOfBirth           *string `json:"date_of_birth"`
@@ -63,8 +61,8 @@ type UserDTO struct {
 	FullName              string   `json:"full_name,omitempty"`
 	FirstName             string   `json:"first_name,omitempty"`
 	LastName              string   `json:"last_name,omitempty"`
-	DisplayName           string   `json:"display_name,omitempty"`
 	AvatarFileID          string   `json:"avatar_file_id,omitempty"`
+	BannerFileID          string   `json:"banner_file_id,omitempty"`
 	Gender                string   `json:"gender,omitempty"`
 	DateOfBirth           string   `json:"date_of_birth,omitempty"`
 	Phone                 string   `json:"phone,omitempty"`

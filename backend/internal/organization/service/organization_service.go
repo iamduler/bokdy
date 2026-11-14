@@ -121,10 +121,10 @@ type StaffRoleRef struct {
 }
 
 type StaffWithRoles struct {
-	Member      entity.StaffMember
-	Email       string
-	DisplayName string
-	Roles       []StaffRoleRef
+	Member   entity.StaffMember
+	Email    string
+	FullName string
+	Roles    []StaffRoleRef
 }
 
 func (s *OrganizationService) Create(ctx context.Context, ownerID uuid.UUID, in CreateOrganizationInput) (*entity.Organization, error) {
@@ -426,13 +426,13 @@ func (s *OrganizationService) enrichStaff(ctx context.Context, tenantID uuid.UUI
 	for _, r := range roles {
 		refs = append(refs, StaffRoleRef{ID: r.RoleID, Code: r.RoleCode})
 	}
-	email, displayName := "", ""
+	email, fullName := "", ""
 	if contact, err := s.users.FindContact(ctx, m.UserID); err != nil {
 		return nil, apperr.Wrap(err, apperr.CodeInternal, "lookup staff contact")
 	} else if contact != nil {
-		email, displayName = contact.Email, contact.DisplayName
+		email, fullName = contact.Email, contact.FullName
 	}
-	return &StaffWithRoles{Member: m, Email: email, DisplayName: displayName, Roles: refs}, nil
+	return &StaffWithRoles{Member: m, Email: email, FullName: fullName, Roles: refs}, nil
 }
 
 func (s *OrganizationService) ListInvitations(ctx context.Context, orgID, requester uuid.UUID) ([]entity.StaffInvitation, error) {

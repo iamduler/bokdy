@@ -5,6 +5,7 @@ import { apiGo } from "@/lib/api/client";
 export type Locale = components["schemas"]["Locale"];
 export type Country = components["schemas"]["Country"];
 export type Currency = components["schemas"]["Currency"];
+export type Timezone = components["schemas"]["Timezone"];
 export type AdminUnit = components["schemas"]["AdminUnit"];
 export type AdminDivisionScheme = components["schemas"]["AdminDivisionScheme"];
 
@@ -18,6 +19,10 @@ export function listCountries() {
 
 export function listCurrencies() {
   return apiGo<Currency[]>("reference/currencies");
+}
+
+export function listTimezones() {
+  return apiGo<Timezone[]>("reference/timezones");
 }
 
 export function listProvinces(scheme: AdminDivisionScheme) {

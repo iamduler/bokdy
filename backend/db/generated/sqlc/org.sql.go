@@ -24,7 +24,7 @@ SELECT
       AND r.status <> 'archived'
   ) AS court_count,
   COALESCE((
-    SELECT COALESCE(NULLIF(btrim(p.display_name), ''), NULLIF(btrim(p.full_name), ''))
+    SELECT NULLIF(btrim(p.full_name), '')
     FROM organization.staff_members sm
     JOIN identity.user_roles ur ON ur.user_id = sm.user_id AND ur.tenant_id = o.tenant_id
     JOIN identity.roles r ON r.id = ur.role_id AND r.code = 'org_owner'
@@ -545,7 +545,7 @@ SELECT o.id, o.public_id, o.tenant_id, o.code,
            AND r.status <> 'archived'
        ) AS court_count,
        COALESCE((
-         SELECT COALESCE(NULLIF(btrim(p.display_name), ''), NULLIF(btrim(p.full_name), ''))
+         SELECT NULLIF(btrim(p.full_name), '')
          FROM organization.staff_members sm
          JOIN identity.user_roles ur ON ur.user_id = sm.user_id AND ur.tenant_id = o.tenant_id
          JOIN identity.roles r ON r.id = ur.role_id AND r.code = 'org_owner'

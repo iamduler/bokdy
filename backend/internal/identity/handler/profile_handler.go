@@ -10,8 +10,11 @@ import (
 )
 
 type passwordBody struct {
+	Password string `json:"password"`
+}
+
+type deactivateBody struct {
 	CurrentPassword string `json:"current_password"`
-	Password        string `json:"password"`
 }
 
 type emailBody struct {
@@ -44,6 +47,7 @@ type sportBody struct {
 func (h *AuthHandler) registerProfileRoutes(identity *gin.RouterGroup) {
 	identity.POST("/password", h.ChangePassword)
 	identity.POST("/email", h.ChangeEmail)
+	identity.POST("/email/resend-verification", h.ResendEmailVerification)
 	identity.POST("/phone", h.ChangePhone)
 	identity.POST("/deactivate", h.Deactivate)
 	identity.GET("/mfa", h.MFAStatus)
@@ -73,7 +77,7 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 	if !httpx.BindJSON(c, &req) {
 		return
 	}
-	if err := h.auth.ChangePassword(c.Request.Context(), uid, req.CurrentPassword, req.Password); err != nil {
+	if err := h.auth.ChangePassword(c.Request.Context(), uid, req.Password); err != nil {
 		httpx.Error(c, err)
 		return
 	}
@@ -90,6 +94,18 @@ func (h *AuthHandler) ChangeEmail(c *gin.Context) {
 		return
 	}
 	if err := h.auth.ChangeEmail(c.Request.Context(), uid, req.CurrentPassword, req.Email); err != nil {
+		httpx.Error(c, err)
+		return
+	}
+	httpx.NoContent(c)
+}
+
+func (h *AuthHandler) ResendEmailVerification(c *gin.Context) {
+	uid, _, ok := currentUser(c)
+	if !ok {
+		return
+	}
+	if err := h.auth.ResendEmailVerification(c.Request.Context(), uid); err != nil {
 		httpx.Error(c, err)
 		return
 	}
@@ -117,7 +133,7 @@ func (h *AuthHandler) Deactivate(c *gin.Context) {
 	if !ok {
 		return
 	}
-	var req passwordBody
+	var req deactivateBody
 	if !httpx.BindJSON(c, &req) {
 		return
 	}
