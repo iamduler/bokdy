@@ -4,10 +4,9 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { useTranslations } from "next-intl";
 import { useMemo } from "react";
 
-import { EntityAvatar } from "@/components/entity/avatar";
+import { DirectoryIdentityCell } from "@/components/data-list/directory-identity-cell";
 import { EntityUnavailableBadge } from "@/components/entity/unavailable";
 import { OrganizationStatusBadge } from "@/components/organizations/organization-status-badge";
-import { Link } from "@/i18n/navigation";
 import type { AdminOrganization } from "@/lib/api/admin";
 
 export function useOrganizationColumns() {
@@ -24,24 +23,20 @@ export function useOrganizationColumns() {
         cell: ({ row }) => {
           const org = row.original;
           return (
-            <div className="flex min-w-0 items-center gap-2.5">
-              <EntityAvatar name={org.name} size="sm" />
-              <div className="min-w-0">
-                <Link
-                  href={`/organizations/${org.id}`}
-                  className="block truncate font-medium text-foreground underline-offset-4"
-                >
-                  {org.name}
-                </Link>
-                <p className="truncate text-[11px] text-muted-foreground">
+            <DirectoryIdentityCell
+              href={`/organizations/${org.id}`}
+              name={org.name}
+              avatar
+              subtitle={
+                <>
                   {org.code}
                   {" · "}
                   <span className="text-muted-foreground/80">
                     {org.owner_display_name || t("emptyValue")}
                   </span>
-                </p>
-              </div>
-            </div>
+                </>
+              }
+            />
           );
         },
       },

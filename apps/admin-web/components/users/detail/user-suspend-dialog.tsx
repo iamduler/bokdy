@@ -1,13 +1,8 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Button, Label, Textarea } from "@bokdy/ui";
 import { useTranslations } from "next-intl";
-import { useMemo } from "react";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
 
-import { EntityActionDialog } from "@/components/entity/action-dialog";
+import { ReasonActionDialog } from "@/components/entity/reason-action-dialog";
 import { useSuspendUser } from "@/hooks/use-admin-users";
 import { ApiError, errorMessageKey } from "@/lib/api/errors";
 
@@ -22,66 +17,33 @@ export function UserSuspendDialog({ open, onClose, userId }: UserSuspendDialogPr
   const te = useTranslations("errors");
   const suspend = useSuspendUser();
 
-  const schema = useMemo(
-    () => z.object({ reason: z.string().trim().min(1, te("REQUIRED")) }),
-    [te],
-  );
-
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm<{ reason: string }>({
-    resolver: zodResolver(schema),
-    defaultValues: { reason: "" },
-  });
-
-  function close() {
-    onClose();
-    reset({ reason: "" });
-  }
-
-  async function onSubmit(values: { reason: string }) {
-    try {
-      await suspend.mutateAsync({ id: userId, reason: values.reason });
-      close();
-    } catch (err) {
-      const apiErr = err instanceof ApiError ? err : new ApiError("INTERNAL", "", 500);
-      // error surfaced via suspend.isError — keep dialog open
-      void apiErr;
-    }
-  }
+  const error = suspend.isError
+    ? te(errorMessageKey(suspend.error instanceof ApiError ? suspend.error : new ApiError("INTERNAL", "", 500)))
+    : null;
 
   return (
-    <EntityActionDialog open={open} title={t("title")} closeLabel={t("cancel")} onClose={close}>
-      <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
-        <p className="text-sm text-muted-foreground">{t("hint")}</p>
-        <div className="space-y-1.5">
-          <Label htmlFor="user-suspend-reason">{t("reason")}</Label>
-          <Textarea id="user-suspend-reason" rows={4} {...register("reason")} />
-          {errors.reason?.message ? (
-            <p className="text-sm text-destructive">{errors.reason.message}</p>
-          ) : null}
-        </div>
-        {suspend.isError ? (
-          <p className="text-sm text-destructive">
-            {te(errorMessageKey(suspend.error instanceof ApiError ? suspend.error : new ApiError("INTERNAL", "", 500)))}
-          </p>
-        ) : null}
-        <div className="flex flex-wrap justify-end gap-2">
-          <Button type="button" variant="outline" onClick={close} disabled={suspend.isPending}>
-            {t("cancel")}
-          </Button>
-          <Button
-            type="submit"
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            disabled={suspend.isPending}
-          >
-            {t("submit")}
-          </Button>
-        </div>
-      </form>
-    </EntityActionDialog>
+    <ReasonActionDialog
+      open={open}
+      onClose={onClose}
+      title={t("title")}
+      hint={t("hint")}
+      reasonLabel={t("reason")}
+      reasonId="user-suspend-reason"
+      cancelLabel={t("cancel")}
+      submitLabel={t("submit")}
+      closeLabel={t("cancel")}
+      pending={suspend.isPending}
+      error={error}
+      requiredMessage={te("REQUIRED")}
+      destructive
+      onSubmit={async (reason) => {
+        try {
+          await suspend.mutateAsync({ id: userId, reason });
+          onClose();
+        } catch {
+          // Reason stays in the dialog; the mutation error renders below the field.
+        }
+      }}
+    />
   );
 }

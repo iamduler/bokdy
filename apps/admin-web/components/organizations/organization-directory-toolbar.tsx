@@ -4,7 +4,6 @@ import { Button, Label } from "@bokdy/ui";
 import {
   Building2,
   PauseCircle,
-  Plus,
   PowerOff,
   ShieldCheck,
 } from "lucide-react";
@@ -19,11 +18,10 @@ import {
 } from "react";
 
 import {
-  DataListLayout,
-  softDirectoryPrimaryBtn,
   type DataListStatItem,
   type DataListStatusTab,
 } from "@/components/data-list";
+import { DirectoryToolbar } from "@/components/data-list/directory-toolbar";
 import { EntityUnavailable } from "@/components/entity/unavailable";
 import type { OrganizationDirectoryStats } from "@/components/organizations/organization-directory-stats";
 import {
@@ -205,21 +203,12 @@ export function OrganizationDirectoryToolbar({
   }
 
   return (
-    <DataListLayout
+    <DirectoryToolbar
       title={t("title")}
       stats={stats}
       statsLoading={statsLoading}
-      primaryAction={
-        <Button
-          type="button"
-          size="lg"
-          className={softDirectoryPrimaryBtn}
-          onClick={onOpenCreate}
-        >
-          <Plus className="size-4" aria-hidden />
-          {t("create")}
-        </Button>
-      }
+      createLabel={t("create")}
+      onCreate={onOpenCreate}
       statusTabs={statusTabs}
       statusValue={status}
       onStatusChange={(value) => replaceParams({ status: value || undefined })}
@@ -289,6 +278,6 @@ export function OrganizationDirectoryToolbar({
       }
     >
       {children}
-    </DataListLayout>
+    </DirectoryToolbar>
   );
 }

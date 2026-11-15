@@ -3,9 +3,6 @@
 import {
   Button,
   cn,
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
   Table,
   TableBody,
   TableCell,
@@ -13,13 +10,15 @@ import {
   TableHeader,
   TableRow,
 } from "@bokdy/ui";
-import { Pencil, Plus, Search } from "lucide-react";
+import { Pencil, Plus } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 
 import { sportLabel } from "@/components/branches/branch-sports-chips";
 import { BRANCH_STATUS_TONE } from "@/components/branches/branch-status";
-import { DataListEmpty, softDirectoryPrimaryBtn, softFilterControl } from "@/components/data-list";
+import { DataListEmpty, softDirectoryPrimaryBtn } from "@/components/data-list";
+import { FilterSearchField } from "@/components/data-list/filter-search-field";
+import { FilterSelect } from "@/components/data-list/filter-select";
 import { EntityDetailPanel } from "@/components/entity/detail-panel";
 import {
   EntityDetailError,
@@ -27,11 +26,11 @@ import {
 } from "@/components/entity/detail-state";
 import { EntityRelationLink } from "@/components/entity/relation-link";
 import { SoftStatusChip } from "@/components/entity/soft-status-chip";
-import { CollectionViewToggle } from "@/components/organizations/detail/collection-view-toggle";
+import { CollectionViewToggle } from "@/components/entity/collection-view-toggle";
+import { useCollectionViewMode } from "@/components/entity/use-collection-view-mode";
 import { OrganizationSectionFrame } from "@/components/organizations/detail/organization-section-frame";
 import { useOrganizationDetail } from "@/components/organizations/detail/organization-detail-context";
-import { useCollectionViewMode } from "@/components/organizations/detail/use-collection-view-mode";
-import { PopoverCommandSelect, type PopoverCommandOption } from "@/components/popover-command-select";
+import { type PopoverCommandOption } from "@/components/popover-command-select";
 import { useBranches } from "@/hooks/use-branches";
 import { useSports } from "@/hooks/use-sports";
 import { currentBranchAddress, type Branch, type BranchStatus } from "@/lib/api/branches";
@@ -44,10 +43,6 @@ import { BranchFormSheet } from "./branch-form-sheet";
 const ROW = "border-border/40 hover:bg-muted/30";
 const ALL = "";
 const BRANCH_STATUSES = ["active", "inactive", "maintenance", "archived"] as const satisfies readonly BranchStatus[];
-const filterComboClass = cn(
-  "h-8 min-w-[8.5rem] justify-between px-2.5 text-xs font-medium",
-  softFilterControl,
-);
 
 function includesQuery(parts: Array<string | null | undefined>, query: string) {
   const needle = query.trim().toLowerCase();
@@ -219,36 +214,19 @@ export function OrganizationBranchesView() {
         toolbar={
           branches.length > 0 ? (
             <>
-              <InputGroup className={cn("h-8 min-w-[12rem] flex-1", softFilterControl)}>
-                <InputGroupAddon align="inline-start" className="text-foreground/70">
-                  <Search aria-hidden />
-                </InputGroupAddon>
-                <InputGroupInput
-                  type="search"
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  aria-label={t("search")}
-                  placeholder={t("search")}
-                  autoComplete="off"
-                  className="placeholder:text-foreground/70"
-                />
-              </InputGroup>
-              <PopoverCommandSelect
+              <FilterSearchField value={query} onChange={setQuery} label={t("search")} />
+              <FilterSelect
                 value={filterStatus}
                 onValueChange={setFilterStatus}
                 options={statusOptions}
-                aria-label={t("filterStatus")}
-                className={filterComboClass}
-                align="start"
+                ariaLabel={t("filterStatus")}
               />
-              <PopoverCommandSelect
+              <FilterSelect
                 value={filterSport}
                 onValueChange={setFilterSport}
                 options={sportOptions}
-                aria-label={t("filterSport")}
+                ariaLabel={t("filterSport")}
                 searchable
-                className={filterComboClass}
-                align="start"
               />
             </>
           ) : null

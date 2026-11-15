@@ -3,7 +3,6 @@
 import { Button, Label } from "@bokdy/ui";
 import {
   PauseCircle,
-  Plus,
   ShieldCheck,
   UserPlus,
   Users,
@@ -12,11 +11,10 @@ import { useTranslations } from "next-intl";
 import { useMemo, type ReactNode } from "react";
 
 import {
-  DataListLayout,
-  softDirectoryPrimaryBtn,
   type DataListStatItem,
   type DataListStatusTab,
 } from "@/components/data-list";
+import { DirectoryToolbar } from "@/components/data-list/directory-toolbar";
 import {
   PopoverCommandSelect,
   type PopoverCommandOption,
@@ -178,22 +176,13 @@ export function UserDirectoryToolbar({
   }
 
   return (
-    <DataListLayout
+    <DirectoryToolbar
       title={t(`audience.${audience}`)}
       eyebrow={t(`audienceHint.${audience}`)}
       stats={kpiItems}
       statsLoading={statsLoading}
-      primaryAction={
-        <Button
-          type="button"
-          size="lg"
-          className={softDirectoryPrimaryBtn}
-          onClick={onCreate}
-        >
-          <Plus className="size-4" aria-hidden />
-          {t("accountForm.create")}
-        </Button>
-      }
+      createLabel={t("accountForm.create")}
+      onCreate={onCreate}
       statusTabs={statusTabs}
       statusValue={status}
       onStatusChange={(value) =>
@@ -268,6 +257,6 @@ export function UserDirectoryToolbar({
       }
     >
       {children}
-    </DataListLayout>
+    </DirectoryToolbar>
   );
 }

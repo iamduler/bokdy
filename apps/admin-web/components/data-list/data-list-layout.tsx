@@ -33,7 +33,7 @@ export type DataListStatusTab = {
   dotClass?: string;
 };
 
-type DataListLayoutProps = {
+export type DataListLayoutProps = {
   title: string;
   eyebrow?: string;
   stats: DataListStatItem[];

@@ -8,14 +8,12 @@ import { useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
 import type { ReactNode } from "react";
 
-import { cn } from "@bokdy/ui";
-
 import { BranchDetailSubnav } from "@/components/branches/detail/branch-detail-subnav";
-import { softContentMaxW } from "@/components/data-list";
 import {
   EntityDetailError,
   EntityDetailLoading,
 } from "@/components/entity/detail-state";
+import { EntityDetailRail } from "@/components/entity/detail-rail";
 import { usePageShellTitle } from "@/components/shell/shell-title";
 import { useBranch } from "@/hooks/use-branches";
 import { usePathname } from "@/i18n/navigation";
@@ -63,28 +61,9 @@ export function BranchDetailLayout({ children }: { children: ReactNode }) {
       branchId={branchId}
     >
       <div className="flex h-full min-h-0 flex-col overflow-hidden">
-        <BranchDetailSubnav />
-        {/*
-          Left Soft rail (opaque white card) + scrollable content.
-          Inset padding so the floating shell icon rail does not cover the panel.
-        */}
-        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden p-3 pt-2 md:flex-row md:p-4 md:pt-2">
-          <aside
-            className={cn(
-              "soft-elevated h-fit max-h-full shrink-0 overflow-x-auto rounded-md border-0 bg-card soft-scrollbar",
-              "md:sticky md:top-0 md:w-52 md:self-start md:overflow-y-auto md:overflow-x-hidden",
-            )}
-          >
-            <BranchDetailTabs />
-          </aside>
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto soft-scrollbar">
-            <div
-              className={cn("mx-auto w-full pb-4", softContentMaxW)}
-            >
-              {children}
-            </div>
-          </div>
-        </div>
+        <EntityDetailRail subnav={<BranchDetailSubnav />} tabs={<BranchDetailTabs />}>
+          {children}
+        </EntityDetailRail>
       </div>
     </BranchDetailProvider>
   );

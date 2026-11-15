@@ -6,6 +6,7 @@ import { Eye } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useMemo } from "react";
 
+import { DirectoryIdentityCell } from "@/components/data-list/directory-identity-cell";
 import { SoftStatusChip } from "@/components/entity/soft-status-chip";
 import { UserStatusBadge } from "@/components/users/shared/user-status-badge";
 import { UserUnavailableBadge } from "@/components/users/shared/user-unavailable-badge";
@@ -40,17 +41,11 @@ export function useUserColumns(audience: UserAudience) {
         cell: ({ row }) => {
           const user = row.original;
           return (
-            <div className="min-w-0">
-              <Link
-                href={`${base}/${user.id}`}
-                className="block truncate font-semibold text-foreground"
-              >
-                {displayName(user)}
-              </Link>
-              <p className="truncate text-xs tracking-wide text-muted-foreground">
-                {user.email}
-              </p>
-            </div>
+            <DirectoryIdentityCell
+              href={`${base}/${user.id}`}
+              name={displayName(user)}
+              subtitle={user.email}
+            />
           );
         },
       },

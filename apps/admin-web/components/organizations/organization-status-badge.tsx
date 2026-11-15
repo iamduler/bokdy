@@ -2,10 +2,8 @@
 
 import { useTranslations } from "next-intl";
 
-import {
-  SoftStatusChip,
-  type SoftStatusToneKey,
-} from "@/components/entity/soft-status-chip";
+import { MappedStatusBadge } from "@/components/entity/mapped-status-badge";
+import type { SoftStatusToneKey } from "@/components/entity/soft-status-chip";
 import type { OrgStatus, TenantStatus } from "@/lib/api/admin";
 
 const ORG_TONE: Record<OrgStatus, SoftStatusToneKey> = {
@@ -26,24 +24,26 @@ type OrganizationStatusBadgeProps =
   | { kind: "org"; status: OrgStatus }
   | { kind: "tenant"; status: TenantStatus };
 
-/** Domain wrapper around SoftStatusChip for org / tenant lifecycle. */
+/** Domain wrapper around MappedStatusBadge for org / tenant lifecycle. */
 export function OrganizationStatusBadge(props: OrganizationStatusBadgeProps) {
   const tOrg = useTranslations("organization.status");
   const tTenant = useTranslations("organization.tenantStatus");
 
   if (props.kind === "org") {
     return (
-      <SoftStatusChip
-        label={tOrg(props.status)}
-        tone={ORG_TONE[props.status]}
+      <MappedStatusBadge
+        status={props.status}
+        tones={ORG_TONE}
+        label={(status) => tOrg(status)}
       />
     );
   }
 
   return (
-    <SoftStatusChip
-      label={tTenant(props.status)}
-      tone={TENANT_TONE[props.status]}
+    <MappedStatusBadge
+      status={props.status}
+      tones={TENANT_TONE}
+      label={(status) => tTenant(status)}
     />
   );
 }

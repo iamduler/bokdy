@@ -1,6 +1,5 @@
 "use client";
 
-import { EntityUnavailable } from "@/components/entity/unavailable";
 import {
   Building2,
   CreditCard,
@@ -11,9 +10,14 @@ import {
   UserPlus,
   Zap,
 } from "lucide-react";
-import { useTranslations } from "next-intl";
 import type { LucideIcon } from "lucide-react";
+import { useMemo } from "react";
+import { useTranslations } from "next-intl";
 
+import {
+  EntityActionGroups,
+  type EntityActionItem,
+} from "@/components/entity/action-groups";
 import { OrganizationActivateButton } from "@/components/organizations/organization-activate-button";
 import { OrganizationRestoreDialog } from "@/components/organizations/organization-restore-dialog";
 import { OrganizationSuspendDialog } from "@/components/organizations/organization-suspend-dialog";
@@ -26,7 +30,6 @@ type ActionItem = {
   labelKey: string;
   descKey: string;
   wired?: "activate" | "suspend" | "restore";
-  danger?: boolean;
 };
 
 type ActionGroup = {
@@ -66,7 +69,7 @@ const ACTION_GROUPS: ActionGroup[] = [
     titleKey: "administration",
     icon: Shield,
     actions: [
-      { id: "suspend", icon: Shield, labelKey: "suspend", descKey: "suspendDesc", wired: "suspend", danger: true },
+      { id: "suspend", icon: Shield, labelKey: "suspend", descKey: "suspendDesc", wired: "suspend" },
       { id: "activate", icon: Shield, labelKey: "activate", descKey: "activateDesc", wired: "activate" },
       { id: "restore", icon: Shield, labelKey: "restore", descKey: "restoreDesc", wired: "restore" },
       { id: "auditLog", icon: FileText, labelKey: "auditLog", descKey: "auditLogDesc" },
@@ -74,111 +77,56 @@ const ACTION_GROUPS: ActionGroup[] = [
   },
 ];
 
-function DisabledActionCard({
-  icon: Icon,
-  label,
-  description,
-}: {
-  icon: LucideIcon;
-  label: string;
-  description: string;
-}) {
-  const tu = useTranslations("organization");
-  return (
-    <EntityUnavailable reason={tu("unavailable")} className="w-full">
-      <button
-        type="button"
-        disabled
-        className="flex w-full items-start gap-3 rounded-md border border-border bg-card/30 p-3.5 text-left opacity-60"
-      >
-        <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
-        <div>
-          <p className="text-sm font-bold text-foreground">{label}</p>
-          <p className="text-xs text-muted-foreground">{description}</p>
-        </div>
-      </button>
-    </EntityUnavailable>
-  );
-}
-
-function WiredLifecycleAction({
-  wired,
-  orgId,
-  status,
-}: {
-  wired: "activate" | "suspend" | "restore";
-  orgId: string;
-  status: import("@/lib/api/admin").OrgStatus;
-}) {
-  const t = useTranslations("organization.detailActions");
-  const labels = {
-    activate: { label: t("items.activate"), desc: t("items.activateDesc") },
-    suspend: { label: t("items.suspend"), desc: t("items.suspendDesc") },
-    restore: { label: t("items.restore"), desc: t("items.restoreDesc") },
-  };
-
-  const show =
-    (wired === "activate" && status === "inactive") ||
-    (wired === "suspend" && status === "active") ||
-    (wired === "restore" && status === "suspended");
-
-  if (!show) return null;
-
-  return (
-    <div className="rounded-md border border-border bg-card/40 p-3.5">
-      <p className="mb-1 text-sm font-bold text-foreground">{labels[wired].label}</p>
-      <p className="mb-3 text-xs text-muted-foreground">{labels[wired].desc}</p>
-      {wired === "activate" ? (
-        <OrganizationActivateButton orgId={orgId} status={status} />
-      ) : wired === "suspend" ? (
-        <OrganizationSuspendDialog orgId={orgId} status={status} />
-      ) : (
-        <OrganizationRestoreDialog orgId={orgId} status={status} />
-      )}
-    </div>
-  );
-}
-
 export function OrganizationActionsList() {
   const t = useTranslations("organization.detailActions");
+  const tu = useTranslations("organization");
   const { org, orgId } = useOrganizationDetail();
 
-  return (
-    <div className="flex flex-col gap-6">
-      {ACTION_GROUPS.map((group) => {
-        const GroupIcon = group.icon;
-        return (
-          <div key={group.titleKey}>
-            <div className="mb-3 flex items-center gap-2">
-              <GroupIcon className="h-4 w-4 text-muted-foreground" aria-hidden />
-              <h3 className="text-sm font-semibold text-foreground">{t(`groups.${group.titleKey}`)}</h3>
-            </div>
-            <div className="grid gap-2 sm:grid-cols-2">
-              {group.actions.map((action) => {
-                if (action.wired) {
-                  return (
-                    <WiredLifecycleAction
-                      key={action.id}
-                      wired={action.wired}
-                      orgId={orgId}
-                      status={org.status}
-                    />
-                  );
-                }
-                const Icon = action.icon;
-                return (
-                  <DisabledActionCard
-                    key={action.id}
-                    icon={Icon}
-                    label={t(`items.${action.labelKey}`)}
-                    description={t(`items.${action.descKey}`)}
-                  />
-                );
-              })}
-            </div>
-          </div>
-        );
-      })}
-    </div>
+  const groups = useMemo(
+    () =>
+      ACTION_GROUPS.map((group) => ({
+        id: group.titleKey,
+        icon: group.icon,
+        title: t(`groups.${group.titleKey}`),
+        items: group.actions.flatMap((action): EntityActionItem[] => {
+          const label = t(`items.${action.labelKey}`);
+          const description = t(`items.${action.descKey}`);
+          if (!action.wired) {
+            return [
+              {
+                id: action.id,
+                icon: action.icon,
+                label,
+                description,
+                unavailableReason: tu("unavailable"),
+              },
+            ];
+          }
+          const show =
+            (action.wired === "activate" && org.status === "inactive") ||
+            (action.wired === "suspend" && org.status === "active") ||
+            (action.wired === "restore" && org.status === "suspended");
+          if (!show) return [];
+          return [
+            {
+              id: action.id,
+              icon: action.icon,
+              label,
+              description,
+              children:
+                action.wired === "activate" ? (
+                  <OrganizationActivateButton orgId={orgId} status={org.status} />
+                ) : action.wired === "suspend" ? (
+                  <OrganizationSuspendDialog orgId={orgId} status={org.status} />
+                ) : (
+                  <OrganizationRestoreDialog orgId={orgId} status={org.status} />
+                ),
+            },
+          ];
+        }),
+      })),
+    [org.status, orgId, t, tu],
   );
+
+  return <EntityActionGroups groups={groups} />;
 }

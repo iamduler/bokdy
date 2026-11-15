@@ -1,6 +1,7 @@
 export { DataListStats, type DataListStatItem } from "./data-list-stats";
 export {
   DataListLayout,
+  type DataListLayoutProps,
   type DataListStatusTab,
 } from "./data-list-layout";
 export { DataListEmpty, DataTableSkeleton } from "./data-list-empty";

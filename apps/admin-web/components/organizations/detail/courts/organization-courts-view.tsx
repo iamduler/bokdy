@@ -1,12 +1,14 @@
 "use client";
 
-import { Button, cn, InputGroup, InputGroupAddon, InputGroupInput, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@bokdy/ui";
-import { Plus, Search } from "lucide-react";
+import { Button, cn, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@bokdy/ui";
+import { Plus } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 
 import { sportLabel } from "@/components/branches/branch-sports-chips";
-import { DataListEmpty, softDirectoryPrimaryBtn, softFilterControl } from "@/components/data-list";
+import { DataListEmpty, softDirectoryPrimaryBtn } from "@/components/data-list";
+import { FilterSearchField } from "@/components/data-list/filter-search-field";
+import { FilterSelect } from "@/components/data-list/filter-select";
 import { EntityDetailPanel } from "@/components/entity/detail-panel";
 import {
   EntityDetailError,
@@ -17,13 +19,10 @@ import { SoftStatusChip } from "@/components/entity/soft-status-chip";
 import { CourtCard } from "@/components/courts/court-card";
 import { CourtFormSheet } from "@/components/courts/court-form-sheet";
 import { COURT_STATUS_TONE } from "@/components/courts/court-status";
-import { CollectionViewToggle } from "@/components/organizations/detail/collection-view-toggle";
+import { CollectionViewToggle } from "@/components/entity/collection-view-toggle";
 import { OrganizationSectionFrame } from "@/components/organizations/detail/organization-section-frame";
-import { useCollectionViewMode } from "@/components/organizations/detail/use-collection-view-mode";
-import {
-  PopoverCommandSelect,
-  type PopoverCommandOption,
-} from "@/components/popover-command-select";
+import { useCollectionViewMode } from "@/components/entity/use-collection-view-mode";
+import { type PopoverCommandOption } from "@/components/popover-command-select";
 import { useBranches } from "@/hooks/use-branches";
 import { useOrgCourts } from "@/hooks/use-courts";
 import { useSports } from "@/hooks/use-sports";
@@ -33,10 +32,6 @@ import { ApiError } from "@/lib/api/errors";
 import { useOrganizationDetail } from "../organization-detail-context";
 
 const ALL = "";
-const filterComboClass = cn(
-  "h-8 min-w-[8.5rem] justify-between px-2.5 text-xs font-medium",
-  softFilterControl,
-);
 const ROW = "border-border/40 hover:bg-muted/30";
 
 function CourtList({
@@ -211,44 +206,29 @@ export function OrganizationCourtsView() {
         toolbar={
           courts.length > 0 ? (
           <>
-            <InputGroup className={cn("h-8 min-w-[12rem] flex-1", softFilterControl)}>
-              <InputGroupAddon align="inline-start" className="text-foreground/70">
-                <Search aria-hidden />
-              </InputGroupAddon>
-              <InputGroupInput
-                type="search"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                aria-label={t("search")}
-                placeholder={t("search")}
-                autoComplete="off"
-                className="placeholder:text-foreground/70"
-              />
-            </InputGroup>
-            <PopoverCommandSelect
+            <FilterSearchField
+              value={query}
+              onChange={setQuery}
+              label={t("search")}
+            />
+            <FilterSelect
               value={filterBranch}
               onValueChange={setFilterBranch}
               options={branchOptions}
-              aria-label={t("filterBranch")}
+              ariaLabel={t("filterBranch")}
               searchable
-              className={filterComboClass}
-              align="start"
             />
-            <PopoverCommandSelect
+            <FilterSelect
               value={filterStatus}
               onValueChange={setFilterStatus}
               options={statusOptions}
-              aria-label={t("filterStatus")}
-              className={filterComboClass}
-              align="start"
+              ariaLabel={t("filterStatus")}
             />
-            <PopoverCommandSelect
+            <FilterSelect
               value={filterEnv}
               onValueChange={setFilterEnv}
               options={envOptions}
-              aria-label={t("filterEnvironment")}
-              className={filterComboClass}
-              align="start"
+              ariaLabel={t("filterEnvironment")}
             />
           </>
           ) : null

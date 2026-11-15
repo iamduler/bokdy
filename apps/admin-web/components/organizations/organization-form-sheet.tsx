@@ -1,10 +1,8 @@
 "use client";
 
-import { Sheet, SheetContent } from "@bokdy/ui";
 import { useTranslations } from "next-intl";
-import { useRef } from "react";
 
-import { EntityFormSheetHeader } from "@/components/entity/form-sheet-header";
+import { EntityFormSheet } from "@/components/entity/entity-form-sheet";
 import type { AdminOrganization } from "@/lib/api/admin";
 
 import { OrganizationForm } from "./organization-form";
@@ -16,7 +14,6 @@ type OrganizationFormSheetProps = {
 
 export function OrganizationFormSheet(props: OrganizationFormSheetProps) {
   const t = useTranslations("organization");
-  const leaveRef = useRef<() => void>(() => props.onOpenChange(false));
   const title = props.mode === "create" ? t("createTitle") : t("editTitle");
   const fullPageHref =
     props.mode === "create"
@@ -24,31 +21,22 @@ export function OrganizationFormSheet(props: OrganizationFormSheetProps) {
       : `/organizations/${props.organization.id}/edit`;
 
   return (
-    <Sheet
+    <EntityFormSheet
       open={props.open}
-      onOpenChange={(next) => {
-        if (next) return;
-        leaveRef.current();
-      }}
+      onOpenChange={props.onOpenChange}
+      title={title}
+      fullPageHref={fullPageHref}
     >
-      <SheetContent
-        side="right"
-        className="flex h-full w-full flex-col gap-0 p-0 sm:max-w-2xl"
-      >
-        <EntityFormSheetHeader title={title} fullPageHref={fullPageHref} />
-        {props.open ? (
-          <OrganizationForm
-            {...(props.mode === "edit"
-              ? { mode: "edit" as const, organization: props.organization }
-              : { mode: "create" as const })}
-            layout="sheet"
-            onDone={() => props.onOpenChange(false)}
-            onRegisterLeave={(leave) => {
-              leaveRef.current = leave;
-            }}
-          />
-        ) : null}
-      </SheetContent>
-    </Sheet>
+      {(registerLeave) => (
+        <OrganizationForm
+          {...(props.mode === "edit"
+            ? { mode: "edit" as const, organization: props.organization }
+            : { mode: "create" as const })}
+          layout="sheet"
+          onDone={() => props.onOpenChange(false)}
+          onRegisterLeave={registerLeave}
+        />
+      )}
+    </EntityFormSheet>
   );
 }

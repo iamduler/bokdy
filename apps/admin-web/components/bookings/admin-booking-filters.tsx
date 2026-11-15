@@ -1,11 +1,11 @@
 "use client";
 
-import { DatePicker, InputGroup, InputGroupAddon, InputGroupInput, cn } from "@bokdy/ui";
-import { Search } from "lucide-react";
+import { DatePicker, cn } from "@bokdy/ui";
 import { useLocale, useTranslations } from "next-intl";
 
 import { softFilterControl } from "@/components/data-list";
-import { PopoverCommandSelect } from "@/components/popover-command-select";
+import { FilterSearchField } from "@/components/data-list/filter-search-field";
+import { FilterSelect } from "@/components/data-list/filter-select";
 import type { AdminBookingStatus } from "@/lib/api/admin-bookings";
 
 const STATUSES: AdminBookingStatus[] = [
@@ -43,21 +43,12 @@ export function AdminBookingFilters({
         className,
       )}
     >
-      <InputGroup className={cn("h-8 min-w-[12rem] flex-1", softFilterControl)}>
-        <InputGroupAddon align="inline-start" className="text-foreground/70">
-          <Search aria-hidden />
-        </InputGroupAddon>
-        <InputGroupInput
-          type="search"
-          value={q}
-          onChange={(event) => onChange({ q: event.target.value })}
-          aria-label={t("search")}
-          placeholder={t("search")}
-          autoComplete="off"
-          className="placeholder:text-foreground/70"
-        />
-      </InputGroup>
-      <PopoverCommandSelect
+      <FilterSearchField
+        value={q}
+        onChange={(value) => onChange({ q: value })}
+        label={t("search")}
+      />
+      <FilterSelect
         value={status}
         onValueChange={(value) => onChange({ status: value })}
         options={[
@@ -68,13 +59,7 @@ export function AdminBookingFilters({
             keywords: item,
           })),
         ]}
-        aria-label={t("status")}
-        searchable={false}
-        align="start"
-        className={cn(
-          "h-8 min-w-[8.5rem] justify-between px-2.5 text-xs font-medium",
-          softFilterControl,
-        )}
+        ariaLabel={t("status")}
       />
       <DatePicker
         value={from}

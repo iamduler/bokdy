@@ -83,7 +83,7 @@ Tabs that are not Soft-cover overview (schedule, holidays, images, amenities, co
 
 ## Golden paths
 
-- Org sections: `organizations/detail/organization-section-frame.tsx`
+- Org sections: `entity/detail-section-frame.tsx` via `organizations/detail/organization-section-frame.tsx`
 - Branch: `branch-detail-view.tsx` + `branch-detail-hero.tsx`
 - Court: `courts/detail/court-overview-view.tsx`
 - Branch secondary tabs: `branches/detail/branch-tab-state.tsx` (`BranchTabBody`)

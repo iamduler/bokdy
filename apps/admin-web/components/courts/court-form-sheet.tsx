@@ -1,10 +1,8 @@
 "use client";
 
-import { Sheet, SheetContent } from "@bokdy/ui";
 import { useTranslations } from "next-intl";
-import { useRef } from "react";
 
-import { EntityFormSheetHeader } from "@/components/entity/form-sheet-header";
+import { EntityFormSheet } from "@/components/entity/entity-form-sheet";
 import type { Court } from "@/lib/api/courts";
 
 import { CourtForm } from "./court-form";
@@ -32,46 +30,33 @@ function courtFullPageHref(props: CourtFormSheetProps): string | null {
 
 export function CourtFormSheet(props: CourtFormSheetProps) {
   const t = useTranslations("organization.court");
-  const leaveRef = useRef<() => void>(() => props.onOpenChange(false));
   const title =
     props.mode === "create"
       ? t("createTitle")
       : props.mode === "duplicate"
         ? t("duplicateTitle")
         : t("editTitle");
-  const fullPageHref = courtFullPageHref(props);
 
   return (
-    <Sheet
+    <EntityFormSheet
       open={props.open}
-      onOpenChange={(next) => {
-        if (next) return;
-        leaveRef.current();
-      }}
+      onOpenChange={props.onOpenChange}
+      title={title}
+      fullPageHref={courtFullPageHref(props)}
+      className="sm:max-w-xl"
     >
-      <SheetContent side="right" className="flex h-full w-full flex-col gap-0 p-0 sm:max-w-xl">
-        {fullPageHref ? (
-          <EntityFormSheetHeader title={title} fullPageHref={fullPageHref} />
-        ) : (
-          <div className="border-b border-border px-4 py-3 pr-12">
-            <p className="text-base font-semibold text-foreground">{title}</p>
-          </div>
-        )}
-        {props.open ? (
-          <CourtForm
-            {...(props.mode === "create"
-              ? { mode: "create" as const }
-              : { mode: props.mode, court: props.court })}
-            organizationId={props.organizationId}
-            fixedBranchId={props.fixedBranchId}
-            layout="sheet"
-            onDone={() => props.onOpenChange(false)}
-            onRegisterLeave={(leave) => {
-              leaveRef.current = leave;
-            }}
-          />
-        ) : null}
-      </SheetContent>
-    </Sheet>
+      {(registerLeave) => (
+        <CourtForm
+          {...(props.mode === "create"
+            ? { mode: "create" as const }
+            : { mode: props.mode, court: props.court })}
+          organizationId={props.organizationId}
+          fixedBranchId={props.fixedBranchId}
+          layout="sheet"
+          onDone={() => props.onOpenChange(false)}
+          onRegisterLeave={registerLeave}
+        />
+      )}
+    </EntityFormSheet>
   );
 }

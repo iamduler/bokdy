@@ -7,9 +7,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
   Table,
   TableBody,
   TableCell,
@@ -18,7 +15,7 @@ import {
   TableRow,
   toast,
 } from "@bokdy/ui";
-import { MoreHorizontal, Plus, Search } from "lucide-react";
+import { MoreHorizontal, Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 
@@ -26,8 +23,9 @@ import {
   DataListEmpty,
   softDetailSectionGap,
   softDirectoryPrimaryBtn,
-  softFilterControl,
 } from "@/components/data-list";
+import { FilterSearchField } from "@/components/data-list/filter-search-field";
+import { FilterSelect } from "@/components/data-list/filter-select";
 import { entityInitials } from "@/components/entity/avatar";
 import { EntityDetailPanel } from "@/components/entity/detail-panel";
 import {
@@ -37,10 +35,7 @@ import {
 import { SoftChip } from "@/components/entity/soft-chip";
 import { OrganizationSectionFrame } from "@/components/organizations/detail/organization-section-frame";
 import { useOrganizationDetail } from "@/components/organizations/detail/organization-detail-context";
-import {
-  PopoverCommandSelect,
-  type PopoverCommandOption,
-} from "@/components/popover-command-select";
+import { type PopoverCommandOption } from "@/components/popover-command-select";
 import { TeamInviteSheet } from "@/components/team/team-invite-sheet";
 import { TeamMemberSheet } from "@/components/team/team-member-sheet";
 import { TeamRoleChip } from "@/components/team/team-role-chip";
@@ -81,10 +76,6 @@ const SOFT_ROW = "border-border/40 hover:bg-muted/30";
 const ALL = "";
 const TEAM_ROLES = ["org_owner", "org_staff"] as const satisfies readonly StaffRoleCode[];
 const TEAM_STATUSES = ["active", "suspended", "resigned", "pending"] as const;
-const filterComboClass = cn(
-  "h-8 min-w-[8.5rem] justify-between px-2.5 text-xs font-medium",
-  softFilterControl,
-);
 
 function textMatches(parts: Array<string | null | undefined>, needle: string) {
   if (!needle) return true;
@@ -243,35 +234,18 @@ export function TeamView() {
         toolbar={
           hasRows ? (
             <>
-              <InputGroup className={cn("h-8 min-w-[12rem] flex-1", softFilterControl)}>
-                <InputGroupAddon align="inline-start" className="text-foreground/70">
-                  <Search aria-hidden />
-                </InputGroupAddon>
-                <InputGroupInput
-                  type="search"
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  aria-label={t("search")}
-                  placeholder={t("search")}
-                  autoComplete="off"
-                  className="placeholder:text-foreground/70"
-                />
-              </InputGroup>
-              <PopoverCommandSelect
+              <FilterSearchField value={query} onChange={setQuery} label={t("search")} />
+              <FilterSelect
                 value={filterRole}
                 onValueChange={setFilterRole}
                 options={roleOptions}
-                aria-label={t("filterRole")}
-                className={filterComboClass}
-                align="start"
+                ariaLabel={t("filterRole")}
               />
-              <PopoverCommandSelect
+              <FilterSelect
                 value={filterStatus}
                 onValueChange={setFilterStatus}
                 options={statusOptions}
-                aria-label={t("filterStatus")}
-                className={filterComboClass}
-                align="start"
+                ariaLabel={t("filterStatus")}
               />
             </>
           ) : null
