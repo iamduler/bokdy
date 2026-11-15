@@ -126,3 +126,93 @@ ORDER BY amenity_id ASC;
 SELECT court_id, amenity_id FROM catalog.court_amenities
 WHERE court_id = ANY(sqlc.arg(court_ids)::uuid[])
 ORDER BY court_id ASC, amenity_id ASC;
+
+-- name: ListCourtsAdmin :many
+SELECT r.id, r.code,
+       COALESCE(r.name_en, '') AS name_en, COALESCE(r.name_vi, '') AS name_vi,
+       r.status, r.environment,
+       o.id AS organization_id,
+       COALESCE(o.name_en, '') AS organization_name_en,
+       COALESCE(o.name_vi, '') AS organization_name_vi,
+       o.logo_file_id AS organization_logo_file_id,
+       l.id AS branch_id,
+       COALESCE(l.name_en, '') AS branch_name_en,
+       COALESCE(l.name_vi, '') AS branch_name_vi,
+       l.logo_file_id AS branch_logo_file_id,
+       s.id AS sport_id,
+       COALESCE(s.name_en, '') AS sport_name_en,
+       COALESCE(s.name_vi, '') AS sport_name_vi,
+       r.created_at
+FROM catalog.courts r
+JOIN organization.branches l ON l.id = r.branch_id AND l.deleted_at IS NULL
+JOIN organization.organizations o ON o.id = l.organization_id AND o.deleted_at IS NULL
+JOIN catalog.sports s ON s.id = r.sport_id
+WHERE r.deleted_at IS NULL
+  AND r.resource_type = 'court'
+  AND (sqlc.narg(status_filter)::text IS NULL OR r.status = sqlc.narg(status_filter)::catalog.court_status)
+  AND (sqlc.narg(sport_id)::uuid IS NULL OR r.sport_id = sqlc.narg(sport_id)::uuid)
+  AND (sqlc.narg(environment)::text IS NULL OR r.environment = sqlc.narg(environment)::catalog.court_environment)
+  AND (sqlc.narg(organization_id)::uuid IS NULL OR o.id = sqlc.narg(organization_id)::uuid)
+  AND (sqlc.narg(branch_id)::uuid IS NULL OR r.branch_id = sqlc.narg(branch_id)::uuid)
+  AND (sqlc.narg(surface)::text IS NULL OR r.surface = sqlc.narg(surface)::catalog.court_surface)
+  AND (
+    sqlc.arg(q)::text = ''
+    OR lower(r.code) LIKE '%' || lower(sqlc.arg(q)::text) || '%'
+    OR lower(COALESCE(r.name_en, '')) LIKE '%' || lower(sqlc.arg(q)::text) || '%'
+    OR lower(COALESCE(r.name_vi, '')) LIKE '%' || lower(sqlc.arg(q)::text) || '%'
+  )
+ORDER BY
+  CASE WHEN sqlc.arg(sort_key)::text = 'name' AND NOT sqlc.arg(sort_desc)::bool
+    THEN lower(COALESCE(NULLIF(r.name_vi, ''), NULLIF(r.name_en, ''), r.code)) END ASC,
+  CASE WHEN sqlc.arg(sort_key)::text = 'name' AND sqlc.arg(sort_desc)::bool
+    THEN lower(COALESCE(NULLIF(r.name_vi, ''), NULLIF(r.name_en, ''), r.code)) END DESC,
+  CASE WHEN sqlc.arg(sort_key)::text = 'status' AND NOT sqlc.arg(sort_desc)::bool THEN r.status::text END ASC,
+  CASE WHEN sqlc.arg(sort_key)::text = 'status' AND sqlc.arg(sort_desc)::bool THEN r.status::text END DESC,
+  CASE WHEN sqlc.arg(sort_key)::text = 'created_at' AND NOT sqlc.arg(sort_desc)::bool THEN r.created_at END ASC,
+  CASE WHEN sqlc.arg(sort_key)::text = 'created_at' AND sqlc.arg(sort_desc)::bool THEN r.created_at END DESC,
+  r.id DESC
+OFFSET sqlc.arg(row_offset)
+LIMIT sqlc.arg(row_limit);
+
+-- name: CountCourtsAdmin :one
+SELECT COUNT(*)::int AS total
+FROM catalog.courts r
+JOIN organization.branches l ON l.id = r.branch_id AND l.deleted_at IS NULL
+JOIN organization.organizations o ON o.id = l.organization_id AND o.deleted_at IS NULL
+WHERE r.deleted_at IS NULL
+  AND r.resource_type = 'court'
+  AND (sqlc.narg(status_filter)::text IS NULL OR r.status = sqlc.narg(status_filter)::catalog.court_status)
+  AND (sqlc.narg(sport_id)::uuid IS NULL OR r.sport_id = sqlc.narg(sport_id)::uuid)
+  AND (sqlc.narg(environment)::text IS NULL OR r.environment = sqlc.narg(environment)::catalog.court_environment)
+  AND (sqlc.narg(organization_id)::uuid IS NULL OR o.id = sqlc.narg(organization_id)::uuid)
+  AND (sqlc.narg(branch_id)::uuid IS NULL OR r.branch_id = sqlc.narg(branch_id)::uuid)
+  AND (sqlc.narg(surface)::text IS NULL OR r.surface = sqlc.narg(surface)::catalog.court_surface)
+  AND (
+    sqlc.arg(q)::text = ''
+    OR lower(r.code) LIKE '%' || lower(sqlc.arg(q)::text) || '%'
+    OR lower(COALESCE(r.name_en, '')) LIKE '%' || lower(sqlc.arg(q)::text) || '%'
+    OR lower(COALESCE(r.name_vi, '')) LIKE '%' || lower(sqlc.arg(q)::text) || '%'
+  );
+
+-- name: AdminCourtDirectoryStats :one
+SELECT
+  COUNT(*)::int AS total,
+  COUNT(*) FILTER (WHERE r.status = 'active')::int AS active,
+  COUNT(*) FILTER (WHERE r.status = 'inactive')::int AS inactive,
+  COUNT(*) FILTER (WHERE r.status = 'maintenance')::int AS maintenance
+FROM catalog.courts r
+JOIN organization.branches l ON l.id = r.branch_id AND l.deleted_at IS NULL
+JOIN organization.organizations o ON o.id = l.organization_id AND o.deleted_at IS NULL
+WHERE r.deleted_at IS NULL
+  AND r.resource_type = 'court'
+  AND (sqlc.narg(sport_id)::uuid IS NULL OR r.sport_id = sqlc.narg(sport_id)::uuid)
+  AND (sqlc.narg(environment)::text IS NULL OR r.environment = sqlc.narg(environment)::catalog.court_environment)
+  AND (sqlc.narg(organization_id)::uuid IS NULL OR o.id = sqlc.narg(organization_id)::uuid)
+  AND (sqlc.narg(branch_id)::uuid IS NULL OR r.branch_id = sqlc.narg(branch_id)::uuid)
+  AND (sqlc.narg(surface)::text IS NULL OR r.surface = sqlc.narg(surface)::catalog.court_surface)
+  AND (
+    sqlc.arg(q)::text = ''
+    OR lower(r.code) LIKE '%' || lower(sqlc.arg(q)::text) || '%'
+    OR lower(COALESCE(r.name_en, '')) LIKE '%' || lower(sqlc.arg(q)::text) || '%'
+    OR lower(COALESCE(r.name_vi, '')) LIKE '%' || lower(sqlc.arg(q)::text) || '%'
+  );

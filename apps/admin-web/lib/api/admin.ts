@@ -14,11 +14,13 @@ export type TenantStatus = AdminOrganization["tenant_status"];
 export type AdminOrgListParams = ListPageParams & {
   q?: string;
   status?: OrgStatus;
+  organization_type?: OrganizationType;
   province_id?: string;
 };
 
 export type AdminOrgStatsParams = {
   q?: string;
+  organization_type?: OrganizationType;
   province_id?: string;
 };
 
@@ -27,6 +29,7 @@ function buildQuery(params: AdminOrgListParams): string {
   const q = params.q?.trim();
   if (q) qs.set("q", q);
   if (params.status) qs.set("status", params.status);
+  if (params.organization_type) qs.set("organization_type", params.organization_type);
   if (params.province_id) qs.set("province_id", params.province_id);
   appendListPageQuery(qs, params);
   const s = qs.toString();
@@ -41,6 +44,7 @@ export function organizationDirectoryStats(params: AdminOrgStatsParams = {}) {
   const qs = new URLSearchParams();
   const q = params.q?.trim();
   if (q) qs.set("q", q);
+  if (params.organization_type) qs.set("organization_type", params.organization_type);
   if (params.province_id) qs.set("province_id", params.province_id);
   const s = qs.toString();
   return apiGo<AdminOrganizationDirectoryStats>(

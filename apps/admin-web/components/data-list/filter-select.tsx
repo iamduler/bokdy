@@ -14,6 +14,9 @@ export function FilterSelect({
   onValueChange,
   options,
   ariaLabel,
+  placeholder,
+  searchPlaceholder,
+  emptyText,
   searchable,
   align = "start",
   className,
@@ -22,6 +25,9 @@ export function FilterSelect({
   onValueChange: (value: string) => void;
   options: PopoverCommandOption[];
   ariaLabel: string;
+  placeholder?: string;
+  searchPlaceholder?: string;
+  emptyText?: string;
   searchable?: boolean;
   align?: "start" | "center" | "end";
   className?: string;
@@ -32,6 +38,9 @@ export function FilterSelect({
       onValueChange={onValueChange}
       options={options}
       aria-label={ariaLabel}
+      placeholder={placeholder}
+      searchPlaceholder={searchPlaceholder}
+      emptyText={emptyText}
       searchable={searchable}
       align={align}
       className={cn(

@@ -108,6 +108,9 @@
       "commandCenter": "Command Center",
       "health": "Sức khoẻ nền tảng",
       "organizations": "Tổ chức",
+      "branches": "Chi nhánh",
+      "courts": "Sân",
+      "bookings": "Đặt sân",
       "holidays": "Ngày lễ",
       "usersPlayers": "Người chơi",
       "usersOwners": "Chủ sân & nhân viên",
@@ -124,6 +127,9 @@
       "commandCenter": "Command Center",
       "health": "Sức khoẻ nền tảng",
       "organizations": "Quản lý tổ chức",
+      "branches": "Chi nhánh",
+      "courts": "Sân",
+      "bookings": "Đặt sân",
       "organizationDetail": "Chi tiết tổ chức",
       "organizationCreate": "Tổ chức mới",
       "organizationEdit": "Sửa tổ chức",
@@ -301,7 +307,9 @@
       "statusPlaceholder": "Trạng thái",
       "plan": "Gói",
       "planUnavailable": "Lọc gói chưa có — chưa có API.",
+      "type": "Loại tổ chức",
       "province": "Tỉnh/TP",
+      "allProvinces": "Tất cả",
       "provinceUnavailable": "Lọc tỉnh chưa có — chưa có API.",
       "filterSearch": "Tìm…",
       "filterEmpty": "Không có kết quả.",
@@ -595,6 +603,24 @@
       "allBranches": "Tất cả chi nhánh",
       "allStatuses": "Tất cả trạng thái",
       "allEnvironments": "Tất cả môi trường"
+    },
+    "courtList": {
+      "title": "Danh sách sân",
+      "addCourt": "Thêm sân",
+      "search": "Tên hoặc mã sân",
+      "emptyFiltered": "Không có sân khớp bộ lọc.",
+      "filterBranch": "Lọc chi nhánh",
+      "filterStatus": "Lọc trạng thái",
+      "filterEnvironment": "Lọc môi trường",
+      "allBranches": "Tất cả chi nhánh",
+      "allStatuses": "Tất cả trạng thái",
+      "allEnvironments": "Tất cả môi trường",
+      "colName": "Sân",
+      "colSport": "Môn",
+      "colSurface": "Mặt sân",
+      "colEnvironment": "Môi trường",
+      "colStatus": "Trạng thái",
+      "colBranch": "Chi nhánh"
     },
     "court": {
       "createTitle": "Sân mới",
@@ -1665,7 +1691,18 @@
     "from": "Từ ngày",
     "to": "Đến ngày",
     "empty": "Chưa có đặt sân",
+    "emptyFilter": "Không có đặt sân khớp bộ lọc",
     "loadError": "Không tải được danh sách đặt sân",
+    "directoryTitle": "Đặt sân",
+    "directorySearch": "Tìm mã đặt, khách, email…",
+    "filterAll": "Tất cả",
+    "filterSearch": "Tìm…",
+    "filterEmpty": "Không có kết quả.",
+    "clear": "Xóa",
+    "kpiTotal": "Tổng đặt sân",
+    "kpiPending": "Chờ",
+    "kpiConfirmed": "Đã xác nhận",
+    "kpiCompleted": "Hoàn tất",
     "back": "Về danh sách đặt sân",
     "invoice": "Hóa đơn",
     "payment": "Thanh toán",
@@ -1722,6 +1759,91 @@
     "method": {
       "cash": "Tiền mặt",
       "mock": "Mock"
+    }
+  },
+  "branchDirectory": {
+    "title": "Chi nhánh",
+    "searchPlaceholder": "Tìm chi nhánh, mã…",
+    "statusFilter": "Trạng thái chi nhánh",
+    "allStatuses": "Tất cả",
+    "emptyNone": "Chưa có chi nhánh",
+    "emptyFilter": "Không có chi nhánh khớp bộ lọc",
+    "loadError": "Không tải được danh sách chi nhánh",
+    "emptyValue": "—",
+    "status": {
+      "active": "Hoạt động",
+      "inactive": "Ngưng",
+      "maintenance": "Bảo trì",
+      "archived": "Lưu trữ"
+    },
+    "kpis": {
+      "total": "Tổng chi nhánh",
+      "active": "Hoạt động",
+      "inactive": "Ngưng",
+      "maintenance": "Bảo trì",
+      "courtSecondary": "{count, plural, other {# sân}}"
+    },
+    "filters": {
+      "organization": "Tổ chức",
+      "sport": "Môn",
+      "province": "Tỉnh/TP",
+      "all": "Tất cả",
+      "search": "Tìm…",
+      "empty": "Không có kết quả.",
+      "clear": "Xóa"
+    },
+    "columns": {
+      "branch": "Chi nhánh",
+      "organization": "Tổ chức",
+      "address": "Địa chỉ",
+      "courts": "Sân",
+      "status": "Trạng thái"
+    }
+  },
+  "courtDirectory": {
+    "title": "Sân",
+    "searchPlaceholder": "Tìm sân, mã…",
+    "statusFilter": "Trạng thái sân",
+    "allStatuses": "Tất cả",
+    "emptyNone": "Chưa có sân",
+    "emptyFilter": "Không có sân khớp bộ lọc",
+    "loadError": "Không tải được danh sách sân",
+    "emptyValue": "—",
+    "status": {
+      "active": "Hoạt động",
+      "inactive": "Ngưng",
+      "maintenance": "Bảo trì",
+      "archived": "Lưu trữ"
+    },
+    "environment": {
+      "indoor": "Trong nhà",
+      "outdoor": "Ngoài trời",
+      "unspecified": "Chưa xác định"
+    },
+    "kpis": {
+      "total": "Tổng sân",
+      "active": "Hoạt động",
+      "inactive": "Ngưng",
+      "maintenance": "Bảo trì"
+    },
+    "filters": {
+      "organization": "Tổ chức",
+      "branch": "Chi nhánh",
+      "sport": "Môn",
+      "surface": "Mặt sân",
+      "environment": "Môi trường",
+      "all": "Tất cả",
+      "search": "Tìm…",
+      "empty": "Không có kết quả.",
+      "clear": "Xóa"
+    },
+    "columns": {
+      "court": "Sân",
+      "organization": "Tổ chức",
+      "branch": "Chi nhánh",
+      "sport": "Môn",
+      "environment": "Môi trường",
+      "status": "Trạng thái"
     }
   }
 }

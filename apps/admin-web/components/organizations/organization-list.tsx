@@ -10,7 +10,7 @@ import {
   DataTable,
   softDirectoryPrimaryBtn,
 } from "@/components/data-list";
-import { EntityAvatar } from "@/components/entity/avatar";
+import { EntityAvatar, entityFileSrc } from "@/components/entity/avatar";
 import { useOrganizationColumns } from "@/components/organizations/organization-columns";
 import { OrganizationStatusBadge } from "@/components/organizations/organization-status-badge";
 import { Link } from "@/i18n/navigation";
@@ -112,7 +112,7 @@ function OrganizationCard({ org }: { org: AdminOrganization }) {
       <Card className="soft-elevated border-border/40 shadow-none">
         <CardContent className="space-y-3 p-4">
           <div className="flex items-start gap-3">
-            <EntityAvatar name={org.name} size="sm" />
+            <EntityAvatar name={org.name} size="sm" src={entityFileSrc(org.logo_file_id)} />
             <div className="min-w-0 flex-1">
               <p className="font-semibold text-foreground">{org.name}</p>
               <p className="text-xs text-muted-foreground">

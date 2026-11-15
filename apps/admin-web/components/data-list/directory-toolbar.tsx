@@ -11,27 +11,26 @@ import {
 } from "@/components/data-list/data-list-layout";
 
 type DirectoryToolbarProps = Omit<DataListLayoutProps, "primaryAction"> & {
-  createLabel: string;
-  onCreate: () => void;
+  createLabel?: string;
+  onCreate?: () => void;
 };
 
-/** Directory chrome: KPI row, status tabs, search, advanced filters, and a create button. */
+/** Directory chrome: KPI row, status tabs, search, and advanced filters. Create is optional. */
 export function DirectoryToolbar({
   createLabel,
   onCreate,
   children,
   ...layout
 }: DirectoryToolbarProps) {
+  const create =
+    createLabel && onCreate ? (
+      <Button type="button" size="lg" className={softDirectoryPrimaryBtn} onClick={onCreate}>
+        <Plus className="size-4" aria-hidden />
+        {createLabel}
+      </Button>
+    ) : undefined;
   return (
-    <DataListLayout
-      {...layout}
-      primaryAction={
-        <Button type="button" size="lg" className={softDirectoryPrimaryBtn} onClick={onCreate}>
-          <Plus className="size-4" aria-hidden />
-          {createLabel}
-        </Button>
-      }
-    >
+    <DataListLayout {...layout} primaryAction={create}>
       {children}
     </DataListLayout>
   );

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"bokdy/internal/organization/entity"
 
@@ -26,6 +27,8 @@ type BranchRepository interface {
 	ListSportIDs(ctx context.Context, locationID uuid.UUID) ([]uuid.UUID, error)
 	ListSportIDsByLocations(ctx context.Context, locationIDs []uuid.UUID) (map[uuid.UUID][]uuid.UUID, error)
 	CountCourtsByLocations(ctx context.Context, locationIDs []uuid.UUID) (map[uuid.UUID]int, error)
+	ListAdmin(ctx context.Context, filter AdminBranchFilter) ([]AdminBranch, int, error)
+	DirectoryStats(ctx context.Context, q string, provinceID, organizationID, sportID *uuid.UUID) (AdminBranchStats, error)
 
 	ListGallery(ctx context.Context, locationID uuid.UUID) ([]entity.LocationMedia, error)
 	FindGalleryItem(ctx context.Context, locationID, mediaID uuid.UUID) (*entity.LocationMedia, error)
@@ -39,4 +42,42 @@ type BranchRepository interface {
 	ListAmenitiesByIDs(ctx context.Context, ids []uuid.UUID) ([]entity.Amenity, error)
 	ListAmenityIDs(ctx context.Context, locationID uuid.UUID) ([]uuid.UUID, error)
 	ReplaceAmenities(ctx context.Context, tx pgx.Tx, locationID uuid.UUID, amenityIDs []uuid.UUID) error
+}
+
+type AdminBranchFilter struct {
+	Q              string
+	Status         *entity.BranchStatus
+	ProvinceID     *uuid.UUID
+	OrganizationID *uuid.UUID
+	SportID        *uuid.UUID
+	Limit          int
+	Offset         int
+	Sort           string
+	Desc           bool
+}
+
+type AdminBranch struct {
+	ID                     uuid.UUID
+	Code                   string
+	NameEn                 string
+	NameVi                 string
+	Status                 entity.BranchStatus
+	OrganizationID         uuid.UUID
+	OrganizationNameEn     string
+	OrganizationNameVi     string
+	LogoFileID             *uuid.UUID
+	OrganizationLogoFileID *uuid.UUID
+	ProvinceNameEn         string
+	ProvinceNameVi         string
+	AddressLine1           string
+	CourtCount             int
+	CreatedAt              time.Time
+}
+
+type AdminBranchStats struct {
+	Total       int
+	Active      int
+	Inactive    int
+	Maintenance int
+	CourtTotal  int
 }

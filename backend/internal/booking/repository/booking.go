@@ -19,32 +19,57 @@ type ListFilter struct {
 	Limit    int
 }
 
-// AdminBookingFilter is the system-admin read. Exactly one of TenantID or UserID is set by the service.
+// AdminBookingFilter is the system-admin read.
+// TenantID scopes one organization, UserID scopes one player, and both nil is the global directory.
 type AdminBookingFilter struct {
-	BookingID *uuid.UUID
-	TenantID  *uuid.UUID
-	UserID    *uuid.UUID
-	Status    *entity.Status
-	From      *time.Time
-	To        *time.Time
-	Q         string
-	Limit     int
-	Offset    int
-	Sort      string
-	Desc      bool
+	BookingID      *uuid.UUID
+	TenantID       *uuid.UUID
+	UserID         *uuid.UUID
+	Status         *entity.Status
+	OrganizationID *uuid.UUID
+	BranchID       *uuid.UUID
+	From           *time.Time
+	To             *time.Time
+	Q              string
+	Limit          int
+	Offset         int
+	Sort           string
+	Desc           bool
+}
+
+type AdminBookingStatsFilter struct {
+	TenantID       *uuid.UUID
+	UserID         *uuid.UUID
+	OrganizationID *uuid.UUID
+	BranchID       *uuid.UUID
+	From           *time.Time
+	To             *time.Time
+	Q              string
+}
+
+type AdminBookingStats struct {
+	Total      int
+	Pending    int
+	Confirmed  int
+	CheckedIn  int
+	InProgress int
+	Completed  int
+	Canceled   int
 }
 
 type AdminBooking struct {
-	Booking            entity.Booking
-	OrganizationID     uuid.UUID
-	OrganizationNameEn string
-	OrganizationNameVi string
-	CustomerName       string
-	CustomerEmail      string
-	BranchNameEn       string
-	BranchNameVi       string
-	CourtNameEn        string
-	CourtNameVi        string
+	Booking                entity.Booking
+	OrganizationID         uuid.UUID
+	OrganizationNameEn     string
+	OrganizationNameVi     string
+	OrganizationLogoFileID *uuid.UUID
+	CustomerName           string
+	CustomerEmail          string
+	BranchNameEn           string
+	BranchNameVi           string
+	BranchLogoFileID       *uuid.UUID
+	CourtNameEn            string
+	CourtNameVi            string
 }
 
 type BookingRepository interface {
@@ -55,6 +80,7 @@ type BookingRepository interface {
 	LockByID(ctx context.Context, tx pgx.Tx, bookingID uuid.UUID) (*entity.Booking, error)
 	ListByTenant(ctx context.Context, tenantID uuid.UUID, filter ListFilter) ([]entity.Booking, error)
 	ListAdmin(ctx context.Context, filter AdminBookingFilter) ([]AdminBooking, int, error)
+	DirectoryStats(ctx context.Context, filter AdminBookingStatsFilter) (AdminBookingStats, error)
 	ListByCustomers(ctx context.Context, customerIDs []uuid.UUID, limit int) ([]entity.Booking, error)
 	ListExpiredPending(ctx context.Context, before time.Time, limit int) ([]entity.Booking, error)
 	Confirm(ctx context.Context, tx pgx.Tx, bookingID uuid.UUID, at time.Time) error

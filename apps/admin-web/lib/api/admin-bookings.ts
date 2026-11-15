@@ -6,6 +6,7 @@ import { appendListPageQuery, type ListPageParams } from "@/lib/api/list-page";
 export type AdminBooking = components["schemas"]["AdminBooking"];
 export type AdminBookingPage = components["schemas"]["AdminBookingPage"];
 export type AdminBookingDetail = components["schemas"]["AdminBookingDetail"];
+export type AdminBookingDirectoryStats = components["schemas"]["AdminBookingDirectoryStats"];
 export type AdminBookingStatus = AdminBooking["status"];
 
 export type AdminBookingListParams = ListPageParams & {
@@ -13,6 +14,8 @@ export type AdminBookingListParams = ListPageParams & {
   status?: AdminBookingStatus;
   from?: string;
   to?: string;
+  organization_id?: string;
+  branch_id?: string;
 };
 
 const BOOKING_ZONE = "+07:00";
@@ -38,9 +41,35 @@ function buildQuery(params: AdminBookingListParams): string {
   if (params.status) qs.set("status", params.status);
   if (params.from) qs.set("from", params.from);
   if (params.to) qs.set("to", params.to);
+  if (params.organization_id) qs.set("organization_id", params.organization_id);
+  if (params.branch_id) qs.set("branch_id", params.branch_id);
   appendListPageQuery(qs, params);
   const s = qs.toString();
   return s ? `?${s}` : "";
+}
+
+export type AdminBookingStatsParams = {
+  q?: string;
+  from?: string;
+  to?: string;
+  organization_id?: string;
+  branch_id?: string;
+};
+
+export function listAdminBookings(params: AdminBookingListParams = {}) {
+  return apiGo<AdminBookingPage>(`admin/bookings${buildQuery(params)}`);
+}
+
+export function adminBookingDirectoryStats(params: AdminBookingStatsParams = {}) {
+  const qs = new URLSearchParams();
+  const q = params.q?.trim();
+  if (q) qs.set("q", q);
+  if (params.from) qs.set("from", params.from);
+  if (params.to) qs.set("to", params.to);
+  if (params.organization_id) qs.set("organization_id", params.organization_id);
+  if (params.branch_id) qs.set("branch_id", params.branch_id);
+  const s = qs.toString();
+  return apiGo<AdminBookingDirectoryStats>(`admin/bookings/stats${s ? `?${s}` : ""}`);
 }
 
 export function listOrganizationBookings(orgId: string, params: AdminBookingListParams = {}) {

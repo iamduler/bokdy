@@ -98,7 +98,11 @@ WHERE o.deleted_at IS NULL
     OR lower(COALESCE(o.name_vi, '')) LIKE '%' || lower($1::text) || '%'
   )
   AND (
-    $2::uuid IS NULL
+    $2::text IS NULL
+    OR o.organization_type = $2::organization.organization_type
+  )
+  AND (
+    $3::uuid IS NULL
     OR EXISTS (
       SELECT 1
       FROM organization.branches l
@@ -106,14 +110,15 @@ WHERE o.deleted_at IS NULL
       WHERE l.organization_id = o.id
         AND l.deleted_at IS NULL
         AND a.division_scheme = 'current_v2'
-        AND a.province_id = $2::uuid
+        AND a.province_id = $3::uuid
     )
   )
 `
 
 type AdminOrganizationDirectoryStatsParams struct {
-	Q          string     `json:"q"`
-	ProvinceID *uuid.UUID `json:"province_id"`
+	Q                string     `json:"q"`
+	OrganizationType *string    `json:"organization_type"`
+	ProvinceID       *uuid.UUID `json:"province_id"`
 }
 
 type AdminOrganizationDirectoryStatsRow struct {
@@ -125,7 +130,7 @@ type AdminOrganizationDirectoryStatsRow struct {
 }
 
 func (q *Queries) AdminOrganizationDirectoryStats(ctx context.Context, arg AdminOrganizationDirectoryStatsParams) (AdminOrganizationDirectoryStatsRow, error) {
-	row := q.db.QueryRow(ctx, adminOrganizationDirectoryStats, arg.Q, arg.ProvinceID)
+	row := q.db.QueryRow(ctx, adminOrganizationDirectoryStats, arg.Q, arg.OrganizationType, arg.ProvinceID)
 	var i AdminOrganizationDirectoryStatsRow
 	err := row.Scan(
 		&i.Total,
@@ -165,7 +170,11 @@ WHERE o.deleted_at IS NULL
     OR lower(COALESCE(o.name_vi, '')) LIKE '%' || lower($2::text) || '%'
   )
   AND (
-    $3::uuid IS NULL
+    $3::text IS NULL
+    OR o.organization_type = $3::organization.organization_type
+  )
+  AND (
+    $4::uuid IS NULL
     OR EXISTS (
       SELECT 1
       FROM organization.branches l
@@ -173,19 +182,25 @@ WHERE o.deleted_at IS NULL
       WHERE l.organization_id = o.id
         AND l.deleted_at IS NULL
         AND a.division_scheme = 'current_v2'
-        AND a.province_id = $3::uuid
+        AND a.province_id = $4::uuid
     )
   )
 `
 
 type CountOrganizationsAdminParams struct {
-	StatusFilter *string    `json:"status_filter"`
-	Q            string     `json:"q"`
-	ProvinceID   *uuid.UUID `json:"province_id"`
+	StatusFilter     *string    `json:"status_filter"`
+	Q                string     `json:"q"`
+	OrganizationType *string    `json:"organization_type"`
+	ProvinceID       *uuid.UUID `json:"province_id"`
 }
 
 func (q *Queries) CountOrganizationsAdmin(ctx context.Context, arg CountOrganizationsAdminParams) (int32, error) {
-	row := q.db.QueryRow(ctx, countOrganizationsAdmin, arg.StatusFilter, arg.Q, arg.ProvinceID)
+	row := q.db.QueryRow(ctx, countOrganizationsAdmin,
+		arg.StatusFilter,
+		arg.Q,
+		arg.OrganizationType,
+		arg.ProvinceID,
+	)
 	var total int32
 	err := row.Scan(&total)
 	return total, err
@@ -589,7 +604,11 @@ WHERE o.deleted_at IS NULL
     OR lower(COALESCE(o.name_vi, '')) LIKE '%' || lower($2::text) || '%'
   )
   AND (
-    $3::uuid IS NULL
+    $3::text IS NULL
+    OR o.organization_type = $3::organization.organization_type
+  )
+  AND (
+    $4::uuid IS NULL
     OR EXISTS (
       SELECT 1
       FROM organization.branches l
@@ -597,49 +616,50 @@ WHERE o.deleted_at IS NULL
       WHERE l.organization_id = o.id
         AND l.deleted_at IS NULL
         AND a.division_scheme = 'current_v2'
-        AND a.province_id = $3::uuid
+        AND a.province_id = $4::uuid
     )
   )
 ORDER BY
-  CASE WHEN $4::text = 'name' AND NOT $5::bool
+  CASE WHEN $5::text = 'name' AND NOT $6::bool
     THEN lower(COALESCE(NULLIF(o.name_vi, ''), NULLIF(o.name_en, ''), o.code)) END ASC,
-  CASE WHEN $4::text = 'name' AND $5::bool
+  CASE WHEN $5::text = 'name' AND $6::bool
     THEN lower(COALESCE(NULLIF(o.name_vi, ''), NULLIF(o.name_en, ''), o.code)) END DESC,
-  CASE WHEN $4::text = 'status' AND NOT $5::bool THEN o.status::text END ASC,
-  CASE WHEN $4::text = 'status' AND $5::bool THEN o.status::text END DESC,
-  CASE WHEN $4::text = 'branch_count' AND NOT $5::bool THEN (
+  CASE WHEN $5::text = 'status' AND NOT $6::bool THEN o.status::text END ASC,
+  CASE WHEN $5::text = 'status' AND $6::bool THEN o.status::text END DESC,
+  CASE WHEN $5::text = 'branch_count' AND NOT $6::bool THEN (
     SELECT COUNT(*)::int FROM organization.branches l WHERE l.organization_id = o.id AND l.deleted_at IS NULL
   ) END ASC,
-  CASE WHEN $4::text = 'branch_count' AND $5::bool THEN (
+  CASE WHEN $5::text = 'branch_count' AND $6::bool THEN (
     SELECT COUNT(*)::int FROM organization.branches l WHERE l.organization_id = o.id AND l.deleted_at IS NULL
   ) END DESC,
-  CASE WHEN $4::text = 'court_count' AND NOT $5::bool THEN (
+  CASE WHEN $5::text = 'court_count' AND NOT $6::bool THEN (
     SELECT COUNT(*)::int
     FROM catalog.courts r
     JOIN organization.branches b ON b.id = r.branch_id AND b.deleted_at IS NULL
     WHERE b.organization_id = o.id AND r.deleted_at IS NULL AND r.resource_type = 'court' AND r.status <> 'archived'
   ) END ASC,
-  CASE WHEN $4::text = 'court_count' AND $5::bool THEN (
+  CASE WHEN $5::text = 'court_count' AND $6::bool THEN (
     SELECT COUNT(*)::int
     FROM catalog.courts r
     JOIN organization.branches b ON b.id = r.branch_id AND b.deleted_at IS NULL
     WHERE b.organization_id = o.id AND r.deleted_at IS NULL AND r.resource_type = 'court' AND r.status <> 'archived'
   ) END DESC,
-  CASE WHEN $4::text = 'created_at' AND NOT $5::bool THEN o.created_at END ASC,
-  CASE WHEN $4::text = 'created_at' AND $5::bool THEN o.created_at END DESC,
+  CASE WHEN $5::text = 'created_at' AND NOT $6::bool THEN o.created_at END ASC,
+  CASE WHEN $5::text = 'created_at' AND $6::bool THEN o.created_at END DESC,
   o.id DESC
-OFFSET $6
-LIMIT $7
+OFFSET $7
+LIMIT $8
 `
 
 type ListOrganizationsAdminParams struct {
-	StatusFilter *string    `json:"status_filter"`
-	Q            string     `json:"q"`
-	ProvinceID   *uuid.UUID `json:"province_id"`
-	SortKey      string     `json:"sort_key"`
-	SortDesc     bool       `json:"sort_desc"`
-	RowOffset    int32      `json:"row_offset"`
-	RowLimit     int32      `json:"row_limit"`
+	StatusFilter     *string    `json:"status_filter"`
+	Q                string     `json:"q"`
+	OrganizationType *string    `json:"organization_type"`
+	ProvinceID       *uuid.UUID `json:"province_id"`
+	SortKey          string     `json:"sort_key"`
+	SortDesc         bool       `json:"sort_desc"`
+	RowOffset        int32      `json:"row_offset"`
+	RowLimit         int32      `json:"row_limit"`
 }
 
 type ListOrganizationsAdminRow struct {
@@ -673,6 +693,7 @@ func (q *Queries) ListOrganizationsAdmin(ctx context.Context, arg ListOrganizati
 	rows, err := q.db.Query(ctx, listOrganizationsAdmin,
 		arg.StatusFilter,
 		arg.Q,
+		arg.OrganizationType,
 		arg.ProvinceID,
 		arg.SortKey,
 		arg.SortDesc,

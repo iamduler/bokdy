@@ -54,6 +54,8 @@ export type DataListLayoutProps = {
   searchAriaLabel?: string;
   advancedLabel: string;
   advancedContent: ReactNode;
+  /** Extra classes for the advanced-filter popover. */
+  advancedClassName?: string;
   hasAdvancedFilters?: boolean;
   advancedFilterCount?: number;
   onClearFilters?: () => void;
@@ -84,6 +86,7 @@ export function DataListLayout({
   searchAriaLabel,
   advancedLabel,
   advancedContent,
+  advancedClassName,
   hasAdvancedFilters,
   advancedFilterCount = 0,
   onClearFilters,
@@ -162,21 +165,6 @@ export function DataListLayout({
           </div>
 
           <div className="flex shrink-0 items-center gap-2">
-            <InputGroup className="min-w-0 flex-1 overflow-hidden rounded-full border-0 bg-muted/50 shadow-none sm:w-60 sm:flex-none has-[[data-slot=input-group-control]:focus-visible]:ring-1">
-              <InputGroupInput
-                type="search"
-                value={searchValue}
-                onChange={(event) => onSearchChange(event.target.value)}
-                placeholder={searchPlaceholder}
-                autoComplete="off"
-                aria-label={searchAriaLabel ?? searchPlaceholder}
-                className="rounded-full border-0 bg-transparent shadow-none"
-              />
-              <InputGroupAddon align="inline-start">
-                <Search aria-hidden />
-              </InputGroupAddon>
-            </InputGroup>
-
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -194,7 +182,7 @@ export function DataListLayout({
                   ) : null}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent align="end" className="w-72 space-y-3 p-3">
+              <PopoverContent align="end" className={cn("w-72 space-y-3 p-3", advancedClassName)}>
                 {advancedContent}
               </PopoverContent>
             </Popover>
@@ -211,6 +199,21 @@ export function DataListLayout({
                 {clearLabel}
               </Button>
             ) : null}
+
+            <InputGroup className="min-w-0 flex-1 overflow-hidden rounded-full border-0 bg-muted/50 shadow-none sm:w-60 sm:flex-none has-[[data-slot=input-group-control]:focus-visible]:ring-1">
+              <InputGroupInput
+                type="search"
+                value={searchValue}
+                onChange={(event) => onSearchChange(event.target.value)}
+                placeholder={searchPlaceholder}
+                autoComplete="off"
+                aria-label={searchAriaLabel ?? searchPlaceholder}
+                className="rounded-full border-0 bg-transparent shadow-none"
+              />
+              <InputGroupAddon align="inline-start">
+                <Search aria-hidden />
+              </InputGroupAddon>
+            </InputGroup>
           </div>
         </div>
 

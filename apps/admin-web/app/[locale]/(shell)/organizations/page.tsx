@@ -16,7 +16,7 @@ import {
   useOrganizationDirectoryStats,
 } from "@/hooks/use-admin-organizations";
 import { useRouter } from "@/i18n/navigation";
-import type { OrgStatus } from "@/lib/api/admin";
+import type { OrganizationType, OrgStatus } from "@/lib/api/admin";
 import {
   applySearchUpdates,
   queryFromSorting,
@@ -29,6 +29,15 @@ const ORG_STATUSES = new Set<OrgStatus>([
   "inactive",
   "suspended",
   "archived",
+]);
+
+const ORG_TYPES = new Set<OrganizationType>([
+  "company",
+  "club",
+  "school",
+  "government",
+  "individual",
+  "other",
 ]);
 
 const ORG_SORTS = new Set(["created_at", "name", "status", "branch_count", "court_count"]);
@@ -52,6 +61,11 @@ function parseStatus(raw: string | null): OrgStatus | "" {
   return ORG_STATUSES.has(raw as OrgStatus) ? (raw as OrgStatus) : "";
 }
 
+function parseOrganizationType(raw: string | null): OrganizationType | "" {
+  if (!raw) return "";
+  return ORG_TYPES.has(raw as OrganizationType) ? (raw as OrganizationType) : "";
+}
+
 function OrganizationsPageContent() {
   const ts = useTranslations("shell");
   usePageShellTitle(ts("pageTitles.organizations"));
@@ -62,7 +76,8 @@ function OrganizationsPageContent() {
   const q = searchParams.get("q") ?? "";
   const status = parseStatus(searchParams.get("status"));
   const provinceId = searchParams.get("province_id") ?? "";
-  const hasFilters = Boolean(q.trim() || status || provinceId);
+  const organizationType = parseOrganizationType(searchParams.get("organization_type"));
+  const hasFilters = Boolean(q.trim() || status || provinceId || organizationType);
   const page = readListPage(searchParams, DATA_LIST_PAGE_SIZE);
   const sort = ORG_SORTS.has(page.sort) ? page.sort : undefined;
   const order = sort ? (page.order ?? "desc") : undefined;
@@ -78,6 +93,7 @@ function OrganizationsPageContent() {
   const params = {
     q: q.trim() || undefined,
     status: status || undefined,
+    organization_type: organizationType || undefined,
     province_id: provinceId || undefined,
     limit: DATA_LIST_PAGE_SIZE,
     offset: page.offset,
@@ -89,6 +105,7 @@ function OrganizationsPageContent() {
     useAdminOrganizations(params);
   const statsQuery = useOrganizationDirectoryStats({
     q: q.trim() || undefined,
+    organization_type: organizationType || undefined,
     province_id: provinceId || undefined,
   });
   const orgs = data?.items ?? [];
@@ -117,6 +134,7 @@ function OrganizationsPageContent() {
         q={q}
         status={status}
         provinceId={provinceId}
+        organizationType={organizationType}
         directoryStats={directoryStats}
         statsLoading={statsQuery.isLoading}
         onOpenCreate={openCreate}

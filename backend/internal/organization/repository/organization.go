@@ -11,13 +11,14 @@ import (
 )
 
 type AdminListFilter struct {
-	Q          string
-	Status     *entity.OrganizationStatus
-	ProvinceID *uuid.UUID
-	Limit      int
-	Offset     int
-	Sort       string
-	Desc       bool
+	Q                string
+	Status           *entity.OrganizationStatus
+	OrganizationType *entity.OrganizationType
+	ProvinceID       *uuid.UUID
+	Limit            int
+	Offset           int
+	Sort             string
+	Desc             bool
 }
 
 type AdminDirectory struct {
@@ -45,7 +46,7 @@ type OrganizationRepository interface {
 	ListByUser(ctx context.Context, userID uuid.UUID) ([]entity.Organization, error)
 	ListAdmin(ctx context.Context, filter AdminListFilter) ([]AdminOrganization, int, error)
 	Directory(ctx context.Context, orgID uuid.UUID) (AdminDirectory, error)
-	DirectoryStats(ctx context.Context, q string, provinceID *uuid.UUID) (AdminDirectoryStats, error)
+	DirectoryStats(ctx context.Context, q string, organizationType *entity.OrganizationType, provinceID *uuid.UUID) (AdminDirectoryStats, error)
 	CountBranches(ctx context.Context, orgID uuid.UUID) (int, error)
 	Update(ctx context.Context, tx pgx.Tx, org *entity.Organization) error
 	UpdateStatus(ctx context.Context, tx pgx.Tx, orgID uuid.UUID, status entity.OrganizationStatus, at time.Time) error

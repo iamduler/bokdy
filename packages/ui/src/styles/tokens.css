@@ -32,10 +32,15 @@
   --popover: var(--bokdy-popover);
   --popover-foreground: var(--bokdy-popover-foreground);
 
-  /* Default brand accent. Logged-in chrome and Radix portals sit outside .shell--admin,
-     so bg/border/ring-shell-accent must resolve here. .shell--owner overrides to teal. */
+  /* Logged-in chrome and Radix portals sit outside .shell--admin, so shell
+     fill, border, and accent used by portaled fields must resolve here.
+     .shell--owner overrides the accent to teal. */
+  --shell-card: #ffffff;
+  --shell-border: rgba(15, 23, 42, 0.08);
+  --shell-border-strong: rgba(15, 23, 42, 0.14);
   --shell-accent: #0ea5e9;
   --shell-accent-soft: rgba(14, 165, 233, 0.12);
+  --soft-shadow-bar: 0 4px 16px rgba(15, 23, 42, 0.06);
 
   --sidebar: var(--bokdy-background);
   --sidebar-foreground: var(--bokdy-foreground);
@@ -76,6 +81,11 @@
   --popover: var(--bokdy-popover);
   --popover-foreground: var(--bokdy-popover-foreground);
   --relation-link: #7dd3fc;
+
+  --shell-card: #0f1929;
+  --shell-border: rgba(255, 255, 255, 0.1);
+  --shell-border-strong: rgba(255, 255, 255, 0.16);
+  --soft-shadow-bar: 0 4px 16px rgba(0, 0, 0, 0.35);
 }
 
 /* identity.theme = system (register default): follow OS unless html.light */
@@ -107,6 +117,11 @@
     --popover: var(--bokdy-popover);
     --popover-foreground: var(--bokdy-popover-foreground);
     --relation-link: #7dd3fc;
+
+    --shell-card: #0f1929;
+    --shell-border: rgba(255, 255, 255, 0.1);
+    --shell-border-strong: rgba(255, 255, 255, 0.16);
+    --soft-shadow-bar: 0 4px 16px rgba(0, 0, 0, 0.35);
   }
 }
 

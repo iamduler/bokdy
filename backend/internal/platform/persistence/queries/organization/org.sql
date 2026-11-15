@@ -170,6 +170,10 @@ WHERE o.deleted_at IS NULL
     OR lower(COALESCE(o.name_vi, '')) LIKE '%' || lower(sqlc.arg(q)::text) || '%'
   )
   AND (
+    sqlc.narg(organization_type)::text IS NULL
+    OR o.organization_type = sqlc.narg(organization_type)::organization.organization_type
+  )
+  AND (
     sqlc.narg(province_id)::uuid IS NULL
     OR EXISTS (
       SELECT 1
@@ -227,6 +231,10 @@ WHERE o.deleted_at IS NULL
     OR lower(COALESCE(o.name_vi, '')) LIKE '%' || lower(sqlc.arg(q)::text) || '%'
   )
   AND (
+    sqlc.narg(organization_type)::text IS NULL
+    OR o.organization_type = sqlc.narg(organization_type)::organization.organization_type
+  )
+  AND (
     sqlc.narg(province_id)::uuid IS NULL
     OR EXISTS (
       SELECT 1
@@ -258,6 +266,10 @@ WHERE o.deleted_at IS NULL
     OR lower(o.code) LIKE '%' || lower(sqlc.arg(q)::text) || '%'
     OR lower(COALESCE(o.name_en, '')) LIKE '%' || lower(sqlc.arg(q)::text) || '%'
     OR lower(COALESCE(o.name_vi, '')) LIKE '%' || lower(sqlc.arg(q)::text) || '%'
+  )
+  AND (
+    sqlc.narg(organization_type)::text IS NULL
+    OR o.organization_type = sqlc.narg(organization_type)::organization.organization_type
   )
   AND (
     sqlc.narg(province_id)::uuid IS NULL

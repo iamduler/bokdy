@@ -67,6 +67,11 @@ func (h *OrganizationHandler) AdminList(c *gin.Context) {
 		}
 		query.Status = &status
 	}
+	orgType, ok := parseOrganizationType(c)
+	if !ok {
+		return
+	}
+	query.OrganizationType = orgType
 	provinceID, ok := parseProvinceID(c)
 	if !ok {
 		return
@@ -85,11 +90,15 @@ func (h *OrganizationHandler) AdminList(c *gin.Context) {
 }
 
 func (h *OrganizationHandler) AdminDirectoryStats(c *gin.Context) {
+	orgType, ok := parseOrganizationType(c)
+	if !ok {
+		return
+	}
 	provinceID, ok := parseProvinceID(c)
 	if !ok {
 		return
 	}
-	stats, err := h.orgs.AdminDirectoryStats(c.Request.Context(), c.Query("q"), provinceID)
+	stats, err := h.orgs.AdminDirectoryStats(c.Request.Context(), c.Query("q"), orgType, provinceID)
 	if err != nil {
 		httpx.Error(c, err)
 		return
@@ -196,6 +205,39 @@ func adminUserAndOrg(c *gin.Context) (uuid.UUID, uuid.UUID, bool) {
 		return uuid.Nil, uuid.Nil, false
 	}
 	return uid, orgID, true
+}
+
+func parseOrganizationType(c *gin.Context) (*entity.OrganizationType, bool) {
+	raw := strings.TrimSpace(c.Query("organization_type"))
+	if raw == "" {
+		return nil, true
+	}
+	value, ok := entity.ParseOrganizationType(raw)
+	if !ok {
+		httpx.Fail(c, apperr.CodeValidation, "invalid organization_type")
+		return nil, false
+	}
+	return &value, true
+}
+
+func parseQueryUUID(c *gin.Context, field string) (*uuid.UUID, bool) {
+	raw := strings.TrimSpace(c.Query(field))
+	if raw == "" {
+		return nil, true
+	}
+	id, err := uuid.Parse(raw)
+	if err != nil {
+		httpx.Fail(c, apperr.CodeValidation, "invalid "+field)
+		return nil, false
+	}
+	return &id, true
+}
+
+func fileIDText(id *uuid.UUID) string {
+	if id == nil {
+		return ""
+	}
+	return id.String()
 }
 
 func parseProvinceID(c *gin.Context) (*uuid.UUID, bool) {

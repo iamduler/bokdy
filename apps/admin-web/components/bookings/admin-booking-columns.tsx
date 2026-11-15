@@ -6,6 +6,8 @@ import { useLocale, useTranslations } from "next-intl";
 import { useMemo } from "react";
 
 import { bookingFormatters } from "@/components/bookings/booking-format";
+import { DirectoryIdentityCell } from "@/components/data-list/directory-identity-cell";
+import { entityFileSrc } from "@/components/entity/avatar";
 import { EntityRelationLink } from "@/components/entity/relation-link";
 import {
   SoftStatusChip,
@@ -22,10 +24,19 @@ const BOOKING_STATUS_TONE: Record<AdminBookingStatus, SoftStatusToneKey> = {
   canceled: "rose",
 };
 
-function namedRelation(name: string | null | undefined, href: string, empty: string) {
+function namedRelation(
+  name: string | null | undefined,
+  href: string,
+  empty: string,
+  src?: string | null,
+  avatar?: boolean,
+) {
   const label = name?.trim();
   if (!label) return empty;
-  return <EntityRelationLink href={href}>{label}</EntityRelationLink>;
+  if (!avatar) return <EntityRelationLink href={href}>{label}</EntityRelationLink>;
+  return (
+    <DirectoryIdentityCell href={href} name={label} avatar relation src={src} />
+  );
 }
 
 export function useAdminBookingColumns(showOrganization: boolean) {
@@ -84,6 +95,8 @@ export function useAdminBookingColumns(showOrganization: boolean) {
             row.original.branch_name,
             `/branches/${row.original.branch_id}`,
             t("none"),
+            entityFileSrc(row.original.branch_logo_file_id),
+            true,
           ),
       },
     ];
@@ -98,6 +111,8 @@ export function useAdminBookingColumns(showOrganization: boolean) {
             row.original.organization_name,
             `/organizations/${row.original.organization_id}`,
             t("none"),
+            entityFileSrc(row.original.organization_logo_file_id),
+            true,
           ),
       });
     }

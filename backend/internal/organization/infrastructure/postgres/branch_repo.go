@@ -496,6 +496,55 @@ func appendBranchAddresses(
 	return out
 }
 
+func (r *BranchRepo) ListAdmin(ctx context.Context, filter repository.AdminBranchFilter) ([]repository.AdminBranch, int, error) {
+	var status *string
+	if filter.Status != nil {
+		s := string(*filter.Status)
+		status = &s
+	}
+	rows, err := r.q.ListBranchesAdmin(ctx, dbsqlc.ListBranchesAdminParams{
+		StatusFilter: status, ProvinceID: filter.ProvinceID,
+		OrganizationID: filter.OrganizationID, SportID: filter.SportID, Q: filter.Q,
+		SortKey: filter.Sort, SortDesc: filter.Desc,
+		RowOffset: int32(filter.Offset), RowLimit: int32(filter.Limit),
+	})
+	if err != nil {
+		return nil, 0, err
+	}
+	total, err := r.q.CountBranchesAdmin(ctx, dbsqlc.CountBranchesAdminParams{
+		StatusFilter: status, ProvinceID: filter.ProvinceID,
+		OrganizationID: filter.OrganizationID, SportID: filter.SportID, Q: filter.Q,
+	})
+	if err != nil {
+		return nil, 0, err
+	}
+	out := make([]repository.AdminBranch, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, repository.AdminBranch{
+			ID: row.ID, Code: row.Code, NameEn: row.NameEn, NameVi: row.NameVi,
+			Status: entity.BranchStatus(row.Status), OrganizationID: row.OrganizationID,
+			OrganizationNameEn: row.OrganizationNameEn, OrganizationNameVi: row.OrganizationNameVi,
+			LogoFileID: row.LogoFileID, OrganizationLogoFileID: row.OrganizationLogoFileID,
+			ProvinceNameEn: row.ProvinceNameEn, ProvinceNameVi: row.ProvinceNameVi,
+			AddressLine1: row.AddressLine1, CourtCount: int(row.CourtCount), CreatedAt: row.CreatedAt,
+		})
+	}
+	return out, int(total), nil
+}
+
+func (r *BranchRepo) DirectoryStats(ctx context.Context, q string, provinceID, organizationID, sportID *uuid.UUID) (repository.AdminBranchStats, error) {
+	row, err := r.q.AdminBranchDirectoryStats(ctx, dbsqlc.AdminBranchDirectoryStatsParams{
+		ProvinceID: provinceID, OrganizationID: organizationID, SportID: sportID, Q: q,
+	})
+	if err != nil {
+		return repository.AdminBranchStats{}, err
+	}
+	return repository.AdminBranchStats{
+		Total: int(row.Total), Active: int(row.Active), Inactive: int(row.Inactive),
+		Maintenance: int(row.Maintenance), CourtTotal: int(row.CourtTotal),
+	}, nil
+}
+
 func derefTime(t *time.Time) time.Time {
 	if t == nil {
 		return time.Time{}

@@ -20,14 +20,16 @@ import (
 var adminBookingSorts = []string{"starts_at", "status", "created_at", "total_amount"}
 
 type AdminBookingQuery struct {
-	Q         string
-	Status    *entity.Status
-	From      *time.Time
-	To        *time.Time
-	LimitRaw  string
-	OffsetRaw string
-	Sort      string
-	Order     string
+	Q              string
+	Status         *entity.Status
+	OrganizationID *uuid.UUID
+	BranchID       *uuid.UUID
+	From           *time.Time
+	To             *time.Time
+	LimitRaw       string
+	OffsetRaw      string
+	Sort           string
+	Order          string
 }
 
 type AdminBookingDetail struct {
@@ -47,6 +49,28 @@ func (s *BookingService) AdminList(ctx context.Context, orgID uuid.UUID, query A
 	}
 	filter.TenantID = &org.TenantID
 	return s.adminPage(ctx, filter, page)
+}
+
+func (s *BookingService) AdminListAll(ctx context.Context, query AdminBookingQuery) (listpage.Page[repository.AdminBooking], error) {
+	page, filter, err := s.adminFilter(query)
+	if err != nil {
+		return listpage.Page[repository.AdminBooking]{}, err
+	}
+	return s.adminPage(ctx, filter, page)
+}
+
+func (s *BookingService) AdminDirectoryStats(ctx context.Context, query AdminBookingQuery) (repository.AdminBookingStats, error) {
+	if query.From != nil && query.To != nil && !query.To.After(*query.From) {
+		return repository.AdminBookingStats{}, apperr.New(apperr.CodeValidation, "to must be after from")
+	}
+	stats, err := s.repo.DirectoryStats(ctx, repository.AdminBookingStatsFilter{
+		OrganizationID: query.OrganizationID, BranchID: query.BranchID,
+		From: query.From, To: query.To, Q: strings.TrimSpace(query.Q),
+	})
+	if err != nil {
+		return repository.AdminBookingStats{}, apperr.Wrap(err, apperr.CodeInternal, "booking directory stats")
+	}
+	return stats, nil
 }
 
 func (s *BookingService) AdminListByUser(ctx context.Context, userID uuid.UUID, query AdminBookingQuery) (listpage.Page[repository.AdminBooking], error) {
@@ -107,7 +131,8 @@ func (s *BookingService) adminFilter(query AdminBookingQuery) (listpage.Query, r
 		return listpage.Query{}, repository.AdminBookingFilter{}, apperr.New(apperr.CodeValidation, "to must be after from")
 	}
 	return page, repository.AdminBookingFilter{
-		Status: query.Status, From: query.From, To: query.To,
+		Status: query.Status, OrganizationID: query.OrganizationID, BranchID: query.BranchID,
+		From: query.From, To: query.To,
 		Q: strings.TrimSpace(query.Q), Limit: page.Limit, Offset: page.Offset,
 		Sort: page.Sort, Desc: page.Desc,
 	}, nil

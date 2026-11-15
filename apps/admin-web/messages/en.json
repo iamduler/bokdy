@@ -108,6 +108,9 @@
       "commandCenter": "Command Center",
       "health": "Platform health",
       "organizations": "Organizations",
+      "branches": "Branches",
+      "courts": "Courts",
+      "bookings": "Bookings",
       "holidays": "Holidays",
       "usersPlayers": "Players",
       "usersOwners": "Owners & staff",
@@ -124,6 +127,9 @@
       "commandCenter": "Command Center",
       "health": "Platform health",
       "organizations": "Organizations",
+      "branches": "Branches",
+      "courts": "Courts",
+      "bookings": "Bookings",
       "organizationDetail": "Organization detail",
       "organizationCreate": "New organization",
       "organizationEdit": "Edit organization",
@@ -301,7 +307,9 @@
       "statusPlaceholder": "Status",
       "plan": "Plan",
       "planUnavailable": "Plan filter unavailable — no API yet.",
+      "type": "Organization type",
       "province": "Province",
+      "allProvinces": "All",
       "provinceUnavailable": "Province filter unavailable — no API yet.",
       "filterSearch": "Search…",
       "filterEmpty": "No results.",
@@ -595,6 +603,24 @@
       "allBranches": "All branches",
       "allStatuses": "All statuses",
       "allEnvironments": "All environments"
+    },
+    "courtList": {
+      "title": "Courts",
+      "addCourt": "Add court",
+      "search": "Court name or code",
+      "emptyFiltered": "No courts match the filters.",
+      "filterBranch": "Filter by branch",
+      "filterStatus": "Filter by status",
+      "filterEnvironment": "Filter by environment",
+      "allBranches": "All branches",
+      "allStatuses": "All statuses",
+      "allEnvironments": "All environments",
+      "colName": "Court",
+      "colSport": "Sport",
+      "colSurface": "Surface",
+      "colEnvironment": "Environment",
+      "colStatus": "Status",
+      "colBranch": "Branch"
     },
     "court": {
       "createTitle": "New court",
@@ -1665,7 +1691,18 @@
     "from": "From",
     "to": "To",
     "empty": "No bookings",
+    "emptyFilter": "No bookings match these filters",
     "loadError": "Could not load bookings",
+    "directoryTitle": "Bookings",
+    "directorySearch": "Search booking no, customer, email…",
+    "filterAll": "All",
+    "filterSearch": "Search…",
+    "filterEmpty": "No results.",
+    "clear": "Clear",
+    "kpiTotal": "Total bookings",
+    "kpiPending": "Pending",
+    "kpiConfirmed": "Confirmed",
+    "kpiCompleted": "Completed",
     "back": "Back to bookings",
     "invoice": "Invoice",
     "payment": "Payment",
@@ -1722,6 +1759,91 @@
     "method": {
       "cash": "Cash",
       "mock": "Mock"
+    }
+  },
+  "branchDirectory": {
+    "title": "Branches",
+    "searchPlaceholder": "Search branch or code…",
+    "statusFilter": "Branch status",
+    "allStatuses": "All",
+    "emptyNone": "No branches yet",
+    "emptyFilter": "No branches match these filters",
+    "loadError": "Could not load branches",
+    "emptyValue": "—",
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "maintenance": "Maintenance",
+      "archived": "Archived"
+    },
+    "kpis": {
+      "total": "Total branches",
+      "active": "Active",
+      "inactive": "Inactive",
+      "maintenance": "Maintenance",
+      "courtSecondary": "{count, plural, one {# court} other {# courts}}"
+    },
+    "filters": {
+      "organization": "Organization",
+      "sport": "Sport",
+      "province": "Province",
+      "all": "All",
+      "search": "Search…",
+      "empty": "No results.",
+      "clear": "Clear"
+    },
+    "columns": {
+      "branch": "Branch",
+      "organization": "Organization",
+      "address": "Address",
+      "courts": "Courts",
+      "status": "Status"
+    }
+  },
+  "courtDirectory": {
+    "title": "Courts",
+    "searchPlaceholder": "Search court or code…",
+    "statusFilter": "Court status",
+    "allStatuses": "All",
+    "emptyNone": "No courts yet",
+    "emptyFilter": "No courts match these filters",
+    "loadError": "Could not load courts",
+    "emptyValue": "—",
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "maintenance": "Maintenance",
+      "archived": "Archived"
+    },
+    "environment": {
+      "indoor": "Indoor",
+      "outdoor": "Outdoor",
+      "unspecified": "Unspecified"
+    },
+    "kpis": {
+      "total": "Total courts",
+      "active": "Active",
+      "inactive": "Inactive",
+      "maintenance": "Maintenance"
+    },
+    "filters": {
+      "organization": "Organization",
+      "branch": "Branch",
+      "sport": "Sport",
+      "surface": "Surface",
+      "environment": "Environment",
+      "all": "All",
+      "search": "Search…",
+      "empty": "No results.",
+      "clear": "Clear"
+    },
+    "columns": {
+      "court": "Court",
+      "organization": "Organization",
+      "branch": "Branch",
+      "sport": "Sport",
+      "environment": "Environment",
+      "status": "Status"
     }
   }
 }

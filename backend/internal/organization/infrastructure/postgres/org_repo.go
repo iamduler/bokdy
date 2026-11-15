@@ -130,20 +130,22 @@ func (r *OrgRepo) ListAdmin(ctx context.Context, filter repository.AdminListFilt
 		s := string(*filter.Status)
 		statusFilter = &s
 	}
+	orgType := organizationTypeArg(filter.OrganizationType)
 	rows, err := r.q.ListOrganizationsAdmin(ctx, dbsqlc.ListOrganizationsAdminParams{
-		StatusFilter: statusFilter,
-		Q:            filter.Q,
-		ProvinceID:   filter.ProvinceID,
-		SortKey:      filter.Sort,
-		SortDesc:     filter.Desc,
-		RowOffset:    int32(filter.Offset),
-		RowLimit:     int32(filter.Limit),
+		StatusFilter:     statusFilter,
+		Q:                filter.Q,
+		OrganizationType: orgType,
+		ProvinceID:       filter.ProvinceID,
+		SortKey:          filter.Sort,
+		SortDesc:         filter.Desc,
+		RowOffset:        int32(filter.Offset),
+		RowLimit:         int32(filter.Limit),
 	})
 	if err != nil {
 		return nil, 0, err
 	}
 	total, err := r.q.CountOrganizationsAdmin(ctx, dbsqlc.CountOrganizationsAdminParams{
-		StatusFilter: statusFilter, Q: filter.Q, ProvinceID: filter.ProvinceID,
+		StatusFilter: statusFilter, Q: filter.Q, OrganizationType: orgType, ProvinceID: filter.ProvinceID,
 	})
 	if err != nil {
 		return nil, 0, err
@@ -179,9 +181,17 @@ func (r *OrgRepo) Directory(ctx context.Context, orgID uuid.UUID) (repository.Ad
 	}, nil
 }
 
-func (r *OrgRepo) DirectoryStats(ctx context.Context, q string, provinceID *uuid.UUID) (repository.AdminDirectoryStats, error) {
+func organizationTypeArg(value *entity.OrganizationType) *string {
+	if value == nil {
+		return nil
+	}
+	raw := string(*value)
+	return &raw
+}
+
+func (r *OrgRepo) DirectoryStats(ctx context.Context, q string, organizationType *entity.OrganizationType, provinceID *uuid.UUID) (repository.AdminDirectoryStats, error) {
 	row, err := r.q.AdminOrganizationDirectoryStats(ctx, dbsqlc.AdminOrganizationDirectoryStatsParams{
-		Q: q, ProvinceID: provinceID,
+		Q: q, OrganizationType: organizationTypeArg(organizationType), ProvinceID: provinceID,
 	})
 	if err != nil {
 		return repository.AdminDirectoryStats{}, err

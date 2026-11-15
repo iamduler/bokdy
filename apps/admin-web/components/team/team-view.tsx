@@ -15,25 +15,23 @@ import {
   TableRow,
   toast,
 } from "@bokdy/ui";
-import { MoreHorizontal, Plus } from "lucide-react";
+import { MoreHorizontal, Plus, Users } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 
 import {
   DataListEmpty,
+  DataTablePagination,
+  DataTableSkeleton,
   softDetailSectionGap,
   softDirectoryPrimaryBtn,
 } from "@/components/data-list";
 import { FilterSearchField } from "@/components/data-list/filter-search-field";
 import { FilterSelect } from "@/components/data-list/filter-select";
 import { entityInitials } from "@/components/entity/avatar";
-import { EntityDetailPanel } from "@/components/entity/detail-panel";
-import {
-  EntityDetailError,
-  EntityDetailLoading,
-} from "@/components/entity/detail-state";
+import { EntityCollectionPanel } from "@/components/entity/collection-panel";
 import { SoftChip } from "@/components/entity/soft-chip";
-import { OrganizationSectionFrame } from "@/components/organizations/detail/organization-section-frame";
+import { useClientCollectionPage } from "@/components/entity/use-client-collection-page";
 import { useOrganizationDetail } from "@/components/organizations/detail/organization-detail-context";
 import { type PopoverCommandOption } from "@/components/popover-command-select";
 import { TeamInviteSheet } from "@/components/team/team-invite-sheet";
@@ -77,6 +75,10 @@ const ALL = "";
 const TEAM_ROLES = ["org_owner", "org_staff"] as const satisfies readonly StaffRoleCode[];
 const TEAM_STATUSES = ["active", "suspended", "resigned", "pending"] as const;
 
+type TeamRow =
+  | { kind: "invitation"; invitation: InvitationSummary }
+  | { kind: "staff"; member: StaffMember };
+
 function textMatches(parts: Array<string | null | undefined>, needle: string) {
   if (!needle) return true;
   return parts.some((part) => part?.toLowerCase().includes(needle));
@@ -86,7 +88,6 @@ export function TeamView() {
   const t = useTranslations("team");
   const tc = useTranslations("common");
   const te = useTranslations("errors");
-  const ts = useTranslations("shell");
   const { orgId } = useOrganizationDetail();
   const staffQuery = useOrgStaff(orgId);
   const invitesQuery = useOrgInvitations(orgId);
@@ -99,7 +100,6 @@ export function TeamView() {
   const invitations = invitesQuery.data ?? [];
   const isLoading = staffQuery.isLoading || invitesQuery.isLoading;
   const isError = staffQuery.isError || invitesQuery.isError;
-  const error = staffQuery.error ?? invitesQuery.error;
   const hasRows = staff.length > 0 || invitations.length > 0;
 
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -132,8 +132,18 @@ export function TeamView() {
     });
   }, [filterRole, filterStatus, needle, staff]);
 
-  const filtering = needle !== "" || filterRole !== ALL || filterStatus !== ALL;
   const shown = filteredInvitations.length + filteredStaff.length;
+  const filteredRows = useMemo<TeamRow[]>(
+    () => [
+      ...filteredInvitations.map((invitation) => ({ kind: "invitation" as const, invitation })),
+      ...filteredStaff.map((member) => ({ kind: "staff" as const, member })),
+    ],
+    [filteredInvitations, filteredStaff],
+  );
+  const { pageItems, pagination } = useClientCollectionPage(
+    filteredRows,
+    `${needle}|${filterRole}|${filterStatus}`,
+  );
 
   const roleOptions = useMemo<PopoverCommandOption[]>(
     () => [
@@ -216,283 +226,206 @@ export function TeamView() {
     }
   };
 
+  function inviteButton() {
+    return (
+      <Button type="button" size="sm" className={softDirectoryPrimaryBtn} onClick={() => setInviteOpen(true)}>
+        <Plus className="size-3.5" aria-hidden />
+        {t("invite.cta")}
+      </Button>
+    );
+  }
+
   return (
     <>
-      <OrganizationSectionFrame
-        title={t("title")}
-        subtitle={
-          filtering
-            ? t("subtitleFiltered", {
-                shown,
-                total: staff.length + invitations.length,
-              })
-            : t("subtitle", {
-                count: counts.total,
-                pending: counts.pending,
-              })
-        }
-        toolbar={
-          hasRows ? (
-            <>
-              <FilterSearchField value={query} onChange={setQuery} label={t("search")} />
-              <FilterSelect
-                value={filterRole}
-                onValueChange={setFilterRole}
-                options={roleOptions}
-                ariaLabel={t("filterRole")}
-              />
-              <FilterSelect
-                value={filterStatus}
-                onValueChange={setFilterStatus}
-                options={statusOptions}
-                ariaLabel={t("filterStatus")}
-              />
-            </>
-          ) : null
-        }
-        actions={
-          <Button
-            type="button"
-            size="lg"
-            className={softDirectoryPrimaryBtn}
-            onClick={() => setInviteOpen(true)}
-          >
-            <Plus className="size-4" aria-hidden />
-            {t("invite.cta")}
-          </Button>
-        }
-      >
-        {isLoading ? <EntityDetailLoading label={tc("loading")} /> : null}
-        {isError ? (
-          <EntityDetailError
-            message={t("loadError")}
-            notFound={error instanceof ApiError && error.status === 404}
-            retryLabel={tc("retry")}
-            onRetry={refetch}
-            retryDisabled={staffQuery.isFetching || invitesQuery.isFetching}
-            backHref={`/organizations/${orgId}`}
-            backLabel={ts("menuBack")}
-          />
-        ) : null}
-        {!isLoading && !isError && !hasRows ? (
-          <DataListEmpty
-            title={t("empty")}
-            description={t("emptyHint")}
-            action={
+      <div className={cn("flex flex-col p-5 pt-2 md:px-6", softDetailSectionGap)}>
+        <EntityCollectionPanel
+          title={t("title")}
+          icon={<Users className="size-4" aria-hidden />}
+          tone="sky"
+          actions={inviteButton()}
+          toolbar={
+            hasRows ? (
+              <>
+                <FilterSearchField value={query} onChange={setQuery} label={t("search")} />
+                <FilterSelect
+                  value={filterRole}
+                  onValueChange={setFilterRole}
+                  options={roleOptions}
+                  ariaLabel={t("filterRole")}
+                />
+                <FilterSelect
+                  value={filterStatus}
+                  onValueChange={setFilterStatus}
+                  options={statusOptions}
+                  ariaLabel={t("filterStatus")}
+                />
+              </>
+            ) : null
+          }
+          pagination={
+            !isLoading && !isError && shown > 0 ? (
+              <DataTablePagination {...pagination} className="bg-transparent px-0 md:px-0" />
+            ) : null
+          }
+        >
+          {isLoading ? <DataTableSkeleton rows={4} columns={5} className="px-0" /> : null}
+          {isError ? (
+            <div className="space-y-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+              <p className="text-sm text-destructive">{t("loadError")}</p>
               <Button
-                type="button"
+                variant="outline"
                 size="lg"
-                className={cn("mt-3", softDirectoryPrimaryBtn)}
-                onClick={() => setInviteOpen(true)}
+                onClick={refetch}
+                disabled={staffQuery.isFetching || invitesQuery.isFetching}
               >
-                <Plus className="size-4" aria-hidden />
-                {t("invite.cta")}
+                {tc("retry")}
               </Button>
-            }
-          />
-        ) : null}
-        {!isLoading && !isError && hasRows ? (
-          <div className={cn("flex flex-col", softDetailSectionGap)}>
-            <div className="soft-elevated grid grid-cols-3 border-0 px-4 py-3">
-              {(
-                [
-                  ["owners", counts.owners],
-                  ["staff", counts.staffRole],
-                  ["pending", counts.pending],
-                ] as const
-              ).map(([key, count]) => (
-                <div key={key} className="min-w-0 px-2 text-center first:pl-0 last:pr-0">
-                  <p className="text-lg font-semibold tabular-nums text-foreground">
-                    {count}
-                  </p>
-                  <p className="truncate text-xs text-muted-foreground">
-                    {t(`sidebar.${key}`)}
-                  </p>
-                </div>
-              ))}
             </div>
-            <EntityDetailPanel className="min-w-0 overflow-hidden">
-              {shown === 0 ? (
-                <DataListEmpty className="flex-none py-8" title={t("emptyFiltered")} />
-              ) : (
-              <Table>
-                <TableHeader className="sticky top-0 z-10 bg-card">
-                  <TableRow className="border-border/40 hover:bg-transparent">
-                    {[
-                      t("colMember"),
-                      t("colRole"),
-                      t("colBranch"),
-                      t("colStatus"),
-                      "",
-                    ].map((h) => (
-                      <TableHead
-                        key={h || "actions"}
-                        className="text-[10.5px] font-semibold uppercase tracking-wider text-muted-foreground"
-                      >
-                        {h}
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredInvitations.map((inv) => (
-                    <TableRow key={`inv-${inv.id}`} className={SOFT_ROW}>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <MemberAvatar name={inv.email} />
-                          <div className="min-w-0">
-                            <p className="truncate text-[13px] font-bold">
-                              {inv.email}
-                            </p>
-                            <p className="truncate text-xs text-muted-foreground">
-                              {t("invite.pendingHint")}
-                            </p>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <TeamRoleChip
-                          code={inv.role_code}
-                          label={t(`roles.${inv.role_code}`)}
-                        />
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
-                        —
-                      </TableCell>
-                      <TableCell>
-                        <SoftChip
-                          label={t("status.pending")}
-                          tone={STAFF_STATUS_TONE.pending}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu modal={false}>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon-sm"
-                              aria-label={t("actions.more")}
-                            >
-                              <MoreHorizontal className="size-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              variant="destructive"
-                              onSelect={() => void runRevoke(inv)}
-                            >
-                              {t("actions.revoke")}
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
+          ) : null}
+          {!isLoading && !isError && !hasRows ? (
+            <DataListEmpty className="py-10" title={t("empty")} action={inviteButton()} />
+          ) : null}
+          {!isLoading && !isError && hasRows ? (
+            <div className={cn("flex flex-col", softDetailSectionGap)}>
+              <div className="grid grid-cols-3 border-b border-border/40 pb-3">
+                {(
+                  [
+                    ["owners", counts.owners],
+                    ["staff", counts.staffRole],
+                    ["pending", counts.pending],
+                  ] as const
+                ).map(([key, count]) => (
+                  <div key={key} className="min-w-0 px-2 text-center first:pl-0 last:pr-0">
+                    <p className="text-lg font-semibold tabular-nums text-foreground">{count}</p>
+                    <p className="truncate text-xs text-muted-foreground">{t(`sidebar.${key}`)}</p>
+                  </div>
+                ))}
+              </div>
+              {shown === 0 ? <DataListEmpty className="py-10" title={t("emptyFiltered")} /> : null}
+              {shown > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-border/40 hover:bg-transparent">
+                      {[t("colMember"), t("colRole"), t("colBranch"), t("colStatus"), ""].map((heading) => (
+                        <TableHead
+                          key={heading || "actions"}
+                          className="text-[10.5px] font-semibold uppercase tracking-wider text-muted-foreground"
+                        >
+                          {heading}
+                        </TableHead>
+                      ))}
                     </TableRow>
-                  ))}
-                  {filteredStaff.map((m) => {
-                    const label = memberLabel(m);
-                    const role = primaryRole(m);
-                    return (
-                      <TableRow key={m.id} className={SOFT_ROW}>
-                        <TableCell>
-                          <button
-                            type="button"
-                            className="flex items-center gap-2 text-left outline-none focus-visible:underline"
-                            onClick={() => setEditMember(m)}
-                          >
-                            <MemberAvatar name={label} />
-                            <div className="min-w-0">
-                              <p className="truncate text-[13px] font-bold">
-                                {label}
-                              </p>
-                              {m.title ? (
-                                <p className="truncate text-xs text-muted-foreground">
-                                  {m.title}
-                                </p>
-                              ) : m.email && m.full_name ? (
-                                <p className="truncate text-xs text-muted-foreground">
-                                  {m.email}
-                                </p>
-                              ) : null}
+                  </TableHeader>
+                  <TableBody>
+                    {pageItems.map((row) => {
+                      if (row.kind === "invitation") {
+                        const inv = row.invitation;
+                        return (
+                          <TableRow key={`inv-${inv.id}`} className={SOFT_ROW}>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <MemberAvatar name={inv.email} />
+                                <div className="min-w-0">
+                                  <p className="truncate text-[13px] font-bold">{inv.email}</p>
+                                  <p className="truncate text-xs text-muted-foreground">{t("invite.pendingHint")}</p>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <TeamRoleChip code={inv.role_code} label={t(`roles.${inv.role_code}`)} />
+                            </TableCell>
+                            <TableCell className="text-xs text-muted-foreground">—</TableCell>
+                            <TableCell>
+                              <SoftChip label={t("status.pending")} tone={STAFF_STATUS_TONE.pending} />
+                            </TableCell>
+                            <TableCell>
+                              <DropdownMenu modal={false}>
+                                <DropdownMenuTrigger asChild>
+                                  <Button type="button" variant="ghost" size="icon-sm" aria-label={t("actions.more")}>
+                                    <MoreHorizontal className="size-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem variant="destructive" onSelect={() => void runRevoke(inv)}>
+                                    {t("actions.revoke")}
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      }
+                      const member = row.member;
+                      const label = memberLabel(member);
+                      const role = primaryRole(member);
+                      return (
+                        <TableRow key={member.id} className={SOFT_ROW}>
+                          <TableCell>
+                            <button
+                              type="button"
+                              className="flex items-center gap-2 text-left outline-none focus-visible:underline"
+                              onClick={() => setEditMember(member)}
+                            >
+                              <MemberAvatar name={label} />
+                              <div className="min-w-0">
+                                <p className="truncate text-[13px] font-bold">{label}</p>
+                                {member.title ? (
+                                  <p className="truncate text-xs text-muted-foreground">{member.title}</p>
+                                ) : member.email && member.full_name ? (
+                                  <p className="truncate text-xs text-muted-foreground">{member.email}</p>
+                                ) : null}
+                              </div>
+                            </button>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap gap-1">
+                              {member.roles.length > 0 ? (
+                                member.roles.map((item) => (
+                                  <TeamRoleChip key={item.id} code={item.code} label={t(`roles.${item.code}`)} />
+                                ))
+                              ) : (
+                                <TeamRoleChip code={role} label={t(`roles.${role}`)} />
+                              )}
                             </div>
-                          </button>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            {m.roles.length > 0 ? (
-                              m.roles.map((r) => (
-                                <TeamRoleChip
-                                  key={r.id}
-                                  code={r.code}
-                                  label={t(`roles.${r.code}`)}
-                                />
-                              ))
-                            ) : (
-                              <TeamRoleChip
-                                code={role}
-                                label={t(`roles.${role}`)}
-                              />
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-xs text-muted-foreground">
-                          {branchName(m.branch_id)}
-                        </TableCell>
-                        <TableCell>
-                          <SoftChip
-                            label={t(`status.${m.status}`)}
-                            tone={STAFF_STATUS_TONE[m.status]}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <DropdownMenu modal={false}>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon-sm"
-                                aria-label={t("actions.more")}
-                              >
-                                <MoreHorizontal className="size-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                onSelect={() => setEditMember(m)}
-                              >
-                                {t("actions.edit")}
-                              </DropdownMenuItem>
-                              {m.status === "active" ? (
-                                <DropdownMenuItem
-                                  onSelect={() =>
-                                    void runStaffAction("suspend", m)
-                                  }
-                                >
-                                  {t("actions.suspend")}
+                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground">{branchName(member.branch_id)}</TableCell>
+                          <TableCell>
+                            <SoftChip label={t(`status.${member.status}`)} tone={STAFF_STATUS_TONE[member.status]} />
+                          </TableCell>
+                          <TableCell>
+                            <DropdownMenu modal={false}>
+                              <DropdownMenuTrigger asChild>
+                                <Button type="button" variant="ghost" size="icon-sm" aria-label={t("actions.more")}>
+                                  <MoreHorizontal className="size-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onSelect={() => setEditMember(member)}>
+                                  {t("actions.edit")}
                                 </DropdownMenuItem>
-                              ) : null}
-                              {m.status === "suspended" ? (
-                                <DropdownMenuItem
-                                  onSelect={() =>
-                                    void runStaffAction("restore", m)
-                                  }
-                                >
-                                  {t("actions.restore")}
-                                </DropdownMenuItem>
-                              ) : null}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-              )}
-            </EntityDetailPanel>
-          </div>
-        ) : null}
-      </OrganizationSectionFrame>
+                                {member.status === "active" ? (
+                                  <DropdownMenuItem onSelect={() => void runStaffAction("suspend", member)}>
+                                    {t("actions.suspend")}
+                                  </DropdownMenuItem>
+                                ) : null}
+                                {member.status === "suspended" ? (
+                                  <DropdownMenuItem onSelect={() => void runStaffAction("restore", member)}>
+                                    {t("actions.restore")}
+                                  </DropdownMenuItem>
+                                ) : null}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              ) : null}
+            </div>
+          ) : null}
+        </EntityCollectionPanel>
+      </div>
 
       <TeamInviteSheet
         open={inviteOpen}

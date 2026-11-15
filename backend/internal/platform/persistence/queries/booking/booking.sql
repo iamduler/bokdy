@@ -118,10 +118,12 @@ SELECT b.id, b.public_id, b.tenant_id, b.booking_no, b.reservation_id, b.custome
        o.id AS organization_id,
        COALESCE(o.name_en, '') AS organization_name_en,
        COALESCE(o.name_vi, '') AS organization_name_vi,
+       o.logo_file_id AS organization_logo_file_id,
        COALESCE(NULLIF(btrim(p.full_name), ''), NULLIF(btrim(c.organization_name), ''), '')::text AS customer_name,
        COALESCE(email.value, '') AS customer_email,
        COALESCE(br.name_en, '') AS branch_name_en,
        COALESCE(br.name_vi, '') AS branch_name_vi,
+       br.logo_file_id AS branch_logo_file_id,
        COALESCE(ct.name_en, '') AS court_name_en,
        COALESCE(ct.name_vi, '') AS court_name_vi
 FROM booking.bookings b
@@ -140,6 +142,8 @@ LEFT JOIN catalog.courts ct ON ct.id = b.court_id
 WHERE (sqlc.narg(booking_id)::uuid IS NULL OR b.id = sqlc.narg(booking_id)::uuid)
   AND (sqlc.narg(tenant_id)::uuid IS NULL OR b.tenant_id = sqlc.narg(tenant_id)::uuid)
   AND (sqlc.narg(user_id)::uuid IS NULL OR c.user_id = sqlc.narg(user_id)::uuid)
+  AND (sqlc.narg(organization_id)::uuid IS NULL OR o.id = sqlc.narg(organization_id)::uuid)
+  AND (sqlc.narg(branch_id)::uuid IS NULL OR b.branch_id = sqlc.narg(branch_id)::uuid)
   AND (sqlc.narg(status_filter)::text IS NULL OR b.status = sqlc.narg(status_filter)::booking.booking_status)
   AND (sqlc.narg(range_start)::timestamptz IS NULL OR b.starts_at >= sqlc.narg(range_start)::timestamptz)
   AND (sqlc.narg(range_end)::timestamptz IS NULL OR b.starts_at < sqlc.narg(range_end)::timestamptz)
@@ -179,7 +183,43 @@ LEFT JOIN LATERAL (
 WHERE (sqlc.narg(booking_id)::uuid IS NULL OR b.id = sqlc.narg(booking_id)::uuid)
   AND (sqlc.narg(tenant_id)::uuid IS NULL OR b.tenant_id = sqlc.narg(tenant_id)::uuid)
   AND (sqlc.narg(user_id)::uuid IS NULL OR c.user_id = sqlc.narg(user_id)::uuid)
+  AND (sqlc.narg(organization_id)::uuid IS NULL OR o.id = sqlc.narg(organization_id)::uuid)
+  AND (sqlc.narg(branch_id)::uuid IS NULL OR b.branch_id = sqlc.narg(branch_id)::uuid)
   AND (sqlc.narg(status_filter)::text IS NULL OR b.status = sqlc.narg(status_filter)::booking.booking_status)
+  AND (sqlc.narg(range_start)::timestamptz IS NULL OR b.starts_at >= sqlc.narg(range_start)::timestamptz)
+  AND (sqlc.narg(range_end)::timestamptz IS NULL OR b.starts_at < sqlc.narg(range_end)::timestamptz)
+  AND (
+    sqlc.arg(q)::text = ''
+    OR lower(b.booking_no) LIKE '%' || lower(sqlc.arg(q)::text) || '%'
+    OR lower(COALESCE(p.full_name, '')) LIKE '%' || lower(sqlc.arg(q)::text) || '%'
+    OR lower(COALESCE(c.organization_name, '')) LIKE '%' || lower(sqlc.arg(q)::text) || '%'
+    OR lower(COALESCE(email.value, '')) LIKE '%' || lower(sqlc.arg(q)::text) || '%'
+  );
+
+-- name: AdminBookingDirectoryStats :one
+SELECT
+  COUNT(*)::int AS total,
+  COUNT(*) FILTER (WHERE b.status = 'pending')::int AS pending,
+  COUNT(*) FILTER (WHERE b.status = 'confirmed')::int AS confirmed,
+  COUNT(*) FILTER (WHERE b.status = 'checked_in')::int AS checked_in,
+  COUNT(*) FILTER (WHERE b.status = 'in_progress')::int AS in_progress,
+  COUNT(*) FILTER (WHERE b.status = 'completed')::int AS completed,
+  COUNT(*) FILTER (WHERE b.status = 'canceled')::int AS canceled
+FROM booking.bookings b
+JOIN organization.organizations o ON o.tenant_id = b.tenant_id AND o.deleted_at IS NULL
+LEFT JOIN crm.customers c ON c.id = b.customer_id
+LEFT JOIN crm.customer_profiles p ON p.customer_id = c.id
+LEFT JOIN LATERAL (
+  SELECT cc.value
+  FROM crm.customer_contacts cc
+  WHERE cc.customer_id = c.id AND cc.contact_type = 'email'
+  ORDER BY cc.is_primary DESC, cc.created_at ASC
+  LIMIT 1
+) email ON true
+WHERE (sqlc.narg(tenant_id)::uuid IS NULL OR b.tenant_id = sqlc.narg(tenant_id)::uuid)
+  AND (sqlc.narg(user_id)::uuid IS NULL OR c.user_id = sqlc.narg(user_id)::uuid)
+  AND (sqlc.narg(organization_id)::uuid IS NULL OR o.id = sqlc.narg(organization_id)::uuid)
+  AND (sqlc.narg(branch_id)::uuid IS NULL OR b.branch_id = sqlc.narg(branch_id)::uuid)
   AND (sqlc.narg(range_start)::timestamptz IS NULL OR b.starts_at >= sqlc.narg(range_start)::timestamptz)
   AND (sqlc.narg(range_end)::timestamptz IS NULL OR b.starts_at < sqlc.narg(range_end)::timestamptz)
   AND (

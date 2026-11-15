@@ -5,31 +5,31 @@ import { useCallback, useEffect, useState } from "react";
 import { useMe } from "@/hooks/use-me";
 
 export type CollectionViewMode = "grid" | "list";
-export type CollectionViewScope = "branches" | "courts";
 
-function storageKey(userId: string, scope: CollectionViewScope) {
+function storageKey(userId: string, scope: string) {
   return `bokdy.admin.collectionView.${userId}.${scope}`;
 }
 
-function readMode(userId: string, scope: CollectionViewScope): CollectionViewMode {
+function readMode(userId: string, scope: string, fallback: CollectionViewMode): CollectionViewMode {
   try {
     const stored = window.localStorage.getItem(storageKey(userId, scope));
-    return stored === "list" ? "list" : "grid";
+    if (stored === "list" || stored === "grid") return stored;
+    return fallback;
   } catch {
-    return "grid";
+    return fallback;
   }
 }
 
-/** Grid or list for one org collection, remembered per signed-in user in this browser. */
-export function useCollectionViewMode(scope: CollectionViewScope) {
+/** Grid or list for one collection, remembered per signed-in user in this browser. */
+export function useCollectionViewMode(scope: string, fallback: CollectionViewMode = "grid") {
   const { data } = useMe();
   const userId = data?.user?.id;
-  const [mode, setModeState] = useState<CollectionViewMode>("grid");
+  const [mode, setModeState] = useState<CollectionViewMode>(fallback);
 
   useEffect(() => {
     if (!userId) return;
-    setModeState(readMode(userId, scope));
-  }, [scope, userId]);
+    setModeState(readMode(userId, scope, fallback));
+  }, [fallback, scope, userId]);
 
   const setMode = useCallback(
     (next: CollectionViewMode) => {

@@ -18,8 +18,51 @@ import (
 )
 
 func (h *BookingHandler) RegisterAdminRoutes(admin *gin.RouterGroup) {
+	admin.GET("/bookings", h.AdminListAll)
+	admin.GET("/bookings/stats", h.AdminDirectoryStats)
 	admin.GET("/organizations/:id/bookings", h.AdminList)
 	admin.GET("/organizations/:id/bookings/:bookingId", h.AdminGet)
+}
+
+func (h *BookingHandler) AdminListAll(c *gin.Context) {
+	query, ok := adminBookingQuery(c)
+	if !ok {
+		return
+	}
+	page, err := h.bookings.AdminListAll(c.Request.Context(), query)
+	if err != nil {
+		httpx.Error(c, err)
+		return
+	}
+	writeAdminBookingPage(c, page)
+}
+
+func (h *BookingHandler) AdminDirectoryStats(c *gin.Context) {
+	query, ok := adminBookingQuery(c)
+	if !ok {
+		return
+	}
+	query.Status = nil
+	stats, err := h.bookings.AdminDirectoryStats(c.Request.Context(), query)
+	if err != nil {
+		httpx.Error(c, err)
+		return
+	}
+	httpx.OK(c, adminBookingStatsDTO{
+		Total: stats.Total, Pending: stats.Pending, Confirmed: stats.Confirmed,
+		CheckedIn: stats.CheckedIn, InProgress: stats.InProgress,
+		Completed: stats.Completed, Canceled: stats.Canceled,
+	})
+}
+
+type adminBookingStatsDTO struct {
+	Total      int `json:"total"`
+	Pending    int `json:"pending"`
+	Confirmed  int `json:"confirmed"`
+	CheckedIn  int `json:"checked_in"`
+	InProgress int `json:"in_progress"`
+	Completed  int `json:"completed"`
+	Canceled   int `json:"canceled"`
 }
 
 func (h *BookingHandler) AdminList(c *gin.Context) {
@@ -104,7 +147,37 @@ func adminBookingQuery(c *gin.Context) (service.AdminBookingQuery, bool) {
 	}
 	query.From = from
 	query.To = to
+	organizationID, ok := parseBookingUUID(c, "organization_id")
+	if !ok {
+		return query, false
+	}
+	branchID, ok := parseBookingUUID(c, "branch_id")
+	if !ok {
+		return query, false
+	}
+	query.OrganizationID = organizationID
+	query.BranchID = branchID
 	return query, true
+}
+
+func parseBookingUUID(c *gin.Context, field string) (*uuid.UUID, bool) {
+	raw := strings.TrimSpace(c.Query(field))
+	if raw == "" {
+		return nil, true
+	}
+	id, err := uuid.Parse(raw)
+	if err != nil {
+		httpx.Fail(c, apperr.CodeValidation, "invalid "+field)
+		return nil, false
+	}
+	return &id, true
+}
+
+func bookingFileID(id *uuid.UUID) string {
+	if id == nil {
+		return ""
+	}
+	return id.String()
 }
 
 func parseAdminTime(c *gin.Context, field string) (*time.Time, bool) {
@@ -122,12 +195,14 @@ func parseAdminTime(c *gin.Context, field string) (*time.Time, bool) {
 
 type adminBookingDTO struct {
 	bookingDTO
-	OrganizationID   string  `json:"organization_id"`
-	OrganizationName string  `json:"organization_name"`
-	CustomerName     *string `json:"customer_name"`
-	CustomerEmail    *string `json:"customer_email"`
-	BranchName       *string `json:"branch_name"`
-	CourtName        *string `json:"court_name"`
+	OrganizationID         string  `json:"organization_id"`
+	OrganizationName       string  `json:"organization_name"`
+	OrganizationLogoFileID string  `json:"organization_logo_file_id,omitempty"`
+	CustomerName           *string `json:"customer_name"`
+	CustomerEmail          *string `json:"customer_email"`
+	BranchName             *string `json:"branch_name"`
+	BranchLogoFileID       string  `json:"branch_logo_file_id,omitempty"`
+	CourtName              *string `json:"court_name"`
 }
 
 type adminBookingDetailDTO struct {
@@ -156,13 +231,15 @@ func writeAdminBookingPage(c *gin.Context, page listpage.Page[repository.AdminBo
 
 func toAdminBookingDTO(locale string, row *repository.AdminBooking) adminBookingDTO {
 	return adminBookingDTO{
-		bookingDTO:       toBookingDTO(&row.Booking),
-		OrganizationID:   row.OrganizationID.String(),
-		OrganizationName: i18n.DisplayName(locale, row.OrganizationNameEn, row.OrganizationNameVi),
-		CustomerName:     optionalText(row.CustomerName),
-		CustomerEmail:    optionalText(row.CustomerEmail),
-		BranchName:       optionalText(i18n.DisplayName(locale, row.BranchNameEn, row.BranchNameVi)),
-		CourtName:        optionalText(i18n.DisplayName(locale, row.CourtNameEn, row.CourtNameVi)),
+		bookingDTO:             toBookingDTO(&row.Booking),
+		OrganizationID:         row.OrganizationID.String(),
+		OrganizationName:       i18n.DisplayName(locale, row.OrganizationNameEn, row.OrganizationNameVi),
+		OrganizationLogoFileID: bookingFileID(row.OrganizationLogoFileID),
+		CustomerName:           optionalText(row.CustomerName),
+		CustomerEmail:          optionalText(row.CustomerEmail),
+		BranchName:             optionalText(i18n.DisplayName(locale, row.BranchNameEn, row.BranchNameVi)),
+		BranchLogoFileID:       bookingFileID(row.BranchLogoFileID),
+		CourtName:              optionalText(i18n.DisplayName(locale, row.CourtNameEn, row.CourtNameVi)),
 	}
 }
 

@@ -7334,6 +7334,307 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/branches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all branches */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Filter by code or name */
+                    q?: string;
+                    status?: "active" | "inactive" | "maintenance" | "archived";
+                    limit?: number;
+                    offset?: components["parameters"]["AdminListOffset"];
+                    sort?: "created_at" | "name" | "status" | "court_count";
+                    order?: components["parameters"]["AdminListOrder"];
+                    /** @description Filter branches whose current address is in this province */
+                    province_id?: string;
+                    organization_id?: string;
+                    /** @description Branches that offer this sport */
+                    sport_id?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Branches */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminBranchPage"];
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/branches/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Branch directory statistics
+         * @description Counts ignore status so directory tabs stay stable. Search, province, organization, and sport filters still apply.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    q?: string;
+                    province_id?: string;
+                    organization_id?: string;
+                    sport_id?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Directory stats */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminBranchDirectoryStats"];
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/courts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all courts */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Filter by code or name */
+                    q?: string;
+                    status?: "active" | "inactive" | "maintenance" | "archived";
+                    sport_id?: string;
+                    environment?: "indoor" | "outdoor" | "unspecified";
+                    organization_id?: string;
+                    branch_id?: string;
+                    surface?: components["schemas"]["CourtSurface"];
+                    limit?: number;
+                    offset?: components["parameters"]["AdminListOffset"];
+                    sort?: "created_at" | "name" | "status";
+                    order?: components["parameters"]["AdminListOrder"];
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Courts */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminCourtPage"];
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/courts/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Court directory statistics
+         * @description Counts ignore status so directory tabs stay stable. Search and every advanced filter still apply.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    q?: string;
+                    sport_id?: string;
+                    environment?: "indoor" | "outdoor" | "unspecified";
+                    organization_id?: string;
+                    branch_id?: string;
+                    surface?: components["schemas"]["CourtSurface"];
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Directory stats */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminCourtDirectoryStats"];
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/bookings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List bookings across organizations
+         * @description Read-only. Filters starts_at with from inclusive and to exclusive. q matches booking number, customer name, or primary email.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    q?: string;
+                    status?: "pending" | "confirmed" | "checked_in" | "in_progress" | "completed" | "canceled";
+                    from?: string;
+                    to?: string;
+                    organization_id?: string;
+                    branch_id?: string;
+                    limit?: number;
+                    offset?: components["parameters"]["AdminListOffset"];
+                    sort?: "starts_at" | "status" | "created_at" | "total_amount";
+                    order?: components["parameters"]["AdminListOrder"];
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Bookings */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminBookingPage"];
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/bookings/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Booking directory statistics
+         * @description Counts ignore status so directory tabs stay stable. Search, date, organization, and branch filters still apply.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    q?: string;
+                    from?: string;
+                    to?: string;
+                    organization_id?: string;
+                    branch_id?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Directory stats */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminBookingDirectoryStats"];
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/organizations": {
         parameters: {
             query?: never;
@@ -7354,6 +7655,7 @@ export interface paths {
                     order?: components["parameters"]["AdminListOrder"];
                     /** @description Filter orgs with at least one branch in this province (current_v2 address) */
                     province_id?: string;
+                    organization_type?: "company" | "club" | "school" | "government" | "individual" | "other";
                 };
                 header?: never;
                 path?: never;
@@ -7392,12 +7694,13 @@ export interface paths {
         };
         /**
          * Organization directory statistics
-         * @description Counts ignore status so directory tabs stay stable. Search and province filters still apply.
+         * @description Counts ignore status so directory tabs stay stable. Search, organization type, and province filters still apply.
          */
         get: {
             parameters: {
                 query?: {
                     q?: string;
+                    organization_type?: "company" | "club" | "school" | "government" | "individual" | "other";
                     province_id?: string;
                 };
                 header?: never;
@@ -9094,9 +9397,13 @@ export interface components {
             /** Format: uuid */
             organization_id: string;
             organization_name: string;
+            /** Format: uuid */
+            organization_logo_file_id?: string;
             customer_name: string | null;
             customer_email: string | null;
             branch_name: string | null;
+            /** Format: uuid */
+            branch_logo_file_id?: string;
             court_name: string | null;
         };
         AdminBookingPage: components["schemas"]["AdminListPage"] & {
@@ -9119,6 +9426,81 @@ export interface components {
             booking: components["schemas"]["AdminBooking"];
             invoice: components["schemas"]["BookingInvoice"] | null;
             payment: components["schemas"]["AdminBookingPayment"] | null;
+        };
+        AdminBranch: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            name: string;
+            name_en?: string;
+            name_vi?: string;
+            /** @enum {string} */
+            status: "active" | "inactive" | "maintenance" | "archived";
+            /** Format: uuid */
+            organization_id: string;
+            organization_name: string;
+            /** Format: uuid */
+            logo_file_id?: string;
+            /** Format: uuid */
+            organization_logo_file_id?: string;
+            province_name?: string;
+            address_line_1?: string;
+            court_count: number;
+            /** Format: date-time */
+            created_at: string;
+        };
+        AdminBranchPage: components["schemas"]["AdminListPage"] & {
+            items: components["schemas"]["AdminBranch"][];
+        };
+        AdminBranchDirectoryStats: {
+            total: number;
+            active: number;
+            inactive: number;
+            maintenance: number;
+            court_total: number;
+        };
+        AdminCourt: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            name: string;
+            name_en?: string;
+            name_vi?: string;
+            /** @enum {string} */
+            status: "active" | "inactive" | "maintenance" | "archived";
+            /** @enum {string} */
+            environment: "indoor" | "outdoor" | "unspecified";
+            /** Format: uuid */
+            organization_id: string;
+            organization_name: string;
+            /** Format: uuid */
+            organization_logo_file_id?: string;
+            /** Format: uuid */
+            branch_id: string;
+            branch_name: string;
+            /** Format: uuid */
+            branch_logo_file_id?: string;
+            sport_name: string;
+            /** Format: date-time */
+            created_at: string;
+        };
+        AdminCourtPage: components["schemas"]["AdminListPage"] & {
+            items: components["schemas"]["AdminCourt"][];
+        };
+        AdminCourtDirectoryStats: {
+            total: number;
+            active: number;
+            inactive: number;
+            maintenance: number;
+        };
+        AdminBookingDirectoryStats: {
+            total: number;
+            pending: number;
+            confirmed: number;
+            checked_in: number;
+            in_progress: number;
+            completed: number;
+            canceled: number;
         };
         AdminOrganizationDirectoryStats: {
             total: number;

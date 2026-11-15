@@ -16,6 +16,8 @@ import { COURT_STATUS_TONE } from "./court-status";
 type CourtCardProps = {
   court: Court;
   branchName?: string;
+  /** Branch meta is for collections that span more than one branch. */
+  showBranch?: boolean;
 };
 
 function MetaCell({
@@ -40,7 +42,7 @@ function MetaCell({
   );
 }
 
-export function CourtCard({ court, branchName }: CourtCardProps) {
+export function CourtCard({ court, branchName, showBranch = false }: CourtCardProps) {
   const t = useTranslations("organization.court");
   const locale = useLocale();
   const { data: sports = [] } = useSports();
@@ -85,10 +87,9 @@ export function CourtCard({ court, branchName }: CourtCardProps) {
             ) : undefined
           }
         />
-        <MetaCell
-          label={t("cardBranch")}
-          value={branchName || t("emptyValue")}
-        />
+        {showBranch ? (
+          <MetaCell label={t("cardBranch")} value={branchName || t("emptyValue")} />
+        ) : null}
       </div>
     </Link>
   );

@@ -162,6 +162,8 @@ func RegisterRoutes(api *gin.RouterGroup, app *server.Application) {
 	admin := api.Group("/admin", jwt, middleware.RequireSystemAdmin(), authHandler.RequireMFA())
 	pricingHandler.RegisterAdminRoutes(admin)
 	orgHandler.RegisterAdminRoutes(admin)
+	branchHandler.RegisterAdminRoutes(admin)
+	catalogHandler.RegisterAdminRoutes(admin)
 	bookingHandler.RegisterAdminRoutes(admin)
 	adminUserRepo := identitypg.NewAdminUserRepo(app.DB.Pool)
 	adminUserSvc := identityservice.NewAdminUserService(

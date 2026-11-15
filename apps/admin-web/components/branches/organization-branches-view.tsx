@@ -10,31 +10,32 @@ import {
   TableHeader,
   TableRow,
 } from "@bokdy/ui";
-import { Pencil, Plus } from "lucide-react";
+import { Building2, Pencil, Plus } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 
 import { sportLabel } from "@/components/branches/branch-sports-chips";
 import { BRANCH_STATUS_TONE } from "@/components/branches/branch-status";
-import { DataListEmpty, softDirectoryPrimaryBtn } from "@/components/data-list";
+import {
+  DataListEmpty,
+  DataTablePagination,
+  DataTableSkeleton,
+  softDetailSectionGap,
+  softDirectoryPrimaryBtn,
+} from "@/components/data-list";
 import { FilterSearchField } from "@/components/data-list/filter-search-field";
 import { FilterSelect } from "@/components/data-list/filter-select";
-import { EntityDetailPanel } from "@/components/entity/detail-panel";
-import {
-  EntityDetailError,
-  EntityDetailLoading,
-} from "@/components/entity/detail-state";
+import { EntityCollectionPanel } from "@/components/entity/collection-panel";
+import { CollectionViewToggle } from "@/components/entity/collection-view-toggle";
 import { EntityRelationLink } from "@/components/entity/relation-link";
 import { SoftStatusChip } from "@/components/entity/soft-status-chip";
-import { CollectionViewToggle } from "@/components/entity/collection-view-toggle";
+import { useClientCollectionPage } from "@/components/entity/use-client-collection-page";
 import { useCollectionViewMode } from "@/components/entity/use-collection-view-mode";
-import { OrganizationSectionFrame } from "@/components/organizations/detail/organization-section-frame";
 import { useOrganizationDetail } from "@/components/organizations/detail/organization-detail-context";
 import { type PopoverCommandOption } from "@/components/popover-command-select";
 import { useBranches } from "@/hooks/use-branches";
 import { useSports } from "@/hooks/use-sports";
 import { currentBranchAddress, type Branch, type BranchStatus } from "@/lib/api/branches";
-import { ApiError } from "@/lib/api/errors";
 import type { Sport } from "@/lib/api/sports";
 
 import { BranchCard } from "./branch-card";
@@ -75,8 +76,7 @@ function BranchList({
   const to = useTranslations("organization");
 
   return (
-    <EntityDetailPanel className="min-w-0 overflow-hidden">
-      <Table>
+    <Table>
         <TableHeader className="sticky top-0 z-10 bg-card">
           <TableRow className="border-border/40 hover:bg-transparent">
             {[
@@ -138,21 +138,17 @@ function BranchList({
             );
           })}
         </TableBody>
-      </Table>
-    </EntityDetailPanel>
+    </Table>
   );
 }
 
 export function OrganizationBranchesView() {
   const t = useTranslations("organization.detailBranches");
   const tb = useTranslations("organization.branch");
-  const to = useTranslations("organization");
-  const ts = useTranslations("shell");
   const tc = useTranslations("common");
   const locale = useLocale();
   const { orgId } = useOrganizationDetail();
-  const { data, isLoading, isError, error, refetch, isFetching } =
-    useBranches(orgId);
+  const { data, isLoading, isError, refetch, isFetching } = useBranches(orgId);
   const { data: sports = [] } = useSports();
   const branches = data ?? [];
   const { mode, setMode } = useCollectionViewMode("branches");
@@ -177,7 +173,10 @@ export function OrganizationBranchesView() {
       );
     });
   }, [branches, filterSport, filterStatus, needle]);
-  const filtering = needle !== "" || filterStatus !== ALL || filterSport !== ALL;
+  const { pageItems, pagination } = useClientCollectionPage(
+    filtered,
+    `${needle}|${filterStatus}|${filterSport}`,
+  );
 
   const statusOptions = useMemo<PopoverCommandOption[]>(
     () => [
@@ -202,104 +201,93 @@ export function OrganizationBranchesView() {
     [locale, sports, t],
   );
 
+  function addButton() {
+    return (
+      <Button type="button" size="sm" className={softDirectoryPrimaryBtn} onClick={openCreate}>
+        <Plus className="size-3.5" aria-hidden />
+        {t("addBranch")}
+      </Button>
+    );
+  }
+
   return (
     <>
-      <OrganizationSectionFrame
-        title={t("title")}
-        subtitle={
-          filtering
-            ? t("subtitleFiltered", { shown: filtered.length, total: branches.length })
-            : to("branchCount", { count: branches.length })
-        }
-        toolbar={
-          branches.length > 0 ? (
-            <>
-              <FilterSearchField value={query} onChange={setQuery} label={t("search")} />
-              <FilterSelect
-                value={filterStatus}
-                onValueChange={setFilterStatus}
-                options={statusOptions}
-                ariaLabel={t("filterStatus")}
-              />
-              <FilterSelect
-                value={filterSport}
-                onValueChange={setFilterSport}
-                options={sportOptions}
-                ariaLabel={t("filterSport")}
-                searchable
-              />
-            </>
-          ) : null
-        }
-        actions={
-          <>
-            <CollectionViewToggle mode={mode} onChange={setMode} />
-            <Button
-              type="button"
-              size="lg"
-              className={softDirectoryPrimaryBtn}
-              onClick={openCreate}
-            >
-              <Plus className="size-4" />
-              {t("addBranch")}
-            </Button>
-          </>
-        }
-      >
-        {isLoading ? <EntityDetailLoading label={tc("loading")} /> : null}
-        {isError ? (
-          <EntityDetailError
-            message={tb("loadError")}
-            notFound={error instanceof ApiError && error.status === 404}
-            retryLabel={tc("retry")}
-            onRetry={() => refetch()}
-            retryDisabled={isFetching}
-            backHref={`/organizations/${orgId}`}
-            backLabel={ts("menuBack")}
-          />
-        ) : null}
-        {!isLoading && !isError && filtered.length === 0 ? (
-          <DataListEmpty
-            className="flex-none py-8"
-            title={branches.length === 0 ? tb("empty") : t("emptyFiltered")}
-            description={branches.length === 0 ? t("emptyHint") : undefined}
-            action={
-              branches.length === 0 ? (
-                <Button
-                  type="button"
-                  size="lg"
-                  className={cn("mt-3", softDirectoryPrimaryBtn)}
-                  onClick={openCreate}
-                >
-                  <Plus className="size-4" />
-                  {t("addBranch")}
-                </Button>
-              ) : undefined
-            }
-          />
-        ) : null}
-        {!isLoading && !isError && filtered.length > 0 && mode === "grid" ? (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {filtered.map((branch) => (
-              <BranchCard
-                key={branch.id}
-                branch={branch}
-                orgId={orgId}
-                sports={sports}
-                onEdit={(item) => setSheet({ mode: "edit", branch: item })}
-              />
-            ))}
-          </div>
-        ) : null}
-        {!isLoading && !isError && filtered.length > 0 && mode === "list" ? (
-          <BranchList
-            branches={filtered}
-            sports={sports}
-            locale={locale}
-            onEdit={(item) => setSheet({ mode: "edit", branch: item })}
-          />
-        ) : null}
-      </OrganizationSectionFrame>
+      <div className={cn("flex flex-col p-5 pt-2 md:px-6", softDetailSectionGap)}>
+        <EntityCollectionPanel
+          title={t("title")}
+          icon={<Building2 className="size-4" aria-hidden />}
+          tone="sky"
+          actions={
+            <div className="flex items-center gap-2">
+              <CollectionViewToggle mode={mode} onChange={setMode} />
+              {addButton()}
+            </div>
+          }
+          toolbar={
+            branches.length > 0 ? (
+              <>
+                <FilterSearchField value={query} onChange={setQuery} label={t("search")} />
+                <FilterSelect
+                  value={filterStatus}
+                  onValueChange={setFilterStatus}
+                  options={statusOptions}
+                  ariaLabel={t("filterStatus")}
+                />
+                <FilterSelect
+                  value={filterSport}
+                  onValueChange={setFilterSport}
+                  options={sportOptions}
+                  ariaLabel={t("filterSport")}
+                  searchable
+                />
+              </>
+            ) : null
+          }
+          pagination={
+            !isLoading && !isError && filtered.length > 0 ? (
+              <DataTablePagination {...pagination} className="bg-transparent px-0 md:px-0" />
+            ) : null
+          }
+        >
+          {isLoading ? <DataTableSkeleton rows={4} columns={5} className="px-0" /> : null}
+          {isError ? (
+            <div className="space-y-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+              <p className="text-sm text-destructive">{tb("loadError")}</p>
+              <Button variant="outline" size="lg" onClick={() => void refetch()} disabled={isFetching}>
+                {tc("retry")}
+              </Button>
+            </div>
+          ) : null}
+          {!isLoading && !isError && filtered.length === 0 ? (
+            <DataListEmpty
+              className="py-10"
+              title={branches.length === 0 ? tb("empty") : t("emptyFiltered")}
+              action={branches.length === 0 ? addButton() : undefined}
+            />
+          ) : null}
+          {!isLoading && !isError && filtered.length > 0 && mode === "grid" ? (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {pageItems.map((branch) => (
+                <BranchCard
+                  key={branch.id}
+                  branch={branch}
+                  orgId={orgId}
+                  sports={sports}
+                  onEdit={(item) => setSheet({ mode: "edit", branch: item })}
+                />
+              ))}
+            </div>
+          ) : null}
+          {!isLoading && !isError && filtered.length > 0 && mode === "list" ? (
+            <BranchList
+              branches={pageItems}
+              sports={sports}
+              locale={locale}
+              onEdit={(item) => setSheet({ mode: "edit", branch: item })}
+            />
+          ) : null}
+        </EntityCollectionPanel>
+      </div>
       <BranchFormSheet
         open={sheet !== null}
         onOpenChange={(open) => {

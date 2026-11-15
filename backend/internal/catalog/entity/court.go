@@ -57,6 +57,24 @@ const (
 	CourtEnvironmentUnspecified CourtEnvironment = "unspecified"
 )
 
+func ParseCourtStatus(raw string) (CourtStatus, bool) {
+	switch CourtStatus(raw) {
+	case CourtActive, CourtInactive, CourtInMaintenance, CourtArchived:
+		return CourtStatus(raw), true
+	default:
+		return "", false
+	}
+}
+
+func ParseCourtEnvironmentFilter(raw string) (CourtEnvironment, bool) {
+	switch CourtEnvironment(raw) {
+	case CourtEnvironmentIndoor, CourtEnvironmentOutdoor, CourtEnvironmentUnspecified:
+		return CourtEnvironment(raw), true
+	default:
+		return "", false
+	}
+}
+
 func ParseCourtEnvironment(raw string) CourtEnvironment {
 	switch CourtEnvironment(raw) {
 	case CourtEnvironmentIndoor, CourtEnvironmentOutdoor:
@@ -87,6 +105,16 @@ func ParseCourtSurface(raw string) CourtSurface {
 		return CourtSurface(raw)
 	default:
 		return CourtSurfaceUnspecified
+	}
+}
+
+func ParseCourtSurfaceFilter(raw string) (CourtSurface, bool) {
+	switch CourtSurface(raw) {
+	case CourtSurfaceUnspecified, CourtSurfacePVC, CourtSurfaceWood, CourtSurfaceHardCourt, CourtSurfaceGrass,
+		CourtSurfaceArtificialTurf, CourtSurfaceClay, CourtSurfaceRubber, CourtSurfaceOther:
+		return CourtSurface(raw), true
+	default:
+		return "", false
 	}
 }
 

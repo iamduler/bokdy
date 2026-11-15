@@ -8,6 +8,10 @@ export function entityInitials(name: string): string {
   return name.trim().slice(0, 2).toUpperCase();
 }
 
+export function entityFileSrc(id?: string | null): string | undefined {
+  return id ? `/api/go/files/${id}` : undefined;
+}
+
 type EntityAvatarProps = {
   name: string;
   size?: "sm" | "md" | "lg";

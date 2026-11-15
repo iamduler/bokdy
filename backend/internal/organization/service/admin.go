@@ -31,13 +31,14 @@ type AdminOrganization struct {
 }
 
 type AdminListQuery struct {
-	Q          string
-	Status     *entity.OrganizationStatus
-	ProvinceID *uuid.UUID
-	LimitRaw   string
-	OffsetRaw  string
-	Sort       string
-	Order      string
+	Q                string
+	Status           *entity.OrganizationStatus
+	OrganizationType *entity.OrganizationType
+	ProvinceID       *uuid.UUID
+	LimitRaw         string
+	OffsetRaw        string
+	Sort             string
+	Order            string
 }
 
 type AdminDirectoryStats struct {
@@ -90,13 +91,14 @@ func (s *OrganizationService) AdminList(ctx context.Context, query AdminListQuer
 		return listpage.Page[AdminOrganization]{}, err
 	}
 	rows, total, err := s.orgs.ListAdmin(ctx, repository.AdminListFilter{
-		Q:          strings.TrimSpace(query.Q),
-		Status:     query.Status,
-		ProvinceID: query.ProvinceID,
-		Limit:      page.Limit,
-		Offset:     page.Offset,
-		Sort:       page.Sort,
-		Desc:       page.Desc,
+		Q:                strings.TrimSpace(query.Q),
+		Status:           query.Status,
+		OrganizationType: query.OrganizationType,
+		ProvinceID:       query.ProvinceID,
+		Limit:            page.Limit,
+		Offset:           page.Offset,
+		Sort:             page.Sort,
+		Desc:             page.Desc,
 	})
 	if err != nil {
 		return listpage.Page[AdminOrganization]{}, apperr.Wrap(err, apperr.CodeInternal, "list organizations")
@@ -109,8 +111,8 @@ func (s *OrganizationService) AdminList(ctx context.Context, query AdminListQuer
 	return listpage.New(out, total, page.Limit, page.Offset), nil
 }
 
-func (s *OrganizationService) AdminDirectoryStats(ctx context.Context, q string, provinceID *uuid.UUID) (AdminDirectoryStats, error) {
-	stats, err := s.orgs.DirectoryStats(ctx, strings.TrimSpace(q), provinceID)
+func (s *OrganizationService) AdminDirectoryStats(ctx context.Context, q string, organizationType *entity.OrganizationType, provinceID *uuid.UUID) (AdminDirectoryStats, error) {
+	stats, err := s.orgs.DirectoryStats(ctx, strings.TrimSpace(q), organizationType, provinceID)
 	if err != nil {
 		return AdminDirectoryStats{}, apperr.Wrap(err, apperr.CodeInternal, "organization directory stats")
 	}

@@ -254,6 +254,76 @@ func courtFromList(row dbsqlc.ListCourtsRow) *entity.Court {
 	}
 }
 
+func (r *CourtRepo) ListAdmin(ctx context.Context, filter repository.AdminCourtFilter) ([]repository.AdminCourt, int, error) {
+	var status *string
+	if filter.Status != nil {
+		s := string(*filter.Status)
+		status = &s
+	}
+	var environment *string
+	if filter.Environment != nil {
+		s := string(*filter.Environment)
+		environment = &s
+	}
+	var surface *string
+	if filter.Surface != nil {
+		s := string(*filter.Surface)
+		surface = &s
+	}
+	rows, err := r.q.ListCourtsAdmin(ctx, dbsqlc.ListCourtsAdminParams{
+		StatusFilter: status, SportID: filter.SportID, Environment: environment,
+		OrganizationID: filter.OrganizationID, BranchID: filter.BranchID, Surface: surface, Q: filter.Q,
+		SortKey: filter.Sort, SortDesc: filter.Desc,
+		RowOffset: int32(filter.Offset), RowLimit: int32(filter.Limit),
+	})
+	if err != nil {
+		return nil, 0, err
+	}
+	total, err := r.q.CountCourtsAdmin(ctx, dbsqlc.CountCourtsAdminParams{
+		StatusFilter: status, SportID: filter.SportID, Environment: environment,
+		OrganizationID: filter.OrganizationID, BranchID: filter.BranchID, Surface: surface, Q: filter.Q,
+	})
+	if err != nil {
+		return nil, 0, err
+	}
+	out := make([]repository.AdminCourt, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, repository.AdminCourt{
+			ID: row.ID, Code: row.Code, NameEn: row.NameEn, NameVi: row.NameVi,
+			Status: entity.CourtStatus(row.Status), Environment: entity.CourtEnvironment(row.Environment),
+			OrganizationID: row.OrganizationID, OrganizationNameEn: row.OrganizationNameEn, OrganizationNameVi: row.OrganizationNameVi,
+			OrganizationLogoFileID: row.OrganizationLogoFileID,
+			BranchID:               row.BranchID, BranchNameEn: row.BranchNameEn, BranchNameVi: row.BranchNameVi,
+			BranchLogoFileID: row.BranchLogoFileID,
+			SportID:          row.SportID, SportNameEn: row.SportNameEn, SportNameVi: row.SportNameVi,
+			CreatedAt: row.CreatedAt,
+		})
+	}
+	return out, int(total), nil
+}
+
+func (r *CourtRepo) DirectoryStats(ctx context.Context, q string, sportID *uuid.UUID, environment *entity.CourtEnvironment, organizationID, branchID *uuid.UUID, surface *entity.CourtSurface) (repository.AdminCourtStats, error) {
+	var env *string
+	if environment != nil {
+		s := string(*environment)
+		env = &s
+	}
+	var surfaceArg *string
+	if surface != nil {
+		s := string(*surface)
+		surfaceArg = &s
+	}
+	row, err := r.q.AdminCourtDirectoryStats(ctx, dbsqlc.AdminCourtDirectoryStatsParams{
+		SportID: sportID, Environment: env, OrganizationID: organizationID, BranchID: branchID, Surface: surfaceArg, Q: q,
+	})
+	if err != nil {
+		return repository.AdminCourtStats{}, err
+	}
+	return repository.AdminCourtStats{
+		Total: int(row.Total), Active: int(row.Active), Inactive: int(row.Inactive), Maintenance: int(row.Maintenance),
+	}, nil
+}
+
 func surfaceOrDefault(s entity.CourtSurface) entity.CourtSurface {
 	if s == "" {
 		return entity.CourtSurfaceUnspecified

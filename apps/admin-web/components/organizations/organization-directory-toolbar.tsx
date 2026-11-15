@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Label } from "@bokdy/ui";
+import { Button, Field, FieldLabel } from "@bokdy/ui";
 import {
   Building2,
   PauseCircle,
@@ -22,15 +22,21 @@ import {
   type DataListStatusTab,
 } from "@/components/data-list";
 import { DirectoryToolbar } from "@/components/data-list/directory-toolbar";
-import { EntityUnavailable } from "@/components/entity/unavailable";
+import { FilterSelect } from "@/components/data-list/filter-select";
 import type { OrganizationDirectoryStats } from "@/components/organizations/organization-directory-stats";
-import {
-  PopoverCommandSelect,
-  type PopoverCommandOption,
-} from "@/components/popover-command-select";
+import { type PopoverCommandOption } from "@/components/popover-command-select";
 import { useProvinces } from "@/hooks/use-admin-units";
 import { useRouter } from "@/i18n/navigation";
-import type { OrgStatus } from "@/lib/api/admin";
+import type { OrganizationType, OrgStatus } from "@/lib/api/admin";
+
+const ORG_TYPES: OrganizationType[] = [
+  "company",
+  "club",
+  "school",
+  "government",
+  "individual",
+  "other",
+];
 
 const ORG_STATUSES: OrgStatus[] = [
   "active",
@@ -50,6 +56,7 @@ type OrganizationDirectoryToolbarProps = {
   q: string;
   status: OrgStatus | "";
   provinceId: string;
+  organizationType: OrganizationType | "";
   directoryStats: OrganizationDirectoryStats;
   statsLoading?: boolean;
   onOpenCreate: () => void;
@@ -60,6 +67,7 @@ export function OrganizationDirectoryToolbar({
   q,
   status,
   provinceId,
+  organizationType,
   directoryStats,
   statsLoading,
   onOpenCreate,
@@ -103,8 +111,8 @@ export function OrganizationDirectoryToolbar({
     () => [
       {
         value: "",
-        label: t("directoryFilters.province"),
-        keywords: t("directoryFilters.province"),
+        label: t("directoryFilters.allProvinces"),
+        keywords: t("directoryFilters.allProvinces"),
       },
       ...provinces.map((province) => ({
         value: province.id,
@@ -113,17 +121,6 @@ export function OrganizationDirectoryToolbar({
       })),
     ],
     [provinces, t],
-  );
-
-  const planOptions = useMemo<PopoverCommandOption[]>(
-    () => [
-      {
-        value: "",
-        label: t("directoryFilters.plan"),
-        keywords: t("directoryFilters.plan"),
-      },
-    ],
-    [t],
   );
 
   const stats = useMemo<DataListStatItem[]>(
@@ -187,19 +184,27 @@ export function OrganizationDirectoryToolbar({
     [directoryStats, t],
   );
 
-  const hasAdvancedFilters = Boolean(provinceId);
+  const typeOptions = useMemo<PopoverCommandOption[]>(
+    () => [
+      {
+        value: "",
+        label: t("directoryFilters.allProvinces"),
+        keywords: t("directoryFilters.allProvinces"),
+      },
+      ...ORG_TYPES.map((item) => ({
+        value: item,
+        label: t(`type.${item}`),
+        keywords: t(`type.${item}`),
+      })),
+    ],
+    [t],
+  );
+
+  const advancedCount = Number(Boolean(provinceId)) + Number(Boolean(organizationType));
+  const hasAdvancedFilters = advancedCount > 0;
 
   function clearAdvanced() {
-    replaceParams({ province_id: undefined });
-  }
-
-  function clearAll() {
-    setSearch("");
-    replaceParams({
-      q: undefined,
-      status: undefined,
-      province_id: undefined,
-    });
+    replaceParams({ province_id: undefined, organization_type: undefined });
   }
 
   return (
@@ -217,63 +222,56 @@ export function OrganizationDirectoryToolbar({
       onSearchChange={setSearch}
       searchPlaceholder={t("directoryFilters.searchPlaceholder")}
       advancedLabel={td("advancedFilters")}
+      advancedClassName="w-80"
       hasAdvancedFilters={hasAdvancedFilters}
-      advancedFilterCount={provinceId ? 1 : 0}
+      advancedFilterCount={advancedCount}
       onClearFilters={hasAdvancedFilters ? clearAdvanced : undefined}
       clearLabel={t("directoryFilters.clear")}
       advancedContent={
         <div className="space-y-3">
-          <p className="text-xs font-medium text-foreground">
-            {td("advancedFilters")}
-          </p>
-          <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">
-              {t("directoryFilters.province")}
-            </Label>
-            <PopoverCommandSelect
+          <Field>
+            <FieldLabel>{t("directoryFilters.type")}</FieldLabel>
+            <FilterSelect
+              value={organizationType}
+              onValueChange={(value) =>
+                replaceParams({ organization_type: value || undefined })
+              }
+              options={typeOptions}
+              ariaLabel={t("directoryFilters.type")}
+              placeholder={t("directoryFilters.allProvinces")}
+              searchPlaceholder={t("directoryFilters.filterSearch")}
+              emptyText={t("directoryFilters.filterEmpty")}
+              searchable
+              className="w-full"
+            />
+          </Field>
+          <Field>
+            <FieldLabel>{t("directoryFilters.province")}</FieldLabel>
+            <FilterSelect
               value={provinceId}
               onValueChange={(value) =>
                 replaceParams({ province_id: value || undefined })
               }
               options={provinceOptions}
-              placeholder={t("directoryFilters.province")}
+              ariaLabel={t("directoryFilters.province")}
+              placeholder={t("directoryFilters.allProvinces")}
               searchPlaceholder={t("directoryFilters.filterSearch")}
               emptyText={t("directoryFilters.filterEmpty")}
               searchable
-              align="start"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">
-              {t("directoryFilters.plan")}
-            </Label>
-            <EntityUnavailable
-              reason={t("directoryFilters.planUnavailable")}
               className="w-full"
-            >
-              <PopoverCommandSelect
-                value=""
-                onValueChange={() => undefined}
-                options={planOptions}
-                placeholder={t("directoryFilters.plan")}
-                searchPlaceholder={t("directoryFilters.filterSearch")}
-                emptyText={t("directoryFilters.filterEmpty")}
-                disabled
-                align="start"
-              />
-            </EntityUnavailable>
-          </div>
-          {(hasAdvancedFilters || status || q.trim()) && (
+            />
+          </Field>
+          {hasAdvancedFilters ? (
             <Button
               type="button"
               variant="ghost"
               size="sm"
               className="w-full rounded-full"
-              onClick={clearAll}
+              onClick={clearAdvanced}
             >
               {t("directoryFilters.clear")}
             </Button>
-          )}
+          ) : null}
         </div>
       }
     >

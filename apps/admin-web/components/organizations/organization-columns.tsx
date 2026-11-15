@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useMemo } from "react";
 
 import { DirectoryIdentityCell } from "@/components/data-list/directory-identity-cell";
+import { entityFileSrc } from "@/components/entity/avatar";
 import { EntityUnavailableBadge } from "@/components/entity/unavailable";
 import { OrganizationStatusBadge } from "@/components/organizations/organization-status-badge";
 import type { AdminOrganization } from "@/lib/api/admin";
@@ -27,6 +28,7 @@ export function useOrganizationColumns() {
               href={`/organizations/${org.id}`}
               name={org.name}
               avatar
+              src={entityFileSrc(org.logo_file_id)}
               subtitle={
                 <>
                   {org.code}

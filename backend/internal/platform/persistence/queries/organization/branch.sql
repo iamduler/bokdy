@@ -175,3 +175,113 @@ WHERE branch_id = ANY(sqlc.arg(branch_ids)::uuid[])
   AND resource_type = 'court'
   AND deleted_at IS NULL
 GROUP BY branch_id;
+
+-- name: ListBranchesAdmin :many
+SELECT l.id, l.code,
+       COALESCE(l.name_en, '') AS name_en, COALESCE(l.name_vi, '') AS name_vi,
+       l.status,
+       o.id AS organization_id,
+       COALESCE(o.name_en, '') AS organization_name_en,
+       COALESCE(o.name_vi, '') AS organization_name_vi,
+       l.logo_file_id,
+       o.logo_file_id AS organization_logo_file_id,
+       COALESCE(p.name_en, '') AS province_name_en,
+       COALESCE(p.name_vi, '') AS province_name_vi,
+       COALESCE(a.address_line_1, '') AS address_line_1,
+       COALESCE(cc.n, 0)::int AS court_count,
+       l.created_at
+FROM organization.branches l
+JOIN organization.organizations o ON o.id = l.organization_id AND o.deleted_at IS NULL
+LEFT JOIN organization.branch_addresses a ON a.branch_id = l.id AND a.division_scheme = 'current_v2'
+LEFT JOIN reference.province p ON p.id = a.province_id
+LEFT JOIN LATERAL (
+  SELECT COUNT(*)::int AS n
+  FROM catalog.courts r
+  WHERE r.branch_id = l.id AND r.deleted_at IS NULL AND r.resource_type = 'court' AND r.status <> 'archived'
+) cc ON true
+WHERE l.deleted_at IS NULL
+  AND (sqlc.narg(status_filter)::text IS NULL OR l.status = sqlc.narg(status_filter)::organization.branch_status)
+  AND (sqlc.narg(province_id)::uuid IS NULL OR a.province_id = sqlc.narg(province_id)::uuid)
+  AND (sqlc.narg(organization_id)::uuid IS NULL OR l.organization_id = sqlc.narg(organization_id)::uuid)
+  AND (
+    sqlc.narg(sport_id)::uuid IS NULL
+    OR EXISTS (
+      SELECT 1 FROM organization.branch_sports bs
+      WHERE bs.branch_id = l.id AND bs.sport_id = sqlc.narg(sport_id)::uuid
+    )
+  )
+  AND (
+    sqlc.arg(q)::text = ''
+    OR lower(l.code) LIKE '%' || lower(sqlc.arg(q)::text) || '%'
+    OR lower(COALESCE(l.name_en, '')) LIKE '%' || lower(sqlc.arg(q)::text) || '%'
+    OR lower(COALESCE(l.name_vi, '')) LIKE '%' || lower(sqlc.arg(q)::text) || '%'
+  )
+ORDER BY
+  CASE WHEN sqlc.arg(sort_key)::text = 'name' AND NOT sqlc.arg(sort_desc)::bool
+    THEN lower(COALESCE(NULLIF(l.name_vi, ''), NULLIF(l.name_en, ''), l.code)) END ASC,
+  CASE WHEN sqlc.arg(sort_key)::text = 'name' AND sqlc.arg(sort_desc)::bool
+    THEN lower(COALESCE(NULLIF(l.name_vi, ''), NULLIF(l.name_en, ''), l.code)) END DESC,
+  CASE WHEN sqlc.arg(sort_key)::text = 'status' AND NOT sqlc.arg(sort_desc)::bool THEN l.status::text END ASC,
+  CASE WHEN sqlc.arg(sort_key)::text = 'status' AND sqlc.arg(sort_desc)::bool THEN l.status::text END DESC,
+  CASE WHEN sqlc.arg(sort_key)::text = 'court_count' AND NOT sqlc.arg(sort_desc)::bool THEN cc.n END ASC,
+  CASE WHEN sqlc.arg(sort_key)::text = 'court_count' AND sqlc.arg(sort_desc)::bool THEN cc.n END DESC,
+  CASE WHEN sqlc.arg(sort_key)::text = 'created_at' AND NOT sqlc.arg(sort_desc)::bool THEN l.created_at END ASC,
+  CASE WHEN sqlc.arg(sort_key)::text = 'created_at' AND sqlc.arg(sort_desc)::bool THEN l.created_at END DESC,
+  l.id DESC
+OFFSET sqlc.arg(row_offset)
+LIMIT sqlc.arg(row_limit);
+
+-- name: CountBranchesAdmin :one
+SELECT COUNT(*)::int AS total
+FROM organization.branches l
+JOIN organization.organizations o ON o.id = l.organization_id AND o.deleted_at IS NULL
+LEFT JOIN organization.branch_addresses a ON a.branch_id = l.id AND a.division_scheme = 'current_v2'
+WHERE l.deleted_at IS NULL
+  AND (sqlc.narg(status_filter)::text IS NULL OR l.status = sqlc.narg(status_filter)::organization.branch_status)
+  AND (sqlc.narg(province_id)::uuid IS NULL OR a.province_id = sqlc.narg(province_id)::uuid)
+  AND (sqlc.narg(organization_id)::uuid IS NULL OR l.organization_id = sqlc.narg(organization_id)::uuid)
+  AND (
+    sqlc.narg(sport_id)::uuid IS NULL
+    OR EXISTS (
+      SELECT 1 FROM organization.branch_sports bs
+      WHERE bs.branch_id = l.id AND bs.sport_id = sqlc.narg(sport_id)::uuid
+    )
+  )
+  AND (
+    sqlc.arg(q)::text = ''
+    OR lower(l.code) LIKE '%' || lower(sqlc.arg(q)::text) || '%'
+    OR lower(COALESCE(l.name_en, '')) LIKE '%' || lower(sqlc.arg(q)::text) || '%'
+    OR lower(COALESCE(l.name_vi, '')) LIKE '%' || lower(sqlc.arg(q)::text) || '%'
+  );
+
+-- name: AdminBranchDirectoryStats :one
+SELECT
+  COUNT(*)::int AS total,
+  COUNT(*) FILTER (WHERE l.status = 'active')::int AS active,
+  COUNT(*) FILTER (WHERE l.status = 'inactive')::int AS inactive,
+  COUNT(*) FILTER (WHERE l.status = 'maintenance')::int AS maintenance,
+  COALESCE(SUM(cc.n), 0)::int AS court_total
+FROM organization.branches l
+JOIN organization.organizations o ON o.id = l.organization_id AND o.deleted_at IS NULL
+LEFT JOIN organization.branch_addresses a ON a.branch_id = l.id AND a.division_scheme = 'current_v2'
+LEFT JOIN LATERAL (
+  SELECT COUNT(*)::int AS n
+  FROM catalog.courts r
+  WHERE r.branch_id = l.id AND r.deleted_at IS NULL AND r.resource_type = 'court' AND r.status <> 'archived'
+) cc ON true
+WHERE l.deleted_at IS NULL
+  AND (sqlc.narg(province_id)::uuid IS NULL OR a.province_id = sqlc.narg(province_id)::uuid)
+  AND (sqlc.narg(organization_id)::uuid IS NULL OR l.organization_id = sqlc.narg(organization_id)::uuid)
+  AND (
+    sqlc.narg(sport_id)::uuid IS NULL
+    OR EXISTS (
+      SELECT 1 FROM organization.branch_sports bs
+      WHERE bs.branch_id = l.id AND bs.sport_id = sqlc.narg(sport_id)::uuid
+    )
+  )
+  AND (
+    sqlc.arg(q)::text = ''
+    OR lower(l.code) LIKE '%' || lower(sqlc.arg(q)::text) || '%'
+    OR lower(COALESCE(l.name_en, '')) LIKE '%' || lower(sqlc.arg(q)::text) || '%'
+    OR lower(COALESCE(l.name_vi, '')) LIKE '%' || lower(sqlc.arg(q)::text) || '%'
+  );

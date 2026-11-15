@@ -114,6 +114,15 @@ const (
 	BranchArchived    BranchStatus = "archived"
 )
 
+func ParseBranchStatus(raw string) (BranchStatus, bool) {
+	switch BranchStatus(raw) {
+	case BranchActive, BranchInactive, BranchMaintenance, BranchArchived:
+		return BranchStatus(raw), true
+	default:
+		return "", false
+	}
+}
+
 const (
 	RoleOrgOwner  = "org_owner"
 	RoleOrgStaff  = "org_staff"

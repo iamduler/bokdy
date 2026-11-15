@@ -12,6 +12,65 @@ import (
 	"github.com/google/uuid"
 )
 
+const adminCourtDirectoryStats = `-- name: AdminCourtDirectoryStats :one
+SELECT
+  COUNT(*)::int AS total,
+  COUNT(*) FILTER (WHERE r.status = 'active')::int AS active,
+  COUNT(*) FILTER (WHERE r.status = 'inactive')::int AS inactive,
+  COUNT(*) FILTER (WHERE r.status = 'maintenance')::int AS maintenance
+FROM catalog.courts r
+JOIN organization.branches l ON l.id = r.branch_id AND l.deleted_at IS NULL
+JOIN organization.organizations o ON o.id = l.organization_id AND o.deleted_at IS NULL
+WHERE r.deleted_at IS NULL
+  AND r.resource_type = 'court'
+  AND ($1::uuid IS NULL OR r.sport_id = $1::uuid)
+  AND ($2::text IS NULL OR r.environment = $2::catalog.court_environment)
+  AND ($3::uuid IS NULL OR o.id = $3::uuid)
+  AND ($4::uuid IS NULL OR r.branch_id = $4::uuid)
+  AND ($5::text IS NULL OR r.surface = $5::catalog.court_surface)
+  AND (
+    $6::text = ''
+    OR lower(r.code) LIKE '%' || lower($6::text) || '%'
+    OR lower(COALESCE(r.name_en, '')) LIKE '%' || lower($6::text) || '%'
+    OR lower(COALESCE(r.name_vi, '')) LIKE '%' || lower($6::text) || '%'
+  )
+`
+
+type AdminCourtDirectoryStatsParams struct {
+	SportID        *uuid.UUID `json:"sport_id"`
+	Environment    *string    `json:"environment"`
+	OrganizationID *uuid.UUID `json:"organization_id"`
+	BranchID       *uuid.UUID `json:"branch_id"`
+	Surface        *string    `json:"surface"`
+	Q              string     `json:"q"`
+}
+
+type AdminCourtDirectoryStatsRow struct {
+	Total       int32 `json:"total"`
+	Active      int32 `json:"active"`
+	Inactive    int32 `json:"inactive"`
+	Maintenance int32 `json:"maintenance"`
+}
+
+func (q *Queries) AdminCourtDirectoryStats(ctx context.Context, arg AdminCourtDirectoryStatsParams) (AdminCourtDirectoryStatsRow, error) {
+	row := q.db.QueryRow(ctx, adminCourtDirectoryStats,
+		arg.SportID,
+		arg.Environment,
+		arg.OrganizationID,
+		arg.BranchID,
+		arg.Surface,
+		arg.Q,
+	)
+	var i AdminCourtDirectoryStatsRow
+	err := row.Scan(
+		&i.Total,
+		&i.Active,
+		&i.Inactive,
+		&i.Maintenance,
+	)
+	return i, err
+}
+
 const archiveCourt = `-- name: ArchiveCourt :exec
 UPDATE catalog.courts
 SET status = 'archived', is_bookable = false, deleted_at = now(), updated_at = now()
@@ -37,6 +96,52 @@ WHERE id = $1 AND status = 'in_progress'
 func (q *Queries) CompleteResourceMaintenance(ctx context.Context, id uuid.UUID) error {
 	_, err := q.db.Exec(ctx, completeResourceMaintenance, id)
 	return err
+}
+
+const countCourtsAdmin = `-- name: CountCourtsAdmin :one
+SELECT COUNT(*)::int AS total
+FROM catalog.courts r
+JOIN organization.branches l ON l.id = r.branch_id AND l.deleted_at IS NULL
+JOIN organization.organizations o ON o.id = l.organization_id AND o.deleted_at IS NULL
+WHERE r.deleted_at IS NULL
+  AND r.resource_type = 'court'
+  AND ($1::text IS NULL OR r.status = $1::catalog.court_status)
+  AND ($2::uuid IS NULL OR r.sport_id = $2::uuid)
+  AND ($3::text IS NULL OR r.environment = $3::catalog.court_environment)
+  AND ($4::uuid IS NULL OR o.id = $4::uuid)
+  AND ($5::uuid IS NULL OR r.branch_id = $5::uuid)
+  AND ($6::text IS NULL OR r.surface = $6::catalog.court_surface)
+  AND (
+    $7::text = ''
+    OR lower(r.code) LIKE '%' || lower($7::text) || '%'
+    OR lower(COALESCE(r.name_en, '')) LIKE '%' || lower($7::text) || '%'
+    OR lower(COALESCE(r.name_vi, '')) LIKE '%' || lower($7::text) || '%'
+  )
+`
+
+type CountCourtsAdminParams struct {
+	StatusFilter   *string    `json:"status_filter"`
+	SportID        *uuid.UUID `json:"sport_id"`
+	Environment    *string    `json:"environment"`
+	OrganizationID *uuid.UUID `json:"organization_id"`
+	BranchID       *uuid.UUID `json:"branch_id"`
+	Surface        *string    `json:"surface"`
+	Q              string     `json:"q"`
+}
+
+func (q *Queries) CountCourtsAdmin(ctx context.Context, arg CountCourtsAdminParams) (int32, error) {
+	row := q.db.QueryRow(ctx, countCourtsAdmin,
+		arg.StatusFilter,
+		arg.SportID,
+		arg.Environment,
+		arg.OrganizationID,
+		arg.BranchID,
+		arg.Surface,
+		arg.Q,
+	)
+	var total int32
+	err := row.Scan(&total)
+	return total, err
 }
 
 const courtCodeExists = `-- name: CourtCodeExists :one
@@ -503,6 +608,140 @@ func (q *Queries) ListCourts(ctx context.Context, arg ListCourtsParams) ([]ListC
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listCourtsAdmin = `-- name: ListCourtsAdmin :many
+SELECT r.id, r.code,
+       COALESCE(r.name_en, '') AS name_en, COALESCE(r.name_vi, '') AS name_vi,
+       r.status, r.environment,
+       o.id AS organization_id,
+       COALESCE(o.name_en, '') AS organization_name_en,
+       COALESCE(o.name_vi, '') AS organization_name_vi,
+       o.logo_file_id AS organization_logo_file_id,
+       l.id AS branch_id,
+       COALESCE(l.name_en, '') AS branch_name_en,
+       COALESCE(l.name_vi, '') AS branch_name_vi,
+       l.logo_file_id AS branch_logo_file_id,
+       s.id AS sport_id,
+       COALESCE(s.name_en, '') AS sport_name_en,
+       COALESCE(s.name_vi, '') AS sport_name_vi,
+       r.created_at
+FROM catalog.courts r
+JOIN organization.branches l ON l.id = r.branch_id AND l.deleted_at IS NULL
+JOIN organization.organizations o ON o.id = l.organization_id AND o.deleted_at IS NULL
+JOIN catalog.sports s ON s.id = r.sport_id
+WHERE r.deleted_at IS NULL
+  AND r.resource_type = 'court'
+  AND ($1::text IS NULL OR r.status = $1::catalog.court_status)
+  AND ($2::uuid IS NULL OR r.sport_id = $2::uuid)
+  AND ($3::text IS NULL OR r.environment = $3::catalog.court_environment)
+  AND ($4::uuid IS NULL OR o.id = $4::uuid)
+  AND ($5::uuid IS NULL OR r.branch_id = $5::uuid)
+  AND ($6::text IS NULL OR r.surface = $6::catalog.court_surface)
+  AND (
+    $7::text = ''
+    OR lower(r.code) LIKE '%' || lower($7::text) || '%'
+    OR lower(COALESCE(r.name_en, '')) LIKE '%' || lower($7::text) || '%'
+    OR lower(COALESCE(r.name_vi, '')) LIKE '%' || lower($7::text) || '%'
+  )
+ORDER BY
+  CASE WHEN $8::text = 'name' AND NOT $9::bool
+    THEN lower(COALESCE(NULLIF(r.name_vi, ''), NULLIF(r.name_en, ''), r.code)) END ASC,
+  CASE WHEN $8::text = 'name' AND $9::bool
+    THEN lower(COALESCE(NULLIF(r.name_vi, ''), NULLIF(r.name_en, ''), r.code)) END DESC,
+  CASE WHEN $8::text = 'status' AND NOT $9::bool THEN r.status::text END ASC,
+  CASE WHEN $8::text = 'status' AND $9::bool THEN r.status::text END DESC,
+  CASE WHEN $8::text = 'created_at' AND NOT $9::bool THEN r.created_at END ASC,
+  CASE WHEN $8::text = 'created_at' AND $9::bool THEN r.created_at END DESC,
+  r.id DESC
+OFFSET $10
+LIMIT $11
+`
+
+type ListCourtsAdminParams struct {
+	StatusFilter   *string    `json:"status_filter"`
+	SportID        *uuid.UUID `json:"sport_id"`
+	Environment    *string    `json:"environment"`
+	OrganizationID *uuid.UUID `json:"organization_id"`
+	BranchID       *uuid.UUID `json:"branch_id"`
+	Surface        *string    `json:"surface"`
+	Q              string     `json:"q"`
+	SortKey        string     `json:"sort_key"`
+	SortDesc       bool       `json:"sort_desc"`
+	RowOffset      int32      `json:"row_offset"`
+	RowLimit       int32      `json:"row_limit"`
+}
+
+type ListCourtsAdminRow struct {
+	ID                     uuid.UUID               `json:"id"`
+	Code                   string                  `json:"code"`
+	NameEn                 string                  `json:"name_en"`
+	NameVi                 string                  `json:"name_vi"`
+	Status                 CatalogCourtStatus      `json:"status"`
+	Environment            CatalogCourtEnvironment `json:"environment"`
+	OrganizationID         uuid.UUID               `json:"organization_id"`
+	OrganizationNameEn     string                  `json:"organization_name_en"`
+	OrganizationNameVi     string                  `json:"organization_name_vi"`
+	OrganizationLogoFileID *uuid.UUID              `json:"organization_logo_file_id"`
+	BranchID               uuid.UUID               `json:"branch_id"`
+	BranchNameEn           string                  `json:"branch_name_en"`
+	BranchNameVi           string                  `json:"branch_name_vi"`
+	BranchLogoFileID       *uuid.UUID              `json:"branch_logo_file_id"`
+	SportID                uuid.UUID               `json:"sport_id"`
+	SportNameEn            string                  `json:"sport_name_en"`
+	SportNameVi            string                  `json:"sport_name_vi"`
+	CreatedAt              time.Time               `json:"created_at"`
+}
+
+func (q *Queries) ListCourtsAdmin(ctx context.Context, arg ListCourtsAdminParams) ([]ListCourtsAdminRow, error) {
+	rows, err := q.db.Query(ctx, listCourtsAdmin,
+		arg.StatusFilter,
+		arg.SportID,
+		arg.Environment,
+		arg.OrganizationID,
+		arg.BranchID,
+		arg.Surface,
+		arg.Q,
+		arg.SortKey,
+		arg.SortDesc,
+		arg.RowOffset,
+		arg.RowLimit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListCourtsAdminRow{}
+	for rows.Next() {
+		var i ListCourtsAdminRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Code,
+			&i.NameEn,
+			&i.NameVi,
+			&i.Status,
+			&i.Environment,
+			&i.OrganizationID,
+			&i.OrganizationNameEn,
+			&i.OrganizationNameVi,
+			&i.OrganizationLogoFileID,
+			&i.BranchID,
+			&i.BranchNameEn,
+			&i.BranchNameVi,
+			&i.BranchLogoFileID,
+			&i.SportID,
+			&i.SportNameEn,
+			&i.SportNameVi,
+			&i.CreatedAt,
 		); err != nil {
 			return nil, err
 		}

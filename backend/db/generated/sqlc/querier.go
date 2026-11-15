@@ -19,6 +19,9 @@ type Querier interface {
 	AddKYCDocument(ctx context.Context, arg AddKYCDocumentParams) error
 	AddPlayerFavorite(ctx context.Context, arg AddPlayerFavoriteParams) error
 	AddStaffMember(ctx context.Context, arg AddStaffMemberParams) error
+	AdminBookingDirectoryStats(ctx context.Context, arg AdminBookingDirectoryStatsParams) (AdminBookingDirectoryStatsRow, error)
+	AdminBranchDirectoryStats(ctx context.Context, arg AdminBranchDirectoryStatsParams) (AdminBranchDirectoryStatsRow, error)
+	AdminCourtDirectoryStats(ctx context.Context, arg AdminCourtDirectoryStatsParams) (AdminCourtDirectoryStatsRow, error)
 	AdminOrganizationDirectory(ctx context.Context, id uuid.UUID) (AdminOrganizationDirectoryRow, error)
 	AdminOrganizationDirectoryStats(ctx context.Context, arg AdminOrganizationDirectoryStatsParams) (AdminOrganizationDirectoryStatsRow, error)
 	ArchiveCourt(ctx context.Context, arg ArchiveCourtParams) error
@@ -52,8 +55,10 @@ type Querier interface {
 	CountAdminSystemUsersByStatus(ctx context.Context) (CountAdminSystemUsersByStatusRow, error)
 	CountAdminSystemUsersList(ctx context.Context, arg CountAdminSystemUsersListParams) (int32, error)
 	CountBookingsByUser(ctx context.Context, userID *uuid.UUID) (int32, error)
+	CountBranchesAdmin(ctx context.Context, arg CountBranchesAdminParams) (int32, error)
 	CountBranchesByOrganization(ctx context.Context, organizationID uuid.UUID) (int32, error)
 	CountConflictingBlocks(ctx context.Context, arg CountConflictingBlocksParams) (int64, error)
+	CountCourtsAdmin(ctx context.Context, arg CountCourtsAdminParams) (int32, error)
 	CountCourtsByLocationIDs(ctx context.Context, branchIds []uuid.UUID) ([]CountCourtsByLocationIDsRow, error)
 	CountOrganizationsAdmin(ctx context.Context, arg CountOrganizationsAdminParams) (int32, error)
 	CountOverlappingBlocks(ctx context.Context, arg CountOverlappingBlocksParams) (int64, error)
@@ -246,6 +251,7 @@ type Querier interface {
 	ListBranchHolidays(ctx context.Context, branchID uuid.UUID) ([]ListBranchHolidaysRow, error)
 	ListBranchMedia(ctx context.Context, branchID uuid.UUID) ([]ListBranchMediaRow, error)
 	ListBranchSportIDs(ctx context.Context, branchID uuid.UUID) ([]uuid.UUID, error)
+	ListBranchesAdmin(ctx context.Context, arg ListBranchesAdminParams) ([]ListBranchesAdminRow, error)
 	ListBranchesByOrg(ctx context.Context, organizationID uuid.UUID) ([]ListBranchesByOrgRow, error)
 	ListBusinessHours(ctx context.Context, branchID uuid.UUID) ([]SchedulingBusinessHour, error)
 	ListCalendarHolidays(ctx context.Context) ([]ListCalendarHolidaysRow, error)
@@ -255,6 +261,7 @@ type Querier interface {
 	ListCourtMedia(ctx context.Context, courtID uuid.UUID) ([]ListCourtMediaRow, error)
 	ListCourtTypesByTenant(ctx context.Context, arg ListCourtTypesByTenantParams) ([]ListCourtTypesByTenantRow, error)
 	ListCourts(ctx context.Context, arg ListCourtsParams) ([]ListCourtsRow, error)
+	ListCourtsAdmin(ctx context.Context, arg ListCourtsAdminParams) ([]ListCourtsAdminRow, error)
 	ListCurrentProvinces(ctx context.Context, countryID uuid.UUID) ([]ListCurrentProvincesRow, error)
 	ListCustomerContacts(ctx context.Context, customerID uuid.UUID) ([]ListCustomerContactsRow, error)
 	ListCustomersByTenant(ctx context.Context, arg ListCustomersByTenantParams) ([]ListCustomersByTenantRow, error)

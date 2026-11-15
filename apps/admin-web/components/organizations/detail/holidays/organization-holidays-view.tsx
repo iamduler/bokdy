@@ -1,12 +1,12 @@
 "use client";
 
-import { formatUserDate, Spinner, useUserDateTimePrefs } from "@bokdy/ui";
+import { formatUserDate, Spinner, cn, useUserDateTimePrefs } from "@bokdy/ui";
 import { CalendarDays } from "lucide-react";
 import { useTranslations } from "next-intl";
 
+import { softDetailSectionGap } from "@/components/data-list";
 import { EntityDetailPanel } from "@/components/entity/detail-panel";
 import { HolidayLayerForm, type HolidayDraft } from "@/components/holidays/holiday-layer-form";
-import { OrganizationSectionFrame } from "@/components/organizations/detail/organization-section-frame";
 import { useCalendarHolidays, useOrganizationHolidays, useReplaceOrganizationHolidays } from "@/hooks/use-pricing";
 
 import { useOrganizationDetail } from "../organization-detail-context";
@@ -26,9 +26,10 @@ export function OrganizationHolidaysView() {
   const covered = new Set(rows.map((row) => row.holiday_on));
 
   return (
-    <OrganizationSectionFrame title={t("title")} hint={t("orgHint")}>
+    <div className={cn("flex flex-col p-5 pt-2 md:px-6", softDetailSectionGap)}>
       <EntityDetailPanel
         title={t("orgTitle")}
+        hint={t("orgHint")}
         icon={<CalendarDays className="size-4" aria-hidden />}
         tone="sky"
       >
@@ -50,9 +51,9 @@ export function OrganizationHolidaysView() {
                 {covered.has(holiday.holiday_on) ? <span className="text-muted-foreground"> · {t("overridden")}</span> : null}
               </li>
             ))}
-          </ul>
-        </EntityDetailPanel>
+        </ul>
+      </EntityDetailPanel>
       ) : null}
-    </OrganizationSectionFrame>
+    </div>
   );
 }
