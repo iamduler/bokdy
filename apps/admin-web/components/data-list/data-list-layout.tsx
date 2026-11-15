@@ -100,11 +100,6 @@ export function DataListLayout({
     >
       <div className="flex shrink-0 flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
-          {eyebrow ? (
-            <p className="text-xs font-medium tracking-wide text-muted-foreground">
-              {eyebrow}
-            </p>
-          ) : null}
           <h1 className="mt-0.5 text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
             {title}
           </h1>

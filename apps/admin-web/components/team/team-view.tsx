@@ -7,6 +7,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
   Table,
   TableBody,
   TableCell,
@@ -15,20 +18,29 @@ import {
   TableRow,
   toast,
 } from "@bokdy/ui";
-import { MoreHorizontal, Plus, Users } from "lucide-react";
+import { MoreHorizontal, Plus, Search } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 
-import { DataListEmpty, softDirectoryPrimaryBtn } from "@/components/data-list";
+import {
+  DataListEmpty,
+  softDetailSectionGap,
+  softDirectoryPrimaryBtn,
+  softFilterControl,
+} from "@/components/data-list";
+import { entityInitials } from "@/components/entity/avatar";
 import { EntityDetailPanel } from "@/components/entity/detail-panel";
 import {
   EntityDetailError,
   EntityDetailLoading,
 } from "@/components/entity/detail-state";
-import { EntitySectionHead } from "@/components/entity/section-head";
 import { SoftChip } from "@/components/entity/soft-chip";
-import { OrganizationDetailScreenHeader } from "@/components/organizations/detail/organization-detail-screen-header";
+import { OrganizationSectionFrame } from "@/components/organizations/detail/organization-section-frame";
 import { useOrganizationDetail } from "@/components/organizations/detail/organization-detail-context";
+import {
+  PopoverCommandSelect,
+  type PopoverCommandOption,
+} from "@/components/popover-command-select";
 import { TeamInviteSheet } from "@/components/team/team-invite-sheet";
 import { TeamMemberSheet } from "@/components/team/team-member-sheet";
 import { TeamRoleChip } from "@/components/team/team-role-chip";
@@ -48,11 +60,12 @@ import type {
   StaffRoleCode,
 } from "@/lib/api/org-staff";
 
-function initialsFrom(name: string) {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "?";
-  if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase();
-  return `${parts[0]![0] ?? ""}${parts[parts.length - 1]![0] ?? ""}`.toUpperCase();
+function MemberAvatar({ name }: { name: string }) {
+  return (
+    <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold text-muted-foreground">
+      {entityInitials(name) || "?"}
+    </div>
+  );
 }
 
 function memberLabel(m: StaffMember) {
@@ -64,22 +77,26 @@ function primaryRole(m: StaffMember): StaffRoleCode {
   return "org_staff";
 }
 
-const AVATAR_TONES = [
-  "text-violet-600 dark:text-violet-400 bg-violet-500/15",
-  "text-primary bg-primary/15",
-  "text-emerald-600 dark:text-emerald-400 bg-emerald-500/15",
-  "text-amber-600 dark:text-amber-400 bg-amber-500/15",
-  "text-sky-600 dark:text-sky-400 bg-sky-500/15",
-] as const;
-
 const SOFT_ROW = "border-border/40 hover:bg-muted/30";
+const ALL = "";
+const TEAM_ROLES = ["org_owner", "org_staff"] as const satisfies readonly StaffRoleCode[];
+const TEAM_STATUSES = ["active", "suspended", "resigned", "pending"] as const;
+const filterComboClass = cn(
+  "h-8 min-w-[8.5rem] justify-between px-2.5 text-xs font-medium",
+  softFilterControl,
+);
+
+function textMatches(parts: Array<string | null | undefined>, needle: string) {
+  if (!needle) return true;
+  return parts.some((part) => part?.toLowerCase().includes(needle));
+}
 
 export function TeamView() {
   const t = useTranslations("team");
   const tc = useTranslations("common");
   const te = useTranslations("errors");
   const ts = useTranslations("shell");
-  const { org, orgId } = useOrganizationDetail();
+  const { orgId } = useOrganizationDetail();
   const staffQuery = useOrgStaff(orgId);
   const invitesQuery = useOrgInvitations(orgId);
   const { data: branches = [] } = useBranches(orgId);
@@ -96,6 +113,59 @@ export function TeamView() {
 
   const [inviteOpen, setInviteOpen] = useState(false);
   const [editMember, setEditMember] = useState<StaffMember | null>(null);
+  const [query, setQuery] = useState("");
+  const [filterRole, setFilterRole] = useState(ALL);
+  const [filterStatus, setFilterStatus] = useState(ALL);
+  const needle = query.trim().toLowerCase();
+
+  const filteredInvitations = useMemo(() => {
+    return invitations.filter((inv) => {
+      if (filterStatus && filterStatus !== "pending") return false;
+      if (filterRole && inv.role_code !== filterRole) return false;
+      return textMatches([inv.email], needle);
+    });
+  }, [filterRole, filterStatus, invitations, needle]);
+
+  const filteredStaff = useMemo(() => {
+    return staff.filter((member) => {
+      if (filterRole) {
+        const codes = member.roles.map((role) => role.code);
+        const matched = codes.length > 0 ? codes.some((code) => code === filterRole) : primaryRole(member) === filterRole;
+        if (!matched) return false;
+      }
+      if (filterStatus) {
+        const pending = member.status === "invited";
+        if (filterStatus === "pending" ? !pending : member.status !== filterStatus) return false;
+      }
+      return textMatches([member.full_name, member.email, member.title], needle);
+    });
+  }, [filterRole, filterStatus, needle, staff]);
+
+  const filtering = needle !== "" || filterRole !== ALL || filterStatus !== ALL;
+  const shown = filteredInvitations.length + filteredStaff.length;
+
+  const roleOptions = useMemo<PopoverCommandOption[]>(
+    () => [
+      { value: ALL, label: t("allRoles"), keywords: "all" },
+      ...TEAM_ROLES.map((role) => ({
+        value: role,
+        label: t(`roles.${role}`),
+        keywords: role,
+      })),
+    ],
+    [t],
+  );
+  const statusOptions = useMemo<PopoverCommandOption[]>(
+    () => [
+      { value: ALL, label: t("allStatuses"), keywords: "all" },
+      ...TEAM_STATUSES.map((status) => ({
+        value: status,
+        label: t(`status.${status}`),
+        keywords: status,
+      })),
+    ],
+    [t],
+  );
 
   const branchName = useMemo(() => {
     const map = new Map(
@@ -114,13 +184,9 @@ export function TeamView() {
         m.roles.some((r) => r.code === "org_staff") &&
         !m.roles.some((r) => r.code === "org_owner"),
     ).length;
-    const active = staff.filter((m) => m.status === "active").length;
-    const suspended = staff.filter((m) => m.status === "suspended").length;
     return {
       owners,
       staffRole,
-      active,
-      suspended,
       pending: invitations.length,
       total: staff.length,
     };
@@ -160,13 +226,56 @@ export function TeamView() {
   };
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-      <OrganizationDetailScreenHeader
-        title={t("title", { name: org.name })}
-        subtitle={t("subtitle", {
-          count: counts.total,
-          pending: counts.pending,
-        })}
+    <>
+      <OrganizationSectionFrame
+        title={t("title")}
+        subtitle={
+          filtering
+            ? t("subtitleFiltered", {
+                shown,
+                total: staff.length + invitations.length,
+              })
+            : t("subtitle", {
+                count: counts.total,
+                pending: counts.pending,
+              })
+        }
+        toolbar={
+          hasRows ? (
+            <>
+              <InputGroup className={cn("h-8 min-w-[12rem] flex-1", softFilterControl)}>
+                <InputGroupAddon align="inline-start" className="text-foreground/70">
+                  <Search aria-hidden />
+                </InputGroupAddon>
+                <InputGroupInput
+                  type="search"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  aria-label={t("search")}
+                  placeholder={t("search")}
+                  autoComplete="off"
+                  className="placeholder:text-foreground/70"
+                />
+              </InputGroup>
+              <PopoverCommandSelect
+                value={filterRole}
+                onValueChange={setFilterRole}
+                options={roleOptions}
+                aria-label={t("filterRole")}
+                className={filterComboClass}
+                align="start"
+              />
+              <PopoverCommandSelect
+                value={filterStatus}
+                onValueChange={setFilterStatus}
+                options={statusOptions}
+                aria-label={t("filterStatus")}
+                className={filterComboClass}
+                align="start"
+              />
+            </>
+          ) : null
+        }
         actions={
           <Button
             type="button"
@@ -178,9 +287,7 @@ export function TeamView() {
             {t("invite.cta")}
           </Button>
         }
-      />
-
-      <div className="min-h-0 flex-1 overflow-y-auto soft-scrollbar p-4 pb-6 md:px-6">
+      >
         {isLoading ? <EntityDetailLoading label={tc("loading")} /> : null}
         {isError ? (
           <EntityDetailError
@@ -211,8 +318,29 @@ export function TeamView() {
           />
         ) : null}
         {!isLoading && !isError && hasRows ? (
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_240px]">
+          <div className={cn("flex flex-col", softDetailSectionGap)}>
+            <div className="soft-elevated grid grid-cols-3 border-0 px-4 py-3">
+              {(
+                [
+                  ["owners", counts.owners],
+                  ["staff", counts.staffRole],
+                  ["pending", counts.pending],
+                ] as const
+              ).map(([key, count]) => (
+                <div key={key} className="min-w-0 px-2 text-center first:pl-0 last:pr-0">
+                  <p className="text-lg font-semibold tabular-nums text-foreground">
+                    {count}
+                  </p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {t(`sidebar.${key}`)}
+                  </p>
+                </div>
+              ))}
+            </div>
             <EntityDetailPanel className="min-w-0 overflow-hidden">
+              {shown === 0 ? (
+                <DataListEmpty className="flex-none py-8" title={t("emptyFiltered")} />
+              ) : (
               <Table>
                 <TableHeader className="sticky top-0 z-10 bg-card">
                   <TableRow className="border-border/40 hover:bg-transparent">
@@ -233,18 +361,11 @@ export function TeamView() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {invitations.map((inv, i) => (
+                  {filteredInvitations.map((inv) => (
                     <TableRow key={`inv-${inv.id}`} className={SOFT_ROW}>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <div
-                            className={cn(
-                              "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
-                              AVATAR_TONES[i % AVATAR_TONES.length],
-                            )}
-                          >
-                            {initialsFrom(inv.email)}
-                          </div>
+                          <MemberAvatar name={inv.email} />
                           <div className="min-w-0">
                             <p className="truncate text-[13px] font-bold">
                               {inv.email}
@@ -294,10 +415,9 @@ export function TeamView() {
                       </TableCell>
                     </TableRow>
                   ))}
-                  {staff.map((m, i) => {
+                  {filteredStaff.map((m) => {
                     const label = memberLabel(m);
                     const role = primaryRole(m);
-                    const rowIndex = invitations.length + i;
                     return (
                       <TableRow key={m.id} className={SOFT_ROW}>
                         <TableCell>
@@ -306,14 +426,7 @@ export function TeamView() {
                             className="flex items-center gap-2 text-left outline-none focus-visible:underline"
                             onClick={() => setEditMember(m)}
                           >
-                            <div
-                              className={cn(
-                                "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
-                                AVATAR_TONES[rowIndex % AVATAR_TONES.length],
-                              )}
-                            >
-                              {initialsFrom(label)}
-                            </div>
+                            <MemberAvatar name={label} />
                             <div className="min-w-0">
                               <p className="truncate text-[13px] font-bold">
                                 {label}
@@ -401,46 +514,11 @@ export function TeamView() {
                   })}
                 </TableBody>
               </Table>
+              )}
             </EntityDetailPanel>
-
-            <aside className="soft-elevated h-fit rounded-2xl border-0 p-4">
-              <EntitySectionHead
-                icon={<Users className="size-4" aria-hidden />}
-                tone="sky"
-              >
-                {t("sidebar.title")}
-              </EntitySectionHead>
-              {(
-                [
-                  ["owners", counts.owners],
-                  ["staff", counts.staffRole],
-                  ["active", counts.active],
-                  ["suspended", counts.suspended],
-                  ["pending", counts.pending],
-                ] as const
-              ).map(([key, count]) => {
-                const max = Math.max(counts.total, counts.pending, 1);
-                return (
-                  <div key={key} className="mb-3 last:mb-0">
-                    <div className="mb-1 flex justify-between text-xs">
-                      <span className="text-muted-foreground">
-                        {t(`sidebar.${key}`)}
-                      </span>
-                      <span className="font-bold text-primary">{count}</span>
-                    </div>
-                    <div className="h-1.5 rounded-full bg-muted/60">
-                      <div
-                        className="h-full rounded-full bg-primary/80"
-                        style={{ width: `${(count / max) * 100}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </aside>
           </div>
         ) : null}
-      </div>
+      </OrganizationSectionFrame>
 
       <TeamInviteSheet
         open={inviteOpen}
@@ -455,6 +533,6 @@ export function TeamView() {
         organizationId={orgId}
         member={editMember}
       />
-    </div>
+    </>
   );
 }

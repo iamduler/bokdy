@@ -1,7 +1,7 @@
 "use client";
 
 import { BokdyMark } from "@bokdy/brand";
-import { AuthCard, Button, Input, Label } from "@bokdy/ui";
+import { AuthCard, Button, Input, Label, Spinner } from "@bokdy/ui";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
@@ -9,6 +9,7 @@ import { useForm } from "react-hook-form";
 
 import { useLogin } from "@/hooks/use-auth";
 import { Link, useRouter } from "@/i18n/navigation";
+import { announceLogin, currentNextPath, useRedirectIfSignedIn } from "@/lib/auth-tabs";
 import { ApiError, errorMessageKey } from "@/lib/api/errors";
 import { loginSchema, type LoginFormValues } from "@/lib/validation/auth";
 
@@ -18,6 +19,7 @@ export default function LoginPage() {
   const te = useTranslations("errors");
   const router = useRouter();
   const login = useLogin();
+  const checkingSession = useRedirectIfSignedIn();
   const [error, setError] = useState<string | null>(null);
 
   const schema = useMemo(
@@ -38,12 +40,24 @@ export default function LoginPage() {
     setError(null);
     try {
       await login.mutateAsync(values);
-      router.push("/dashboard");
+      announceLogin();
+      router.push(currentNextPath());
       router.refresh();
     } catch (err) {
       const apiErr = err instanceof ApiError ? err : new ApiError("INTERNAL", "", 500);
       setError(te(errorMessageKey(apiErr)));
     }
+  }
+
+  if (checkingSession) {
+    return (
+      <main className="flex min-h-dvh items-center justify-center p-4">
+        <p className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Spinner />
+          {tc("loading")}
+        </p>
+      </main>
+    );
   }
 
   return (

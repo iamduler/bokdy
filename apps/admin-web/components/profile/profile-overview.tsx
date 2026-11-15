@@ -31,6 +31,7 @@ import { useState, type ReactNode } from "react";
 
 import {
   softContentMaxW,
+  softDetailSectionGap,
   softDirectoryPrimaryBtn,
   softDirectorySecondaryBtn,
   softFieldIconBtn,
@@ -279,7 +280,13 @@ export function ProfileOverview() {
         </div>
       </div>
 
-      <div className={cn("mx-auto grid w-full gap-4 py-4 pb-8 md:grid-cols-2", softContentMaxW)}>
+      <div
+        className={cn(
+          "mx-auto grid w-full py-4 pb-8 md:grid-cols-2",
+          softContentMaxW,
+          softDetailSectionGap,
+        )}
+      >
         <EntityDetailPanel
           title={t("sections.account")}
           hint={t("hints.account")}

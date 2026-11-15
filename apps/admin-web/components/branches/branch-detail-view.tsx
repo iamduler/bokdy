@@ -1,12 +1,13 @@
 "use client";
 
-import { RichTextView } from "@bokdy/ui";
+import { cn, RichTextView } from "@bokdy/ui";
 import { FileText, Link2, Mail, MapPin } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 
 import { useBranchDetail } from "@/components/branches/detail/branch-detail-context";
 import { BranchDetailHero } from "@/components/branches/detail/branch-detail-hero";
+import { softDetailSectionGap } from "@/components/data-list";
 import { EntityDetailPanel } from "@/components/entity/detail-panel";
 import { MapPicker } from "@/components/maps/map-picker";
 import { useDistricts, useProvinces, useWards } from "@/hooks/use-admin-units";
@@ -16,7 +17,7 @@ import {
   formerBranchAddress,
 } from "@/lib/api/branches";
 
-/** Branch Overview: compact hero + map/contact grid + address panels. */
+/** Branch Overview: Soft entity stack (hero + panels) — same layout as Org overview. */
 export function BranchOverviewView() {
   const { branch } = useBranchDetail();
   const t = useTranslations("organization");
@@ -65,9 +66,9 @@ export function BranchOverviewView() {
   const contactPanel = (
     <EntityDetailPanel
       title={tb("contact")}
+      hint={tb("hints.contact")}
       icon={<Mail className="size-4" aria-hidden />}
       tone="sky"
-      className="p-4"
     >
       <ProfileRow label={t("fieldEmail")} value={branch.email || empty} />
       <ProfileRow label={t("fieldPhone")} value={branch.phone || empty} />
@@ -77,9 +78,9 @@ export function BranchOverviewView() {
   const linksPanel = (
     <EntityDetailPanel
       title={tb("links")}
+      hint={tb("hints.links")}
       icon={<Link2 className="size-4" aria-hidden />}
       tone="rose"
-      className="p-4"
     >
       <ProfileRow
         label={tb("fieldWebsite")}
@@ -103,92 +104,101 @@ export function BranchOverviewView() {
   );
 
   return (
-    <div className="flex flex-col">
+    <div
+      className={cn(
+        "flex w-full flex-col px-4 pb-6 pt-3 md:px-5 md:pt-4",
+        softDetailSectionGap,
+      )}
+    >
       <BranchDetailHero />
-      <div className="flex flex-col gap-3 p-4 md:px-5">
+
+      <EntityDetailPanel
+        title={tb("fieldDescription")}
+        hint={tb("hints.description")}
+        icon={<FileText className="size-4" aria-hidden />}
+        tone="amber"
+      >
+        {description ? (
+          <RichTextView html={description} />
+        ) : (
+          <p className="text-sm text-muted-foreground">{empty}</p>
+        )}
+      </EntityDetailPanel>
+
+      <div
+        className={cn(
+          "grid grid-cols-1 items-stretch lg:grid-cols-2",
+          softDetailSectionGap,
+        )}
+      >
         <EntityDetailPanel
-          title={tb("fieldDescription")}
-          icon={<FileText className="size-4" aria-hidden />}
-          tone="amber"
-          className="p-4"
+          title={tb("map")}
+          hint={tb("hints.map")}
+          icon={<MapPin className="size-4" aria-hidden />}
+          tone="sky"
+          className="flex min-h-40 flex-col lg:h-full lg:min-h-0"
         >
-          {description ? (
-            <RichTextView html={description} />
+          {hasCoords ? (
+            <div className="relative min-h-40 flex-1 overflow-hidden rounded-xl">
+              <MapPicker
+                latitude={lat}
+                longitude={lng}
+                readOnly
+                unavailableLabel={tb("mapUnavailable")}
+                className="absolute inset-0 size-full min-h-40 border-0"
+              />
+            </div>
           ) : (
             <p className="text-sm text-muted-foreground">{empty}</p>
           )}
         </EntityDetailPanel>
 
-        <div className="grid grid-cols-1 items-stretch gap-3 lg:grid-cols-2">
-          <EntityDetailPanel
-            title={tb("map")}
-            icon={<MapPin className="size-4" aria-hidden />}
-            tone="sky"
-            className="flex min-h-40 flex-col p-4 lg:h-full lg:min-h-0"
-          >
-            {hasCoords ? (
-              <div className="relative min-h-40 flex-1 overflow-hidden rounded-xl">
-                <MapPicker
-                  latitude={lat}
-                  longitude={lng}
-                  readOnly
-                  unavailableLabel={tb("mapUnavailable")}
-                  className="absolute inset-0 size-full min-h-40 border-0"
-                />
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">{empty}</p>
-            )}
-          </EntityDetailPanel>
-
-          <div className="flex h-full flex-col gap-3">
-            {contactPanel}
-            {linksPanel}
-          </div>
+        <div className={cn("flex h-full flex-col", softDetailSectionGap)}>
+          {contactPanel}
+          {linksPanel}
         </div>
+      </div>
 
-        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-          <EntityDetailPanel
-            title={tb("addressCurrent")}
-            icon={<MapPin className="size-4" aria-hidden />}
-            tone="amber"
-            className="p-4"
-          >
-            <ProfileRow
-              label={t("fieldProvince")}
-              value={provinceName || empty}
-            />
-            <ProfileRow label={t("fieldWard")} value={wardName || empty} />
-            <ProfileRow
-              label={t("fieldAddress1")}
-              value={address?.address_line_1 || empty}
-            />
-          </EntityDetailPanel>
+      <div
+        className={cn("grid grid-cols-1 lg:grid-cols-2", softDetailSectionGap)}
+      >
+        <EntityDetailPanel
+          title={tb("addressCurrent")}
+          hint={tb("hints.addressCurrent")}
+          icon={<MapPin className="size-4" aria-hidden />}
+          tone="amber"
+        >
+          <ProfileRow
+            label={t("fieldProvince")}
+            value={provinceName || empty}
+          />
+          <ProfileRow label={t("fieldWard")} value={wardName || empty} />
+          <ProfileRow
+            label={t("fieldAddress1")}
+            value={address?.address_line_1 || empty}
+          />
+        </EntityDetailPanel>
 
-          <EntityDetailPanel
-            title={tb("addressFormer")}
-            icon={<MapPin className="size-4" aria-hidden />}
-            tone="rose"
-            className="p-4"
-          >
-            <ProfileRow
-              label={t("fieldProvince")}
-              value={formerProvinceName || empty}
-            />
-            <ProfileRow
-              label={tb("fieldDistrict")}
-              value={formerDistrictName || empty}
-            />
-            <ProfileRow
-              label={t("fieldWard")}
-              value={formerWardName || empty}
-            />
-            <ProfileRow
-              label={t("fieldAddress1")}
-              value={former?.address_line_1 || empty}
-            />
-          </EntityDetailPanel>
-        </div>
+        <EntityDetailPanel
+          title={tb("addressFormer")}
+          hint={tb("hints.addressFormer")}
+          icon={<MapPin className="size-4" aria-hidden />}
+          tone="rose"
+        >
+          <ProfileRow
+            label={t("fieldProvince")}
+            value={formerProvinceName || empty}
+          />
+          <ProfileRow
+            label={tb("fieldDistrict")}
+            value={formerDistrictName || empty}
+          />
+          <ProfileRow label={t("fieldWard")} value={formerWardName || empty} />
+          <ProfileRow
+            label={t("fieldAddress1")}
+            value={former?.address_line_1 || empty}
+          />
+        </EntityDetailPanel>
       </div>
     </div>
   );
@@ -212,9 +222,7 @@ function linkValue(url: string | undefined | null, empty: string): ReactNode {
 function ProfileRow({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="flex items-start gap-3 border-b border-border/40 py-1.5 last:border-0">
-      <span className="w-28 shrink-0 text-xs text-muted-foreground">
-        {label}
-      </span>
+      <span className="w-28 shrink-0 text-xs text-muted-foreground">{label}</span>
       <span className="min-w-0 flex-1 text-sm text-foreground">{value}</span>
     </div>
   );

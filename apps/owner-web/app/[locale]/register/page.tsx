@@ -9,6 +9,7 @@ import { useForm } from "react-hook-form";
 
 import { useLogin, useRegister } from "@/hooks/use-auth";
 import { Link, useRouter } from "@/i18n/navigation";
+import { announceLogin } from "@/lib/auth-tabs";
 import { ApiError, errorMessageKey } from "@/lib/api/errors";
 import { registerSchema, type RegisterFormValues } from "@/lib/validation/auth";
 
@@ -46,6 +47,7 @@ export default function RegisterPage() {
       await registerUser.mutateAsync(values);
       try {
         await login.mutateAsync({ email: values.email, password: values.password });
+        announceLogin();
         router.push("/dashboard");
         router.refresh();
       } catch {

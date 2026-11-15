@@ -14,8 +14,11 @@ export { DataTablePagination } from "./data-table-pagination";
 
 export const DATA_LIST_PAGE_SIZE = 20;
 
-/** Soft UI content column max width (detail / profile / dashboard). */
+/** Single Soft UI content column max width (auth / detail / profile / dashboard / lists). */
 export const softContentMaxW = "max-w-5xl";
+
+/** Vertical gap between Soft detail sections (hero ↔ panels, panel ↔ panel / grid). */
+export const softDetailSectionGap = "gap-4 md:gap-5";
 
 /** Soft UI title-row primary CTA (sky fill + soft-cta shadow). */
 export const softDirectoryPrimaryBtn =
@@ -32,3 +35,10 @@ export const softFieldIconBtn =
 /** Soft UI compact text action for empty detail fields (Add email / Add phone). */
 export const softFieldSecondaryBtn =
   "soft-btn-secondary h-8 gap-1.5 rounded-lg border border-border/60 bg-card px-2.5 text-xs font-medium text-foreground shadow-none hover:border-sky-400 hover:bg-sky-500 hover:text-white";
+
+/**
+ * Search and filter fields on the warm light canvas.
+ * Opaque card, a solid edge, and a short shadow so they stay readable on the wash.
+ */
+export const softFilterControl =
+  "rounded-lg border border-shell-border-strong bg-shell-card text-foreground shadow-[var(--soft-shadow-bar)] hover:border-sky-400 hover:bg-shell-card hover:text-foreground";

@@ -1,12 +1,38 @@
 "use client";
 
-import { Mail, MapPin } from "lucide-react";
+import { cn } from "@bokdy/ui";
+import { Building2, Mail, MapPin } from "lucide-react";
 import { useTranslations } from "next-intl";
+import type { ReactNode } from "react";
 
+import { softDetailSectionGap } from "@/components/data-list";
 import { EntityDetailPanel } from "@/components/entity/detail-panel";
+import { OrganizationStatusBadge } from "@/components/organizations/organization-status-badge";
 import { useProvinces, useWards } from "@/hooks/use-admin-units";
 
 import { useOrganizationDetail } from "../organization-detail-context";
+
+function websiteHref(raw: string): string {
+  const trimmed = raw.trim();
+  if (!trimmed) return "";
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+}
+
+function linkValue(url: string | undefined | null, empty: string): ReactNode {
+  const trimmed = url?.trim();
+  if (!trimmed) return empty;
+  return (
+    <a
+      href={websiteHref(trimmed)}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="break-all text-sky-700 dark:text-sky-300"
+    >
+      {trimmed}
+    </a>
+  );
+}
 
 export function OrganizationOverviewContent() {
   const t = useTranslations("organization");
@@ -24,27 +50,55 @@ export function OrganizationOverviewContent() {
   const empty = to("emptyValue");
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto soft-scrollbar p-5 md:gap-5 md:px-6">
-      {org.banner_file_id ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={`/api/go/files/${org.banner_file_id}`}
-          alt=""
-          className="aspect-[3/1] w-full rounded-2xl object-cover ring-1 ring-black/5"
+    <>
+      <EntityDetailPanel
+        title={to("identity")}
+        hint={to("identityHint")}
+        icon={<Building2 className="size-4" aria-hidden />}
+        tone="emerald"
+      >
+        <ProfileRow
+          label={t("fieldLegalName")}
+          value={org.legal_name || empty}
         />
-      ) : null}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-5">
+        <ProfileRow label={t("fieldTaxCode")} value={org.tax_code || empty} />
+        <ProfileRow
+          label={t("fieldTenantStatus")}
+          value={
+            org.tenant_status ? (
+              <OrganizationStatusBadge
+                kind="tenant"
+                status={org.tenant_status}
+              />
+            ) : (
+              empty
+            )
+          }
+        />
+      </EntityDetailPanel>
+
+      <div
+        className={cn(
+          "grid grid-cols-1 lg:grid-cols-2",
+          softDetailSectionGap,
+        )}
+      >
         <EntityDetailPanel
           title={to("contact")}
+          hint={to("contactHint")}
           icon={<Mail className="size-4" aria-hidden />}
           tone="sky"
         >
           <ProfileRow label={t("fieldEmail")} value={org.email || empty} />
           <ProfileRow label={t("fieldPhone")} value={org.phone || empty} />
-          <ProfileRow label={t("fieldWebsite")} value={org.website || empty} />
+          <ProfileRow
+            label={t("fieldWebsite")}
+            value={linkValue(org.website, empty)}
+          />
         </EntityDetailPanel>
         <EntityDetailPanel
           title={to("headquarters")}
+          hint={to("headquartersHint")}
           icon={<MapPin className="size-4" aria-hidden />}
           tone="amber"
         >
@@ -59,17 +113,15 @@ export function OrganizationOverviewContent() {
           />
         </EntityDetailPanel>
       </div>
-    </div>
+    </>
   );
 }
 
-function ProfileRow({ label, value }: { label: string; value: string }) {
+function ProfileRow({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <div className="flex items-start justify-between gap-3 border-b border-border/40 py-2.5 last:border-0">
-      <span className="text-xs text-muted-foreground">{label}</span>
-      <span className="min-w-0 text-right text-sm text-foreground">
-        {value}
-      </span>
+    <div className="flex items-start gap-3 border-b border-border/40 py-1.5 last:border-0">
+      <span className="w-28 shrink-0 text-xs text-muted-foreground">{label}</span>
+      <span className="min-w-0 flex-1 text-sm text-foreground">{value}</span>
     </div>
   );
 }

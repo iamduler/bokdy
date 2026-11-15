@@ -1,6 +1,6 @@
 "use client";
 
-import { RichTextView } from "@bokdy/ui";
+import { cn, RichTextView } from "@bokdy/ui";
 import {
   Copy,
   Home,
@@ -19,6 +19,7 @@ import { CourtGalleryStrip } from "@/components/courts/court-gallery-strip";
 import { COURT_STATUS_TONE } from "@/components/courts/court-status";
 import { CourtStatusDialog } from "@/components/courts/court-status-dialog";
 import { useCourtDetail } from "@/components/courts/detail/court-detail-context";
+import { softDetailSectionGap } from "@/components/data-list";
 import { EntityDetailPanel } from "@/components/entity/detail-panel";
 import { EntityRelationLink } from "@/components/entity/relation-link";
 import { SoftStatusChip } from "@/components/entity/soft-status-chip";
@@ -60,7 +61,7 @@ export function CourtOverviewView() {
   const [statusOpen, setStatusOpen] = useState(false);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className={cn("flex flex-col", softDetailSectionGap)}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
           <h1 className="min-w-0 truncate text-xl font-semibold text-foreground">

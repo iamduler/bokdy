@@ -10,6 +10,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   Button,
+  cn,
   formatUserDateTime,
   formatUserTime,
   Sheet,
@@ -35,6 +36,7 @@ import { useState } from "react";
 import { PricingQuotePreview } from "@/components/branches/detail/pricing-quote-preview";
 import { sportLabel } from "@/components/branches/branch-sports-chips";
 import {
+  softDetailSectionGap,
   softDirectoryPrimaryBtn,
   softDirectorySecondaryBtn,
 } from "@/components/data-list";
@@ -171,7 +173,7 @@ export function PricingProfileDetailView() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className={cn("flex flex-col", softDetailSectionGap)}>
       <header className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
@@ -258,8 +260,13 @@ export function PricingProfileDetailView() {
         />
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_18rem]">
-        <div className="space-y-4">
+      <div
+        className={cn(
+          "grid xl:grid-cols-[minmax(0,1fr)_18rem]",
+          softDetailSectionGap,
+        )}
+      >
+        <div className={cn("flex flex-col", softDetailSectionGap)}>
           <EntityDetailPanel
             title={t("schedulePeriodic")}
             hint={t("scheduleLead")}
@@ -284,7 +291,7 @@ export function PricingProfileDetailView() {
                 </Link>
               </p>
             ) : (
-              <div className="space-y-4">
+              <div className={cn("flex flex-col", softDetailSectionGap)}>
                 {groups.map((group) => (
                   <DayGroup
                     key={group.id ?? group.name}

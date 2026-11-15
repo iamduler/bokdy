@@ -156,20 +156,17 @@ export const DatePicker = React.forwardRef<HTMLButtonElement, DatePickerProps>(f
           id={id}
           ref={triggerRef}
           type="button"
-          variant="outline"
+          variant="ghost"
           disabled={disabled}
           aria-label={ariaLabel}
           aria-invalid={ariaInvalid || undefined}
           className={cn(
-            "h-9 w-full justify-start gap-2 border-input bg-background px-3 font-normal text-foreground shadow-xs",
-            "hover:border-sky-400 hover:bg-background! hover:text-foreground!",
-            "dark:bg-input/30 dark:hover:border-sky-400 dark:hover:bg-input/30! dark:hover:text-foreground!",
-            !label && "text-muted-foreground hover:text-muted-foreground!",
+            "h-9 w-full justify-start gap-2 rounded-lg border border-shell-border-strong bg-shell-card px-3 font-normal text-foreground shadow-[var(--soft-shadow-bar)] hover:border-sky-400 hover:bg-shell-card hover:text-foreground",
             className,
           )}
         >
           <CalendarIcon className="size-4 text-muted-foreground" />
-          <span className={cn("truncate", label ? "text-foreground" : "text-muted-foreground")}>{label || placeholder}</span>
+          <span className={cn("truncate", label ? "text-foreground" : "text-foreground/75")}>{label || placeholder}</span>
         </Button>
       </PopoverTrigger>
       <PopoverContent

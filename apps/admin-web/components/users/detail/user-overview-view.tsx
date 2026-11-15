@@ -27,7 +27,11 @@ import {
 import { useLocale, useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 
-import { DataListStats, softContentMaxW } from "@/components/data-list";
+import {
+  DataListStats,
+  softContentMaxW,
+  softDetailSectionGap,
+} from "@/components/data-list";
 import { EntityDetailPanel } from "@/components/entity/detail-panel";
 import { SoftStatusChip } from "@/components/entity/soft-status-chip";
 import { useUserDetail } from "@/components/users/detail/user-detail-context";
@@ -207,8 +211,19 @@ export function UserOverviewView() {
     summary.data?.currency_code || user.preferred_currency_code || undefined;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-auto soft-scrollbar p-4 md:p-6">
-      <div className={cn("mx-auto flex w-full flex-col gap-4", softContentMaxW)}>
+    <div
+      className={cn(
+        "flex min-h-0 flex-1 flex-col overflow-auto soft-scrollbar p-4 md:p-6",
+        softDetailSectionGap,
+      )}
+    >
+      <div
+        className={cn(
+          "mx-auto flex w-full flex-col",
+          softContentMaxW,
+          softDetailSectionGap,
+        )}
+      >
         {user.status === "suspended" ? (
           <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm">
             <p className="font-semibold text-destructive">{t("suspendedNotice")}</p>
@@ -221,7 +236,7 @@ export function UserOverviewView() {
           </div>
         ) : null}
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className={cn("grid sm:grid-cols-2", softDetailSectionGap)}>
           <ProfilePanel
             title={t("contact")}
             hint={t("hints.contact")}

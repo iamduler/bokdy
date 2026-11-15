@@ -15,7 +15,7 @@ import {
 } from "@bokdy/ui";
 
 import { Link } from "@/i18n/navigation";
-import { Fragment } from "react";
+import { Fragment, type ReactNode } from "react";
 
 type EntityDetailCrumb = {
   label: string;
@@ -33,12 +33,14 @@ type EntityDetailSubnavProps = {
   root: { href: string; label: string; active?: boolean };
   crumbs: EntityDetailCrumb[];
   pills?: EntityDetailPill[];
+  trailing?: ReactNode;
 };
 
 export function EntityDetailSubnav({
   root,
   crumbs,
   pills = [],
+  trailing,
 }: EntityDetailSubnavProps) {
   return (
     <div className="flex shrink-0 items-center gap-1.5 border-b border-border/40 px-5 py-2.5 md:px-6">
@@ -71,6 +73,7 @@ export function EntityDetailSubnav({
         </BreadcrumbList>
       </Breadcrumb>
       <div className="flex-1" />
+      {trailing}
       {pills.length > 0 ? (
         <div className="hidden items-center gap-1 sm:flex">
           {pills.map((pill) => (

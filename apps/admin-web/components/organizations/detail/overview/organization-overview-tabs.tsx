@@ -1,7 +1,15 @@
 "use client";
 
+import {
+  Building2,
+  CalendarCheck,
+  CalendarDays,
+  LayoutDashboard,
+  LayoutGrid,
+  Users,
+} from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 
 import {
   EntityDetailTabs,
@@ -18,11 +26,18 @@ const TABS = [
   { id: "courts", href: "/courts", labelKey: "courts" },
   { id: "team", href: "/team", labelKey: "team" },
   { id: "bookings", href: "/bookings", labelKey: "bookings" },
-  { id: "billing", href: "/billing", labelKey: "billing" },
-  { id: "activity", href: "/activity", labelKey: "activity" },
-  { id: "actions", href: "/actions", labelKey: "actions" },
-  { id: "audit", href: null, labelKey: "audit" },
 ] as const;
+
+type OrgTabId = (typeof TABS)[number]["id"];
+
+const TAB_ICONS: Record<OrgTabId, ReactNode> = {
+  overview: <LayoutDashboard />,
+  branches: <Building2 />,
+  holidays: <CalendarDays />,
+  courts: <LayoutGrid />,
+  team: <Users />,
+  bookings: <CalendarCheck />,
+};
 
 export function OrganizationOverviewTabs() {
   const t = useTranslations("organization.detailTabs");
@@ -49,10 +64,19 @@ export function OrganizationOverviewTabs() {
           href: tab.href !== null ? `${base}${tab.href}` : undefined,
           active,
           disabled: tab.href === null,
+          icon: TAB_ICONS[tab.id],
         };
       }),
     [base, pathname, segment, t],
   );
 
-  return <EntityDetailTabs tabs={tabs} ariaLabel={t("overview")} />;
+  return (
+    <EntityDetailTabs
+      tabs={tabs}
+      ariaLabel={t("ariaLabel")}
+      title={t("navTitle")}
+      variant="vertical"
+      className="p-2 md:p-2.5"
+    />
+  );
 }

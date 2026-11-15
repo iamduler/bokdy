@@ -466,6 +466,8 @@
       "loadError": "Could not load holidays."
     },
     "detailTabs": {
+      "navTitle": "Organization",
+      "ariaLabel": "Organization sections",
       "overview": "Overview",
       "branches": "Branches",
       "holidays": "Holidays",
@@ -506,8 +508,12 @@
     },
     "detailOverview": {
       "editProfile": "Edit profile",
+      "identity": "Identity",
+      "identityHint": "Legal identity and tenant subscription status for this organization.",
       "contact": "Contact",
+      "contactHint": "Public contact details for this organization.",
       "headquarters": "Headquarters",
+      "headquartersHint": "Registered headquarters address used for billing and compliance.",
       "emptyValue": "-",
       "verified": "Verified",
       "ownerLabel": "Owner",
@@ -549,9 +555,21 @@
       },
       "viewAllActions": "View all actions"
     },
+    "collectionView": {
+      "label": "Display",
+      "grid": "Grid",
+      "list": "List"
+    },
     "detailBranches": {
-      "title": "Branches — {name}",
+      "title": "Branches",
       "subtitle": "{branches} branches · {courts} courts",
+      "subtitleFiltered": "{shown} of {total}",
+      "search": "Name, code, or address",
+      "filterStatus": "Filter by status",
+      "filterSport": "Filter by sport",
+      "allStatuses": "All statuses",
+      "allSports": "All sports",
+      "emptyFiltered": "No branches match the filters.",
       "grid": "Grid",
       "map": "Map",
       "addBranch": "Add branch",
@@ -564,8 +582,10 @@
       "mapPlaceholder": "Branch map — preview data"
     },
     "detailCourts": {
-      "title": "Courts — {name}",
+      "title": "Courts",
       "subtitle": "{total, plural, one {# court} other {# courts}}",
+      "subtitleFiltered": "{shown} of {total}",
+      "search": "Court name or code",
       "addCourt": "Add court",
       "emptyHint": "Create the first court for this organization.",
       "emptyFiltered": "No courts match the filters.",
@@ -693,7 +713,7 @@
       }
     },
     "detailTeam": {
-      "title": "Team — {name}",
+      "title": "Team",
       "subtitle": "{count} members · {pending} pending invite",
       "invite": "Invite staff",
       "colMember": "Member",
@@ -718,7 +738,7 @@
       }
     },
     "detailBilling": {
-      "title": "Subscription & billing — {name}",
+      "title": "Subscription & billing",
       "viewInvoices": "View invoices",
       "upgrade": "Upgrade plan",
       "currentPlan": "Current plan",
@@ -755,7 +775,7 @@
       "emptyHint": "Plan, usage, and invoices appear here when subscription billing is available."
     },
     "detailActivity": {
-      "title": "Activity — {name}",
+      "title": "Activity",
       "filterCategory": "Category filter",
       "allCategories": "All categories",
       "export": "Export",
@@ -779,6 +799,8 @@
       "emptyHint": "Organization changes appear here when the audit feed is available."
     },
     "detailActions": {
+      "open": "Actions",
+      "pageTitle": "Actions",
       "title": "Actions — {name}",
       "groups": {
         "business": "Business",
@@ -860,6 +882,14 @@
       "address": "Address",
       "addressCurrent": "Address (current)",
       "addressFormer": "Address (former)",
+      "hints": {
+        "description": "Public about text shown on the branch profile.",
+        "map": "Map pin from the branch coordinates.",
+        "contact": "Phone and email for this branch.",
+        "links": "Website, social links, and founding year.",
+        "addressCurrent": "Current administrative address for this branch.",
+        "addressFormer": "Former administrative address kept for reference."
+      },
       "courtCount": "Courts",
       "fieldCreated": "Joined",
       "fieldTimezone": "Timezone",
@@ -1548,8 +1578,15 @@
     "PASSWORD_POLICY": "Password must be at least 8 characters and include uppercase, lowercase, a number, and a special character"
   },
   "team": {
-    "title": "Team — {name}",
+    "title": "Team",
     "subtitle": "{count} members · {pending} pending invite",
+    "subtitleFiltered": "{shown} of {total}",
+    "search": "Name or email",
+    "filterRole": "Filter by role",
+    "filterStatus": "Filter by status",
+    "allRoles": "All roles",
+    "allStatuses": "All statuses",
+    "emptyFiltered": "No team members match the filters.",
     "loadError": "Could not load team.",
     "empty": "No team members yet",
     "emptyHint": "Invite staff by email to join this organization.",
@@ -1620,6 +1657,8 @@
     }
   },
   "adminBookings": {
+    "orgTitle": "Bookings",
+    "orgSubtitle": "{total, plural, one {# booking} other {# bookings}}",
     "search": "Booking no, customer, or email",
     "status": "Status",
     "statusAll": "All statuses",

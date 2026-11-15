@@ -11,6 +11,7 @@ import type { ReactNode } from "react";
 import { cn } from "@bokdy/ui";
 
 import { BranchDetailSubnav } from "@/components/branches/detail/branch-detail-subnav";
+import { softContentMaxW } from "@/components/data-list";
 import {
   EntityDetailError,
   EntityDetailLoading,
@@ -19,7 +20,6 @@ import { usePageShellTitle } from "@/components/shell/shell-title";
 import { useBranch } from "@/hooks/use-branches";
 import { usePathname } from "@/i18n/navigation";
 import { ApiError } from "@/lib/api/errors";
-import { PAGE_CONTENT_MAX_WIDTH_CLASS } from "@/lib/layout";
 
 import { BranchDetailProvider } from "./branch-detail-context";
 import { branchDetailBase, isBranchFormRoute } from "./branch-detail-nav";
@@ -62,7 +62,7 @@ export function BranchDetailLayout({ children }: { children: ReactNode }) {
       organizationId={organizationId}
       branchId={branchId}
     >
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div className="flex h-full min-h-0 flex-col overflow-hidden">
         <BranchDetailSubnav />
         {/*
           Left Soft rail (opaque white card) + scrollable content.
@@ -71,15 +71,15 @@ export function BranchDetailLayout({ children }: { children: ReactNode }) {
         <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden p-3 pt-2 md:flex-row md:p-4 md:pt-2">
           <aside
             className={cn(
-              "soft-elevated h-fit shrink-0 overflow-x-auto rounded-md border-0 bg-card soft-scrollbar",
-              "md:w-52 md:self-start md:overflow-x-hidden",
+              "soft-elevated h-fit max-h-full shrink-0 overflow-x-auto rounded-md border-0 bg-card soft-scrollbar",
+              "md:sticky md:top-0 md:w-52 md:self-start md:overflow-y-auto md:overflow-x-hidden",
             )}
           >
             <BranchDetailTabs />
           </aside>
           <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto soft-scrollbar">
             <div
-              className={cn("mx-auto w-full pb-4", PAGE_CONTENT_MAX_WIDTH_CLASS)}
+              className={cn("mx-auto w-full pb-4", softContentMaxW)}
             >
               {children}
             </div>

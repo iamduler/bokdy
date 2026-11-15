@@ -1,8 +1,9 @@
 "use client";
 
-import { Button, Spinner } from "@bokdy/ui";
+import { Button, cn, Spinner } from "@bokdy/ui";
 import { useTranslations } from "next-intl";
 
+import { softDetailSectionGap } from "@/components/data-list";
 import { useUserDetail } from "@/components/users/detail/user-detail-context";
 import { useUserPermissions } from "@/hooks/use-admin-users";
 
@@ -28,7 +29,12 @@ export function UserPermissionsView() {
   const roles = data?.roles ?? [];
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-auto soft-scrollbar p-4 md:p-6">
+    <div
+      className={cn(
+        "flex min-h-0 flex-1 flex-col overflow-auto soft-scrollbar p-4 md:p-6",
+        softDetailSectionGap,
+      )}
+    >
       {isError ? (
         <div className="space-y-2">
           <p className="text-sm text-destructive">{t("loadError")}</p>

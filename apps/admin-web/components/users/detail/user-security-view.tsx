@@ -4,7 +4,10 @@ import { Button, cn } from "@bokdy/ui";
 import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 
-import { softDirectorySecondaryBtn } from "@/components/data-list";
+import {
+  softDetailSectionGap,
+  softDirectorySecondaryBtn,
+} from "@/components/data-list";
 import { useUserDetail } from "@/components/users/detail/user-detail-context";
 import { UserUnavailableBadge } from "@/components/users/shared/user-unavailable-badge";
 import { useForceEmailVerify, useResetUserPassword } from "@/hooks/use-admin-users";
@@ -58,7 +61,12 @@ export function UserSecurityView() {
   ];
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-auto soft-scrollbar p-4 md:p-6">
+    <div
+      className={cn(
+        "flex min-h-0 flex-1 flex-col overflow-auto soft-scrollbar p-4 md:p-6",
+        softDetailSectionGap,
+      )}
+    >
       <div className="grid gap-3 md:grid-cols-3">
         {cards.map((c) => (
           <div key={c.label} className="soft-elevated rounded-2xl border-0 p-4">

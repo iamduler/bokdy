@@ -8,6 +8,7 @@ import type { ReactNode } from "react";
 
 import { BranchDetailProvider } from "@/components/branches/detail/branch-detail-context";
 import { BranchDetailTabs } from "@/components/branches/detail/branch-detail-tabs";
+import { softContentMaxW } from "@/components/data-list";
 import { EntityDetailError, EntityDetailLoading } from "@/components/entity/detail-state";
 import { PricingProfileProvider } from "@/components/pricing-profiles/pricing-profile-context";
 import { PricingProfileSubnav } from "@/components/pricing-profiles/pricing-profile-subnav";
@@ -16,9 +17,8 @@ import { useBranch } from "@/hooks/use-branches";
 import { usePricingProfile } from "@/hooks/use-pricing";
 import { Link, usePathname } from "@/i18n/navigation";
 import type { Branch } from "@/lib/api/branches";
-import type { BranchPricingProfile } from "@/lib/api/pricing";
 import { ApiError } from "@/lib/api/errors";
-import { PAGE_CONTENT_MAX_WIDTH_CLASS } from "@/lib/layout";
+import type { BranchPricingProfile } from "@/lib/api/pricing";
 
 export function PricingProfileLayout({ children }: { children: ReactNode }) {
   const t = useTranslations("organization.branchDetail.pricing");
@@ -112,7 +112,7 @@ function PricingProfileFrame({
               <BranchDetailTabs activeId="pricing" />
             </aside>
             <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto soft-scrollbar">
-              <div className={cn("mx-auto w-full pb-4", PAGE_CONTENT_MAX_WIDTH_CLASS)}>{children}</div>
+              <div className={cn("mx-auto w-full pb-4", softContentMaxW)}>{children}</div>
             </div>
           </div>
         </div>

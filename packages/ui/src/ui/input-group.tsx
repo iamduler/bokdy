@@ -10,7 +10,7 @@ export function InputGroup({ className, ...props }: React.ComponentProps<"div">)
       data-slot="input-group"
       role="group"
       className={cn(
-        "group/input-group relative flex w-full items-center rounded-md border border-input shadow-xs transition-[color,box-shadow] outline-none dark:bg-input/30",
+        "group/input-group relative flex w-full items-center rounded-md border border-input bg-card shadow-xs transition-[color,box-shadow] outline-none",
         "h-9",
         "has-[[data-slot=input-group-control]:focus-visible]:border-shell-accent has-[[data-slot=input-group-control]:focus-visible]:ring-[3px] has-[[data-slot=input-group-control]:focus-visible]:ring-shell-accent/50",
         className,

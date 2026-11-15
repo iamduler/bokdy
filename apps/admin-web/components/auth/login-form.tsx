@@ -5,6 +5,7 @@ import {
   AuthAlert,
   AuthField,
   AuthPasswordField,
+  Spinner,
 } from "@bokdy/ui";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Lock, Mail } from "lucide-react";
@@ -21,18 +22,42 @@ import {
 } from "@/components/auth/admin-auth-heading";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useLogin } from "@/hooks/use-auth";
+import { getSession } from "@/lib/api/auth";
 import { ApiError, errorMessageKey } from "@/lib/api/errors";
 import { safeNextPath } from "@/lib/login-return";
 import { loginSchema, type LoginFormValues } from "@/lib/validation/auth";
 
+const AUTH_CHANNEL = "bokdy-admin-auth";
+
+function sessionHasUser(body: unknown): boolean {
+  if (!body || typeof body !== "object") return false;
+  const record = body as {
+    user?: unknown;
+    data?: { authenticated?: boolean; user?: unknown };
+  };
+  if (record.data?.authenticated === false) return false;
+  return Boolean(record.user ?? record.data?.user);
+}
+
+function announceLogin() {
+  if (typeof BroadcastChannel === "undefined") return;
+  const channel = new BroadcastChannel(AUTH_CHANNEL);
+  channel.postMessage("login");
+  channel.close();
+}
+
 export function LoginForm() {
   const t = useTranslations("auth");
   const te = useTranslations("errors");
+  const tc = useTranslations("common");
   const router = useRouter();
   const searchParams = useSearchParams();
   const login = useLogin();
   const [error, setError] = useState<string | null>(null);
+  const [checkingSession, setCheckingSession] = useState(true);
   const alertRef = useRef<HTMLDivElement>(null);
+  const leaving = useRef(false);
+  const nextPath = safeNextPath(searchParams.get("next")) ?? "/organizations";
 
   const schema = useMemo(
     () =>
@@ -58,17 +83,73 @@ export function LoginForm() {
     }
   }, [error]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function leaveIfSignedIn() {
+      if (leaving.current) return;
+      try {
+        const body = await getSession();
+        if (cancelled || !sessionHasUser(body)) {
+          if (!cancelled && !leaving.current) setCheckingSession(false);
+          return;
+        }
+        leaving.current = true;
+        router.replace(nextPath);
+        router.refresh();
+      } catch {
+        if (!cancelled && !leaving.current) setCheckingSession(false);
+      }
+    }
+
+    void leaveIfSignedIn();
+
+    function onFocus() {
+      void leaveIfSignedIn();
+    }
+    function onVisible() {
+      if (document.visibilityState === "visible") void leaveIfSignedIn();
+    }
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisible);
+
+    let channel: BroadcastChannel | null = null;
+    if (typeof BroadcastChannel !== "undefined") {
+      channel = new BroadcastChannel(AUTH_CHANNEL);
+      channel.onmessage = (event) => {
+        if (event.data === "login") void leaveIfSignedIn();
+      };
+    }
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisible);
+      channel?.close();
+    };
+  }, [nextPath, router]);
+
   async function onSubmit(values: LoginFormValues) {
     setError(null);
     try {
       await login.mutateAsync(values);
-      router.push(safeNextPath(searchParams.get("next")) ?? "/organizations");
+      announceLogin();
+      router.push(nextPath);
       router.refresh();
     } catch (err) {
       const apiErr =
         err instanceof ApiError ? err : new ApiError("INTERNAL", "", 500);
       setError(te(errorMessageKey(apiErr)));
     }
+  }
+
+  if (checkingSession) {
+    return (
+      <p className="flex items-center gap-2 text-sm text-shell-text/70">
+        <Spinner />
+        {tc("loading")}
+      </p>
+    );
   }
 
   return (

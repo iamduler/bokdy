@@ -59,9 +59,11 @@ const FORM_FIELDS = [
   "address_line_1",
 ] as const;
 
-type OrganizationFormProps =
-  | { mode: "create" }
-  | { mode: "edit"; organization: AdminOrganization };
+type OrganizationFormProps = {
+  layout?: "page" | "sheet";
+  onDone?: () => void;
+  onRegisterLeave?: (leave: () => void) => void;
+} & ({ mode: "create" } | { mode: "edit"; organization: AdminOrganization });
 
 type CropTarget = "logo" | "banner" | null;
 
@@ -144,6 +146,8 @@ export function OrganizationForm(props: OrganizationFormProps) {
   const t = useTranslations("organization");
   const te = useTranslations("errors");
   const router = useRouter();
+  const layout = props.layout ?? "page";
+  const { onDone, onRegisterLeave } = props;
   const isEdit = props.mode === "edit";
   const organization = isEdit ? props.organization : null;
   const create = useCreateOrganization();
@@ -261,8 +265,13 @@ export function OrganizationForm(props: OrganizationFormProps) {
       toast.warning(t("unsavedWarning"));
       return;
     }
-    router.push(backHref);
+    if (layout === "sheet") onDone?.();
+    else router.push(backHref);
   }
+
+  useEffect(() => {
+    onRegisterLeave?.(requestLeave);
+  });
 
   function applyApiError(err: unknown) {
     const apiErr = err instanceof ApiError ? err : null;
@@ -356,7 +365,8 @@ export function OrganizationForm(props: OrganizationFormProps) {
       setBannerPreview(null);
       if (props.mode === "create") {
         toast.success(t("createSuccess"));
-        router.push(`/organizations/${saved.id}`);
+        if (layout === "sheet") onDone?.();
+        else router.push(`/organizations/${saved.id}`);
         return;
       }
       if (organization && nextStatus !== organization.status) {
@@ -379,6 +389,7 @@ export function OrganizationForm(props: OrganizationFormProps) {
       }
       reset(valuesFromOrganization(saved));
       toast.success(t("saveSuccess"));
+      if (layout === "sheet") onDone?.();
     } catch (err) {
       applyApiError(err);
     }
@@ -557,51 +568,58 @@ export function OrganizationForm(props: OrganizationFormProps) {
 
   return (
     <FormProvider {...form}>
-      <EntityFormFrame
-        cancelLabel={t("createCancel")}
-        submitLabel={isEdit ? t("save") : t("createSubmit")}
-        onCancel={requestLeave}
-        pending={pending}
-        submitDisabled={isEdit && !dirty}
-        onSubmit={handleSubmit(onSubmit)}
-        cover={
-          <EntityCover
-            bannerLabel={t("fieldBanner")}
-            logoLabel={t("fieldLogo")}
-            viewLabel={t("viewImage")}
-            pickLabel={t("pickImage")}
-            viewAvatarLabel={t("viewAvatar")}
-            changeImageLabel={t("changeImage")}
-            bannerPreview={bannerPreview ?? storedBanner}
-            logoPreview={logoPreview ?? storedLogo}
-            onBanner={(file) => openCrop("banner", file)}
-            onLogo={(file) => openCrop("logo", file)}
-          />
+      <div
+        className={
+          layout === "sheet" ? "flex min-h-0 flex-1 flex-col" : undefined
         }
       >
-        <EntityMetadataForm blocks={blocks} />
-        <ImageCropDialog
-          open={cropTarget !== null}
-          title={cropTarget === "banner" ? t("fieldBanner") : t("fieldLogo")}
-          imageSrc={cropSrc}
-          aspect={cropTarget === "banner" ? 3 : 1}
-          outputWidth={cropTarget === "banner" ? 1200 : 512}
-          outputHeight={cropTarget === "banner" ? 400 : 512}
-          zoomLabel={t("cropZoom")}
-          cancelLabel={t("cropCancel")}
-          applyLabel={t("cropApply")}
-          onOpenChange={(open) => {
-            if (!open) {
-              setCropTarget(null);
-              setCropSrc((current) => {
-                if (current) URL.revokeObjectURL(current);
-                return null;
-              });
-            }
-          }}
-          onCropped={storeCrop}
-        />
-      </EntityFormFrame>
+        <EntityFormFrame
+          cancelLabel={t("createCancel")}
+          submitLabel={isEdit ? t("save") : t("createSubmit")}
+          onCancel={requestLeave}
+          pending={pending}
+          submitDisabled={isEdit && !dirty}
+          onSubmit={handleSubmit(onSubmit)}
+          actionsPlacement={layout === "sheet" ? "inline" : "shell"}
+          cover={
+            <EntityCover
+              bannerLabel={t("fieldBanner")}
+              logoLabel={t("fieldLogo")}
+              viewLabel={t("viewImage")}
+              pickLabel={t("pickImage")}
+              viewAvatarLabel={t("viewAvatar")}
+              changeImageLabel={t("changeImage")}
+              bannerPreview={bannerPreview ?? storedBanner}
+              logoPreview={logoPreview ?? storedLogo}
+              onBanner={(file) => openCrop("banner", file)}
+              onLogo={(file) => openCrop("logo", file)}
+            />
+          }
+        >
+          <EntityMetadataForm blocks={blocks} />
+          <ImageCropDialog
+            open={cropTarget !== null}
+            title={cropTarget === "banner" ? t("fieldBanner") : t("fieldLogo")}
+            imageSrc={cropSrc}
+            aspect={cropTarget === "banner" ? 3 : 1}
+            outputWidth={cropTarget === "banner" ? 1200 : 512}
+            outputHeight={cropTarget === "banner" ? 400 : 512}
+            zoomLabel={t("cropZoom")}
+            cancelLabel={t("cropCancel")}
+            applyLabel={t("cropApply")}
+            onOpenChange={(open) => {
+              if (!open) {
+                setCropTarget(null);
+                setCropSrc((current) => {
+                  if (current) URL.revokeObjectURL(current);
+                  return null;
+                });
+              }
+            }}
+            onCropped={storeCrop}
+          />
+        </EntityFormFrame>
+      </div>
     </FormProvider>
   );
 }

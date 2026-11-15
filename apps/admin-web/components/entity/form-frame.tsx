@@ -20,7 +20,11 @@ type EntityFormFrameProps = {
   children: ReactNode;
   /** Shell portals actions into the page header. Inline keeps them under the fields. */
   actionsPlacement?: "shell" | "inline";
-  /** `lg` matches Soft detail pages (`softContentMaxW`). Default `md` is max-w-3xl. */
+  /**
+   * `lg` = Soft detail column (`softContentMaxW` / max-w-5xl).
+   * `md` = max-w-3xl.
+   * Default: `lg` for shell (full page), `md` for inline (sheet).
+   */
   contentWidth?: "md" | "lg";
 };
 
@@ -34,9 +38,10 @@ export function EntityFormFrame({
   cover,
   children,
   actionsPlacement = "shell",
-  contentWidth = "md",
+  contentWidth,
 }: EntityFormFrameProps) {
   const inline = actionsPlacement === "inline";
+  const resolvedWidth = contentWidth ?? (actionsPlacement === "shell" ? "lg" : "md");
   const buttons = (
     <>
       <Button type="button" variant="outline" size="sm" onClick={onCancel} disabled={pending}>
@@ -48,7 +53,7 @@ export function EntityFormFrame({
     </>
   );
   const portaled = usePageShellActions(inline ? null : buttons);
-  const widthClass = contentWidth === "lg" ? softContentMaxW : "max-w-3xl";
+  const widthClass = resolvedWidth === "lg" ? softContentMaxW : "max-w-3xl";
 
   return (
     <EntityFormLayoutProvider layout={inline ? "sheet" : "page"}>
@@ -68,7 +73,7 @@ export function EntityFormFrame({
             }
           >
             {cover}
-            <div className={contentWidth === "lg" ? "space-y-4" : "space-y-10"}>{children}</div>
+            <div className={resolvedWidth === "lg" ? "space-y-4" : "space-y-10"}>{children}</div>
           </div>
         </form>
         {inline ? <div className="flex justify-end gap-2 border-t border-border p-4">{buttons}</div> : null}

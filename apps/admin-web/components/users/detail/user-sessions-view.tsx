@@ -1,8 +1,9 @@
 "use client";
 
-import { Button, formatUserDateTime, Spinner, useUserDateTimePrefs } from "@bokdy/ui";
+import { Button, cn, formatUserDateTime, Spinner, useUserDateTimePrefs } from "@bokdy/ui";
 import { useTranslations } from "next-intl";
 
+import { softDetailSectionGap } from "@/components/data-list";
 import { EntityDetailPanel } from "@/components/entity/detail-panel";
 import {
   SoftStatusChip,
@@ -39,8 +40,11 @@ export function UserSessionsView({ embedded = false }: { embedded?: boolean }) {
   const revokeAll = useRevokeAllUserSessions(userId);
 
   const shell = embedded
-    ? "flex flex-col"
-    : "flex min-h-0 flex-1 flex-col overflow-auto soft-scrollbar p-4 md:p-6";
+    ? cn("flex flex-col", softDetailSectionGap)
+    : cn(
+        "flex min-h-0 flex-1 flex-col overflow-auto soft-scrollbar p-4 md:p-6",
+        softDetailSectionGap,
+      );
 
   return (
     <div className={shell}>

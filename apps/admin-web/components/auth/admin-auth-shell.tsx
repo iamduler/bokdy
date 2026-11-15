@@ -11,6 +11,7 @@ import { useTranslations } from "next-intl";
 
 import { AdminAuthBanner } from "@/components/auth/admin-auth-banner";
 import { AdminAuthFeaturePane } from "@/components/auth/admin-auth-feature-pane";
+import { softContentMaxW } from "@/components/data-list";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 
@@ -33,7 +34,12 @@ export function AdminAuthShell({ children }: { children: React.ReactNode }) {
         <ThemeSwitcher className={switcherClassName} />
       </div>
 
-      <div className="relative z-10 mx-auto flex min-h-dvh w-full max-w-5xl items-center px-4 py-16 sm:px-6 lg:px-8">
+      <div
+        className={cn(
+          "relative z-10 mx-auto flex min-h-dvh w-full items-center px-4 py-16 sm:px-6 lg:px-8",
+          softContentMaxW,
+        )}
+      >
         <div className="grid w-full overflow-hidden rounded-2xl border border-shell-border-strong bg-shell-card shadow-sm lg:grid-cols-2">
           <div className="flex flex-col justify-center p-6 sm:p-8 lg:p-10">
             <header className="mb-8 space-y-3">

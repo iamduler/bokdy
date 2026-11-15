@@ -1,9 +1,9 @@
 "use client";
 
-import { Button } from "@bokdy/ui";
+import { Button, cn } from "@bokdy/ui";
 import { useTranslations } from "next-intl";
 
-import { DataTableSkeleton } from "@/components/data-list";
+import { DataTableSkeleton, softDetailSectionGap } from "@/components/data-list";
 
 export function BranchTabLoading() {
   return <DataTableSkeleton rows={4} columns={4} className="px-0" />;
@@ -33,5 +33,9 @@ export function BranchTabError({
 
 /** Wrapper shared by every branch tab body (scrolls inside the layout). */
 export function BranchTabBody({ children }: { children: React.ReactNode }) {
-  return <div className="flex flex-col gap-4 p-5 pt-2 md:gap-5 md:px-6">{children}</div>;
+  return (
+    <div className={cn("flex flex-col p-5 pt-2 md:px-6", softDetailSectionGap)}>
+      {children}
+    </div>
+  );
 }

@@ -1,63 +1,162 @@
 "use client";
 
-import { Button, cn } from "@bokdy/ui";
-import { Plus } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { Button, cn, InputGroup, InputGroupAddon, InputGroupInput, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@bokdy/ui";
+import { Plus, Search } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 
-import { DataListEmpty, softDirectoryPrimaryBtn } from "@/components/data-list";
+import { sportLabel } from "@/components/branches/branch-sports-chips";
+import { DataListEmpty, softDirectoryPrimaryBtn, softFilterControl } from "@/components/data-list";
+import { EntityDetailPanel } from "@/components/entity/detail-panel";
 import {
   EntityDetailError,
   EntityDetailLoading,
 } from "@/components/entity/detail-state";
+import { EntityRelationLink } from "@/components/entity/relation-link";
+import { SoftStatusChip } from "@/components/entity/soft-status-chip";
 import { CourtCard } from "@/components/courts/court-card";
 import { CourtFormSheet } from "@/components/courts/court-form-sheet";
+import { COURT_STATUS_TONE } from "@/components/courts/court-status";
+import { CollectionViewToggle } from "@/components/organizations/detail/collection-view-toggle";
+import { OrganizationSectionFrame } from "@/components/organizations/detail/organization-section-frame";
+import { useCollectionViewMode } from "@/components/organizations/detail/use-collection-view-mode";
 import {
   PopoverCommandSelect,
   type PopoverCommandOption,
 } from "@/components/popover-command-select";
 import { useBranches } from "@/hooks/use-branches";
 import { useOrgCourts } from "@/hooks/use-courts";
+import { useSports } from "@/hooks/use-sports";
 import type { Court, CourtEnvironment, CourtStatus } from "@/lib/api/courts";
 import { ApiError } from "@/lib/api/errors";
 
-import { OrganizationDetailScreenHeader } from "../organization-detail-screen-header";
 import { useOrganizationDetail } from "../organization-detail-context";
 
 const ALL = "";
-const filterComboClass =
-  "h-8 min-w-[8.5rem] justify-between border border-border bg-background px-2.5 text-xs";
+const filterComboClass = cn(
+  "h-8 min-w-[8.5rem] justify-between px-2.5 text-xs font-medium",
+  softFilterControl,
+);
+const ROW = "border-border/40 hover:bg-muted/30";
+
+function CourtList({
+  courts,
+  branchName,
+}: {
+  courts: Court[];
+  branchName: Map<string, string>;
+}) {
+  const t = useTranslations("organization.court");
+  const to = useTranslations("organization");
+  const locale = useLocale();
+  const { data: sports = [] } = useSports();
+  const headings = [
+    to("fieldName"),
+    t("fieldStatus"),
+    t("cardSport"),
+    t("cardSurface"),
+    t("cardEnvironment"),
+    t("cardBranch"),
+  ];
+
+  return (
+    <EntityDetailPanel className="min-w-0 overflow-hidden">
+      <Table>
+        <TableHeader className="sticky top-0 z-10 bg-card">
+          <TableRow className="border-border/40 hover:bg-transparent">
+            {headings.map((heading) => (
+              <TableHead
+                key={heading}
+                className="text-[10.5px] font-semibold tracking-wider text-muted-foreground uppercase"
+              >
+                {heading}
+              </TableHead>
+            ))}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {courts.map((court) => {
+            const sport = sports.find((item) => item.id === court.sport_id);
+            const env = court.environment ?? "unspecified";
+            const surface = court.surface ?? "unspecified";
+            return (
+              <TableRow key={court.id} className={ROW}>
+                <TableCell>
+                  <EntityRelationLink href={`/courts/${court.id}`}>
+                    {court.name}
+                  </EntityRelationLink>
+                </TableCell>
+                <TableCell>
+                  <SoftStatusChip
+                    label={t(`status.${court.status}`)}
+                    tone={COURT_STATUS_TONE[court.status]}
+                    size="sm"
+                  />
+                </TableCell>
+                <TableCell className="text-sm text-muted-foreground">
+                  {sport ? sportLabel(sport, locale) : t("emptyValue")}
+                </TableCell>
+                <TableCell className="text-sm text-muted-foreground">
+                  {t(`surface.${surface}`)}
+                </TableCell>
+                <TableCell className="text-sm text-muted-foreground">
+                  {t(`environment.${env}`)}
+                </TableCell>
+                <TableCell className="text-sm text-muted-foreground">
+                  {branchName.get(court.branch_id) || t("emptyValue")}
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </EntityDetailPanel>
+  );
+}
 
 export function OrganizationCourtsView() {
   const t = useTranslations("organization.detailCourts");
   const tc = useTranslations("organization.court");
   const tCommon = useTranslations("common");
   const ts = useTranslations("shell");
-  const { org, orgId } = useOrganizationDetail();
+  const { orgId } = useOrganizationDetail();
   const { data, isLoading, isError, error, refetch, isFetching } =
     useOrgCourts(orgId);
   const { data: branches = [] } = useBranches(orgId);
   const courts = data ?? [];
 
+  const [query, setQuery] = useState("");
   const [filterBranch, setFilterBranch] = useState(ALL);
   const [filterStatus, setFilterStatus] = useState(ALL);
   const [filterEnv, setFilterEnv] = useState(ALL);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const { mode, setMode } = useCollectionViewMode("courts");
 
   const branchName = useMemo(
     () => new Map(branches.map((b) => [b.id, b.name])),
     [branches],
   );
 
+  const needle = query.trim().toLowerCase();
   const filtered = useMemo(() => {
     return courts.filter((court) => {
+      if (needle) {
+        const haystack = [court.name, court.name_vi, court.name_en, court.code]
+          .filter((part): part is string => Boolean(part))
+          .join(" ")
+          .toLowerCase();
+        if (!haystack.includes(needle)) return false;
+      }
       if (filterBranch && court.branch_id !== filterBranch) return false;
       if (filterStatus && court.status !== filterStatus) return false;
       if (filterEnv && (court.environment ?? "unspecified") !== filterEnv)
         return false;
       return true;
     });
-  }, [courts, filterBranch, filterEnv, filterStatus]);
+  }, [courts, filterBranch, filterEnv, filterStatus, needle]);
+
+  const filtering =
+    needle !== "" || filterBranch !== ALL || filterStatus !== ALL || filterEnv !== ALL;
 
   const branchOptions = useMemo<PopoverCommandOption[]>(
     () => [
@@ -100,13 +199,32 @@ export function OrganizationCourtsView() {
   );
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-      <OrganizationDetailScreenHeader
-        title={t("title", { name: org.name })}
-        subtitle={t("subtitle", { total: courts.length })}
+    <>
+      <OrganizationSectionFrame
+        title={t("title")}
+        subtitle={
+          filtering
+            ? t("subtitleFiltered", { shown: filtered.length, total: courts.length })
+            : t("subtitle", { total: courts.length })
+        }
         hint={t("emptyHint")}
-        actions={
+        toolbar={
+          courts.length > 0 ? (
           <>
+            <InputGroup className={cn("h-8 min-w-[12rem] flex-1", softFilterControl)}>
+              <InputGroupAddon align="inline-start" className="text-foreground/70">
+                <Search aria-hidden />
+              </InputGroupAddon>
+              <InputGroupInput
+                type="search"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                aria-label={t("search")}
+                placeholder={t("search")}
+                autoComplete="off"
+                className="placeholder:text-foreground/70"
+              />
+            </InputGroup>
             <PopoverCommandSelect
               value={filterBranch}
               onValueChange={setFilterBranch}
@@ -132,6 +250,12 @@ export function OrganizationCourtsView() {
               className={filterComboClass}
               align="start"
             />
+          </>
+          ) : null
+        }
+        actions={
+          <>
+            <CollectionViewToggle mode={mode} onChange={setMode} />
             <Button
               type="button"
               size="lg"
@@ -143,9 +267,7 @@ export function OrganizationCourtsView() {
             </Button>
           </>
         }
-      />
-
-      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto soft-scrollbar p-4 md:px-6 md:pb-6">
+      >
         {isLoading ? <EntityDetailLoading label={tCommon("loading")} /> : null}
         {isError ? (
           <EntityDetailError
@@ -160,6 +282,7 @@ export function OrganizationCourtsView() {
         ) : null}
         {!isLoading && !isError && filtered.length === 0 ? (
           <DataListEmpty
+            className="flex-none py-8"
             title={courts.length === 0 ? tc("empty") : t("emptyFiltered")}
             action={
               courts.length === 0 ? (
@@ -176,8 +299,8 @@ export function OrganizationCourtsView() {
             }
           />
         ) : null}
-        {!isLoading && !isError && filtered.length > 0 ? (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-4 xl:grid-cols-5">
+        {!isLoading && !isError && filtered.length > 0 && mode === "grid" ? (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {filtered.map((court: Court) => (
               <CourtCard
                 key={court.id}
@@ -187,7 +310,10 @@ export function OrganizationCourtsView() {
             ))}
           </div>
         ) : null}
-      </div>
+        {!isLoading && !isError && filtered.length > 0 && mode === "list" ? (
+          <CourtList courts={filtered} branchName={branchName} />
+        ) : null}
+      </OrganizationSectionFrame>
 
       <CourtFormSheet
         open={sheetOpen}
@@ -195,6 +321,6 @@ export function OrganizationCourtsView() {
         organizationId={orgId}
         mode="create"
       />
-    </div>
+    </>
   );
 }

@@ -11,6 +11,7 @@ import type { ReactNode } from "react";
 
 import { CourtDetailProvider } from "@/components/courts/detail/court-detail-context";
 import { CourtDetailSubnav } from "@/components/courts/detail/court-detail-subnav";
+import { softContentMaxW } from "@/components/data-list";
 import {
   EntityDetailError,
   EntityDetailLoading,
@@ -19,7 +20,6 @@ import { usePageShellTitle } from "@/components/shell/shell-title";
 import { useCourt } from "@/hooks/use-courts";
 import { usePathname } from "@/i18n/navigation";
 import { ApiError } from "@/lib/api/errors";
-import { PAGE_CONTENT_MAX_WIDTH_CLASS } from "@/lib/layout";
 
 export function CourtDetailLayout({ children }: { children: ReactNode }) {
   const t = useTranslations("organization.court");
@@ -60,7 +60,7 @@ export function CourtDetailLayout({ children }: { children: ReactNode }) {
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <CourtDetailSubnav />
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto soft-scrollbar p-3 md:p-4">
-          <div className={cn("mx-auto w-full pb-4", PAGE_CONTENT_MAX_WIDTH_CLASS)}>
+          <div className={cn("mx-auto w-full pb-4", softContentMaxW)}>
             {children}
           </div>
         </div>

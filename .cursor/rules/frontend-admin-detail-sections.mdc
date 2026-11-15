@@ -1,0 +1,96 @@
+---
+description: Soft entity overview layout — one stack for Org/Branch/Court and secondary detail tabs
+globs:
+  - apps/admin-web/components/**/*detail*
+  - apps/admin-web/components/**/overview/**
+  - apps/admin-web/components/**/*-overview*
+  - apps/admin-web/components/profile/profile-overview*
+  - apps/admin-web/components/branches/branch-detail-view.tsx
+  - apps/admin-web/components/courts/detail/**
+  - apps/admin-web/components/pricing-profiles/**
+alwaysApply: false
+---
+
+# Soft admin detail sections
+
+Soft **entity overview** pages of the same nature (Organization, Branch, Court, pricing profile) share **one section-gap / column convention**. Do not invent a second gap, column width, or panel pad per entity.
+
+## Tokens (required)
+
+From [`apps/admin-web/components/data-list/index.ts`](apps/admin-web/components/data-list/index.ts):
+
+| Token | Role |
+| --- | --- |
+| `softContentMaxW` | Content column (`max-w-5xl`) |
+| `softDetailSectionGap` | Vertical gap hero ↔ panels and panel ↔ panel / grid |
+
+```tsx
+// ❌ BAD — ad-hoc spacing / width
+<div className="px-4 pt-1">
+  <Hero />
+  <div className="space-y-3 max-w-6xl">…</div>
+</div>
+
+// ✅ GOOD — Soft entity overview stack
+<div
+  className={cn(
+    "mx-auto flex w-full flex-col px-4 pb-6 pt-3 md:px-5 md:pt-4",
+    softContentMaxW,
+    softDetailSectionGap,
+  )}
+>
+  <SoftHero /> {/* card only — soft-elevated rounded-3xl, no outer page pad */}
+  <EntityDetailPanel title=… hint=…>…</EntityDetailPanel>
+  <div className={cn("grid grid-cols-1 lg:grid-cols-2", softDetailSectionGap)}>
+    <EntityDetailPanel>…</EntityDetailPanel>
+    <EntityDetailPanel>…</EntityDetailPanel>
+  </div>
+</div>
+```
+
+If a parent layout already wraps children in `softContentMaxW`, the overview stack may omit a second `softContentMaxW` but **must** still use `softDetailSectionGap` (and the same page pad when the layout does not already pad).
+
+## Soft cover hero (overview only)
+
+Org / Branch (and Profile / User when they use Soft cover) use Soft cover + logo overlap on the **overview** tab only. Court overview may use a title-row + panels without Soft cover — still use `softDetailSectionGap` between sections.
+
+## Secondary detail tabs
+
+Tabs that are not Soft-cover overview (schedule, holidays, images, amenities, courts list, pricing list, user sessions/security, org holidays, …) still use `softDetailSectionGap` between `EntityDetailPanel` blocks / major sections.
+
+- Prefer shared wrappers: Branch → `BranchTabBody` (already applies the token).
+- Organization sections (branches, courts, team, holidays, bookings) use `OrganizationSectionFrame`: title row, optional toolbar, scrolling body. The body is a card grid, a list/table, or panels. Do not add a Soft cover hero, and do not wrap the section in a second full-height card.
+- Branches and courts are the two sections that switch between grid and list. The choice is stored per signed-in user (`bokdy.admin.collectionView.${userId}.branches` / `.courts`).
+- Soft cover hero is **not** required on secondary tabs.
+- Do not redesign list/table chrome; only unify section stack gap.
+
+```tsx
+// ❌ BAD
+<div className="flex flex-col gap-3 p-5">…</div>
+<div className="flex flex-col gap-4 p-5 pt-2 md:gap-5">…</div>
+
+// ✅ GOOD
+<div className={cn("flex flex-col p-5 pt-2 md:px-6", softDetailSectionGap)}>…</div>
+```
+
+## Rules
+
+1. **Same-nature = same stack** — Org / Branch / Court overview (+ pricing detail panel stacks) must share `softDetailSectionGap` and default `EntityDetailPanel` padding (`p-5`). Do not ship `pt-1` under a Soft hero or one-off `gap-3` / `p-4` overrides that drift from peers.
+2. **Hero is overview-only** — Soft cover + logo overlap lives on the overview tab; other tabs do not repeat the avatar/banner hero.
+3. **Panels** — Use `EntityDetailPanel` with section `hint` when the section needs an InfoHint. Always show important fields empty as `—` (see `frontend-detail-fields-visible`).
+4. **Profile rows** — Prefer fixed-width label left + value (`w-28` label pattern) on Soft entity overviews. Do not mix `justify-between` and fixed-label rows across the same entity family without reason.
+5. **No hardcoding** — Do not hardcode `max-w-5xl`, `max-w-6xl`, or one-off `gap-3`/`pt-1`/`gap-4 md:gap-5` between Soft detail sections; use the tokens.
+
+## Golden paths
+
+- Org sections: `organizations/detail/organization-section-frame.tsx`
+- Branch: `branch-detail-view.tsx` + `branch-detail-hero.tsx`
+- Court: `courts/detail/court-overview-view.tsx`
+- Branch secondary tabs: `branches/detail/branch-tab-state.tsx` (`BranchTabBody`)
+- Pricing detail: `pricing-profiles/pricing-profile-detail.tsx`
+
+## Related
+
+- `.cursor/rules/frontend-detail-fields-visible.mdc`
+- `.cursor/rules/frontend-admin-entity-forms.mdc`
+- `.cursor/rules/frontend-admin-detail-urls.mdc`

@@ -1,14 +1,21 @@
 "use client";
 
+import { cn } from "@bokdy/ui";
+
+import { softDetailSectionGap } from "@/components/data-list";
+
 import { OrganizationOverviewContent } from "./organization-overview-content";
 import { OrganizationOverviewHeader } from "./organization-overview-header";
-import { OrganizationOverviewMetrics } from "./organization-overview-metrics";
 
 export function OrganizationOverviewPage() {
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+    <div
+      className={cn(
+        "flex w-full flex-col px-4 pb-6 pt-3 md:px-5 md:pt-4",
+        softDetailSectionGap,
+      )}
+    >
       <OrganizationOverviewHeader />
-      <OrganizationOverviewMetrics />
       <OrganizationOverviewContent />
     </div>
   );

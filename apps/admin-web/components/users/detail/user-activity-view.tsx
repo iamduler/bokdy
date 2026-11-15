@@ -1,8 +1,9 @@
 "use client";
 
-import { Button, formatUserDateTime, Spinner, useUserDateTimePrefs } from "@bokdy/ui";
+import { Button, cn, formatUserDateTime, Spinner, useUserDateTimePrefs } from "@bokdy/ui";
 import { useTranslations } from "next-intl";
 
+import { softDetailSectionGap } from "@/components/data-list";
 import { EntityDetailPanel } from "@/components/entity/detail-panel";
 import { useUserDetail } from "@/components/users/detail/user-detail-context";
 import { useUserActivity } from "@/hooks/use-admin-users";
@@ -15,8 +16,11 @@ export function UserActivityView({ embedded = false }: { embedded?: boolean }) {
   const { data: events = [], isLoading, isError, refetch, isFetching } = useUserActivity(userId);
 
   const shell = embedded
-    ? "flex flex-col"
-    : "flex min-h-0 flex-1 flex-col overflow-auto soft-scrollbar p-4 md:p-6";
+    ? cn("flex flex-col", softDetailSectionGap)
+    : cn(
+        "flex min-h-0 flex-1 flex-col overflow-auto soft-scrollbar p-4 md:p-6",
+        softDetailSectionGap,
+      );
 
   return (
     <div className={shell}>

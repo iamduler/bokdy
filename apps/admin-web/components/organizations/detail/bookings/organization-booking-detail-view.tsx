@@ -1,9 +1,10 @@
 "use client";
 
-import { formatUserDateTime, Spinner, useUserDateTimePrefs } from "@bokdy/ui";
+import { cn, formatUserDateTime, Spinner, useUserDateTimePrefs } from "@bokdy/ui";
 import { useLocale, useTranslations } from "next-intl";
 
 import { bookingFormatters } from "@/components/bookings/booking-format";
+import { softDetailSectionGap } from "@/components/data-list";
 import { useOrganizationDetail } from "@/components/organizations/detail/organization-detail-context";
 import { useOrganizationBooking } from "@/hooks/use-admin-bookings";
 import { Link } from "@/i18n/navigation";
@@ -59,7 +60,12 @@ export function OrganizationBookingDetailView({
   ];
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-auto soft-scrollbar p-4 md:p-6">
+    <div
+      className={cn(
+        "flex min-h-0 flex-1 flex-col overflow-auto soft-scrollbar p-4 md:p-6",
+        softDetailSectionGap,
+      )}
+    >
       <Link
         href={`/organizations/${orgId}/bookings`}
         className="text-sm text-muted-foreground underline-offset-4 hover:text-foreground"

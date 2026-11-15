@@ -466,6 +466,8 @@
       "loadError": "Không tải được ngày lễ."
     },
     "detailTabs": {
+      "navTitle": "Tổ chức",
+      "ariaLabel": "Mục tổ chức",
       "overview": "Tổng quan",
       "branches": "Chi nhánh",
       "holidays": "Ngày lễ",
@@ -506,8 +508,12 @@
     },
     "detailOverview": {
       "editProfile": "Sửa hồ sơ",
+      "identity": "Định danh",
+      "identityHint": "Thông tin pháp lý và trạng thái thuê bao tenant của tổ chức.",
       "contact": "Liên hệ",
+      "contactHint": "Thông tin liên hệ công khai của tổ chức.",
       "headquarters": "Trụ sở",
+      "headquartersHint": "Địa chỉ trụ sở đăng ký dùng cho thanh toán và tuân thủ.",
       "emptyValue": "-",
       "verified": "Đã xác minh",
       "ownerLabel": "Chủ sở hữu",
@@ -549,9 +555,21 @@
       },
       "viewAllActions": "Xem tất cả hành động"
     },
+    "collectionView": {
+      "label": "Dạng hiển thị",
+      "grid": "Lưới",
+      "list": "Danh sách"
+    },
     "detailBranches": {
-      "title": "Chi nhánh — {name}",
+      "title": "Chi nhánh",
       "subtitle": "{branches} chi nhánh · {courts} sân",
+      "subtitleFiltered": "{shown} / {total}",
+      "search": "Tên, mã, hoặc địa chỉ",
+      "filterStatus": "Lọc trạng thái",
+      "filterSport": "Lọc môn",
+      "allStatuses": "Tất cả trạng thái",
+      "allSports": "Tất cả môn",
+      "emptyFiltered": "Không có chi nhánh khớp bộ lọc.",
       "grid": "Lưới",
       "map": "Bản đồ",
       "addBranch": "Thêm chi nhánh",
@@ -564,8 +582,10 @@
       "mapPlaceholder": "Bản đồ chi nhánh — dữ liệu preview"
     },
     "detailCourts": {
-      "title": "Sân thể thao — {name}",
+      "title": "Sân thể thao",
       "subtitle": "{total, plural, other {# sân}}",
+      "subtitleFiltered": "{shown} / {total}",
+      "search": "Tên hoặc mã sân",
       "addCourt": "Thêm sân",
       "emptyHint": "Tạo sân đầu tiên cho tổ chức này.",
       "emptyFiltered": "Không có sân khớp bộ lọc.",
@@ -693,7 +713,7 @@
       }
     },
     "detailTeam": {
-      "title": "Nhân sự — {name}",
+      "title": "Nhân sự",
       "subtitle": "{count} thành viên · {pending} lời mời chờ",
       "invite": "Mời nhân sự",
       "colMember": "Thành viên",
@@ -718,7 +738,7 @@
       }
     },
     "detailBilling": {
-      "title": "Thuê bao & Thanh toán — {name}",
+      "title": "Thuê bao & Thanh toán",
       "viewInvoices": "Xem hóa đơn",
       "upgrade": "Nâng cấp gói",
       "currentPlan": "Gói hiện tại",
@@ -755,7 +775,7 @@
       "emptyHint": "Gói, mức dùng và hóa đơn sẽ hiện ở đây khi có thanh toán thuê bao."
     },
     "detailActivity": {
-      "title": "Activity — {name}",
+      "title": "Hoạt động",
       "filterCategory": "Lọc loại",
       "allCategories": "Tất cả loại",
       "export": "Xuất",
@@ -779,6 +799,8 @@
       "emptyHint": "Thay đổi của tổ chức sẽ hiện ở đây khi có nhật ký kiểm tra."
     },
     "detailActions": {
+      "open": "Thao tác",
+      "pageTitle": "Hành động",
       "title": "Hành động — {name}",
       "groups": {
         "business": "Kinh doanh",
@@ -860,6 +882,14 @@
       "address": "Địa chỉ",
       "addressCurrent": "Địa chỉ (mới)",
       "addressFormer": "Địa chỉ (cũ)",
+      "hints": {
+        "description": "Mô tả công khai trên hồ sơ chi nhánh.",
+        "map": "Vị trí trên bản đồ theo tọa độ chi nhánh.",
+        "contact": "Số điện thoại và email của chi nhánh.",
+        "links": "Website, mạng xã hội và năm thành lập.",
+        "addressCurrent": "Địa chỉ hành chính hiện tại của chi nhánh.",
+        "addressFormer": "Địa chỉ hành chính cũ giữ để tham chiếu."
+      },
       "courtCount": "Số sân",
       "fieldCreated": "Tham gia",
       "fieldTimezone": "Múi giờ",
@@ -1548,8 +1578,15 @@
     "PASSWORD_POLICY": "Mật khẩu phải có ít nhất 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt"
   },
   "team": {
-    "title": "Nhân sự — {name}",
+    "title": "Nhân sự",
     "subtitle": "{count} thành viên · {pending} lời mời chờ",
+    "subtitleFiltered": "{shown} / {total}",
+    "search": "Tên hoặc email",
+    "filterRole": "Lọc vai trò",
+    "filterStatus": "Lọc trạng thái",
+    "allRoles": "Tất cả vai trò",
+    "allStatuses": "Tất cả trạng thái",
+    "emptyFiltered": "Không có nhân sự khớp bộ lọc.",
     "loadError": "Không tải được nhân sự.",
     "empty": "Chưa có thành viên",
     "emptyHint": "Mời nhân sự qua email để tham gia tổ chức này.",
@@ -1620,6 +1657,8 @@
     }
   },
   "adminBookings": {
+    "orgTitle": "Đặt sân",
+    "orgSubtitle": "{total, plural, other {# đặt sân}}",
     "search": "Mã đặt, khách, hoặc email",
     "status": "Trạng thái",
     "statusAll": "Mọi trạng thái",
