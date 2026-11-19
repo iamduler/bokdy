@@ -2,7 +2,11 @@
   "common": {
     "appName": "Bokdy Player",
     "loading": "Loading…",
-    "logout": "Log out"
+    "logout": "Log out",
+    "leaveTitle": "Leave this form?",
+    "leaveDescription": "You have unsaved changes. Leaving now discards them.",
+    "stay": "Stay",
+    "leave": "Leave"
   },
   "auth": {
     "loginTitle": "Sign in",

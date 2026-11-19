@@ -8,7 +8,11 @@
     "pickTime": "Chọn giờ",
     "hour": "Giờ",
     "minute": "Phút",
-    "openFullForm": "Mở form toàn trang"
+    "openFullForm": "Mở form toàn trang",
+    "leaveTitle": "Rời form này?",
+    "leaveDescription": "Có thay đổi chưa lưu. Rời trang sẽ bỏ các thay đổi đó.",
+    "stay": "Ở lại",
+    "leave": "Rời trang"
   },
   "dataList": {
     "advancedFilters": "Bộ lọc nâng cao",

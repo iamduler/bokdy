@@ -52,6 +52,7 @@ export {
   AlertDialogAction,
   AlertDialogCancel,
 } from "./ui/alert-dialog";
+export { FormLeaveGuardProvider, useFormLeaveGuard } from "./form-leave-guard";
 export { Calendar } from "./ui/calendar";
 export {
   DatePicker,

@@ -13,6 +13,7 @@ import {
   TableHeader,
   TableRow,
   toast,
+  useFormLeaveGuard,
   formatUserDate,
   useUserDateTimePrefs,
 } from "@bokdy/ui";
@@ -78,6 +79,7 @@ export function BranchHolidaysView() {
     .filter((holiday) => holiday.source === "branch")
     .map((holiday) => ({ holiday_on: holiday.holiday_on, name: holiday.name, effect: holiday.effect }));
   const dirty = holidaySignature(overlay) !== holidaySignature(savedBranch);
+  useFormLeaveGuard(dirty);
   const isEmpty = inherited.length === 0 && overlay.length === 0;
 
   function addRow() {

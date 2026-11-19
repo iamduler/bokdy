@@ -15,6 +15,7 @@ import {
   SelectValue,
   Switch,
   Textarea,
+  useFormLeaveGuard,
 } from "@bokdy/ui";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -81,6 +82,7 @@ export function PlayerProfile() {
       is_activity_visible: true,
     },
   });
+  useFormLeaveGuard(personalForm.formState.isDirty || privacyForm.formState.isDirty);
   const passwordForm = useForm<PasswordValues>({
     resolver: zodResolver(useMemo(() => passwordSchema({ required: te("REQUIRED") }), [te])),
     defaultValues: { current_password: "", password: "" },

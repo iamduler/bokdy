@@ -2,6 +2,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getMessages, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
+import { FormLeaveGuardRoot } from "@/components/form-leave-guard-root";
 import { Providers } from "@/providers/providers";
 
 export function generateStaticParams() {
@@ -21,7 +22,9 @@ export default async function LocaleLayout({
   const messages = await getMessages();
   return (
     <NextIntlClientProvider messages={messages}>
-      <Providers>{children}</Providers>
+      <Providers>
+        <FormLeaveGuardRoot>{children}</FormLeaveGuardRoot>
+      </Providers>
     </NextIntlClientProvider>
   );
 }

@@ -2,7 +2,11 @@
   "common": {
     "appName": "Bokdy Owner",
     "loading": "Đang tải…",
-    "logout": "Đăng xuất"
+    "logout": "Đăng xuất",
+    "leaveTitle": "Rời form này?",
+    "leaveDescription": "Có thay đổi chưa lưu. Rời trang sẽ bỏ các thay đổi đó.",
+    "stay": "Ở lại",
+    "leave": "Rời trang"
   },
   "auth": {
     "loginTitle": "Đăng nhập",

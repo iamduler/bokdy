@@ -10,9 +10,11 @@ type EntityFormSheetHeaderProps = {
   title: string;
   /** Full-page create/edit href — required for Soft entity sheets. */
   fullPageHref: string;
+  /** Stash the sheet draft before opening the full page. */
+  onExpand?: () => void;
 };
 
-export function EntityFormSheetHeader({ title, fullPageHref }: EntityFormSheetHeaderProps) {
+export function EntityFormSheetHeader({ title, fullPageHref, onExpand }: EntityFormSheetHeaderProps) {
   const t = useTranslations("common");
 
   return (
@@ -28,7 +30,12 @@ export function EntityFormSheetHeader({ title, fullPageHref }: EntityFormSheetHe
         size="icon"
         className="size-8 shrink-0 rounded-lg text-muted-foreground"
       >
-        <Link href={fullPageHref} aria-label={t("openFullForm")}>
+        <Link
+          href={fullPageHref}
+          data-form-expand=""
+          aria-label={t("openFullForm")}
+          onClick={() => onExpand?.()}
+        >
           <Maximize2 className="size-4" aria-hidden />
         </Link>
       </Button>

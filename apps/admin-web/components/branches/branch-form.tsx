@@ -6,6 +6,7 @@ import {
   FieldGroup,
   FieldLabel,
   toast,
+  useFormLeaveGuard,
 } from "@bokdy/ui";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link2, Mail, MapPin, Store } from "lucide-react";
@@ -49,6 +50,7 @@ import { amenityKeys, useBranchAmenityIds } from "@/hooks/use-amenities";
 import { useProvinces, useWards } from "@/hooks/use-admin-units";
 import { useSports } from "@/hooks/use-sports";
 import { useRouter } from "@/i18n/navigation";
+import { useSheetFormHandoff } from "@/lib/sheet-form-draft";
 import {
   checkBranchSlug,
   currentBranchAddress,
@@ -210,6 +212,8 @@ export function BranchForm(props: BranchFormProps) {
   const layout = props.layout ?? "page";
   const fieldsClass =
     layout === "sheet" ? entityFormFieldsClassSheet : entityFormFieldsClass;
+  const fullRowClass =
+    layout === "sheet" ? "col-span-2" : "sm:col-span-2 lg:col-span-3";
   const queryClient = useQueryClient();
   const create = useCreateBranch(organizationId);
   const update = useUpdateBranch(organizationId, branch?.id ?? "");
@@ -225,7 +229,6 @@ export function BranchForm(props: BranchFormProps) {
     close.isPending ||
     maintenance.isPending ||
     archive.isPending;
-  const leaveConfirmed = useRef(false);
   const [slugTaken, setSlugTaken] = useState(false);
   const [logo, setLogo] = useState<Blob | null>(null);
   const [banner, setBanner] = useState<Blob | null>(null);
@@ -258,6 +261,26 @@ export function BranchForm(props: BranchFormProps) {
     reValidateMode: "onChange",
     defaultValues: branch ? valuesFromBranch(branch) : emptyValues,
   });
+
+  const handoff = useSheetFormHandoff<
+    BranchFormValues,
+    { logo: Blob | null; banner: Blob | null; logoPreview: string | null; bannerPreview: string | null }
+  >({
+    layout,
+    snapshot: () => ({
+      values: form.getValues(),
+      extra: { logo, banner, logoPreview, bannerPreview },
+    }),
+    apply: (draft) => {
+      const baseline = branch ? valuesFromBranch(branch) : emptyValues;
+      form.reset(baseline);
+      form.reset(draft.values, { keepDefaultValues: true });
+      setLogo(draft.extra.logo);
+      setBanner(draft.extra.banner);
+      setLogoPreview(draft.extra.logoPreview);
+      setBannerPreview(draft.extra.bannerPreview);
+    },
+  });
   const {
     handleSubmit,
     register,
@@ -273,11 +296,17 @@ export function BranchForm(props: BranchFormProps) {
   useEffect(() => {
     if (props.mode !== "edit" || !savedAmenities.data || amenitiesReady.current) return;
     amenitiesReady.current = true;
+    if (handoff.current && branch) {
+      const current = form.getValues();
+      reset({ ...valuesFromBranch(branch), amenity_ids: savedAmenities.data });
+      reset(current, { keepDefaultValues: true });
+      return;
+    }
     reset(
       { ...form.getValues(), amenity_ids: savedAmenities.data },
       { keepDirtyValues: true },
     );
-  }, [form, props.mode, reset, savedAmenities.data]);
+  }, [branch, form, handoff, props.mode, reset, savedAmenities.data]);
   const provinceId = watch("province_id");
   const slug = watch("slug");
   const addressLine1 = watch("address_line_1");
@@ -369,14 +398,11 @@ export function BranchForm(props: BranchFormProps) {
   const branchId = branch?.id;
   useEffect(() => {
     if (!branch) return;
+    if (handoff.current) return;
     reset(valuesFromBranch(branch));
     // Reset only when opening another branch, not on every refetch.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [branchId, reset]);
-
-  useEffect(() => {
-    if (!isDirty && !mediaDirty) leaveConfirmed.current = false;
-  }, [isDirty, mediaDirty]);
 
   useEffect(() => {
     const trimmed = slug.trim();
@@ -415,15 +441,13 @@ export function BranchForm(props: BranchFormProps) {
 
   const listHref = `/organizations/${organizationId}/branches`;
   const backHref = branch ? `/branches/${branch.id}` : listHref;
+  const confirmLeave = useFormLeaveGuard(isDirty || mediaDirty);
 
   function requestLeave() {
-    if ((isDirty || mediaDirty) && !leaveConfirmed.current) {
-      leaveConfirmed.current = true;
-      toast.warning(t("unsavedWarning"));
-      return;
-    }
-    if (layout === "sheet") onDone?.();
-    else router.push(backHref);
+    confirmLeave(() => {
+      if (layout === "sheet") onDone?.();
+      else router.push(backHref);
+    });
   }
 
   function openCrop(target: "logo" | "banner", file: File) {
@@ -617,16 +641,6 @@ export function BranchForm(props: BranchFormProps) {
             error: slugTaken ? t("slugTaken") : undefined,
           },
           {
-            kind: "multi-select",
-            name: "sport_ids",
-            label: tb("fieldSports"),
-            placeholder: tb("fieldSportsPlaceholder"),
-            options: sportOptions,
-            searchable: true,
-            required: true,
-            span: 2,
-          },
-          {
             kind: "select",
             name: "status",
             label: tb("fieldStatus"),
@@ -636,6 +650,15 @@ export function BranchForm(props: BranchFormProps) {
               branch?.status === "inactive" ||
               branch?.status === "maintenance",
             onValueChange: () => clearErrors("status"),
+          },
+          {
+            kind: "multi-select",
+            name: "sport_ids",
+            label: tb("fieldSports"),
+            placeholder: tb("fieldSportsPlaceholder"),
+            options: sportOptions,
+            searchable: true,
+            required: true,
           },
         ],
       },
@@ -806,7 +829,7 @@ export function BranchForm(props: BranchFormProps) {
               </Field>
               <Field
                 data-invalid={Boolean(addressError) || undefined}
-                className="sm:col-span-2"
+                className={fullRowClass}
               >
                 <FieldLabel htmlFor="field-address_line_1" required>
                   {tb("fieldAddressSearch")}
@@ -831,7 +854,7 @@ export function BranchForm(props: BranchFormProps) {
                 />
                 <FieldError>{addressError}</FieldError>
               </Field>
-              <Field className="sm:col-span-2">
+              <Field className={fullRowClass}>
                 <div className="flex items-start gap-2">
                   <div className="min-w-0 flex-1">
                     <MapPicker
@@ -847,20 +870,22 @@ export function BranchForm(props: BranchFormProps) {
               <input type="hidden" {...register("latitude")} />
               <input type="hidden" {...register("longitude")} />
               <input type="hidden" {...register("joined_at")} />
-              <Field data-invalid={Boolean(latError) || undefined}>
-                <FieldLabel required>{tb("fieldLatitude")}</FieldLabel>
-                <p className="text-sm tabular-nums text-foreground">
-                  {mapsReady ? latNum.toFixed(6) : tb("coordsEmpty")}
-                </p>
-                <FieldError>{latError}</FieldError>
-              </Field>
-              <Field data-invalid={Boolean(lngError) || undefined}>
-                <FieldLabel required>{tb("fieldLongitude")}</FieldLabel>
-                <p className="text-sm tabular-nums text-foreground">
-                  {mapsReady ? lngNum.toFixed(6) : tb("coordsEmpty")}
-                </p>
-                <FieldError>{lngError}</FieldError>
-              </Field>
+              <div className={`${fullRowClass} grid grid-cols-1 gap-4 sm:grid-cols-2`}>
+                <Field data-invalid={Boolean(latError) || undefined}>
+                  <FieldLabel required>{tb("fieldLatitude")}</FieldLabel>
+                  <p className="text-sm tabular-nums text-foreground">
+                    {mapsReady ? latNum.toFixed(6) : tb("coordsEmpty")}
+                  </p>
+                  <FieldError>{latError}</FieldError>
+                </Field>
+                <Field data-invalid={Boolean(lngError) || undefined}>
+                  <FieldLabel required>{tb("fieldLongitude")}</FieldLabel>
+                  <p className="text-sm tabular-nums text-foreground">
+                    {mapsReady ? lngNum.toFixed(6) : tb("coordsEmpty")}
+                  </p>
+                  <FieldError>{lngError}</FieldError>
+                </Field>
+              </div>
             </FieldGroup>
           </EntityFormSection>
           <ImageCropDialog

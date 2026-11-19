@@ -9,12 +9,15 @@ import {
   FieldLabel,
   Input,
   toast,
+  useFormLeaveGuard,
 } from "@bokdy/ui";
 import { useQueryClient } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { IdCard, KeyRound, MapPin, SlidersHorizontal, UserRound, Users } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+import { useSheetFormHandoff } from "@/lib/sheet-form-draft";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 
 import { EntityCover } from "@/components/entity/cover";
@@ -75,6 +78,37 @@ function givenName(user: UserDetailRecord) {
   const last = user.last_name?.trim() ?? "";
   if (first || last) return first;
   return user.full_name?.trim() ?? "";
+}
+
+function accountValues(
+  user: UserDetailRecord,
+  memberships: AdminUserOrganization[],
+): UserAccountFormValues {
+  return {
+    ...emptyUserAccount(),
+    email: user.email ?? "",
+    first_name: givenName(user),
+    last_name: user.last_name ?? "",
+    phone: user.phone ?? "",
+    gender: user.gender ?? "",
+    date_of_birth: user.date_of_birth ?? "",
+    locale_id: user.locale_id ?? "",
+    timezone: user.timezone || "Asia/Ho_Chi_Minh",
+    country_id: user.country_id ?? "",
+    preferred_currency_code: user.preferred_currency_code || "VND",
+    theme: user.theme || "system",
+    date_format: user.date_format || "dmy",
+    province_id: user.province_id ?? "",
+    ward_id: user.ward_id ?? "",
+    address_line: user.address_line ?? "",
+    memberships: memberships.map((row) => ({
+      staff_id: row.staff_id,
+      organization_id: row.organization_id,
+      organization_name: row.name || row.code,
+      staff_role: row.staff_role,
+      title: row.staff_title ?? "",
+    })),
+  };
 }
 
 type UserAccountFormProps = {
@@ -194,45 +228,42 @@ function UserAccountFields({
     resolver: zodResolver(schema),
     defaultValues: emptyUserAccount(),
   });
+  const handoff = useSheetFormHandoff<
+    UserAccountFormValues,
+    { avatar: Blob | null; banner: Blob | null; avatarPreview: string | null; bannerPreview: string | null }
+  >({
+    layout: formLayout,
+    snapshot: () => ({
+      values: form.getValues(),
+      extra: { avatar, banner, avatarPreview, bannerPreview },
+    }),
+    apply: (draft) => {
+      const baseline = mode === "edit" && user ? accountValues(user, memberships) : emptyUserAccount();
+      form.reset(baseline);
+      form.reset(draft.values, { keepDefaultValues: true });
+      setAvatar(draft.extra.avatar);
+      setBanner(draft.extra.banner);
+      setAvatarPreview(draft.extra.avatarPreview);
+      setBannerPreview(draft.extra.bannerPreview);
+    },
+  });
   const { isDirty } = form.formState;
   const provinceId = form.watch("province_id");
   const provinces = useProvinces("current_v2");
   const wards = useWards({ scheme: "current_v2", provinceId: provinceId || undefined });
-  const leaveConfirmed = useRef(false);
-
   const membershipKey = memberships.map((row) => row.staff_id).join(",");
   useEffect(() => {
     if (mode !== "edit" || !user) return;
-    form.reset({
-      ...emptyUserAccount(),
-      email: user.email ?? "",
-      first_name: givenName(user),
-      last_name: user.last_name ?? "",
-      phone: user.phone ?? "",
-      gender: user.gender ?? "",
-      date_of_birth: user.date_of_birth ?? "",
-      locale_id: user.locale_id ?? "",
-      timezone: user.timezone || "Asia/Ho_Chi_Minh",
-      country_id: user.country_id ?? "",
-      preferred_currency_code: user.preferred_currency_code || "VND",
-      theme: user.theme || "system",
-      date_format: user.date_format || "dmy",
-      province_id: user.province_id ?? "",
-      ward_id: user.ward_id ?? "",
-      address_line: user.address_line ?? "",
-      memberships: memberships.map((row) => ({
-        staff_id: row.staff_id,
-        organization_id: row.organization_id,
-        organization_name: row.name || row.code,
-        staff_role: row.staff_role,
-        title: row.staff_title ?? "",
-      })),
-    });
-  }, [form, membershipKey, mode, user]);
-
-  useEffect(() => {
-    if (!isDirty) leaveConfirmed.current = false;
-  }, [isDirty]);
+    if (handoff.current) {
+      const current = form.getValues();
+      form.reset(accountValues(user, memberships));
+      form.reset(current, { keepDefaultValues: true });
+      return;
+    }
+    form.reset(accountValues(user, memberships));
+    // membershipKey tracks the loaded rows; memberships is read from this render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form, handoff, membershipKey, mode, user]);
 
   useEffect(() => {
     if (mode !== "create" || form.getValues("locale_id")) return;
@@ -576,17 +607,16 @@ function UserAccountFields({
     }
   }
 
+  const confirmLeave = useFormLeaveGuard(isDirty || mediaDirty);
+
   function requestLeave() {
-    if ((isDirty || mediaDirty) && !leaveConfirmed.current) {
-      leaveConfirmed.current = true;
-      toast.warning(t("unsavedWarning"));
-      return;
-    }
-    if (formLayout === "sheet") {
-      onDone?.();
-      return;
-    }
-    router.push(mode === "edit" ? detailHref : listHref);
+    confirmLeave(() => {
+      if (formLayout === "sheet") {
+        onDone?.();
+        return;
+      }
+      router.push(mode === "edit" ? detailHref : listHref);
+    });
   }
 
   useEffect(() => {
@@ -656,7 +686,6 @@ function UserAccountFields({
         if (banner) await uploadUserMedia(savedId, "banner", banner);
         await queryClient.invalidateQueries({ queryKey: adminUserKeys.all });
       }
-      leaveConfirmed.current = true;
       if (formLayout === "sheet") {
         onDone?.();
       } else {

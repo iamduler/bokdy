@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Checkbox, FieldError, TimePicker, toast } from "@bokdy/ui";
+import { Button, Checkbox, FieldError, TimePicker, toast, useFormLeaveGuard } from "@bokdy/ui";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CalendarClock, Pencil } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -70,6 +70,7 @@ export function BranchScheduleView() {
     defaultValues: toFormValues(data),
   });
   const { control, handleSubmit, reset, watch, formState } = form;
+  useFormLeaveGuard(editing && formState.isDirty);
 
   useEffect(() => {
     if (!editing) reset(toFormValues(data));

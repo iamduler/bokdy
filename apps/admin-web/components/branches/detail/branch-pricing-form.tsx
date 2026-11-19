@@ -11,6 +11,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   Button,
+  useFormLeaveGuard,
   FieldError,
   FieldLabel,
   Input,
@@ -218,6 +219,7 @@ export function BranchPricingForm({
       profile?.sport_id ?? initialSportId,
     ),
   });
+  useFormLeaveGuard(form.formState.isDirty);
   const slotUnit =
     useWatch({ control: form.control, name: "slot_unit_minutes" }) || 60;
   const watchedGroups = useWatch({ control: form.control, name: "day_groups" });

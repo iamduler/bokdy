@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { LayoutGrid } from "lucide-react";
-import { toast } from "@bokdy/ui";
+import { toast, useFormLeaveGuard } from "@bokdy/ui";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
@@ -26,6 +26,7 @@ import {
 import { useSports } from "@/hooks/use-sports";
 import { amenityLabel } from "@/lib/api/amenities";
 import { useRouter } from "@/i18n/navigation";
+import { useSheetFormHandoff } from "@/lib/sheet-form-draft";
 import type { Court, CourtEnvironment, CourtSurface } from "@/lib/api/courts";
 import { ApiError } from "@/lib/api/errors";
 import { toVietnameseASCII } from "@/lib/text/vietnamese-ascii";
@@ -122,26 +123,55 @@ export function CourtForm(props: CourtFormProps) {
     defaultValues: defaults,
   });
 
+  const handoff = useSheetFormHandoff<
+    CourtFormValues,
+    { pendingImages: File[]; removedGalleryIds: string[] }
+  >({
+    layout,
+    snapshot: () => ({
+      values: form.getValues(),
+      extra: { pendingImages, removedGalleryIds },
+    }),
+    apply: (draft) => {
+      form.reset(defaults);
+      form.reset(draft.values, { keepDefaultValues: true });
+      setPendingImages(draft.extra.pendingImages);
+      setRemovedGalleryIds(draft.extra.removedGalleryIds);
+    },
+  });
+
   useEffect(() => {
+    if (handoff.current) {
+      const current = form.getValues();
+      form.reset(defaults);
+      form.reset(current, { keepDefaultValues: true });
+      return;
+    }
     form.reset(defaults);
     setPendingImages([]);
     setRemovedGalleryIds([]);
-  }, [defaults, form]);
+  }, [defaults, form, handoff]);
+
+  const confirmLeave = useFormLeaveGuard(
+    form.formState.isDirty || pendingImages.length > 0 || removedGalleryIds.length > 0,
+  );
 
   function requestLeave() {
-    if (layout === "sheet") {
-      props.onDone?.();
-      return;
-    }
-    if (props.mode === "edit") {
-      router.push(`/courts/${props.court.id}`);
-      return;
-    }
-    if (fixedBranchId) {
-      router.push(`/branches/${fixedBranchId}/courts`);
-      return;
-    }
-    router.push(`/organizations/${organizationId}/courts`);
+    confirmLeave(() => {
+      if (layout === "sheet") {
+        props.onDone?.();
+        return;
+      }
+      if (props.mode === "edit") {
+        router.push(`/courts/${props.court.id}`);
+        return;
+      }
+      if (fixedBranchId) {
+        router.push(`/branches/${fixedBranchId}/courts`);
+        return;
+      }
+      router.push(`/organizations/${organizationId}/courts`);
+    });
   }
 
   useEffect(() => {

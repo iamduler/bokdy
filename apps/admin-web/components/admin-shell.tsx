@@ -8,6 +8,7 @@ import { SidebarInset, SidebarProvider, Spinner, Toaster, TooltipProvider, cn } 
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, type ReactNode } from "react";
 
+import { FormLeaveGuardRoot } from "@/components/form-leave-guard-root";
 import { AdminHeader } from "@/components/shell/admin-header";
 import { AdminSidebar } from "@/components/shell/admin-sidebar";
 import { ShellTitleProvider } from "@/components/shell/shell-title";
@@ -73,6 +74,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
   }, []);
 
   return (
+    <FormLeaveGuardRoot>
     <TooltipProvider delayDuration={200}>
       <ShellTitleProvider>
         {/* Provider must wrap header (SidebarTrigger) and still keep header full-width above the rail */}
@@ -103,5 +105,6 @@ export function AdminShell({ children }: { children: ReactNode }) {
       </ShellTitleProvider>
       <Toaster />
     </TooltipProvider>
+    </FormLeaveGuardRoot>
   );
 }

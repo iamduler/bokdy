@@ -13,6 +13,7 @@ import {
   Spinner,
   THEME_STORAGE_KEY,
   toast,
+  useFormLeaveGuard,
   type BokdyTheme,
 } from "@bokdy/ui";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -120,6 +121,7 @@ export function ProfileEditForm() {
     resolver: zodResolver(schema),
     defaultValues: emptyValues(),
   });
+  const confirmLeave = useFormLeaveGuard(form.formState.isDirty || Boolean(avatar || banner));
 
   const watchedLast = useWatch({ control: form.control, name: "last_name" }) ?? "";
   const watchedFirst = useWatch({ control: form.control, name: "first_name" }) ?? "";
@@ -351,7 +353,7 @@ export function ProfileEditForm() {
       <EntityFormFrame
         cancelLabel={t("cancel")}
         submitLabel={t("save")}
-        onCancel={() => router.push("/profile")}
+        onCancel={() => confirmLeave(() => router.push("/profile"))}
         pending={pending}
         submitDisabled={!form.formState.isDirty && !mediaDirty}
         onSubmit={form.handleSubmit(onSubmit)}

@@ -1,10 +1,12 @@
 "use client";
 
-import { toast } from "@bokdy/ui";
+import { toast, useFormLeaveGuard } from "@bokdy/ui";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Building2, Mail, MapPin } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+import { useSheetFormHandoff } from "@/lib/sheet-form-draft";
 import { FormProvider, useForm } from "react-hook-form";
 
 import { EntityCover } from "@/components/entity/cover";
@@ -174,7 +176,6 @@ export function OrganizationForm(props: OrganizationFormProps) {
     activate.isPending ||
     suspend.isPending ||
     restore.isPending;
-  const leaveConfirmed = useRef(false);
   const [logo, setLogo] = useState<Blob | null>(null);
   const [banner, setBanner] = useState<Blob | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -201,6 +202,26 @@ export function OrganizationForm(props: OrganizationFormProps) {
       ? valuesFromOrganization(organization)
       : emptyValues,
   });
+
+  const handoff = useSheetFormHandoff<
+    OrganizationFormValues,
+    { logo: Blob | null; banner: Blob | null; logoPreview: string | null; bannerPreview: string | null }
+  >({
+    layout,
+    snapshot: () => ({
+      values: form.getValues(),
+      extra: { logo, banner, logoPreview, bannerPreview },
+    }),
+    apply: (draft) => {
+      const baseline = organization ? valuesFromOrganization(organization) : emptyValues;
+      form.reset(baseline);
+      form.reset(draft.values, { keepDefaultValues: true });
+      setLogo(draft.extra.logo);
+      setBanner(draft.extra.banner);
+      setLogoPreview(draft.extra.logoPreview);
+      setBannerPreview(draft.extra.bannerPreview);
+    },
+  });
   const {
     handleSubmit,
     reset,
@@ -223,24 +244,11 @@ export function OrganizationForm(props: OrganizationFormProps) {
   const organizationId = organization?.id;
   useEffect(() => {
     if (!organization) return;
+    if (handoff.current) return;
     reset(valuesFromOrganization(organization));
     // Reset only when opening another organization, not on every refetch.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [organizationId, reset]);
-
-  useEffect(() => {
-    if (!isDirty && !logo && !banner) leaveConfirmed.current = false;
-  }, [isDirty, logo, banner]);
-
-  useEffect(() => {
-    if (!isDirty && !logo && !banner) return;
-    function onBeforeUnload(event: BeforeUnloadEvent) {
-      event.preventDefault();
-      event.returnValue = "";
-    }
-    window.addEventListener("beforeunload", onBeforeUnload);
-    return () => window.removeEventListener("beforeunload", onBeforeUnload);
-  }, [isDirty, logo, banner]);
 
   useEffect(() => {
     const trimmed = slug.trim();
@@ -272,15 +280,13 @@ export function OrganizationForm(props: OrganizationFormProps) {
     ? `/organizations/${organization.id}`
     : "/organizations";
   const dirty = isDirty || Boolean(logo || banner);
+  const confirmLeave = useFormLeaveGuard(dirty);
 
   function requestLeave() {
-    if (dirty && !leaveConfirmed.current) {
-      leaveConfirmed.current = true;
-      toast.warning(t("unsavedWarning"));
-      return;
-    }
-    if (layout === "sheet") onDone?.();
-    else router.push(backHref);
+    confirmLeave(() => {
+      if (layout === "sheet") onDone?.();
+      else router.push(backHref);
+    });
   }
 
   useEffect(() => {

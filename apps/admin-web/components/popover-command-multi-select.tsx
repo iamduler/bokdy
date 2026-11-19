@@ -51,8 +51,15 @@ export function PopoverCommandMultiSelect({
 }: PopoverCommandMultiSelectProps) {
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState("");
+  const [portalContainer, setPortalContainer] = React.useState<HTMLElement | null>(null);
   const inputRef = React.useRef<HTMLInputElement>(null);
   const anchorRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (!open) return;
+    // Keep the menu inside the sheet/dialog. A body portal is "outside" and opens the leave dialog.
+    setPortalContainer(anchorRef.current?.closest('[role="dialog"]') ?? null);
+  }, [open]);
 
   const selected = options.filter((option) => value.includes(option.value));
   const filtered = options.filter((option) => {
@@ -166,6 +173,7 @@ export function PopoverCommandMultiSelect({
         </div>
       </PopoverAnchor>
       <PopoverContent
+        container={portalContainer}
         align={align}
         onOpenAutoFocus={(event) => event.preventDefault()}
         onCloseAutoFocus={(event) => event.preventDefault()}

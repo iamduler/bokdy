@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, FieldError, FieldLabel, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@bokdy/ui";
+import { Button, FieldError, FieldLabel, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, useFormLeaveGuard } from "@bokdy/ui";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
@@ -45,6 +45,7 @@ export function OwnerProfile() {
     resolver: zodResolver(useMemo(() => transferSchema({ required: te("REQUIRED") }), [te])),
     values: { organization_id: orgId, successor_user_id: "" },
   });
+  useFormLeaveGuard(personal.formState.isDirty || transfer.formState.isDirty);
   const savePersonal = useMutation({
     mutationFn: (values: PersonalValues) => apiGo("identity/me", { method: "PATCH", body: JSON.stringify(values) }),
     onSuccess: () => setNotice(t("saved")),
