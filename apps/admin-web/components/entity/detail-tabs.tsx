@@ -85,7 +85,7 @@ function tabClassName(
 ) {
   if (variant === "vertical") {
     return cn(
-      "inline-flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium whitespace-nowrap transition-colors md:w-full md:whitespace-normal",
+      "inline-flex w-full min-w-0 items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
       tab.disabled
         ? "cursor-not-allowed text-muted-foreground/50"
         : tab.active
@@ -129,7 +129,7 @@ export function EntityDetailTabs({
     <div
       className={cn(
         isVertical
-          ? "flex w-full flex-col gap-2 overflow-x-auto p-2 soft-scrollbar md:overflow-visible"
+          ? "flex w-full min-w-0 flex-col gap-2 overflow-hidden p-2"
           : "shrink-0 overflow-x-auto soft-scrollbar",
         variant === "underline" && "border-b border-border/50 px-4 md:px-6",
         variant === "pill" && "px-4 pb-2.5",
@@ -147,7 +147,7 @@ export function EntityDetailTabs({
         aria-orientation={isVertical ? "vertical" : "horizontal"}
         className={cn(
           isVertical
-            ? "inline-flex w-max max-w-none items-center gap-0.5 md:flex md:w-full md:flex-col md:items-stretch"
+            ? "flex w-full min-w-0 flex-col items-stretch gap-0.5"
             : "inline-flex w-max max-w-full items-center",
           variant === "pill" &&
             "rounded-full border border-border/60 bg-card p-1 shadow-sm",

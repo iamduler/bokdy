@@ -80,6 +80,11 @@
     "healthError": "API không khả dụng",
     "welcome": "Chào mừng đến Bokdy Admin",
     "subtitle": "Scaffold nền tảng — chưa có domain nghiệp vụ.",
+    "dashboardOps": {
+      "organizations": "Tổ chức",
+      "users": "Người dùng",
+      "activeSecondary": "{count} đang hoạt động"
+    },
     "unavailable": "Chưa có",
     "brandSubtitle": "Nền tảng Admin",
     "openMenu": "Mở điều hướng",
@@ -851,17 +856,44 @@
         "verification": "Xác minh"
       },
       "events": {
-        "event1": "Chi nhánh Gò Vấp được thêm",
-        "event1Detail": "Bởi chủ sở hữu · 6 sân",
-        "event2": "Đạt mốc doanh thu tích lũy",
-        "event2Detail": "Mốc quan trọng từ khi gia nhập Bokdy",
-        "event3": "Huấn luyện viên được mời",
-        "event3Detail": "Bởi quản lý chi nhánh · Q.1",
-        "event4": "Tổ chức được xác minh bởi Admin",
-        "event4Detail": "Xác minh giấy phép và thông tin pháp lý"
+        "OrganizationCreated": "Tổ chức được tạo",
+        "OrganizationUpdated": "Hồ sơ tổ chức được cập nhật",
+        "OrganizationActivated": "Tổ chức được kích hoạt",
+        "OrganizationSuspended": "Tổ chức bị tạm ngưng",
+        "OrganizationRestored": "Tổ chức được khôi phục",
+        "OrganizationArchived": "Tổ chức được lưu trữ",
+        "BranchCreated": "Chi nhánh được tạo",
+        "BranchUpdated": "Chi nhánh được cập nhật",
+        "BranchOpened": "Chi nhánh được mở",
+        "BranchClosed": "Chi nhánh được đóng",
+        "BranchArchived": "Chi nhánh được lưu trữ",
+        "CourtCreated": "Sân được tạo",
+        "CourtUpdated": "Sân được cập nhật",
+        "CourtOpened": "Sân được mở",
+        "CourtClosed": "Sân được đóng",
+        "CourtArchived": "Sân được lưu trữ",
+        "BookingCreated": "Đặt sân được tạo",
+        "StaffAdded": "Nhân sự được thêm",
+        "StaffUpdated": "Nhân sự được cập nhật",
+        "StaffSuspended": "Nhân sự bị tạm ngưng",
+        "StaffRestored": "Nhân sự được khôi phục",
+        "StaffRemoved": "Nhân sự được gỡ"
       },
+      "actions": {
+        "created": "tạo mới",
+        "updated": "cập nhật",
+        "deleted": "xóa",
+        "restored": "khôi phục",
+        "status_change": "đổi trạng thái",
+        "assign": "gán",
+        "other": "khác"
+      },
+      "eventFallback": "{entity} · {action}",
+      "byActor": "Bởi {name}",
+      "reason": "Lý do: {reason}",
+      "loadError": "Không tải được nhật ký",
       "empty": "Chưa có hoạt động",
-      "emptyHint": "Thay đổi của tổ chức sẽ hiện ở đây khi có nhật ký kiểm tra."
+      "emptyHint": "Tạm ngưng và khôi phục sẽ hiện ở đây sau khi có trong nhật ký."
     },
     "detailActions": {
       "open": "Thao tác",

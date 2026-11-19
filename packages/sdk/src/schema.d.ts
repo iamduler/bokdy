@@ -7809,6 +7809,7 @@ export interface paths {
                     to?: string;
                     organization_id?: string;
                     branch_id?: string;
+                    court_id?: string;
                     limit?: number;
                     offset?: components["parameters"]["AdminListOffset"];
                     sort?: "starts_at" | "status" | "created_at" | "total_amount";
@@ -7851,7 +7852,7 @@ export interface paths {
         };
         /**
          * Booking directory statistics
-         * @description Counts ignore status so directory tabs stay stable. Search, date, organization, and branch filters still apply.
+         * @description Counts ignore status so directory tabs stay stable. Search, date, organization, branch, and court filters still apply.
          */
         get: {
             parameters: {
@@ -7861,6 +7862,7 @@ export interface paths {
                     to?: string;
                     organization_id?: string;
                     branch_id?: string;
+                    court_id?: string;
                 };
                 header?: never;
                 path?: never;
@@ -8012,6 +8014,86 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["AdminOrganization"];
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update organization profile
+         * @description System admin. Same profile fields an owner may edit. Does not change status; activate, suspend, and restore stay on their own routes.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["parameters"]["OrganizationId"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["UpdateOrganizationRequest"];
+                };
+            };
+            responses: {
+                /** @description Organization */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminOrganization"];
+                    };
+                };
+                400: components["responses"]["BadRequest"];
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        trace?: never;
+    };
+    "/api/v1/admin/organizations/{id}/activity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Organization audit timeline
+         * @description Newest audit rows for one organization tenant. Export is not part of this route.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    limit?: number;
+                };
+                header?: never;
+                path: {
+                    id: components["parameters"]["OrganizationId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Activity events */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminOrganizationActivityEvent"][];
                     };
                 };
                 401: components["responses"]["Error"];
@@ -9998,10 +10080,29 @@ export interface components {
             pending: number;
             new_this_week?: number;
         };
+        AdminOrganizationActivityEvent: {
+            /** Format: uuid */
+            id: string;
+            event_type: string;
+            action: string;
+            entity_type: string;
+            /** Format: uuid */
+            entity_id: string;
+            actor_name?: string;
+            reason?: string;
+            /**
+             * Format: date-time
+             * @description UTC
+             */
+            created_at: string;
+        };
         AdminPlayerSummary: {
             booking_count: number;
+            /** @description Succeeded payment intents for the player's customers. */
             transaction_count?: number;
+            /** @description Completed refunds for the player's customers. */
             refund_count?: number;
+            /** @description Settled amount in major currency units (VND đồng). Succeeded payment intents minus completed refunds. */
             total_spend_minor?: number;
             currency_code?: string;
         };

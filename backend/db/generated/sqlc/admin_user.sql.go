@@ -866,3 +866,63 @@ func (q *Queries) ListLoginHistoryByUser(ctx context.Context, arg ListLoginHisto
 	}
 	return items, nil
 }
+
+const playerSpendSummary = `-- name: PlayerSpendSummary :one
+SELECT
+    (
+        SELECT COUNT(*)::int
+        FROM payment.payment_intents p
+        JOIN crm.customers c ON c.id = p.customer_id
+        WHERE c.user_id = $1 AND p.status = 'succeeded'
+    ) AS transaction_count,
+    (
+        SELECT COUNT(*)::int
+        FROM payment.refunds r
+        JOIN payment.payment_intents p ON p.id = r.payment_intent_id
+        JOIN crm.customers c ON c.id = p.customer_id
+        WHERE c.user_id = $1 AND r.status = 'completed'
+    ) AS refund_count,
+    (
+        SELECT ROUND(COALESCE(SUM(p.amount), 0))::bigint
+        FROM payment.payment_intents p
+        JOIN crm.customers c ON c.id = p.customer_id
+        WHERE c.user_id = $1 AND p.status = 'succeeded'
+    ) AS spend_amount,
+    (
+        SELECT ROUND(COALESCE(SUM(r.amount), 0))::bigint
+        FROM payment.refunds r
+        JOIN payment.payment_intents p ON p.id = r.payment_intent_id
+        JOIN crm.customers c ON c.id = p.customer_id
+        WHERE c.user_id = $1 AND r.status = 'completed'
+    ) AS refunded_amount,
+    COALESCE((
+        SELECT p.currency
+        FROM payment.payment_intents p
+        JOIN crm.customers c ON c.id = p.customer_id
+        WHERE c.user_id = $1 AND p.status = 'succeeded'
+        GROUP BY p.currency
+        ORDER BY COUNT(*) DESC
+        LIMIT 1
+    ), '')::text AS currency_code
+`
+
+type PlayerSpendSummaryRow struct {
+	TransactionCount int32  `json:"transaction_count"`
+	RefundCount      int32  `json:"refund_count"`
+	SpendAmount      int64  `json:"spend_amount"`
+	RefundedAmount   int64  `json:"refunded_amount"`
+	CurrencyCode     string `json:"currency_code"`
+}
+
+func (q *Queries) PlayerSpendSummary(ctx context.Context, userID *uuid.UUID) (PlayerSpendSummaryRow, error) {
+	row := q.db.QueryRow(ctx, playerSpendSummary, userID)
+	var i PlayerSpendSummaryRow
+	err := row.Scan(
+		&i.TransactionCount,
+		&i.RefundCount,
+		&i.SpendAmount,
+		&i.RefundedAmount,
+		&i.CurrencyCode,
+	)
+	return i, err
+}

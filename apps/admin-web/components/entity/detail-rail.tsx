@@ -19,8 +19,8 @@ export function EntityDetailRail({
     <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden p-3 pt-2 md:flex-row md:p-4 md:pt-2">
       <aside
         className={cn(
-          "soft-elevated h-fit max-h-full shrink-0 overflow-x-auto rounded-md border-0 bg-card soft-scrollbar",
-          "md:sticky md:top-0 md:w-52 md:self-start md:overflow-y-auto md:overflow-x-hidden",
+          "soft-elevated h-fit max-h-full w-full shrink-0 overflow-hidden rounded-md border-0 bg-card",
+          "md:sticky md:top-0 md:w-52 md:self-start md:overflow-y-auto",
         )}
       >
         {tabs}

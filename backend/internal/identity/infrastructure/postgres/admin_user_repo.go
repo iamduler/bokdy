@@ -253,7 +253,21 @@ func (r *AdminUserRepo) PlayerSummary(ctx context.Context, userID uuid.UUID) (re
 	if err != nil {
 		return repository.AdminPlayerSummary{}, err
 	}
-	return repository.AdminPlayerSummary{BookingCount: int(n)}, nil
+	spend, err := r.q.PlayerSpendSummary(ctx, &uid)
+	if err != nil {
+		return repository.AdminPlayerSummary{}, err
+	}
+	net := spend.SpendAmount - spend.RefundedAmount
+	if net < 0 {
+		net = 0
+	}
+	return repository.AdminPlayerSummary{
+		BookingCount:     int(n),
+		TransactionCount: int(spend.TransactionCount),
+		RefundCount:      int(spend.RefundCount),
+		TotalSpendMinor:  net,
+		CurrencyCode:     spend.CurrencyCode,
+	}, nil
 }
 
 func statusFilter(status *string) *dbsqlc.IdentityUserStatus {

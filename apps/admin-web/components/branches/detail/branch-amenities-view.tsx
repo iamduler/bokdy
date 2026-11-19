@@ -50,7 +50,7 @@ export function BranchAmenitiesView() {
       ) : names.length > 0 ? (
         <div className="flex flex-wrap gap-1.5">
           {names.map((name) => (
-            <SoftChip key={name} label={name} tone="rose" />
+            <SoftChip key={name} label={name} tone="sky" />
           ))}
         </div>
       ) : (

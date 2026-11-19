@@ -81,6 +81,13 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     id: "platform",
     labelKey: "platform",
     items: [
+      {
+        id: "dashboard",
+        labelKey: "dashboard",
+        href: "/dashboard",
+        status: "ready",
+        icon: "layoutDashboard",
+      },
       { id: "commandCenter", labelKey: "commandCenter", status: "missing", icon: "zap" },
       { id: "health", labelKey: "health", status: "missing", icon: "heartPulse" },
       {

@@ -8,6 +8,8 @@ export type AdminOrganization = components["schemas"]["AdminOrganization"];
 export type AdminOrganizationPage = components["schemas"]["AdminOrganizationPage"];
 export type AdminOrganizationDirectoryStats =
   components["schemas"]["AdminOrganizationDirectoryStats"];
+export type AdminOrganizationActivityEvent =
+  components["schemas"]["AdminOrganizationActivityEvent"];
 
 export type OrgStatus = AdminOrganization["status"];
 export type TenantStatus = AdminOrganization["tenant_status"];
@@ -39,6 +41,12 @@ function buildQuery(params: AdminOrgListParams): string {
 
 export function listOrganizations(params: AdminOrgListParams = {}) {
   return apiGo<AdminOrganizationPage>(`admin/organizations${buildQuery(params)}`);
+}
+
+export function listOrganizationActivity(id: string, limit = 50) {
+  return apiGo<AdminOrganizationActivityEvent[]>(
+    `admin/organizations/${encodeURIComponent(id)}/activity?limit=${limit}`,
+  );
 }
 
 export function organizationDirectoryStats(params: AdminOrgStatsParams = {}) {
@@ -129,9 +137,9 @@ export type CreateOrganizationInput = OrganizationProfileInput & {
 
 export type UpdateOrganizationInput = OrganizationProfileInput;
 
-/** Owner-path update. System admin is allowed; status is unchanged. */
+/** System-admin profile update. Status stays on activate, suspend, and restore. */
 export function updateOrganization(id: string, input: UpdateOrganizationInput) {
-  return apiGo<AdminOrganization>(`organizations/${encodeURIComponent(id)}`, {
+  return apiGo<AdminOrganization>(`admin/organizations/${encodeURIComponent(id)}`, {
     method: "PATCH",
     body: JSON.stringify(input),
   });

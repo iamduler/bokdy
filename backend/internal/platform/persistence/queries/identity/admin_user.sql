@@ -338,3 +338,41 @@ SELECT COUNT(b.id)::int AS booking_count
 FROM booking.bookings b
 JOIN crm.customers c ON c.id = b.customer_id
 WHERE c.user_id = $1;
+
+-- name: PlayerSpendSummary :one
+SELECT
+    (
+        SELECT COUNT(*)::int
+        FROM payment.payment_intents p
+        JOIN crm.customers c ON c.id = p.customer_id
+        WHERE c.user_id = $1 AND p.status = 'succeeded'
+    ) AS transaction_count,
+    (
+        SELECT COUNT(*)::int
+        FROM payment.refunds r
+        JOIN payment.payment_intents p ON p.id = r.payment_intent_id
+        JOIN crm.customers c ON c.id = p.customer_id
+        WHERE c.user_id = $1 AND r.status = 'completed'
+    ) AS refund_count,
+    (
+        SELECT ROUND(COALESCE(SUM(p.amount), 0))::bigint
+        FROM payment.payment_intents p
+        JOIN crm.customers c ON c.id = p.customer_id
+        WHERE c.user_id = $1 AND p.status = 'succeeded'
+    ) AS spend_amount,
+    (
+        SELECT ROUND(COALESCE(SUM(r.amount), 0))::bigint
+        FROM payment.refunds r
+        JOIN payment.payment_intents p ON p.id = r.payment_intent_id
+        JOIN crm.customers c ON c.id = p.customer_id
+        WHERE c.user_id = $1 AND r.status = 'completed'
+    ) AS refunded_amount,
+    COALESCE((
+        SELECT p.currency
+        FROM payment.payment_intents p
+        JOIN crm.customers c ON c.id = p.customer_id
+        WHERE c.user_id = $1 AND p.status = 'succeeded'
+        GROUP BY p.currency
+        ORDER BY COUNT(*) DESC
+        LIMIT 1
+    ), '')::text AS currency_code;

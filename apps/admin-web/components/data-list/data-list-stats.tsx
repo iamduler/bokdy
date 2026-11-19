@@ -7,6 +7,7 @@ import {
   SoftIconChip,
   type SoftIconToneKey,
 } from "@/components/entity/soft-icon-chip";
+import { Link } from "@/i18n/navigation";
 
 export type DataListStatItem = {
   key: string;
@@ -28,6 +29,8 @@ export type DataListStatItem = {
   secondaryTone?: string;
   /** Optional Vessa-like chip beside secondary (e.g. "1 late"). */
   badge?: ReactNode;
+  /** Opens this path when the card is clicked. */
+  href?: string;
 };
 
 type DataListStatsProps = {
@@ -49,51 +52,63 @@ export function DataListStats({
         className,
       )}
     >
-      {items.map((item) => (
-        <div
-          key={item.key}
-          className="soft-elevated flex min-w-0 flex-col gap-2 border-0 px-5 py-4"
-        >
-          <div className="flex min-w-0 items-center gap-2.5">
-            {item.icon ? (
-              <SoftIconChip
-                icon={item.icon}
-                tone={item.iconTone}
-                color={item.iconColor}
-                backgroundColor={item.iconBackground}
-              />
-            ) : null}
-            <p className="truncate text-sm font-medium text-muted-foreground">
-              {item.label}
-            </p>
+      {items.map((item) => {
+        const card = (
+          <>
+            <div className="flex min-w-0 items-center gap-2.5">
+              {item.icon ? (
+                <SoftIconChip
+                  icon={item.icon}
+                  tone={item.iconTone}
+                  color={item.iconColor}
+                  backgroundColor={item.iconBackground}
+                />
+              ) : null}
+              <p className="truncate text-sm font-medium text-muted-foreground">
+                {item.label}
+              </p>
+            </div>
+            <div className="min-w-0">
+              <p
+                className={cn(
+                  "text-2xl font-bold tracking-tight tabular-nums md:text-[1.75rem]",
+                  item.tone ?? "text-foreground",
+                )}
+              >
+                {isLoading ? "—" : item.value}
+              </p>
+              {item.secondary || item.badge ? (
+                <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                  {item.secondary ? (
+                    <p
+                      className={cn(
+                        "truncate text-xs",
+                        item.secondaryTone ?? "text-muted-foreground",
+                      )}
+                    >
+                      {item.secondary}
+                    </p>
+                  ) : null}
+                  {item.badge}
+                </div>
+              ) : null}
+            </div>
+          </>
+        );
+        const cardClass = "soft-elevated flex min-w-0 flex-col gap-2 border-0 px-5 py-4";
+        if (item.href) {
+          return (
+            <Link key={item.key} href={item.href} className={cardClass}>
+              {card}
+            </Link>
+          );
+        }
+        return (
+          <div key={item.key} className={cardClass}>
+            {card}
           </div>
-          <div className="min-w-0">
-            <p
-              className={cn(
-                "text-2xl font-bold tracking-tight tabular-nums md:text-[1.75rem]",
-                item.tone ?? "text-foreground",
-              )}
-            >
-              {isLoading ? "—" : item.value}
-            </p>
-            {item.secondary || item.badge ? (
-              <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                {item.secondary ? (
-                  <p
-                    className={cn(
-                      "truncate text-xs",
-                      item.secondaryTone ?? "text-muted-foreground",
-                    )}
-                  >
-                    {item.secondary}
-                  </p>
-                ) : null}
-                {item.badge}
-              </div>
-            ) : null}
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

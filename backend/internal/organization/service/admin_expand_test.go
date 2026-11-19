@@ -8,6 +8,18 @@ import (
 	"github.com/google/uuid"
 )
 
+func TestReasonFromAudit(t *testing.T) {
+	if got := reasonFromAudit(`{"reason":"  hết hạn  ","status":"suspended"}`); got != "hết hạn" {
+		t.Fatalf("reason = %q", got)
+	}
+	if got := reasonFromAudit(`{"status":"active"}`); got != "" {
+		t.Fatalf("empty reason = %q", got)
+	}
+	if got := reasonFromAudit("not-json"); got != "" {
+		t.Fatalf("invalid json = %q", got)
+	}
+}
+
 func TestPickRepresentativeFormer_PreferCodeEqual(t *testing.T) {
 	a := uuid.MustParse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
 	b := uuid.MustParse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")

@@ -6,5 +6,5 @@ export default async function Home({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  redirect({ href: "/organizations", locale });
+  redirect({ href: "/dashboard", locale });
 }

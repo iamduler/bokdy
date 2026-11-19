@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import {
   getOrganization,
+  listOrganizationActivity,
   listOrganizations,
   organizationDirectoryStats,
   type AdminOrgListParams,
@@ -29,6 +30,14 @@ export function useOrganizationDirectoryStats(params: AdminOrgStatsParams) {
   return useQuery({
     queryKey: adminOrganizationKeys.stats(params),
     queryFn: () => organizationDirectoryStats(params),
+  });
+}
+
+export function useOrganizationActivity(id: string) {
+  return useQuery({
+    queryKey: [...adminOrganizationKeys.detail(id), "activity"] as const,
+    queryFn: () => listOrganizationActivity(id),
+    enabled: Boolean(id),
   });
 }
 

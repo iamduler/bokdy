@@ -5,6 +5,7 @@ import {
   Building2,
   CalendarCheck,
   CalendarDays,
+  History,
   LayoutDashboard,
   LayoutGrid,
   ListChecks,
@@ -29,6 +30,7 @@ const TABS = [
   { id: "courts", href: "/courts", labelKey: "courts" },
   { id: "team", href: "/team", labelKey: "team" },
   { id: "bookings", href: "/bookings", labelKey: "bookings" },
+  { id: "activity", href: "/activity", labelKey: "activity" },
 ] as const;
 
 type OrgTabId = (typeof TABS)[number]["id"];
@@ -40,6 +42,7 @@ const TAB_ICONS: Record<OrgTabId, ReactNode> = {
   courts: <LayoutGrid />,
   team: <Users />,
   bookings: <CalendarCheck />,
+  activity: <History />,
 };
 
 export function OrganizationOverviewTabs() {

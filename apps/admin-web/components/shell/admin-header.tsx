@@ -55,7 +55,7 @@ export function AdminHeader({
           <SidebarTrigger className="md:hidden" aria-label={t("openMenu")} />
 
           <Link
-            href="/organizations"
+            href="/dashboard"
             className="flex min-w-0 items-center gap-2.5"
             aria-label={tc("appName")}
           >

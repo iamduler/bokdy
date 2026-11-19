@@ -372,6 +372,25 @@ func (r *OrgRepo) InsertFile(ctx context.Context, tx pgx.Tx, in repository.Store
 	})
 }
 
+func (r *OrgRepo) ListAuditLogs(ctx context.Context, tenantID uuid.UUID, limit int) ([]repository.OrgAuditLog, error) {
+	rows, err := r.q.ListTenantAuditLogs(ctx, dbsqlc.ListTenantAuditLogsParams{
+		TenantID: &tenantID,
+		RowLimit: int32(limit),
+	})
+	if err != nil {
+		return nil, err
+	}
+	out := make([]repository.OrgAuditLog, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, repository.OrgAuditLog{
+			ID: row.ID, EventType: row.EventType, Action: row.Action,
+			EntityType: row.EntityType, EntityID: row.EntityID, AfterData: row.AfterData,
+			ActorName: row.ActorName, CreatedAt: row.CreatedAt,
+		})
+	}
+	return out, nil
+}
+
 func (r *OrgRepo) FindFile(ctx context.Context, fileID uuid.UUID) (*repository.StoredFile, error) {
 	row, err := r.q.FindFileByID(ctx, fileID)
 	if err != nil {

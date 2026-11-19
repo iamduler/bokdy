@@ -80,6 +80,11 @@
     "healthError": "API unavailable",
     "welcome": "Welcome to Bokdy Admin",
     "subtitle": "Foundation scaffold — no business domain yet.",
+    "dashboardOps": {
+      "organizations": "Organizations",
+      "users": "Users",
+      "activeSecondary": "{count} active"
+    },
     "unavailable": "Unavailable",
     "brandSubtitle": "Admin Platform",
     "openMenu": "Open navigation",
@@ -851,17 +856,44 @@
         "verification": "Verification"
       },
       "events": {
-        "event1": "Go Vap branch added",
-        "event1Detail": "By organization owner · 6 courts",
-        "event2": "Reached cumulative revenue milestone",
-        "event2Detail": "Major milestone since joining Bokdy",
-        "event3": "Coach invited to team",
-        "event3Detail": "By branch manager · District 1 branch",
-        "event4": "Organization verified by admin",
-        "event4Detail": "License and legal information verified"
+        "OrganizationCreated": "Organization created",
+        "OrganizationUpdated": "Organization profile updated",
+        "OrganizationActivated": "Organization activated",
+        "OrganizationSuspended": "Organization suspended",
+        "OrganizationRestored": "Organization restored",
+        "OrganizationArchived": "Organization archived",
+        "BranchCreated": "Branch created",
+        "BranchUpdated": "Branch updated",
+        "BranchOpened": "Branch opened",
+        "BranchClosed": "Branch closed",
+        "BranchArchived": "Branch archived",
+        "CourtCreated": "Court created",
+        "CourtUpdated": "Court updated",
+        "CourtOpened": "Court opened",
+        "CourtClosed": "Court closed",
+        "CourtArchived": "Court archived",
+        "BookingCreated": "Booking created",
+        "StaffAdded": "Staff added",
+        "StaffUpdated": "Staff updated",
+        "StaffSuspended": "Staff suspended",
+        "StaffRestored": "Staff restored",
+        "StaffRemoved": "Staff removed"
       },
+      "actions": {
+        "created": "created",
+        "updated": "updated",
+        "deleted": "deleted",
+        "restored": "restored",
+        "status_change": "status change",
+        "assign": "assigned",
+        "other": "other"
+      },
+      "eventFallback": "{entity} · {action}",
+      "byActor": "By {name}",
+      "reason": "Reason: {reason}",
+      "loadError": "Could not load the activity log",
       "empty": "No activity yet",
-      "emptyHint": "Organization changes appear here when the audit feed is available."
+      "emptyHint": "Suspend and restore events appear here once they are in the audit log."
     },
     "detailActions": {
       "open": "Actions",

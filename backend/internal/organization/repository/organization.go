@@ -62,6 +62,18 @@ type OrganizationRepository interface {
 	UpdateTenantSlug(ctx context.Context, tx pgx.Tx, tenantID uuid.UUID, slug string) error
 	InsertFile(ctx context.Context, tx pgx.Tx, in StoredFile) error
 	FindFile(ctx context.Context, id uuid.UUID) (*StoredFile, error)
+	ListAuditLogs(ctx context.Context, tenantID uuid.UUID, limit int) ([]OrgAuditLog, error)
+}
+
+type OrgAuditLog struct {
+	ID         uuid.UUID
+	EventType  string
+	Action     string
+	EntityType string
+	EntityID   uuid.UUID
+	AfterData  string
+	ActorName  string
+	CreatedAt  time.Time
 }
 
 type StoredFile struct {

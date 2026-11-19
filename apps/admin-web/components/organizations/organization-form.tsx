@@ -18,10 +18,7 @@ import {
 import { ImageCropDialog } from "@/components/media/image-crop-dialog";
 import { OrganizationContentFields } from "@/components/organizations/organization-content-fields";
 import type { PopoverCommandOption } from "@/components/popover-command-select";
-import { useActivateOrganization } from "@/hooks/use-activate-organization";
 import { useCreateOrganization } from "@/hooks/use-create-organization";
-import { useRestoreOrganization } from "@/hooks/use-restore-organization";
-import { useSuspendOrganization } from "@/hooks/use-suspend-organization";
 import { useUpdateOrganization } from "@/hooks/use-update-organization";
 import { useProvinces, useWards } from "@/hooks/use-admin-units";
 import { useRouter } from "@/i18n/navigation";
@@ -30,7 +27,6 @@ import {
   uploadOrganizationMedia,
   type AdminOrganization,
   type OrganizationProfileInput,
-  type OrgStatus,
 } from "@/lib/api/admin";
 import { ApiError, errorMessageKey } from "@/lib/api/errors";
 import { toVietnameseASCII } from "@/lib/text/vietnamese-ascii";
@@ -39,13 +35,6 @@ import {
   organizationFormSchema,
   type OrganizationFormValues,
 } from "@/lib/validation/organization-create";
-
-const ORG_STATUSES: OrgStatus[] = [
-  "active",
-  "inactive",
-  "suspended",
-  "archived",
-];
 
 const FORM_FIELDS = [
   "name_vi",
@@ -167,15 +156,7 @@ export function OrganizationForm(props: OrganizationFormProps) {
   const organization = isEdit ? props.organization : null;
   const create = useCreateOrganization();
   const update = useUpdateOrganization(organization?.id ?? "");
-  const activate = useActivateOrganization();
-  const suspend = useSuspendOrganization();
-  const restore = useRestoreOrganization();
-  const pending =
-    create.isPending ||
-    update.isPending ||
-    activate.isPending ||
-    suspend.isPending ||
-    restore.isPending;
+  const pending = create.isPending || update.isPending;
   const [logo, setLogo] = useState<Blob | null>(null);
   const [banner, setBanner] = useState<Blob | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -351,23 +332,6 @@ export function OrganizationForm(props: OrganizationFormProps) {
       setError("slug", { message: t("slugTaken") });
       return;
     }
-    const nextStatus = values.status as OrgStatus;
-    if (organization && nextStatus !== organization.status) {
-      const changingToSuspended =
-        organization.status === "active" && nextStatus === "suspended";
-      const allowed =
-        (organization.status === "inactive" && nextStatus === "active") ||
-        (organization.status === "suspended" && nextStatus === "active") ||
-        changingToSuspended;
-      if (!allowed) {
-        setError("status", { message: t("statusUnsupported") });
-        return;
-      }
-      if (changingToSuspended && !values.suspend_reason.trim()) {
-        setError("suspend_reason", { message: t("statusReasonRequired") });
-        return;
-      }
-    }
     try {
       const body = profileBody(values, props.mode);
       let saved: AdminOrganization;
@@ -389,24 +353,6 @@ export function OrganizationForm(props: OrganizationFormProps) {
         else router.push(`/organizations/${saved.id}`);
         return;
       }
-      if (organization && nextStatus !== organization.status) {
-        if (organization.status === "inactive" && nextStatus === "active") {
-          saved = await activate.mutateAsync(saved.id);
-        } else if (
-          organization.status === "suspended" &&
-          nextStatus === "active"
-        ) {
-          saved = await restore.mutateAsync(saved.id);
-        } else if (
-          organization.status === "active" &&
-          nextStatus === "suspended"
-        ) {
-          saved = await suspend.mutateAsync({
-            id: saved.id,
-            reason: values.suspend_reason.trim(),
-          });
-        }
-      }
       reset(valuesFromOrganization(saved));
       toast.success(t("saveSuccess"));
       if (layout === "sheet") onDone?.();
@@ -422,11 +368,6 @@ export function OrganizationForm(props: OrganizationFormProps) {
       keywords: value,
     }),
   );
-  const statusOptions: PopoverCommandOption[] = ORG_STATUSES.map((value) => ({
-    value,
-    label: t(`status.${value}`),
-    keywords: value,
-  }));
   const provinceOptions = provinces.map((unit) => ({
     value: unit.id,
     label: unit.name,
@@ -473,28 +414,6 @@ export function OrganizationForm(props: OrganizationFormProps) {
             label: t("fieldSlug"),
             description: t("fieldSlugHint"),
             error: slugTaken ? t("slugTaken") : undefined,
-          },
-          {
-            kind: "select",
-            name: "status",
-            label: t("fieldOrgStatus"),
-            options: statusOptions,
-            visible: () => Boolean(organization),
-            onValueChange: () => {
-              clearErrors(["status", "suspend_reason"]);
-            },
-          },
-          {
-            kind: "text",
-            name: "suspend_reason",
-            label: t("suspendReason"),
-            required: true,
-            visible: (values) =>
-              Boolean(
-                organization &&
-                values.status === "suspended" &&
-                organization.status !== "suspended",
-              ),
           },
         ],
       },
@@ -569,12 +488,9 @@ export function OrganizationForm(props: OrganizationFormProps) {
     [
       t,
       typeOptions,
-      statusOptions,
       provinceOptions,
       wardOptions,
       slugTaken,
-      organization,
-      clearErrors,
       setValue,
     ],
   );

@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"strings"
 	"time"
@@ -121,6 +122,60 @@ func (s *OrganizationService) AdminDirectoryStats(ctx context.Context, q string,
 		Total: stats.Total, Active: stats.Active, Inactive: stats.Inactive,
 		Suspended: stats.Suspended, BranchTotal: stats.BranchTotal,
 	}, nil
+}
+
+type OrgActivity struct {
+	ID         uuid.UUID
+	EventType  string
+	Action     string
+	EntityType string
+	EntityID   uuid.UUID
+	ActorName  string
+	Reason     string
+	CreatedAt  time.Time
+}
+
+func (s *OrganizationService) ListActivity(ctx context.Context, orgID uuid.UUID, limit int) ([]OrgActivity, error) {
+	if limit <= 0 {
+		limit = 50
+	}
+	if limit > 100 {
+		limit = 100
+	}
+	org, err := s.orgs.FindByID(ctx, orgID)
+	if err != nil {
+		return nil, apperr.Wrap(err, apperr.CodeInternal, "lookup organization")
+	}
+	if org == nil {
+		return nil, orgerrors.ErrOrganizationNotFound
+	}
+	rows, err := s.orgs.ListAuditLogs(ctx, org.TenantID, limit)
+	if err != nil {
+		return nil, apperr.Wrap(err, apperr.CodeInternal, "list organization activity")
+	}
+	out := make([]OrgActivity, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, OrgActivity{
+			ID: row.ID, EventType: row.EventType, Action: row.Action,
+			EntityType: row.EntityType, EntityID: row.EntityID,
+			ActorName: strings.TrimSpace(row.ActorName), Reason: reasonFromAudit(row.AfterData),
+			CreatedAt: row.CreatedAt.UTC(),
+		})
+	}
+	return out, nil
+}
+
+func reasonFromAudit(raw string) string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" || raw == "{}" {
+		return ""
+	}
+	var payload map[string]any
+	if err := json.Unmarshal([]byte(raw), &payload); err != nil {
+		return ""
+	}
+	reason, _ := payload["reason"].(string)
+	return strings.TrimSpace(reason)
 }
 
 func (s *OrganizationService) AdminGet(ctx context.Context, orgID uuid.UUID) (*AdminOrganization, error) {

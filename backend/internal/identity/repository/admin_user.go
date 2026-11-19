@@ -77,7 +77,11 @@ type AdminUserActivityRow struct {
 }
 
 type AdminPlayerSummary struct {
-	BookingCount int
+	BookingCount     int
+	TransactionCount int
+	RefundCount      int
+	TotalSpendMinor  int64
+	CurrencyCode     string
 }
 
 type AdminUserListFilter struct {

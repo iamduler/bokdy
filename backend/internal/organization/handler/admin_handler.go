@@ -1,7 +1,9 @@
 package handler
 
 import (
+	"strconv"
 	"strings"
+	"time"
 
 	"bokdy/internal/organization/entity"
 	"bokdy/internal/organization/service"
@@ -43,6 +45,8 @@ func (h *OrganizationHandler) RegisterAdminRoutes(admin *gin.RouterGroup) {
 	admin.GET("/organizations/stats", h.AdminDirectoryStats)
 	admin.POST("/organizations/archive", h.AdminArchiveMany)
 	admin.GET("/organizations/:id", h.AdminGet)
+	admin.PATCH("/organizations/:id", h.AdminUpdate)
+	admin.GET("/organizations/:id/activity", h.AdminActivity)
 	admin.POST("/organizations/:id/activate", h.AdminActivate)
 	admin.POST("/organizations/:id/suspend", h.AdminSuspend)
 	admin.POST("/organizations/:id/restore", h.AdminRestore)
@@ -110,6 +114,81 @@ func (h *OrganizationHandler) AdminDirectoryStats(c *gin.Context) {
 		Total: stats.Total, Active: stats.Active, Inactive: stats.Inactive,
 		Suspended: stats.Suspended, BranchTotal: stats.BranchTotal,
 	})
+}
+
+func (h *OrganizationHandler) AdminUpdate(c *gin.Context) {
+	uid, orgID, ok := adminUserAndOrg(c)
+	if !ok {
+		return
+	}
+	var req updateOrgRequest
+	if !httpx.BindJSON(c, &req) {
+		return
+	}
+	hq, err := parseHeadquarters(req.Headquarters)
+	if err != nil {
+		httpx.Error(c, err)
+		return
+	}
+	if _, err := h.orgs.Update(c.Request.Context(), orgID, uid, service.UpdateOrganizationInput{
+		NameEn: req.NameEn, NameVi: req.NameVi, LegalName: req.LegalName, OrganizationType: req.OrganizationType,
+		Slug: req.Slug, TaxCode: req.TaxCode, Email: req.Email, Phone: req.Phone, Website: req.Website,
+		ShortIntroEn: req.ShortIntroEn, ShortIntroVi: req.ShortIntroVi,
+		DescriptionEn: req.DescriptionEn, DescriptionVi: req.DescriptionVi,
+		Headquarters: hq,
+	}); err != nil {
+		httpx.Error(c, err)
+		return
+	}
+	h.AdminGet(c)
+}
+
+type adminOrgActivityDTO struct {
+	ID         string `json:"id"`
+	EventType  string `json:"event_type"`
+	Action     string `json:"action"`
+	EntityType string `json:"entity_type"`
+	EntityID   string `json:"entity_id"`
+	ActorName  string `json:"actor_name,omitempty"`
+	Reason     string `json:"reason,omitempty"`
+	CreatedAt  string `json:"created_at"`
+}
+
+func (h *OrganizationHandler) AdminActivity(c *gin.Context) {
+	orgID, ok := adminOrgID(c)
+	if !ok {
+		return
+	}
+	rows, err := h.orgs.ListActivity(c.Request.Context(), orgID, parseActivityLimit(c))
+	if err != nil {
+		httpx.Error(c, err)
+		return
+	}
+	out := make([]adminOrgActivityDTO, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, adminOrgActivityDTO{
+			ID: row.ID.String(), EventType: row.EventType, Action: row.Action,
+			EntityType: row.EntityType, EntityID: row.EntityID.String(),
+			ActorName: row.ActorName, Reason: row.Reason,
+			CreatedAt: row.CreatedAt.UTC().Format(time.RFC3339),
+		})
+	}
+	httpx.OK(c, out)
+}
+
+func parseActivityLimit(c *gin.Context) int {
+	raw := strings.TrimSpace(c.Query("limit"))
+	if raw == "" {
+		return 50
+	}
+	n, err := strconv.Atoi(raw)
+	if err != nil || n < 1 {
+		return 50
+	}
+	if n > 100 {
+		return 100
+	}
+	return n
 }
 
 func (h *OrganizationHandler) AdminGet(c *gin.Context) {

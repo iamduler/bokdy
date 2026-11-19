@@ -133,7 +133,11 @@ type adminUserStatsDTO struct {
 }
 
 type adminPlayerSummaryDTO struct {
-	BookingCount int `json:"booking_count"`
+	BookingCount     int    `json:"booking_count"`
+	TransactionCount int    `json:"transaction_count"`
+	RefundCount      int    `json:"refund_count"`
+	TotalSpendMinor  int64  `json:"total_spend_minor"`
+	CurrencyCode     string `json:"currency_code,omitempty"`
 }
 
 type adminUserPermissionsDTO struct {
@@ -489,7 +493,11 @@ func (h *AdminUserHandler) PlayerSummary(c *gin.Context) {
 		httpx.Error(c, err)
 		return
 	}
-	httpx.OK(c, adminPlayerSummaryDTO{BookingCount: summary.BookingCount})
+	httpx.OK(c, adminPlayerSummaryDTO{
+		BookingCount: summary.BookingCount, TransactionCount: summary.TransactionCount,
+		RefundCount: summary.RefundCount, TotalSpendMinor: summary.TotalSpendMinor,
+		CurrencyCode: summary.CurrencyCode,
+	})
 }
 
 func (h *AdminUserHandler) Suspend(c *gin.Context) {

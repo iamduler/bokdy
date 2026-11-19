@@ -303,6 +303,7 @@ type Querier interface {
 	ListSports(ctx context.Context) ([]ListSportsRow, error)
 	ListSportsWithSkills(ctx context.Context) ([]ListSportsWithSkillsRow, error)
 	ListStaffByOrg(ctx context.Context, organizationID uuid.UUID) ([]ListStaffByOrgRow, error)
+	ListTenantAuditLogs(ctx context.Context, arg ListTenantAuditLogsParams) ([]ListTenantAuditLogsRow, error)
 	ListTimeRules(ctx context.Context, priceVersionID uuid.UUID) ([]ListTimeRulesRow, error)
 	ListTimeSlots(ctx context.Context, arg ListTimeSlotsParams) ([]ListTimeSlotsRow, error)
 	ListUserRoles(ctx context.Context, userID uuid.UUID) ([]ListUserRolesRow, error)
@@ -329,6 +330,7 @@ type Querier interface {
 	NextPriceVersionNumber(ctx context.Context, priceListID uuid.UUID) (int32, error)
 	Ping(ctx context.Context) (int32, error)
 	PlayerActivitySummary(ctx context.Context, userID *uuid.UUID) (PlayerActivitySummaryRow, error)
+	PlayerSpendSummary(ctx context.Context, userID *uuid.UUID) (PlayerSpendSummaryRow, error)
 	ProvinceCurrentExists(ctx context.Context, id uuid.UUID) (bool, error)
 	ProvinceFormerExists(ctx context.Context, id uuid.UUID) (bool, error)
 	PublishPriceVersion(ctx context.Context, arg PublishPriceVersionParams) error
