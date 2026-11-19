@@ -1,6 +1,7 @@
 import type { components } from "@bokdy/sdk/schema";
 
 import { apiGo } from "@/lib/api/client";
+import type { BulkActionResult } from "@/lib/api/branches";
 
 export type CourtEnvironment = "indoor" | "outdoor" | "unspecified";
 export type CourtSurface = components["schemas"]["CourtSurface"];
@@ -85,6 +86,17 @@ export function archiveCourt(organizationId: string, id: string) {
     method: "POST",
     headers: orgHeaders(organizationId),
   });
+}
+
+export function archiveBranchCourts(organizationId: string, branchId: string, ids: string[]) {
+  return apiGo<BulkActionResult>(
+    `branches/${encodeURIComponent(branchId)}/courts/archive`,
+    {
+      method: "POST",
+      headers: orgHeaders(organizationId),
+      body: JSON.stringify({ ids }),
+    },
+  );
 }
 
 export function startCourtMaintenance(

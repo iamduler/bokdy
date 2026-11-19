@@ -1,5 +1,6 @@
 import type { components } from "@bokdy/sdk/schema";
 
+import type { BulkActionResult } from "@/lib/api/branches";
 import { apiGo } from "@/lib/api/client";
 import { appendListPageQuery, type ListPageParams } from "@/lib/api/list-page";
 
@@ -77,6 +78,19 @@ export function restoreOrganization(id: string) {
   });
 }
 
+export function archiveOrganization(id: string) {
+  return apiGo<AdminOrganization>(`admin/organizations/${encodeURIComponent(id)}/archive`, {
+    method: "POST",
+  });
+}
+
+export function archiveOrganizations(ids: string[]) {
+  return apiGo<BulkActionResult>("admin/organizations/archive", {
+    method: "POST",
+    body: JSON.stringify({ ids }),
+  });
+}
+
 export type OrganizationType =
   | "company"
   | "club"
@@ -102,6 +116,10 @@ export type OrganizationProfileInput = {
   email?: string;
   phone?: string;
   website?: string;
+  short_intro_en?: string;
+  short_intro_vi?: string;
+  description_en?: string;
+  description_vi?: string;
   headquarters?: OrganizationHeadquartersInput;
 };
 

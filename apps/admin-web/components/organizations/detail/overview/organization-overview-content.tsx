@@ -1,13 +1,12 @@
 "use client";
 
-import { cn } from "@bokdy/ui";
-import { Building2, Mail, MapPin } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { cn, RichTextView } from "@bokdy/ui";
+import { Building2, Mail, MapPin, Phone } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 
 import { softDetailSectionGap } from "@/components/data-list";
 import { EntityDetailPanel } from "@/components/entity/detail-panel";
-import { OrganizationStatusBadge } from "@/components/organizations/organization-status-badge";
 import { useProvinces, useWards } from "@/hooks/use-admin-units";
 
 import { useOrganizationDetail } from "../organization-detail-context";
@@ -19,24 +18,21 @@ function websiteHref(raw: string): string {
   return `https://${trimmed}`;
 }
 
-function linkValue(url: string | undefined | null, empty: string): ReactNode {
-  const trimmed = url?.trim();
-  if (!trimmed) return empty;
-  return (
-    <a
-      href={websiteHref(trimmed)}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="break-all text-sky-700 dark:text-sky-300"
-    >
-      {trimmed}
-    </a>
-  );
+function websiteLabel(raw: string): string {
+  return raw.replace(/^https?:\/\//i, "").replace(/\/$/, "");
+}
+
+function localized(locale: string, vi?: string, en?: string): string {
+  const primary = locale.startsWith("vi") ? vi : en;
+  const fallback = locale.startsWith("vi") ? en : vi;
+  return primary?.trim() || fallback?.trim() || "";
 }
 
 export function OrganizationOverviewContent() {
   const t = useTranslations("organization");
   const to = useTranslations("organization.detailOverview");
+  const tTenant = useTranslations("organization.tenantStatus");
+  const locale = useLocale();
   const { org } = useOrganizationDetail();
   const provinceId = org.headquarters?.province_id;
   const wardId = org.headquarters?.ward_id;
@@ -48,80 +44,87 @@ export function OrganizationOverviewContent() {
   const provinceName = provinces.find((unit) => unit.id === provinceId)?.name;
   const wardName = wards.find((unit) => unit.id === wardId)?.name;
   const empty = to("emptyValue");
+  const address = [org.headquarters?.address_line_1, wardName, provinceName].filter(Boolean).join(", ");
+  const intro = localized(locale, org.short_intro_vi, org.short_intro_en);
+  const description = localized(locale, org.description_vi, org.description_en);
+  const website = org.website?.trim();
+  const email = org.email?.trim();
+  const phone = org.phone?.trim();
 
   return (
-    <>
+    <div className={cn("grid grid-cols-1 items-start lg:grid-cols-2", softDetailSectionGap)}>
+      <section className="soft-elevated rounded-3xl p-5 md:p-6">
+        <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+          {to("about")}
+        </p>
+        {intro ? (
+          <h2 className="mt-4 text-2xl font-semibold leading-snug text-foreground">{intro}</h2>
+        ) : null}
+        {description ? (
+          <RichTextView html={description} className={cn("text-muted-foreground", intro && "mt-3")} />
+        ) : null}
+        <div className={cn("flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground", (intro || description) && "mt-6")}>
+          <ContactItem icon={<MapPin className="size-4 shrink-0" aria-hidden />} text={address || empty} />
+          <ContactItem icon={<Mail className="size-4 shrink-0" aria-hidden />} text={email || empty} />
+          <ContactItem icon={<Phone className="size-4 shrink-0" aria-hidden />} text={phone || empty} />
+        </div>
+      </section>
       <EntityDetailPanel
-        title={to("identity")}
-        hint={to("identityHint")}
+        title={to("profile")}
         icon={<Building2 className="size-4" aria-hidden />}
         tone="emerald"
       >
-        <ProfileRow
-          label={t("fieldLegalName")}
-          value={org.legal_name || empty}
-        />
+        <ProfileRow label={t("fieldLegalName")} value={org.legal_name || empty} />
         <ProfileRow label={t("fieldTaxCode")} value={org.tax_code || empty} />
         <ProfileRow
           label={t("fieldTenantStatus")}
+          value={org.tenant_status ? tTenant(org.tenant_status) : empty}
+        />
+        <ProfileRow label={to("ownerLabel")} value={org.owner_display_name || empty} emphasize />
+        <ProfileRow
+          label={t("fieldWebsite")}
           value={
-            org.tenant_status ? (
-              <OrganizationStatusBadge
-                kind="tenant"
-                status={org.tenant_status}
-              />
+            website ? (
+              <a
+                href={websiteHref(website)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="break-all text-foreground"
+              >
+                {websiteLabel(website)}
+              </a>
             ) : (
               empty
             )
           }
         />
       </EntityDetailPanel>
-
-      <div
-        className={cn(
-          "grid grid-cols-1 lg:grid-cols-2",
-          softDetailSectionGap,
-        )}
-      >
-        <EntityDetailPanel
-          title={to("contact")}
-          hint={to("contactHint")}
-          icon={<Mail className="size-4" aria-hidden />}
-          tone="sky"
-        >
-          <ProfileRow label={t("fieldEmail")} value={org.email || empty} />
-          <ProfileRow label={t("fieldPhone")} value={org.phone || empty} />
-          <ProfileRow
-            label={t("fieldWebsite")}
-            value={linkValue(org.website, empty)}
-          />
-        </EntityDetailPanel>
-        <EntityDetailPanel
-          title={to("headquarters")}
-          hint={to("headquartersHint")}
-          icon={<MapPin className="size-4" aria-hidden />}
-          tone="amber"
-        >
-          <ProfileRow
-            label={t("fieldProvince")}
-            value={provinceName || empty}
-          />
-          <ProfileRow label={t("fieldWard")} value={wardName || empty} />
-          <ProfileRow
-            label={t("fieldAddress1")}
-            value={org.headquarters?.address_line_1 || empty}
-          />
-        </EntityDetailPanel>
-      </div>
-    </>
+    </div>
   );
 }
 
-function ProfileRow({ label, value }: { label: string; value: ReactNode }) {
+function ContactItem({ icon, text }: { icon: ReactNode; text: string }) {
   return (
-    <div className="flex items-start gap-3 border-b border-border/40 py-1.5 last:border-0">
-      <span className="w-28 shrink-0 text-xs text-muted-foreground">{label}</span>
-      <span className="min-w-0 flex-1 text-sm text-foreground">{value}</span>
+    <span className="inline-flex min-w-0 items-center gap-1.5">
+      {icon}
+      <span className="min-w-0">{text}</span>
+    </span>
+  );
+}
+
+function ProfileRow({
+  label,
+  value,
+  emphasize = false,
+}: {
+  label: string;
+  value: ReactNode;
+  emphasize?: boolean;
+}) {
+  return (
+    <div className="flex items-start gap-4 border-b border-border/40 py-3 last:border-0">
+      <span className="w-36 shrink-0 text-sm text-muted-foreground">{label}</span>
+      <span className={cn("min-w-0 flex-1 text-sm text-foreground", emphasize && "font-medium")}>{value}</span>
     </div>
   );
 }

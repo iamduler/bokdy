@@ -15,11 +15,7 @@ import { ImagePlus, Images, Star, Trash2 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRef, useState } from "react";
 
-import {
-  DataListEmpty,
-  softDirectoryPrimaryBtn,
-  softDirectorySecondaryBtn,
-} from "@/components/data-list";
+import { DataListEmpty } from "@/components/data-list";
 import { EntityDetailPanel } from "@/components/entity/detail-panel";
 import { MediaLightbox, type MediaPreviewItem } from "@/components/entity/media-lightbox";
 import {
@@ -97,8 +93,7 @@ export function BranchImagesView() {
           <>
             <Button
               type="button"
-              size="lg"
-              className={softDirectoryPrimaryBtn}
+              size="sm"
               disabled={busy}
               onClick={() => inputRef.current?.click()}
             >
@@ -242,15 +237,15 @@ export function BranchImagesView() {
           <DialogFooter>
             <Button
               type="button"
-              size="lg"
-              className={softDirectorySecondaryBtn}
+              variant="outline"
+              size="sm"
               onClick={() => setPendingDelete(null)}
             >
               {t("cancel")}
             </Button>
             <Button
               type="button"
-              size="lg"
+              size="sm"
               variant="destructive"
               disabled={remove.isPending}
               onClick={() => {

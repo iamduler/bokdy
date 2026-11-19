@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 import { softDetailSectionGap } from "@/components/data-list";
 import { CourtCollection } from "@/components/courts/court-collection";
 import { CourtFormSheet } from "@/components/courts/court-form-sheet";
+import { useArchiveAdminCourts } from "@/hooks/use-admin-courts";
 import { useBranches } from "@/hooks/use-branches";
 import { useOrgCourts } from "@/hooks/use-courts";
 
@@ -17,6 +18,7 @@ export function OrganizationCourtsView() {
   const { orgId } = useOrganizationDetail();
   const { data, isLoading, isError, refetch, isFetching } = useOrgCourts(orgId);
   const { data: branches = [] } = useBranches(orgId);
+  const archiveMany = useArchiveAdminCourts();
   const [sheetOpen, setSheetOpen] = useState(false);
 
   return (
@@ -30,7 +32,9 @@ export function OrganizationCourtsView() {
         errorMessage={t("loadError")}
         emptyTitle={t("empty")}
         onCreate={() => setSheetOpen(true)}
+        organizationId={orgId}
         branches={branches}
+        onArchiveSelected={(ids) => archiveMany.mutateAsync(ids)}
       />
       <CourtFormSheet
         open={sheetOpen}

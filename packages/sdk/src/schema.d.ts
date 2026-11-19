@@ -2178,6 +2178,60 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/organizations/{id}/branches/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Archive branches
+         * @description Any non-archived status → archived, one transaction per id.
+         *     An id outside the organization is `NOT_FOUND`. Already archived is `INVALID_STATUS`.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                };
+                path: {
+                    id: components["parameters"]["OrganizationId"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["BulkIdsRequest"];
+                };
+            };
+            responses: {
+                /** @description Per-id results */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["BulkActionResult"];
+                        };
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/organizations/{id}/staff": {
         parameters: {
             query?: never;
@@ -2251,6 +2305,60 @@ export interface paths {
                 401: components["responses"]["Error"];
                 403: components["responses"]["Error"];
                 409: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organizations/{id}/staff/remove": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Remove staff
+         * @description Sets each member to resigned and revokes tenant roles, one transaction per id.
+         *     A resigned or unknown member is `NOT_FOUND`. The last owner stays and returns `VALIDATION`.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    /** @description If present on nested `/organizations/{id}/...` routes, must match path id. */
+                    "X-Organization-ID"?: components["parameters"]["XOrganizationIdOptional"];
+                };
+                path: {
+                    id: components["parameters"]["OrganizationId"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["BulkIdsRequest"];
+                };
+            };
+            responses: {
+                /** @description Per-id results */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["BulkActionResult"];
+                        };
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
                 422: components["responses"]["ValidationFailed"];
             };
         };
@@ -3725,6 +3833,61 @@ export interface paths {
                 401: components["responses"]["Error"];
                 403: components["responses"]["Error"];
                 404: components["responses"]["Error"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/branches/{id}/courts/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Archive courts at a branch
+         * @description Only `inactive` courts archive, one transaction per id.
+         *     A court outside this branch is `NOT_FOUND`. Any other status is `INVALID_STATUS`.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header: {
+                    /** @description Tenant organization context. Required for `/api/v1/branches*`, staff `/api/v1/customers*`, `/api/v1/court-types*`, `/api/v1/courts*`, staff schedule/availability routes, and staff booking routes (list, walk-in, confirm, check-in, complete). */
+                    "X-Organization-ID": components["parameters"]["XOrganizationId"];
+                };
+                path: {
+                    id: components["parameters"]["BranchId"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["BulkIdsRequest"];
+                };
+            };
+            responses: {
+                /** @description Per-id results */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            data?: components["schemas"]["BulkActionResult"];
+                        };
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
             };
         };
         delete?: never;
@@ -7433,6 +7596,52 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/branches/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Archive branches across organizations
+         * @description Does not require one organization header. Each non-archived branch becomes archived.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["BulkIdsRequest"];
+                };
+            };
+            responses: {
+                /** @description Per-id result */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BulkActionResult"];
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/courts": {
         parameters: {
             query?: never;
@@ -7528,6 +7737,52 @@ export interface paths {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/courts/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Archive courts across organizations
+         * @description Only inactive courts archive. Any other status is INVALID_STATUS.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["BulkIdsRequest"];
+                };
+            };
+            responses: {
+                /** @description Per-id result */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BulkActionResult"];
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -7995,6 +8250,98 @@ export interface paths {
             requestBody?: never;
             responses: {
                 /** @description Organization restored */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AdminOrganization"];
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                404: components["responses"]["Error"];
+                409: components["responses"]["Error"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/organizations/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Archive organizations
+         * @description Each id is archived on its own. Already archived or unknown ids are reported in failed.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["BulkIdsRequest"];
+                };
+            };
+            responses: {
+                /** @description Per-id result */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BulkActionResult"];
+                    };
+                };
+                401: components["responses"]["Error"];
+                403: components["responses"]["Error"];
+                422: components["responses"]["ValidationFailed"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/organizations/{id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Archive organization
+         * @description Org `active`, `inactive`, or `suspended` → `archived`. Emits OrganizationArchived.
+         *     Archived is terminal.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: components["parameters"]["OrganizationId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Organization archived */
                 200: {
                     headers: {
                         [name: string]: unknown;
@@ -9304,6 +9651,17 @@ export interface components {
             message: string;
             details?: components["schemas"]["ErrorDetail"][];
         };
+        BulkIdsRequest: {
+            ids: string[];
+        };
+        BulkActionResult: {
+            succeeded: string[];
+            failed: {
+                /** Format: uuid */
+                id: string;
+                code: string;
+            }[];
+        };
         ErrorDetail: {
             field: string;
             /** @enum {string} */
@@ -9360,6 +9718,12 @@ export interface components {
             email?: string;
             phone?: string;
             website?: string;
+            short_intro_en?: string;
+            short_intro_vi?: string;
+            /** @description Sanitized HTML */
+            description_en?: string;
+            /** @description Sanitized HTML */
+            description_vi?: string;
             /** Format: uuid */
             logo_file_id?: string;
             /** Format: uuid */
@@ -9367,6 +9731,11 @@ export interface components {
             headquarters?: components["schemas"]["OrganizationHeadquarters"];
             /** @enum {string} */
             status: "active" | "inactive" | "suspended" | "archived";
+            /**
+             * Format: date-time
+             * @description UTC instant the organization was created
+             */
+            created_at?: string;
             /**
              * @description Present on admin organization reads
              * @enum {string}
@@ -9384,6 +9753,8 @@ export interface components {
             owner_display_name: string | null;
             /** @description Sport name for the request locale. Most courts, else most branch sports. Null when none. */
             primary_sport: string | null;
+            /** @description Active staff. Present on the admin organization detail. */
+            staff_count?: number;
         };
         AdminListPage: {
             total: number;
@@ -9746,6 +10117,10 @@ export interface components {
             email?: string;
             phone?: string;
             website?: string;
+            short_intro_en?: string;
+            short_intro_vi?: string;
+            description_en?: string;
+            description_vi?: string;
             headquarters?: components["schemas"]["OrganizationHeadquarters"];
         };
         UpdateOrganizationRequest: {
@@ -9760,6 +10135,10 @@ export interface components {
             email?: string;
             phone?: string;
             website?: string;
+            short_intro_en?: string;
+            short_intro_vi?: string;
+            description_en?: string;
+            description_vi?: string;
             headquarters?: components["schemas"]["OrganizationHeadquarters"];
         };
         OrganizationHeadquarters: {

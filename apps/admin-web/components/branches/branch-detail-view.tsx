@@ -1,28 +1,69 @@
 "use client";
 
-import { cn, RichTextView } from "@bokdy/ui";
+import { cn, formatUserTime, RichTextView } from "@bokdy/ui";
 import { FileText, Link2, Mail, MapPin } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 
 import { useBranchDetail } from "@/components/branches/detail/branch-detail-context";
+import { BranchAmenitiesView } from "@/components/branches/detail/branch-amenities-view";
 import { BranchDetailHero } from "@/components/branches/detail/branch-detail-hero";
 import { softDetailSectionGap } from "@/components/data-list";
 import { EntityDetailPanel } from "@/components/entity/detail-panel";
 import { MapPicker } from "@/components/maps/map-picker";
 import { useDistricts, useProvinces, useWards } from "@/hooks/use-admin-units";
+import { useBranchSchedule } from "@/hooks/use-branch-schedule";
 import {
   branchDescription,
+  branchShortIntro,
   currentBranchAddress,
   formerBranchAddress,
 } from "@/lib/api/branches";
+import type { BusinessHour } from "@/lib/api/branch-schedule";
+
+function todayWeekdayInSaigon(): number {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Ho_Chi_Minh",
+    weekday: "short",
+  }).formatToParts(new Date());
+  const wd = parts.find((part) => part.type === "weekday")?.value;
+  const map: Record<string, number> = {
+    Sun: 0,
+    Mon: 1,
+    Tue: 2,
+    Wed: 3,
+    Thu: 4,
+    Fri: 5,
+    Sat: 6,
+  };
+  return map[wd ?? ""] ?? new Date().getDay();
+}
+
+function todayHoursLabel(
+  days: BusinessHour[] | undefined,
+  openToday: (range: string) => string,
+  closedToday: string,
+): string | null {
+  if (!days?.length) return null;
+  const weekday = todayWeekdayInSaigon();
+  const day = days.find((item) => item.weekday === weekday);
+  if (!day) return null;
+  if (day.is_closed) return closedToday;
+  if (day.opens_at && day.closes_at) {
+    return openToday(`${formatUserTime(day.opens_at)} – ${formatUserTime(day.closes_at)}`);
+  }
+  return closedToday;
+}
 
 /** Branch Overview: Soft entity stack (hero + panels) — same layout as Org overview. */
 export function BranchOverviewView() {
-  const { branch } = useBranchDetail();
+  const { branch, organizationId, branchId } = useBranchDetail();
   const t = useTranslations("organization");
   const tb = useTranslations("organization.branch");
+  const th = useTranslations("organization.branchDetail.hero");
+  const tTabs = useTranslations("organization.branchDetail.tabs");
   const locale = useLocale();
+  const { data: schedule } = useBranchSchedule(organizationId, branchId);
   const address = currentBranchAddress(branch);
   const former = formerBranchAddress(branch);
 
@@ -62,6 +103,12 @@ export function BranchOverviewView() {
     lat != null && lng != null && !Number.isNaN(lat) && !Number.isNaN(lng);
 
   const description = branchDescription(branch, locale);
+  const shortIntro = branchShortIntro(branch, locale);
+  const hoursLabel = todayHoursLabel(
+    schedule,
+    (range) => th("openToday", { range }),
+    th("closedToday"),
+  );
 
   const contactPanel = (
     <EntityDetailPanel
@@ -72,6 +119,7 @@ export function BranchOverviewView() {
     >
       <ProfileRow label={t("fieldEmail")} value={branch.email || empty} />
       <ProfileRow label={t("fieldPhone")} value={branch.phone || empty} />
+      <ProfileRow label={tTabs("schedule")} value={hoursLabel || empty} />
     </EntityDetailPanel>
   );
 
@@ -112,18 +160,25 @@ export function BranchOverviewView() {
     >
       <BranchDetailHero />
 
-      <EntityDetailPanel
-        title={tb("fieldDescription")}
-        hint={tb("hints.description")}
-        icon={<FileText className="size-4" aria-hidden />}
-        tone="amber"
-      >
-        {description ? (
-          <RichTextView html={description} />
-        ) : (
-          <p className="text-sm text-muted-foreground">{empty}</p>
-        )}
-      </EntityDetailPanel>
+      <div className={cn("grid grid-cols-1 items-stretch lg:grid-cols-2", softDetailSectionGap)}>
+        <EntityDetailPanel
+          title={tb("fieldDescription")}
+          hint={tb("hints.description")}
+          icon={<FileText className="size-4" aria-hidden />}
+          tone="amber"
+          className="h-full"
+        >
+          {shortIntro ? (
+            <h2 className="text-2xl font-semibold leading-snug text-foreground">{shortIntro}</h2>
+          ) : null}
+          {description ? (
+            <RichTextView html={description} className={shortIntro ? "mt-3 text-muted-foreground" : undefined} />
+          ) : shortIntro ? null : (
+            <p className="text-sm text-muted-foreground">{empty}</p>
+          )}
+        </EntityDetailPanel>
+        <BranchAmenitiesView />
+      </div>
 
       <div
         className={cn(

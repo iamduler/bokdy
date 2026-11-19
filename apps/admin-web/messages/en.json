@@ -17,7 +17,8 @@
     "pageSummary": "{from}–{to} of {total}",
     "actions": "Actions",
     "selectAll": "Select all",
-    "selectRow": "Select row"
+    "selectRow": "Select row",
+    "clearSelection": "Clear selection"
   },
   "auth": {
     "adminEyebrow": "Administrator access",
@@ -112,6 +113,7 @@
       "courts": "Courts",
       "bookings": "Bookings",
       "holidays": "Holidays",
+      "settings": "Settings",
       "usersPlayers": "Players",
       "usersOwners": "Owners & staff",
       "usersAdmins": "Admins",
@@ -155,7 +157,14 @@
       "profileEdit": "Edit profile",
       "sessions": "Sessions",
       "holidays": "Holidays",
+      "settings": "Settings",
       "fallback": "Bokdy Admin"
+    }
+  },
+  "settings": {
+    "tabs": {
+      "aria": "Settings",
+      "holidays": "Holidays"
     }
   },
   "profile": {
@@ -336,7 +345,7 @@
       "risk": "Risk",
       "status": "Status",
       "tenantStatus": "Tenant",
-      "actions": ""
+      "actions": "Actions"
     },
     "ownerUnavailable": "Owner unavailable",
     "regionSportsUnavailable": "Region & sports unavailable",
@@ -350,6 +359,9 @@
     "rowMenuUnavailable": "More actions unavailable — no API yet.",
     "branchCount": "{count, plural, one {# branch} other {# branches}}",
     "bulkSelected": "{count} selected",
+    "selectPage": "Select page",
+    "selectRow": "Select row",
+    "bulkFailed": "{count} could not be deleted.",
     "bulkAssign": "Assign reviewer",
     "bulkApprove": "Approve",
     "bulkReject": "Reject",
@@ -374,6 +386,14 @@
     "slugTaken": "This slug is already used.",
     "fieldTaxCode": "Tax code",
     "fieldWebsite": "Website",
+    "sectionIntro": "Introduction",
+    "fieldShortIntroVi": "Short intro (VN)",
+    "fieldShortIntroEn": "Short intro (EN)",
+    "fieldShortIntroCount": "{count}/{max}",
+    "shortIntroTooLong": "Short intro must be 200 characters or fewer.",
+    "fieldDescriptionVi": "Description (VN)",
+    "fieldDescriptionEn": "Description (EN)",
+    "fieldDescriptionPlaceholder": "Describe this organization…",
     "websiteInvalid": "Enter a full URL, including https://.",
     "addressIncomplete": "Choose a province and a ward.",
     "sectionIdentity": "Identity",
@@ -509,6 +529,7 @@
       "branches": "Branches",
       "courts": "Courts",
       "staff": "Staff",
+      "founded": "Founded",
       "players": "Players",
       "revenue": "Monthly revenue",
       "occupancy": "Occupancy",
@@ -516,6 +537,10 @@
     },
     "detailOverview": {
       "editProfile": "Edit profile",
+      "about": "Introduction",
+      "aboutHint": "Public introduction, description, and contact details.",
+      "profile": "Organization profile",
+      "profileHint": "Legal identity, tenant status, and owner.",
       "identity": "Identity",
       "identityHint": "Legal identity and tenant subscription status for this organization.",
       "contact": "Contact",
@@ -623,6 +648,12 @@
       "colBranch": "Branch"
     },
     "court": {
+      "tabs": {
+        "ariaLabel": "Court sections",
+        "navTitle": "Court",
+        "overview": "Overview",
+        "bookings": "Bookings"
+      },
       "createTitle": "New court",
       "editTitle": "Edit court",
       "edit": "Edit",
@@ -669,6 +700,10 @@
       "actionMaintenance": "Maintenance",
       "actionCompleteMaintenance": "Complete maintenance",
       "actionArchive": "Archive",
+      "delete": "Delete",
+      "deleteTitle": "Delete court?",
+      "deleteConfirm": "Archive {name}. The court will no longer operate.",
+      "deleted": "Court deleted.",
       "archiveTitle": "Archive court",
       "archiveHint": "A closed court will be archived and hidden from the active list.",
       "maintenanceTitle": "Put court in maintenance",
@@ -857,6 +892,8 @@
         "activateDesc": "Enable normal operations",
         "restore": "Restore organization",
         "restoreDesc": "Restore from suspended state",
+        "delete": "Delete organization",
+        "deleteDesc": "Archive the organization. Records stay in place.",
         "auditLog": "View audit log",
         "auditLogDesc": "Full organization change history"
       }
@@ -878,6 +915,13 @@
     "submitRestore": "Restore",
     "restoreSuccess": "Organization restored.",
     "restoreConflict": "Only a suspended organization can be restored.",
+    "delete": "Delete",
+    "deleteTitle": "Delete organization?",
+    "deleteConfirm": "Archive {name}. The organization will no longer operate.",
+    "deleted": "Organization deleted.",
+    "bulkDeleteTitle": "Delete {count} organizations?",
+    "bulkDeleteConfirm": "Archive {count} organizations. They will no longer operate.",
+    "bulkDeleted": "Deleted {count} organizations.",
     "status": {
       "active": "Active",
       "inactive": "Inactive",
@@ -895,6 +939,14 @@
       "fullView": "Full view",
       "editTitle": "Edit branch",
       "editProfile": "Edit branch",
+      "delete": "Delete",
+      "deleteTitle": "Delete branch?",
+      "deleteConfirm": "Archive {name}. The branch will no longer operate.",
+      "deleted": "Branch deleted.",
+      "cancel": "Cancel",
+      "bulkDeleteTitle": "Delete {count} branches?",
+      "bulkDeleteConfirm": "Archive {count} branches. They will no longer operate.",
+      "bulkDeleted": "Deleted {count} branches.",
       "backToList": "Branch list",
       "empty": "No branches yet.",
       "emptyValue": "-",
@@ -1025,6 +1077,9 @@
         "title": "Courts",
         "addCourt": "Add court",
         "empty": "No courts at this branch yet.",
+        "bulkDeleteTitle": "Delete {count} courts?",
+        "bulkDeleteConfirm": "Archive {count} closed courts. Courts in another status cannot be selected.",
+        "bulkDeleted": "Deleted {count} courts.",
         "loadError": "Could not load courts.",
         "emptyValue": "-",
         "colName": "Court",
@@ -1166,11 +1221,9 @@
         "advancedCourt": "Court overrides",
         "advancedDiscount": "Discounts and surcharges",
         "advancedOff": "Not applied",
-        "contextLine": "{branch} · {sport}",
         "addWindow": "Add window",
         "removeWindow": "Remove",
         "formCreateTitle": "New price list",
-        "formCreateLead": "Set the base price and time windows for {branch}.",
         "backToPricing": "Back to price lists",
         "backToDetail": "Back to detail",
         "saveDraft": "Save draft",
@@ -1178,7 +1231,6 @@
         "checkOverlap": "Check overlaps",
         "willActivate": "Will activate",
         "sectionBasic": "Basic information",
-        "sectionBasicLead": "Name the list and choose the sport",
         "nameHint": "A name you can recognize when managing bookings.",
         "sportHint": "This list applies only to courts of this sport.",
         "audienceApply": "Customer type",
@@ -1192,18 +1244,15 @@
         "activateAfterCreateLead": "Applies immediately for {sport} · {branch} · {audience}",
         "activateReplaces": "If a live {audience} list already exists, that list stops.",
         "sectionDuration": "Booking length",
-        "sectionDurationLead": "Choose the slot length and the lengths a guest can book",
         "durationChipLead": "A guest picks one of the configured lengths.",
         "durationUnlimitedLead": "A guest can book continuous slot multiples until the court is no longer free.",
         "baseSlotTitle": "Base price per slot",
         "baseSlotLead": "Used when the time is outside a special window",
         "currencySuffix": "VND",
         "sectionSchedule": "Weekly price schedule",
-        "sectionScheduleLead": "Each day group has its own windows and prices",
         "daysApply": "Days",
         "addWindowTo": "Add a window to {name}",
         "sectionHoliday": "Holiday prices",
-        "sectionHolidayLead": "Prices used on every date marked as a holiday",
         "holidayManaged": "Holiday dates are managed on their own screen",
         "holidayManagedLead": "This form only sets prices. Holiday dates live in the holiday calendar.",
         "viewHolidays": "View holiday calendar",
@@ -1367,6 +1416,8 @@
       "suspended": "Suspended"
     },
     "detailSubnav": {
+      "navTitle": "User details",
+      "ariaLabel": "User sections",
       "user": "User",
       "overview": "Overview",
       "sessions": "Sessions",
@@ -1648,7 +1699,11 @@
       "suspend": "Suspend",
       "restore": "Restore",
       "remove": "Remove",
-      "revoke": "Revoke invite"
+      "delete": "Delete",
+      "revoke": "Revoke invite",
+      "bulkDeleteTitle": "Delete {count} people?",
+      "bulkDeleteConfirm": "Remove {count} people from this organization. They lose access.",
+      "bulkDeleted": "Deleted {count} people."
     },
     "invite": {
       "cta": "Invite staff",
@@ -1797,8 +1852,20 @@
       "organization": "Organization",
       "address": "Address",
       "courts": "Courts",
-      "status": "Status"
-    }
+      "status": "Status",
+      "actions": "Actions",
+      "delete": "Delete"
+    },
+    "edit": "Edit",
+    "selectPage": "Select page",
+    "selectRow": "Select row",
+    "bulkSelected": "{count} selected",
+    "bulkDelete": "Delete",
+    "bulkDeleteTitle": "Delete {count} branches?",
+    "bulkDeleteConfirm": "Archive {count} branches. They will no longer operate.",
+    "bulkDeleted": "Deleted {count} branches.",
+    "bulkFailed": "{count} could not be deleted.",
+    "cancel": "Cancel"
   },
   "courtDirectory": {
     "title": "Courts",
@@ -1843,7 +1910,18 @@
       "branch": "Branch",
       "sport": "Sport",
       "environment": "Environment",
-      "status": "Status"
-    }
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "edit": "Edit",
+    "selectPage": "Select page",
+    "selectRow": "Select row",
+    "bulkSelected": "{count} selected",
+    "bulkDelete": "Delete",
+    "bulkDeleteTitle": "Delete {count} courts?",
+    "bulkDeleteConfirm": "Archive {count} closed courts. Courts in another status cannot be selected.",
+    "bulkDeleted": "Deleted {count} courts.",
+    "bulkFailed": "{count} could not be deleted.",
+    "cancel": "Cancel"
   }
 }

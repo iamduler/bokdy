@@ -41,6 +41,8 @@ func (r *OrgRepo) CreateTenantAndOrg(ctx context.Context, tx pgx.Tx, tenant *ent
 		OrganizationType: dbsqlc.OrganizationOrganizationType(org.OrganizationType),
 		TaxCode:          nullStr(org.TaxCode),
 		Phone:            nullStr(org.Phone), Email: nullStr(org.Email), Website: nullStr(org.Website),
+		ShortIntroEn: nullStr(org.ShortIntroEn), ShortIntroVi: nullStr(org.ShortIntroVi),
+		DescriptionEn: nullStr(org.DescriptionEn), DescriptionVi: nullStr(org.DescriptionVi),
 		Status: dbsqlc.OrganizationOrganizationStatus(org.Status), CreatedAt: org.CreatedAt, UpdatedAt: org.UpdatedAt,
 	}); err != nil {
 		return err
@@ -65,7 +67,7 @@ func (r *OrgRepo) FindByID(ctx context.Context, orgID uuid.UUID) (*entity.Organi
 		}
 		return nil, err
 	}
-	return mapOrg(row.ID, row.PublicID, row.TenantID, row.Code, row.NameEn, row.NameVi, row.LegalName, row.OrganizationType, row.TaxCode, row.Phone, row.Email, row.Website, row.LogoFileID, row.BannerFileID, row.Slug, row.Status, row.CreatedAt, row.UpdatedAt), nil
+	return mapOrg(row.ID, row.PublicID, row.TenantID, row.Code, row.NameEn, row.NameVi, row.LegalName, row.OrganizationType, row.TaxCode, row.Phone, row.Email, row.Website, row.ShortIntroEn, row.ShortIntroVi, row.DescriptionEn, row.DescriptionVi, row.LogoFileID, row.BannerFileID, row.Slug, row.Status, row.CreatedAt, row.UpdatedAt), nil
 }
 
 func (r *OrgRepo) FindByTenant(ctx context.Context, tenantID uuid.UUID) (*entity.Organization, error) {
@@ -76,7 +78,7 @@ func (r *OrgRepo) FindByTenant(ctx context.Context, tenantID uuid.UUID) (*entity
 		}
 		return nil, err
 	}
-	return mapOrg(row.ID, row.PublicID, row.TenantID, row.Code, row.NameEn, row.NameVi, row.LegalName, row.OrganizationType, row.TaxCode, row.Phone, row.Email, row.Website, row.LogoFileID, row.BannerFileID, row.Slug, row.Status, row.CreatedAt, row.UpdatedAt), nil
+	return mapOrg(row.ID, row.PublicID, row.TenantID, row.Code, row.NameEn, row.NameVi, row.LegalName, row.OrganizationType, row.TaxCode, row.Phone, row.Email, row.Website, row.ShortIntroEn, row.ShortIntroVi, row.DescriptionEn, row.DescriptionVi, row.LogoFileID, row.BannerFileID, row.Slug, row.Status, row.CreatedAt, row.UpdatedAt), nil
 }
 
 func (r *OrgRepo) FindTenantByID(ctx context.Context, tenantID uuid.UUID) (*entity.Tenant, error) {
@@ -98,7 +100,7 @@ func (r *OrgRepo) LockByID(ctx context.Context, tx pgx.Tx, orgID uuid.UUID) (*en
 		}
 		return nil, err
 	}
-	return mapOrg(row.ID, row.PublicID, row.TenantID, row.Code, row.NameEn, row.NameVi, row.LegalName, row.OrganizationType, row.TaxCode, row.Phone, row.Email, row.Website, row.LogoFileID, row.BannerFileID, row.Slug, row.Status, row.CreatedAt, row.UpdatedAt), nil
+	return mapOrg(row.ID, row.PublicID, row.TenantID, row.Code, row.NameEn, row.NameVi, row.LegalName, row.OrganizationType, row.TaxCode, row.Phone, row.Email, row.Website, row.ShortIntroEn, row.ShortIntroVi, row.DescriptionEn, row.DescriptionVi, row.LogoFileID, row.BannerFileID, row.Slug, row.Status, row.CreatedAt, row.UpdatedAt), nil
 }
 
 func (r *OrgRepo) LockTenantByID(ctx context.Context, tx pgx.Tx, tenantID uuid.UUID) (*entity.Tenant, error) {
@@ -119,7 +121,7 @@ func (r *OrgRepo) ListByUser(ctx context.Context, userID uuid.UUID) ([]entity.Or
 	}
 	out := make([]entity.Organization, 0, len(rows))
 	for _, row := range rows {
-		out = append(out, *mapOrg(row.ID, row.PublicID, row.TenantID, row.Code, row.NameEn, row.NameVi, row.LegalName, row.OrganizationType, row.TaxCode, row.Phone, row.Email, row.Website, row.LogoFileID, row.BannerFileID, row.Slug, row.Status, row.CreatedAt, row.UpdatedAt))
+		out = append(out, *mapOrg(row.ID, row.PublicID, row.TenantID, row.Code, row.NameEn, row.NameVi, row.LegalName, row.OrganizationType, row.TaxCode, row.Phone, row.Email, row.Website, row.ShortIntroEn, row.ShortIntroVi, row.DescriptionEn, row.DescriptionVi, row.LogoFileID, row.BannerFileID, row.Slug, row.Status, row.CreatedAt, row.UpdatedAt))
 	}
 	return out, nil
 }
@@ -153,7 +155,7 @@ func (r *OrgRepo) ListAdmin(ctx context.Context, filter repository.AdminListFilt
 	out := make([]repository.AdminOrganization, 0, len(rows))
 	for _, row := range rows {
 		out = append(out, repository.AdminOrganization{
-			Organization:       *mapOrg(row.ID, row.PublicID, row.TenantID, row.Code, row.NameEn, row.NameVi, row.LegalName, row.OrganizationType, row.TaxCode, row.Phone, row.Email, row.Website, row.LogoFileID, row.BannerFileID, row.Slug, row.Status, row.CreatedAt, row.UpdatedAt),
+			Organization:       *mapOrg(row.ID, row.PublicID, row.TenantID, row.Code, row.NameEn, row.NameVi, row.LegalName, row.OrganizationType, row.TaxCode, row.Phone, row.Email, row.Website, row.ShortIntroEn, row.ShortIntroVi, row.DescriptionEn, row.DescriptionVi, row.LogoFileID, row.BannerFileID, row.Slug, row.Status, row.CreatedAt, row.UpdatedAt),
 			TenantStatus:       entity.TenantStatus(row.TenantStatus),
 			BranchCount:        int(row.BranchCount),
 			CourtCount:         int(row.CourtCount),
@@ -210,12 +212,22 @@ func (r *OrgRepo) CountBranches(ctx context.Context, orgID uuid.UUID) (int, erro
 	return int(n), nil
 }
 
+func (r *OrgRepo) CountActiveStaff(ctx context.Context, orgID uuid.UUID) (int, error) {
+	n, err := r.q.CountActiveStaffByOrganization(ctx, orgID)
+	if err != nil {
+		return 0, err
+	}
+	return int(n), nil
+}
+
 func (r *OrgRepo) Update(ctx context.Context, tx pgx.Tx, org *entity.Organization) error {
 	return r.q.WithTx(tx).UpdateOrganization(ctx, dbsqlc.UpdateOrganizationParams{
 		ID: org.ID, NameEn: nullStr(org.NameEn), NameVi: nullStr(org.NameVi), LegalName: nullStr(org.LegalName),
 		OrganizationType: dbsqlc.OrganizationOrganizationType(org.OrganizationType),
 		TaxCode:          nullStr(org.TaxCode), Phone: nullStr(org.Phone), Email: nullStr(org.Email),
 		Website: nullStr(org.Website), LogoFileID: org.LogoFileID, BannerFileID: org.BannerFileID,
+		ShortIntroEn: nullStr(org.ShortIntroEn), ShortIntroVi: nullStr(org.ShortIntroVi),
+		DescriptionEn: nullStr(org.DescriptionEn), DescriptionVi: nullStr(org.DescriptionVi),
 	})
 }
 
@@ -260,13 +272,17 @@ func toTenant(
 func mapOrg(
 	id uuid.UUID, publicID string, tenantID uuid.UUID, code, nameEn, nameVi, legalName string,
 	typ dbsqlc.OrganizationOrganizationType, taxCode, phone, email, website string,
+	shortIntroEn, shortIntroVi, descriptionEn, descriptionVi string,
 	logoID, bannerID *uuid.UUID, slug string, status dbsqlc.OrganizationOrganizationStatus,
 	createdAt, updatedAt time.Time,
 ) *entity.Organization {
 	return &entity.Organization{
 		ID: id, PublicID: publicID, TenantID: tenantID, Code: code, NameEn: nameEn, NameVi: nameVi,
 		LegalName: legalName, OrganizationType: entity.OrganizationType(typ), TaxCode: taxCode,
-		Phone: phone, Email: email, Website: website, LogoFileID: logoID, BannerFileID: bannerID, Slug: slug,
+		Phone: phone, Email: email, Website: website,
+		ShortIntroEn: shortIntroEn, ShortIntroVi: shortIntroVi,
+		DescriptionEn: descriptionEn, DescriptionVi: descriptionVi,
+		LogoFileID: logoID, BannerFileID: bannerID, Slug: slug,
 		Status: entity.OrganizationStatus(status), CreatedAt: createdAt, UpdatedAt: updatedAt,
 	}
 }

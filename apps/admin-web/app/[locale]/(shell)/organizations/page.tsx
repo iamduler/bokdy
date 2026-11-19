@@ -4,7 +4,9 @@ import { Spinner } from "@bokdy/ui";
 import type { OnChangeFn, PaginationState, SortingState } from "@tanstack/react-table";
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useCallback } from "react";
+import { Suspense, useCallback, useState } from "react";
+
+import { OrganizationFormSheet } from "@/components/organizations/organization-form-sheet";
 
 import { DATA_LIST_PAGE_SIZE } from "@/components/data-list";
 import { organizationDirectoryStatsFromApi } from "@/components/organizations/organization-directory-stats";
@@ -71,7 +73,8 @@ function OrganizationsPageContent() {
   usePageShellTitle(ts("pageTitles.organizations"));
   const router = useRouter();
   const searchParams = useSearchParams();
-  const openCreate = () => router.push("/organizations/new");
+  const [createOpen, setCreateOpen] = useState(false);
+  const openCreate = () => setCreateOpen(true);
 
   const q = searchParams.get("q") ?? "";
   const status = parseStatus(searchParams.get("status"));
@@ -154,6 +157,7 @@ function OrganizationsPageContent() {
           onOpenCreate={openCreate}
         />
       </OrganizationDirectoryToolbar>
+      <OrganizationFormSheet open={createOpen} onOpenChange={setCreateOpen} mode="create" />
     </div>
   );
 }

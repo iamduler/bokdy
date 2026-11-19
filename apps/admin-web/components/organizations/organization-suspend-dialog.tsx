@@ -32,7 +32,8 @@ export function OrganizationSuspendDialog({ orgId, status }: OrganizationSuspend
     <div className="space-y-2">
       <Button
         type="button"
-        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+        variant="destructive"
+        size="sm"
         onClick={() => {
           setSuccess(false);
           setError(null);

@@ -19,7 +19,7 @@ export function SystemHolidaysView() {
   }));
 
   return (
-    <div className="page-canvas p-4 md:p-6">
+    <div>
       <EntityDetailPanel
         title={t("systemTitle")}
         hint={t("systemHint")}

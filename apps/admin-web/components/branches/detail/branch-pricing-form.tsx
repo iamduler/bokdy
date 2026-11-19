@@ -29,16 +29,12 @@ import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { sportLabel } from "@/components/branches/branch-sports-chips";
 import { InfoHint } from "@/components/info-hint";
 import { PopoverCommandSelect } from "@/components/popover-command-select";
-import {
-  softDirectoryPrimaryBtn,
-  softDirectorySecondaryBtn,
-} from "@/components/data-list";
 import { SoftStatusChip } from "@/components/entity/soft-status-chip";
 import {
   PRICING_STATUS_TONE,
   pricingStatusKey,
 } from "@/components/pricing-profiles/pricing-status";
-import { usePageShellLeading } from "@/components/shell/shell-title";
+import { usePageShellActions, usePageShellLeading } from "@/components/shell/shell-title";
 import { Link } from "@/i18n/navigation";
 import { EntityActionDialog } from "@/components/entity/action-dialog";
 import { useBranch } from "@/hooks/use-branches";
@@ -391,6 +387,49 @@ export function BranchPricingForm({
       </Button>
     ) : null,
   );
+  const shellActions = usePageShellActions(
+    <>
+      {creating ? (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={pending}
+          onClick={() =>
+            void form.handleSubmit(
+              (values) => submit(values, "create", { draft: true }),
+              (errors) => {
+                const message = firstMessage(errors);
+                if (message) toast.error(message);
+              },
+            )()
+          }
+        >
+          {t("saveDraft")}
+        </Button>
+      ) : null}
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={() => {
+          const { lists, pairs } = reviewSchedule(form.getValues());
+          if (pairs.length > 0 || lists.some(blocksPublish)) toast.error(t("scheduleInvalid"));
+          else toast.success(t("scheduleValid"));
+        }}
+      >
+        {t("checkOverlap")}
+      </Button>
+      <Button type="submit" form={formId} size="sm" disabled={pending}>
+        {creating ? t("createList") : t("save")}
+      </Button>
+      {!creating && !profile.published ? (
+        <Button type="button" size="sm" disabled={pending} onClick={() => setConfirming(true)}>
+          {t("activate")}
+        </Button>
+      ) : null}
+    </>,
+  );
 
   function replaceGroups(next: BranchPricingFormValues["day_groups"]) {
     form.setValue("day_groups", next, {
@@ -409,6 +448,7 @@ export function BranchPricingForm({
   return (
     <FormProvider {...form}>
       <form
+        id={formId}
         className="space-y-5"
         noValidate
         onSubmit={form.handleSubmit(
@@ -420,81 +460,22 @@ export function BranchPricingForm({
         )}
       >
         {shellBack}
-        <header className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="min-w-0 space-y-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-2xl font-semibold tracking-tight">
-                {creating ? t("formCreateTitle") : profile.name}
-              </h1>
-              {creating ? (
-                <SoftStatusChip
-                  label={activateOnCreate ? t("willActivate") : t("draft")}
-                  tone={activateOnCreate ? "emerald" : "amber"}
-                />
-              ) : statusKey ? (
-                <SoftStatusChip
-                  label={
-                    statusKey === "activeBadge" ? t("activeLive") : t(statusKey)
-                  }
-                  tone={PRICING_STATUS_TONE[statusKey]}
-                />
-              ) : null}
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {creating
-                ? t("formCreateLead", { branch: branchName })
-                : t("contextLine", { branch: branchName, sport: sportName })}
-            </p>
-          </div>
+        {shellActions}
+        <header className="min-w-0 space-y-1">
           <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-2xl font-semibold tracking-tight">
+              {creating ? t("formCreateTitle") : profile.name}
+            </h1>
             {creating ? (
-              <Button
-                type="button"
-                className={softDirectorySecondaryBtn}
-                disabled={pending}
-                onClick={() =>
-                  void form.handleSubmit(
-                    (values) => submit(values, "create", { draft: true }),
-                    (errors) => {
-                      const message = firstMessage(errors);
-                      if (message) toast.error(message);
-                    },
-                  )()
-                }
-              >
-                {t("saveDraft")}
-              </Button>
-            ) : null}
-            <Button
-              type="button"
-              className={softDirectorySecondaryBtn}
-              onClick={() => {
-                const { lists, pairs } = reviewSchedule(form.getValues());
-                if (pairs.length > 0 || lists.some(blocksPublish))
-                  toast.error(t("scheduleInvalid"));
-                else toast.success(t("scheduleValid"));
-              }}
-            >
-              {t("checkOverlap")}
-            </Button>
-            <Button
-              type="submit"
-              className={
-                creating ? softDirectoryPrimaryBtn : softDirectorySecondaryBtn
-              }
-              disabled={pending}
-            >
-              {creating ? t("createList") : t("save")}
-            </Button>
-            {!creating && !profile.published ? (
-              <Button
-                type="button"
-                className={softDirectoryPrimaryBtn}
-                disabled={pending}
-                onClick={() => setConfirming(true)}
-              >
-                {t("activate")}
-              </Button>
+              <SoftStatusChip
+                label={activateOnCreate ? t("willActivate") : t("draft")}
+                tone={activateOnCreate ? "emerald" : "amber"}
+              />
+            ) : statusKey ? (
+              <SoftStatusChip
+                label={statusKey === "activeBadge" ? t("activeLive") : t(statusKey)}
+                tone={PRICING_STATUS_TONE[statusKey]}
+              />
             ) : null}
           </div>
         </header>
@@ -744,7 +725,8 @@ export function BranchPricingForm({
           <PricingSchedule />
           <Button
             type="button"
-            className={softDirectorySecondaryBtn}
+            variant="outline"
+            size="sm"
             onClick={() =>
               replaceGroups([
                 ...groups,
@@ -792,7 +774,8 @@ export function BranchPricingForm({
           </div>
           <Button
             type="button"
-            className={softDirectorySecondaryBtn}
+            variant="outline"
+            size="sm"
             onClick={() =>
               replaceHolidays([
                 ...holidays,

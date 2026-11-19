@@ -48,6 +48,7 @@ type OrganizationRepository interface {
 	Directory(ctx context.Context, orgID uuid.UUID) (AdminDirectory, error)
 	DirectoryStats(ctx context.Context, q string, organizationType *entity.OrganizationType, provinceID *uuid.UUID) (AdminDirectoryStats, error)
 	CountBranches(ctx context.Context, orgID uuid.UUID) (int, error)
+	CountActiveStaff(ctx context.Context, orgID uuid.UUID) (int, error)
 	Update(ctx context.Context, tx pgx.Tx, org *entity.Organization) error
 	UpdateStatus(ctx context.Context, tx pgx.Tx, orgID uuid.UUID, status entity.OrganizationStatus, at time.Time) error
 	UpdateTenantStatus(ctx context.Context, tx pgx.Tx, tenantID uuid.UUID, status entity.TenantStatus, at time.Time) error

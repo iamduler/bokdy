@@ -1,7 +1,10 @@
-"use client";
+import { redirect } from "@/i18n/navigation";
 
-import { BranchAmenitiesView } from "@/components/branches/detail/branch-amenities-view";
-
-export default function BranchAmenitiesPage() {
-  return <BranchAmenitiesView />;
+export default async function BranchAmenitiesPage({
+  params,
+}: {
+  params: Promise<{ locale: string; branchId: string }>;
+}) {
+  const { locale, branchId } = await params;
+  redirect({ href: `/branches/${branchId}`, locale });
 }

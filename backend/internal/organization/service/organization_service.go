@@ -79,6 +79,10 @@ type CreateOrganizationInput struct {
 	Email            string
 	Phone            string
 	Website          string
+	ShortIntroEn     string
+	ShortIntroVi     string
+	DescriptionEn    string
+	DescriptionVi    string
 	Headquarters     *HeadquartersInput
 }
 
@@ -92,6 +96,10 @@ type UpdateOrganizationInput struct {
 	Email            *string
 	Phone            *string
 	Website          *string
+	ShortIntroEn     *string
+	ShortIntroVi     *string
+	DescriptionEn    *string
+	DescriptionVi    *string
 	Headquarters     *HeadquartersInput
 }
 
@@ -163,6 +171,8 @@ func (s *OrganizationService) Create(ctx context.Context, ownerID uuid.UUID, in 
 		ID: orgID, PublicID: id.MustNewPublicID(), TenantID: tenantID, Code: code, NameEn: nameEn, NameVi: nameVi,
 		LegalName: strings.TrimSpace(in.LegalName), OrganizationType: orgType, TaxCode: strings.TrimSpace(in.TaxCode),
 		Email: strings.TrimSpace(in.Email), Phone: strings.TrimSpace(in.Phone), Website: strings.TrimSpace(in.Website),
+		ShortIntroEn: sanitizeShortIntro(in.ShortIntroEn), ShortIntroVi: sanitizeShortIntro(in.ShortIntroVi),
+		DescriptionEn: sanitizeDescriptionHTML(in.DescriptionEn), DescriptionVi: sanitizeDescriptionHTML(in.DescriptionVi),
 		Slug: slug, Status: entity.OrganizationActive, CreatedAt: now, UpdatedAt: now,
 	}
 	bu := &entity.BusinessUnit{
@@ -295,6 +305,18 @@ func (s *OrganizationService) Update(ctx context.Context, orgID, requester uuid.
 	}
 	if in.Website != nil {
 		org.Website = strings.TrimSpace(*in.Website)
+	}
+	if in.ShortIntroEn != nil {
+		org.ShortIntroEn = sanitizeShortIntro(*in.ShortIntroEn)
+	}
+	if in.ShortIntroVi != nil {
+		org.ShortIntroVi = sanitizeShortIntro(*in.ShortIntroVi)
+	}
+	if in.DescriptionEn != nil {
+		org.DescriptionEn = sanitizeDescriptionHTML(*in.DescriptionEn)
+	}
+	if in.DescriptionVi != nil {
+		org.DescriptionVi = sanitizeDescriptionHTML(*in.DescriptionVi)
 	}
 	if in.Slug != nil {
 		rawSlug := strings.TrimSpace(*in.Slug)

@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
+  archiveBranchCourts,
   archiveCourt,
   deleteCourtGalleryItem,
   listCourtGallery,
@@ -108,6 +109,18 @@ export function useCloseCourt(organizationId: string, id: string) {
   return useMutation({
     mutationFn: () => closeCourt(organizationId, id),
     onSuccess: () => invalidate({ courtId: id }),
+  });
+}
+
+export function useArchiveBranchCourts(organizationId: string, branchId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (ids: string[]) => archiveBranchCourts(organizationId, branchId, ids),
+    onSuccess: (result) => {
+      if (result.succeeded.length === 0) return;
+      void queryClient.invalidateQueries({ queryKey: courtKeys.list(organizationId, branchId) });
+      void queryClient.invalidateQueries({ queryKey: courtKeys.orgList(organizationId) });
+    },
   });
 }
 

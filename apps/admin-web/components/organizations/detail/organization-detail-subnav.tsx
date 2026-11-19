@@ -1,13 +1,9 @@
 "use client";
 
-import { Button } from "@bokdy/ui";
-import { ListChecks } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
-import { softDirectorySecondaryBtn } from "@/components/data-list";
 import { EntityDetailSubnav } from "@/components/entity/detail-subnav";
-import { OrganizationActionsDialog } from "@/components/organizations/detail/actions/organization-actions-dialog";
 import { usePathname } from "@/i18n/navigation";
 
 import { useOrganizationDetail } from "./organization-detail-context";
@@ -39,12 +35,10 @@ function resolveDetailView(pathname: string, orgId: string): DetailView {
 
 export function OrganizationDetailSubnav() {
   const t = useTranslations("organization.detailSubnav");
-  const tActions = useTranslations("organization.detailActions");
   const { org, orgId } = useOrganizationDetail();
   const pathname = usePathname();
   const view = resolveDetailView(pathname, orgId);
   const base = `/organizations/${orgId}`;
-  const [actionsOpen, setActionsOpen] = useState(false);
 
   const crumbs = useMemo(() => {
     if (view === "overview") {
@@ -69,27 +63,14 @@ export function OrganizationDetailSubnav() {
   }, [base, org.name, t, view]);
 
   return (
-    <>
-      <EntityDetailSubnav
-        root={{
-          href: "/organizations",
-          label: t("organizations"),
-          active: view === "overview" && pathname === "/organizations",
-        }}
-        crumbs={crumbs}
-        trailing={
-          <Button
-            type="button"
-            className={softDirectorySecondaryBtn}
-            onClick={() => setActionsOpen(true)}
-          >
-            <ListChecks className="size-4" aria-hidden />
-            {tActions("open")}
-          </Button>
-        }
-      />
-      <OrganizationActionsDialog open={actionsOpen} onOpenChange={setActionsOpen} />
-    </>
+    <EntityDetailSubnav
+      root={{
+        href: "/organizations",
+        label: t("organizations"),
+        active: view === "overview" && pathname === "/organizations",
+      }}
+      crumbs={crumbs}
+    />
   );
 }
 

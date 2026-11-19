@@ -113,6 +113,7 @@ type sportDTO struct {
 
 func (h *CatalogHandler) RegisterRoutes(rg *gin.RouterGroup, jwt gin.HandlerFunc) {
 	rg.GET("/sports", jwt, h.ListSports)
+	rg.POST("/branches/:id/courts/archive", jwt, middleware.OptionalOrganization(), h.ArchiveBranchCourts)
 	types := rg.Group("/court-types", jwt, middleware.OptionalOrganization())
 	{
 		types.POST("", h.CreateCourtType)

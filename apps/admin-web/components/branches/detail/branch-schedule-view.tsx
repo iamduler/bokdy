@@ -7,7 +7,6 @@ import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 
-import { softDirectoryPrimaryBtn, softDirectorySecondaryBtn } from "@/components/data-list";
 import { EntityDetailPanel } from "@/components/entity/detail-panel";
 import { useBranchSchedule, usePutBranchSchedule } from "@/hooks/use-branch-schedule";
 import type { BusinessHour } from "@/lib/api/branch-schedule";
@@ -111,8 +110,8 @@ export function BranchScheduleView() {
           !editing && data ? (
             <Button
               type="button"
-              size="lg"
-              className={softDirectorySecondaryBtn}
+              variant="outline"
+              size="sm"
               onClick={() => setEditing(true)}
             >
               <Pencil className="size-4" aria-hidden />
@@ -210,8 +209,8 @@ export function BranchScheduleView() {
             <div className="flex flex-wrap justify-end gap-2">
               <Button
                 type="button"
-                size="lg"
-                className={softDirectorySecondaryBtn}
+                variant="outline"
+                size="sm"
                 disabled={save.isPending}
                 onClick={() => {
                   reset(toFormValues(data));
@@ -222,8 +221,7 @@ export function BranchScheduleView() {
               </Button>
               <Button
                 type="submit"
-                size="lg"
-                className={softDirectoryPrimaryBtn}
+                size="sm"
                 disabled={save.isPending || !formState.isDirty}
               >
                 {t("save")}

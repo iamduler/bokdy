@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  BadgeCheck,
   CalendarDays,
   Clock,
   Images,
@@ -33,7 +32,6 @@ const TAB_ICONS: Record<BranchDetailTabId, ReactNode> = {
   images: <Images />,
   courts: <LayoutGrid />,
   schedule: <Clock />,
-  amenities: <BadgeCheck />,
 };
 
 export function BranchDetailTabs({ activeId }: { activeId?: BranchDetailTabId } = {}) {

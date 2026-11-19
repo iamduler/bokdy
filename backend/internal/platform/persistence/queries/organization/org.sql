@@ -4,8 +4,9 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);
 
 -- name: CreateOrganization :exec
 INSERT INTO organization.organizations
-    (id, public_id, tenant_id, code, name_en, name_vi, legal_name, organization_type, tax_code, phone, email, website, status, created_at, updated_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15);
+    (id, public_id, tenant_id, code, name_en, name_vi, legal_name, organization_type, tax_code, phone, email, website,
+     short_intro_en, short_intro_vi, description_en, description_vi, status, created_at, updated_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19);
 
 -- name: CreateOrganizationSettings :exec
 INSERT INTO organization.organization_settings (id, organization_id, updated_at)
@@ -21,7 +22,10 @@ SELECT o.id, o.public_id, o.tenant_id, o.code,
        COALESCE(o.legal_name, '') AS legal_name, o.organization_type,
        COALESCE(o.tax_code, '') AS tax_code,
        COALESCE(o.phone, '') AS phone, COALESCE(o.email, '') AS email,
-       COALESCE(o.website, '') AS website, o.logo_file_id, o.banner_file_id,
+       COALESCE(o.website, '') AS website,
+       COALESCE(o.short_intro_en, '') AS short_intro_en, COALESCE(o.short_intro_vi, '') AS short_intro_vi,
+       COALESCE(o.description_en, '') AS description_en, COALESCE(o.description_vi, '') AS description_vi,
+       o.logo_file_id, o.banner_file_id,
        o.status, o.created_at, o.updated_at, t.slug
 FROM organization.organizations o
 JOIN organization.tenants t ON t.id = o.tenant_id
@@ -33,7 +37,10 @@ SELECT o.id, o.public_id, o.tenant_id, o.code,
        COALESCE(o.legal_name, '') AS legal_name, o.organization_type,
        COALESCE(o.tax_code, '') AS tax_code,
        COALESCE(o.phone, '') AS phone, COALESCE(o.email, '') AS email,
-       COALESCE(o.website, '') AS website, o.logo_file_id, o.banner_file_id,
+       COALESCE(o.website, '') AS website,
+       COALESCE(o.short_intro_en, '') AS short_intro_en, COALESCE(o.short_intro_vi, '') AS short_intro_vi,
+       COALESCE(o.description_en, '') AS description_en, COALESCE(o.description_vi, '') AS description_vi,
+       o.logo_file_id, o.banner_file_id,
        o.status, o.created_at, o.updated_at, t.slug
 FROM organization.organizations o
 JOIN organization.tenants t ON t.id = o.tenant_id
@@ -44,7 +51,8 @@ ORDER BY o.created_at ASC;
 -- name: UpdateOrganization :exec
 UPDATE organization.organizations
 SET name_en = $2, name_vi = $3, legal_name = $4, organization_type = $5, tax_code = $6,
-    phone = $7, email = $8, website = $9, logo_file_id = $10, banner_file_id = $11, updated_at = now()
+    phone = $7, email = $8, website = $9, logo_file_id = $10, banner_file_id = $11,
+    short_intro_en = $12, short_intro_vi = $13, description_en = $14, description_vi = $15, updated_at = now()
 WHERE id = $1 AND deleted_at IS NULL;
 
 -- name: UpdateTenantSlug :exec
@@ -71,7 +79,10 @@ SELECT o.id, o.public_id, o.tenant_id, o.code,
        COALESCE(o.legal_name, '') AS legal_name, o.organization_type,
        COALESCE(o.tax_code, '') AS tax_code,
        COALESCE(o.phone, '') AS phone, COALESCE(o.email, '') AS email,
-       COALESCE(o.website, '') AS website, o.logo_file_id, o.banner_file_id,
+       COALESCE(o.website, '') AS website,
+       COALESCE(o.short_intro_en, '') AS short_intro_en, COALESCE(o.short_intro_vi, '') AS short_intro_vi,
+       COALESCE(o.description_en, '') AS description_en, COALESCE(o.description_vi, '') AS description_vi,
+       o.logo_file_id, o.banner_file_id,
        o.status, o.created_at, o.updated_at, t.slug
 FROM organization.organizations o
 JOIN organization.tenants t ON t.id = o.tenant_id
@@ -81,6 +92,8 @@ WHERE o.tenant_id = $1 AND o.deleted_at IS NULL;
 SELECT id, public_id, tenant_id, code, COALESCE(name_en, '') AS name_en, COALESCE(name_vi, '') AS name_vi,
        COALESCE(legal_name, '') AS legal_name, organization_type, COALESCE(tax_code, '') AS tax_code,
        COALESCE(phone, '') AS phone, COALESCE(email, '') AS email, COALESCE(website, '') AS website,
+       COALESCE(short_intro_en, '') AS short_intro_en, COALESCE(short_intro_vi, '') AS short_intro_vi,
+       COALESCE(description_en, '') AS description_en, COALESCE(description_vi, '') AS description_vi,
        logo_file_id, banner_file_id, status, created_at, updated_at, ''::text AS slug
 FROM organization.organizations
 WHERE id = $1 AND deleted_at IS NULL
@@ -108,7 +121,10 @@ SELECT o.id, o.public_id, o.tenant_id, o.code,
        COALESCE(o.legal_name, '') AS legal_name, o.organization_type,
        COALESCE(o.tax_code, '') AS tax_code,
        COALESCE(o.phone, '') AS phone, COALESCE(o.email, '') AS email,
-       COALESCE(o.website, '') AS website, o.logo_file_id, o.banner_file_id,
+       COALESCE(o.website, '') AS website,
+       COALESCE(o.short_intro_en, '') AS short_intro_en, COALESCE(o.short_intro_vi, '') AS short_intro_vi,
+       COALESCE(o.description_en, '') AS description_en, COALESCE(o.description_vi, '') AS description_vi,
+       o.logo_file_id, o.banner_file_id,
        o.status, o.created_at, o.updated_at, t.slug,
        t.status AS tenant_status,
        (
@@ -333,4 +349,9 @@ WHERE o.id = $1 AND o.deleted_at IS NULL;
 SELECT COUNT(*)::int AS branch_count
 FROM organization.branches
 WHERE organization_id = $1 AND deleted_at IS NULL;
+
+-- name: CountActiveStaffByOrganization :one
+SELECT COUNT(*)::int AS staff_count
+FROM organization.staff_members
+WHERE organization_id = $1 AND status = 'active';
 

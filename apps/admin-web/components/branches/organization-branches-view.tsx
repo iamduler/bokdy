@@ -2,15 +2,17 @@
 
 import {
   Button,
+  Checkbox,
   cn,
   Table,
+  toast,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@bokdy/ui";
-import { Building2, Pencil, Plus } from "lucide-react";
+import { Building2, Plus } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 
@@ -21,23 +23,27 @@ import {
   DataTablePagination,
   DataTableSkeleton,
   softDetailSectionGap,
-  softDirectoryPrimaryBtn,
 } from "@/components/data-list";
 import { FilterSearchField } from "@/components/data-list/filter-search-field";
 import { FilterSelect } from "@/components/data-list/filter-select";
+import { BulkDeleteBar } from "@/components/entity/bulk-delete-bar";
 import { EntityCollectionPanel } from "@/components/entity/collection-panel";
+import { useBulkSelection } from "@/components/entity/use-bulk-selection";
 import { CollectionViewToggle } from "@/components/entity/collection-view-toggle";
 import { EntityRelationLink } from "@/components/entity/relation-link";
+import { RowEditButton } from "@/components/entity/row-edit-button";
 import { SoftStatusChip } from "@/components/entity/soft-status-chip";
 import { useClientCollectionPage } from "@/components/entity/use-client-collection-page";
 import { useCollectionViewMode } from "@/components/entity/use-collection-view-mode";
 import { useOrganizationDetail } from "@/components/organizations/detail/organization-detail-context";
 import { type PopoverCommandOption } from "@/components/popover-command-select";
-import { useBranches } from "@/hooks/use-branches";
+import { useArchiveBranches, useBranches } from "@/hooks/use-branches";
 import { useSports } from "@/hooks/use-sports";
 import { currentBranchAddress, type Branch, type BranchStatus } from "@/lib/api/branches";
+import { ApiError, errorMessageKey } from "@/lib/api/errors";
 import type { Sport } from "@/lib/api/sports";
 
+import { BranchArchiveButton } from "./branch-archive-button";
 import { BranchCard } from "./branch-card";
 import { BranchFormSheet } from "./branch-form-sheet";
 
@@ -65,27 +71,50 @@ function BranchList({
   sports,
   locale,
   onEdit,
+  selected,
+  pageSelected,
+  onToggle,
+  onTogglePage,
 }: {
   branches: Branch[];
   sports: Sport[];
   locale: string;
   onEdit: (branch: Branch) => void;
+  selected: Set<string>;
+  pageSelected: boolean;
+  onToggle: (id: string) => void;
+  onTogglePage: (ids: string[]) => void;
 }) {
   const t = useTranslations("organization.detailBranches");
   const tb = useTranslations("organization.branch");
   const to = useTranslations("organization");
+  const selectableIds = branches.filter((branch) => branch.status !== "archived").map((branch) => branch.id);
 
   return (
     <Table>
         <TableHeader className="sticky top-0 z-10 bg-card">
           <TableRow className="border-border/40 hover:bg-transparent">
+            <TableHead className="w-10">
+              <Checkbox
+                checked={
+                  pageSelected
+                    ? true
+                    : selectableIds.some((id) => selected.has(id))
+                      ? "indeterminate"
+                      : false
+                }
+                disabled={selectableIds.length === 0}
+                aria-label={to("selectPage")}
+                onCheckedChange={() => onTogglePage(selectableIds)}
+              />
+            </TableHead>
             {[
               to("fieldName"),
               tb("fieldStatus"),
               tb("address"),
               tb("fieldSports"),
               tb("courtCount"),
-              "",
+              to("columns.actions"),
             ].map((heading) => (
               <TableHead
                 key={heading || "edit"}
@@ -102,6 +131,15 @@ function BranchList({
             const sportsLabel = sportNames(sports, branch.sport_ids, locale);
             return (
               <TableRow key={branch.id} className={ROW}>
+                <TableCell>
+                  {branch.status === "archived" ? null : (
+                    <Checkbox
+                      checked={selected.has(branch.id)}
+                      aria-label={to("selectRow")}
+                      onCheckedChange={() => onToggle(branch.id)}
+                    />
+                  )}
+                </TableCell>
                 <TableCell>
                   <EntityRelationLink href={`/branches/${branch.id}`}>
                     {branch.name}
@@ -124,15 +162,15 @@ function BranchList({
                   {t("courtCount", { count: branch.court_count ?? 0 })}
                 </TableCell>
                 <TableCell>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    aria-label={tb("editProfile")}
-                    onClick={() => onEdit(branch)}
-                  >
-                    <Pencil className="size-4" />
-                  </Button>
+                  <div className="flex items-center justify-end gap-1">
+                    <RowEditButton label={tb("editProfile")} onClick={() => onEdit(branch)} />
+                    <BranchArchiveButton
+                      organizationId={branch.organization_id}
+                      branchId={branch.id}
+                      name={branch.name}
+                      status={branch.status}
+                    />
+                  </div>
                 </TableCell>
               </TableRow>
             );
@@ -145,10 +183,14 @@ function BranchList({
 export function OrganizationBranchesView() {
   const t = useTranslations("organization.detailBranches");
   const tb = useTranslations("organization.branch");
+  const to = useTranslations("organization");
   const tc = useTranslations("common");
+  const te = useTranslations("errors");
   const locale = useLocale();
   const { orgId } = useOrganizationDetail();
   const { data, isLoading, isError, refetch, isFetching } = useBranches(orgId);
+  const archiveMany = useArchiveBranches(orgId);
+  const selection = useBulkSelection();
   const { data: sports = [] } = useSports();
   const branches = data ?? [];
   const { mode, setMode } = useCollectionViewMode("branches");
@@ -203,7 +245,7 @@ export function OrganizationBranchesView() {
 
   function addButton() {
     return (
-      <Button type="button" size="sm" className={softDirectoryPrimaryBtn} onClick={openCreate}>
+      <Button type="button" size="sm" onClick={openCreate}>
         <Plus className="size-3.5" aria-hidden />
         {t("addBranch")}
       </Button>
@@ -245,7 +287,40 @@ export function OrganizationBranchesView() {
           }
           pagination={
             !isLoading && !isError && filtered.length > 0 ? (
-              <DataTablePagination {...pagination} className="bg-transparent px-0 md:px-0" />
+              <DataTablePagination
+                {...pagination}
+                className="bg-transparent px-0 md:px-0"
+                leading={
+                  <BulkDeleteBar
+                    placement="footer"
+                    count={selection.selected.length}
+                    selectedLabel={to("bulkSelected", { count: selection.selected.length })}
+                    deleteLabel={tb("delete")}
+                    title={tb("bulkDeleteTitle", { count: selection.selected.length })}
+                    description={tb("bulkDeleteConfirm", { count: selection.selected.length })}
+                    cancelLabel={tb("cancel")}
+                    pending={archiveMany.isPending}
+                    onClear={selection.clear}
+                    onConfirm={async () => {
+                      let result;
+                      try {
+                        result = await archiveMany.mutateAsync(selection.selected);
+                      } catch (err) {
+                        const apiErr = err instanceof ApiError ? err : new ApiError("INTERNAL", "", 500);
+                        toast.error(te(errorMessageKey(apiErr)));
+                        throw err;
+                      }
+                      selection.keep(result.failed.map((item) => item.id));
+                      if (result.succeeded.length > 0) {
+                        toast.success(tb("bulkDeleted", { count: result.succeeded.length }));
+                      }
+                      if (result.failed.length > 0) {
+                        toast.error(to("bulkFailed", { count: result.failed.length }));
+                      }
+                    }}
+                  />
+                }
+              />
             ) : null
           }
         >
@@ -274,6 +349,11 @@ export function OrganizationBranchesView() {
                   orgId={orgId}
                   sports={sports}
                   onEdit={(item) => setSheet({ mode: "edit", branch: item })}
+                  selected={selection.selectedSet.has(branch.id)}
+                  selectLabel={to("selectRow")}
+                  onSelectedChange={
+                    branch.status === "archived" ? undefined : () => selection.toggle(branch.id)
+                  }
                 />
               ))}
             </div>
@@ -284,6 +364,13 @@ export function OrganizationBranchesView() {
               sports={sports}
               locale={locale}
               onEdit={(item) => setSheet({ mode: "edit", branch: item })}
+              selected={selection.selectedSet}
+              pageSelected={pageItems
+                .filter((branch) => branch.status !== "archived")
+                .every((branch) => selection.selectedSet.has(branch.id)) &&
+                pageItems.some((branch) => branch.status !== "archived")}
+              onToggle={selection.toggle}
+              onTogglePage={selection.toggleMany}
             />
           ) : null}
         </EntityCollectionPanel>

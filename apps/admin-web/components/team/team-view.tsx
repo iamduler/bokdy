@@ -2,6 +2,7 @@
 
 import {
   Button,
+  Checkbox,
   cn,
   DropdownMenu,
   DropdownMenuContent,
@@ -15,19 +16,22 @@ import {
   TableRow,
   toast,
 } from "@bokdy/ui";
-import { MoreHorizontal, Plus, Users } from "lucide-react";
+import { Crown, Mail, MoreHorizontal, Plus, Users } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 
 import {
   DataListEmpty,
+  DataListStats,
   DataTablePagination,
   DataTableSkeleton,
   softDetailSectionGap,
-  softDirectoryPrimaryBtn,
 } from "@/components/data-list";
 import { FilterSearchField } from "@/components/data-list/filter-search-field";
 import { FilterSelect } from "@/components/data-list/filter-select";
+import { BulkDeleteBar } from "@/components/entity/bulk-delete-bar";
+import { ConfirmActionDialog } from "@/components/entity/confirm-action-dialog";
+import { useBulkSelection } from "@/components/entity/use-bulk-selection";
 import { entityInitials } from "@/components/entity/avatar";
 import { EntityCollectionPanel } from "@/components/entity/collection-panel";
 import { SoftChip } from "@/components/entity/soft-chip";
@@ -42,6 +46,8 @@ import { useBranches } from "@/hooks/use-branches";
 import {
   useOrgInvitations,
   useOrgStaff,
+  useRemoveOrgStaff,
+  useRemoveOrgStaffMany,
   useRestoreOrgStaff,
   useRevokeOrgInvitation,
   useSuspendOrgStaff,
@@ -86,6 +92,7 @@ function textMatches(parts: Array<string | null | undefined>, needle: string) {
 
 export function TeamView() {
   const t = useTranslations("team");
+  const tOrg = useTranslations("organization");
   const tc = useTranslations("common");
   const te = useTranslations("errors");
   const { orgId } = useOrganizationDetail();
@@ -95,6 +102,9 @@ export function TeamView() {
   const suspend = useSuspendOrgStaff(orgId);
   const restore = useRestoreOrgStaff(orgId);
   const revoke = useRevokeOrgInvitation(orgId);
+  const remove = useRemoveOrgStaff(orgId);
+  const removeMany = useRemoveOrgStaffMany(orgId);
+  const selection = useBulkSelection();
 
   const staff = staffQuery.data ?? [];
   const invitations = invitesQuery.data ?? [];
@@ -104,6 +114,7 @@ export function TeamView() {
 
   const [inviteOpen, setInviteOpen] = useState(false);
   const [editMember, setEditMember] = useState<StaffMember | null>(null);
+  const [removeTarget, setRemoveTarget] = useState<StaffMember | null>(null);
   const [query, setQuery] = useState("");
   const [filterRole, setFilterRole] = useState(ALL);
   const [filterStatus, setFilterStatus] = useState(ALL);
@@ -144,6 +155,11 @@ export function TeamView() {
     filteredRows,
     `${needle}|${filterRole}|${filterStatus}`,
   );
+  const selectablePageIds = pageItems.flatMap((row) =>
+    row.kind === "staff" && row.member.status !== "resigned" ? [row.member.id] : [],
+  );
+  const pageAllSelected =
+    selectablePageIds.length > 0 && selectablePageIds.every((id) => selection.selectedSet.has(id));
 
   const roleOptions = useMemo<PopoverCommandOption[]>(
     () => [
@@ -228,7 +244,7 @@ export function TeamView() {
 
   function inviteButton() {
     return (
-      <Button type="button" size="sm" className={softDirectoryPrimaryBtn} onClick={() => setInviteOpen(true)}>
+      <Button type="button" size="sm" onClick={() => setInviteOpen(true)}>
         <Plus className="size-3.5" aria-hidden />
         {t("invite.cta")}
       </Button>
@@ -238,6 +254,33 @@ export function TeamView() {
   return (
     <>
       <div className={cn("flex flex-col p-5 pt-2 md:px-6", softDetailSectionGap)}>
+        <DataListStats
+          isLoading={isLoading}
+          className="grid-cols-3 md:grid-cols-3"
+          items={[
+            {
+              key: "owners",
+              label: t("sidebar.owners"),
+              value: counts.owners,
+              icon: <Crown className="size-4" aria-hidden />,
+              iconTone: "sky",
+            },
+            {
+              key: "staff",
+              label: t("sidebar.staff"),
+              value: counts.staffRole,
+              icon: <Users className="size-4" aria-hidden />,
+              iconTone: "emerald",
+            },
+            {
+              key: "pending",
+              label: t("sidebar.pending"),
+              value: counts.pending,
+              icon: <Mail className="size-4" aria-hidden />,
+              iconTone: "amber",
+            },
+          ]}
+        />
         <EntityCollectionPanel
           title={t("title")}
           icon={<Users className="size-4" aria-hidden />}
@@ -264,7 +307,40 @@ export function TeamView() {
           }
           pagination={
             !isLoading && !isError && shown > 0 ? (
-              <DataTablePagination {...pagination} className="bg-transparent px-0 md:px-0" />
+              <DataTablePagination
+                {...pagination}
+                className="bg-transparent px-0 md:px-0"
+                leading={
+                  <BulkDeleteBar
+                    placement="footer"
+                    count={selection.selected.length}
+                    selectedLabel={tOrg("bulkSelected", { count: selection.selected.length })}
+                    deleteLabel={t("actions.delete")}
+                    title={t("actions.bulkDeleteTitle", { count: selection.selected.length })}
+                    description={t("actions.bulkDeleteConfirm", { count: selection.selected.length })}
+                    cancelLabel={t("actions.cancel")}
+                    pending={removeMany.isPending}
+                    onClear={selection.clear}
+                    onConfirm={async () => {
+                      let result;
+                      try {
+                        result = await removeMany.mutateAsync(selection.selected);
+                      } catch (err) {
+                        const apiErr = err instanceof ApiError ? err : new ApiError("INTERNAL", "", 500);
+                        toast.error(te(errorMessageKey(apiErr)));
+                        throw err;
+                      }
+                      selection.keep(result.failed.map((item) => item.id));
+                      if (result.succeeded.length > 0) {
+                        toast.success(t("actions.bulkDeleted", { count: result.succeeded.length }));
+                      }
+                      if (result.failed.length > 0) {
+                        toast.error(tOrg("bulkFailed", { count: result.failed.length }));
+                      }
+                    }}
+                  />
+                }
+              />
             ) : null
           }
         >
@@ -287,25 +363,25 @@ export function TeamView() {
           ) : null}
           {!isLoading && !isError && hasRows ? (
             <div className={cn("flex flex-col", softDetailSectionGap)}>
-              <div className="grid grid-cols-3 border-b border-border/40 pb-3">
-                {(
-                  [
-                    ["owners", counts.owners],
-                    ["staff", counts.staffRole],
-                    ["pending", counts.pending],
-                  ] as const
-                ).map(([key, count]) => (
-                  <div key={key} className="min-w-0 px-2 text-center first:pl-0 last:pr-0">
-                    <p className="text-lg font-semibold tabular-nums text-foreground">{count}</p>
-                    <p className="truncate text-xs text-muted-foreground">{t(`sidebar.${key}`)}</p>
-                  </div>
-                ))}
-              </div>
               {shown === 0 ? <DataListEmpty className="py-10" title={t("emptyFiltered")} /> : null}
               {shown > 0 ? (
                 <Table>
                   <TableHeader>
                     <TableRow className="border-border/40 hover:bg-transparent">
+                      <TableHead className="w-10">
+                        <Checkbox
+                          checked={
+                            pageAllSelected
+                              ? true
+                              : selectablePageIds.some((id) => selection.selectedSet.has(id))
+                                ? "indeterminate"
+                                : false
+                          }
+                          disabled={selectablePageIds.length === 0}
+                          aria-label={tOrg("selectPage")}
+                          onCheckedChange={() => selection.toggleMany(selectablePageIds)}
+                        />
+                      </TableHead>
                       {[t("colMember"), t("colRole"), t("colBranch"), t("colStatus"), ""].map((heading) => (
                         <TableHead
                           key={heading || "actions"}
@@ -322,6 +398,7 @@ export function TeamView() {
                         const inv = row.invitation;
                         return (
                           <TableRow key={`inv-${inv.id}`} className={SOFT_ROW}>
+                            <TableCell />
                             <TableCell>
                               <div className="flex items-center gap-2">
                                 <MemberAvatar name={inv.email} />
@@ -360,6 +437,15 @@ export function TeamView() {
                       const role = primaryRole(member);
                       return (
                         <TableRow key={member.id} className={SOFT_ROW}>
+                          <TableCell>
+                            {member.status === "resigned" ? null : (
+                              <Checkbox
+                                checked={selection.selectedSet.has(member.id)}
+                                aria-label={tOrg("selectRow")}
+                                onCheckedChange={() => selection.toggle(member.id)}
+                              />
+                            )}
+                          </TableCell>
                           <TableCell>
                             <button
                               type="button"
@@ -413,6 +499,11 @@ export function TeamView() {
                                     {t("actions.restore")}
                                   </DropdownMenuItem>
                                 ) : null}
+                                {member.status !== "resigned" ? (
+                                  <DropdownMenuItem variant="destructive" onSelect={() => setRemoveTarget(member)}>
+                                    {t("actions.delete")}
+                                  </DropdownMenuItem>
+                                ) : null}
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </TableCell>
@@ -439,6 +530,29 @@ export function TeamView() {
         }}
         organizationId={orgId}
         member={editMember}
+      />
+      <ConfirmActionDialog
+        open={removeTarget !== null}
+        onClose={() => setRemoveTarget(null)}
+        title={t("member.removeConfirmTitle")}
+        description={t("member.removeConfirmBody", { name: removeTarget ? memberLabel(removeTarget) : "" })}
+        confirmLabel={t("actions.delete")}
+        cancelLabel={t("actions.cancel")}
+        pending={remove.isPending}
+        destructive
+        onConfirm={() => {
+          if (!removeTarget) return;
+          void remove.mutateAsync(removeTarget.id).then(
+            () => {
+              toast.success(t("member.removeSuccess"));
+              setRemoveTarget(null);
+            },
+            (err: unknown) => {
+              const apiErr = err instanceof ApiError ? err : new ApiError("INTERNAL", "", 500);
+              toast.error(te(errorMessageKey(apiErr)));
+            },
+          );
+        }}
       />
     </>
   );

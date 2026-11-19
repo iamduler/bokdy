@@ -2,6 +2,8 @@ import { z } from "zod";
 
 const organizationTypes = ["company", "club", "school", "government", "individual", "other"] as const;
 
+export const ORGANIZATION_SHORT_INTRO_MAX_LENGTH = 200;
+
 const formFields = z.object({
   name_vi: z.string().trim(),
   name_en: z.string().trim(),
@@ -12,6 +14,10 @@ const formFields = z.object({
   email: z.string().trim(),
   phone: z.string().trim(),
   website: z.string().trim(),
+  short_intro_vi: z.string().trim(),
+  short_intro_en: z.string().trim(),
+  description_vi: z.string(),
+  description_en: z.string(),
   province_id: z.string().trim(),
   ward_id: z.string().trim(),
   address_line_1: z.string().trim(),
@@ -28,6 +34,7 @@ export function organizationFormSchema(messages: {
   emailInvalid: string;
   websiteInvalid: string;
   addressIncomplete: string;
+  shortIntroTooLong: string;
 }) {
   return formFields.superRefine((value, ctx) => {
     if (!value.name_vi.trim()) {
@@ -64,6 +71,15 @@ export function organizationFormSchema(messages: {
         path: ["ward_id"],
         message: messages.addressIncomplete,
       });
+    }
+    for (const path of ["short_intro_en", "short_intro_vi"] as const) {
+      if ([...value[path]].length > ORGANIZATION_SHORT_INTRO_MAX_LENGTH) {
+        ctx.addIssue({
+          code: "custom",
+          path: [path],
+          message: messages.shortIntroTooLong,
+        });
+      }
     }
   });
 }

@@ -37,6 +37,11 @@ func (o *Organization) CanSuspend() bool {
 	return o.Status == OrganizationActive
 }
 
+// CanArchive reports a status that archive may close. Archived is terminal.
+func (o *Organization) CanArchive() bool {
+	return o.Status == OrganizationActive || o.Status == OrganizationInactive || o.Status == OrganizationSuspended
+}
+
 func (o *Organization) CanRestore() bool {
 	return o.Status == OrganizationSuspended
 }
@@ -157,6 +162,10 @@ type Organization struct {
 	Phone            string
 	Email            string
 	Website          string
+	ShortIntroEn     string
+	ShortIntroVi     string
+	DescriptionEn    string
+	DescriptionVi    string
 	LogoFileID       *uuid.UUID
 	BannerFileID     *uuid.UUID
 	Slug             string

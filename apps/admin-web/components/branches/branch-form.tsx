@@ -27,6 +27,7 @@ import {
 } from "@/components/entity/metadata-form";
 import { AddressAutocomplete } from "@/components/maps/address-autocomplete";
 import { MapPicker } from "@/components/maps/map-picker";
+import { BranchAmenitiesFields } from "@/components/branches/branch-amenities-fields";
 import { BranchContentFields } from "@/components/branches/branch-content-fields";
 import { ImageCropDialog } from "@/components/media/image-crop-dialog";
 import {
@@ -44,6 +45,7 @@ import {
   useOpenBranch,
   useUpdateBranch,
 } from "@/hooks/use-branches";
+import { amenityKeys, useBranchAmenityIds } from "@/hooks/use-amenities";
 import { useProvinces, useWards } from "@/hooks/use-admin-units";
 import { useSports } from "@/hooks/use-sports";
 import { useRouter } from "@/i18n/navigation";
@@ -55,6 +57,7 @@ import {
   type BranchProfileInput,
   type BranchStatus,
 } from "@/lib/api/branches";
+import { putBranchAmenities } from "@/lib/api/amenities";
 import { ApiError, errorMessageKey } from "@/lib/api/errors";
 import {
   reverseGeocode,
@@ -125,6 +128,7 @@ const emptyValues: BranchFormValues = {
   latitude: "",
   longitude: "",
   status: "inactive",
+  amenity_ids: [],
 };
 
 function valuesFromBranch(branch: Branch): BranchFormValues {
@@ -152,6 +156,7 @@ function valuesFromBranch(branch: Branch): BranchFormValues {
     latitude: address?.latitude != null ? String(address.latitude) : "",
     longitude: address?.longitude != null ? String(address.longitude) : "",
     status: branch.status,
+    amenity_ids: [],
   };
 }
 
@@ -212,6 +217,7 @@ export function BranchForm(props: BranchFormProps) {
   const close = useCloseBranch(organizationId, branch?.id ?? "");
   const maintenance = useMaintenanceBranch(organizationId, branch?.id ?? "");
   const archive = useArchiveBranch(organizationId, branch?.id ?? "");
+  const savedAmenities = useBranchAmenityIds(organizationId, branch?.id ?? "");
   const pending =
     create.isPending ||
     update.isPending ||
@@ -263,6 +269,15 @@ export function BranchForm(props: BranchFormProps) {
     formState,
   } = form;
   const { isDirty } = formState;
+  const amenitiesReady = useRef(false);
+  useEffect(() => {
+    if (props.mode !== "edit" || !savedAmenities.data || amenitiesReady.current) return;
+    amenitiesReady.current = true;
+    reset(
+      { ...form.getValues(), amenity_ids: savedAmenities.data },
+      { keepDirtyValues: true },
+    );
+  }, [form, props.mode, reset, savedAmenities.data]);
   const provinceId = watch("province_id");
   const slug = watch("slug");
   const addressLine1 = watch("address_line_1");
@@ -512,6 +527,12 @@ export function BranchForm(props: BranchFormProps) {
           queryKey: branchKeys.detail(saved.id),
         });
       }
+      await putBranchAmenities(organizationId, saved.id, {
+        amenity_ids: values.amenity_ids,
+      });
+      void queryClient.invalidateQueries({
+        queryKey: amenityKeys.branch(organizationId, saved.id),
+      });
       setLogo(null);
       setBanner(null);
       setLogoPreview(null);
@@ -715,7 +736,10 @@ export function BranchForm(props: BranchFormProps) {
           submitLabel={props.mode === "edit" ? t("save") : t("createSubmit")}
           onCancel={requestLeave}
           pending={pending}
-          submitDisabled={props.mode === "edit" && !isDirty && !mediaDirty}
+          submitDisabled={
+            (props.mode === "edit" && !isDirty && !mediaDirty) ||
+            (props.mode === "edit" && savedAmenities.isLoading)
+          }
           onSubmit={handleSubmit(onSubmit)}
           actionsPlacement={layout === "sheet" ? "inline" : "shell"}
           cover={
@@ -735,6 +759,7 @@ export function BranchForm(props: BranchFormProps) {
         >
           <EntityMetadataForm blocks={blocks} />
           <BranchContentFields />
+          <BranchAmenitiesFields />
           <EntityFormSection
             title={tb("address")}
             icon={<MapPin className="size-4" aria-hidden />}

@@ -1,5 +1,6 @@
 import type { components } from "@bokdy/sdk/schema";
 
+import type { BulkActionResult } from "@/lib/api/branches";
 import { apiGo } from "@/lib/api/client";
 import { appendListPageQuery, type ListPageParams } from "@/lib/api/list-page";
 
@@ -49,4 +50,11 @@ export function adminBranchDirectoryStats(params: AdminBranchStatsParams = {}) {
   if (params.sport_id) qs.set("sport_id", params.sport_id);
   const s = qs.toString();
   return apiGo<AdminBranchDirectoryStats>(`admin/branches/stats${s ? `?${s}` : ""}`);
+}
+
+export function archiveAdminBranches(ids: string[]) {
+  return apiGo<BulkActionResult>("admin/branches/archive", {
+    method: "POST",
+    body: JSON.stringify({ ids }),
+  });
 }

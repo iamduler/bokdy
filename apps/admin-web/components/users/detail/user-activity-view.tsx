@@ -1,6 +1,7 @@
 "use client";
 
 import { Button, cn, formatUserDateTime, Spinner, useUserDateTimePrefs } from "@bokdy/ui";
+import { History } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { softDetailSectionGap } from "@/components/data-list";
@@ -17,14 +18,15 @@ export function UserActivityView({ embedded = false }: { embedded?: boolean }) {
 
   const shell = embedded
     ? cn("flex flex-col", softDetailSectionGap)
-    : cn(
-        "flex min-h-0 flex-1 flex-col overflow-auto soft-scrollbar p-4 md:p-6",
-        softDetailSectionGap,
-      );
+    : cn("flex min-h-0 flex-1 flex-col p-4 md:p-6", softDetailSectionGap);
 
   return (
     <div className={shell}>
-      <EntityDetailPanel title={t("title")}>
+      <EntityDetailPanel
+        title={t("title")}
+        icon={<History className="size-4" aria-hidden />}
+        tone="amber"
+      >
         {isLoading ? (
           <p className="flex items-center gap-2 text-sm text-muted-foreground">
             <Spinner />

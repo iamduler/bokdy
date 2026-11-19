@@ -44,6 +44,7 @@ type adminCourtStatsDTO struct {
 func (h *CatalogHandler) RegisterAdminRoutes(admin *gin.RouterGroup) {
 	admin.GET("/courts", h.AdminListCourts)
 	admin.GET("/courts/stats", h.AdminCourtDirectoryStats)
+	admin.POST("/courts/archive", h.AdminArchiveMany)
 }
 
 func (h *CatalogHandler) AdminListCourts(c *gin.Context) {

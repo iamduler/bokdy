@@ -37801,3 +37801,11 @@ ALTER TABLE identity.users
 COMMENT ON COLUMN identity.users.suspend_reason IS 'Set when status=suspended; cleared on restore/activate.';
 
 
+-- >>> 00046_organization_intro_description.sql
+ALTER TABLE organization.organizations
+    ADD COLUMN short_intro_en varchar(200),
+    ADD COLUMN short_intro_vi varchar(200),
+    ADD COLUMN description_en text,
+    ADD COLUMN description_vi text;
+
+

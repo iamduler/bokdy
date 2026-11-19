@@ -1,132 +1,93 @@
 "use client";
 
-import {
-  Building2,
-  CreditCard,
-  FileText,
-  Monitor,
-  Phone,
-  Shield,
-  UserPlus,
-  Zap,
-} from "lucide-react";
+import { RotateCcw, Shield, ShieldOff, Trash2 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { useMemo } from "react";
+import type { ReactNode } from "react";
 import { useTranslations } from "next-intl";
 
-import {
-  EntityActionGroups,
-  type EntityActionItem,
-} from "@/components/entity/action-groups";
 import { OrganizationActivateButton } from "@/components/organizations/organization-activate-button";
+import { OrganizationArchiveButton } from "@/components/organizations/organization-archive-button";
 import { OrganizationRestoreDialog } from "@/components/organizations/organization-restore-dialog";
 import { OrganizationSuspendDialog } from "@/components/organizations/organization-suspend-dialog";
 
 import { useOrganizationDetail } from "../organization-detail-context";
 
-type ActionItem = {
+type ActionRow = {
   id: string;
   icon: LucideIcon;
   labelKey: string;
   descKey: string;
-  wired?: "activate" | "suspend" | "restore";
+  show: boolean;
+  control: ReactNode;
 };
-
-type ActionGroup = {
-  titleKey: string;
-  icon: LucideIcon;
-  actions: ActionItem[];
-};
-
-const ACTION_GROUPS: ActionGroup[] = [
-  {
-    titleKey: "business",
-    icon: Monitor,
-    actions: [
-      { id: "ownerApp", icon: Monitor, labelKey: "ownerApp", descKey: "ownerAppDesc" },
-      { id: "openBranches", icon: Building2, labelKey: "openBranches", descKey: "openBranchesDesc" },
-      { id: "contactOwner", icon: Phone, labelKey: "contactOwner", descKey: "contactOwnerDesc" },
-    ],
-  },
-  {
-    titleKey: "operations",
-    icon: Building2,
-    actions: [
-      { id: "createBranch", icon: Building2, labelKey: "createBranch", descKey: "createBranchDesc" },
-      { id: "createCourt", icon: Zap, labelKey: "createCourt", descKey: "createCourtDesc" },
-      { id: "inviteStaff", icon: UserPlus, labelKey: "inviteStaff", descKey: "inviteStaffDesc" },
-    ],
-  },
-  {
-    titleKey: "commercial",
-    icon: CreditCard,
-    actions: [
-      { id: "upgradePlan", icon: CreditCard, labelKey: "upgradePlan", descKey: "upgradePlanDesc" },
-      { id: "viewPayments", icon: CreditCard, labelKey: "viewPayments", descKey: "viewPaymentsDesc" },
-    ],
-  },
-  {
-    titleKey: "administration",
-    icon: Shield,
-    actions: [
-      { id: "suspend", icon: Shield, labelKey: "suspend", descKey: "suspendDesc", wired: "suspend" },
-      { id: "activate", icon: Shield, labelKey: "activate", descKey: "activateDesc", wired: "activate" },
-      { id: "restore", icon: Shield, labelKey: "restore", descKey: "restoreDesc", wired: "restore" },
-      { id: "auditLog", icon: FileText, labelKey: "auditLog", descKey: "auditLogDesc" },
-    ],
-  },
-];
 
 export function OrganizationActionsList() {
   const t = useTranslations("organization.detailActions");
-  const tu = useTranslations("organization");
   const { org, orgId } = useOrganizationDetail();
 
-  const groups = useMemo(
-    () =>
-      ACTION_GROUPS.map((group) => ({
-        id: group.titleKey,
-        icon: group.icon,
-        title: t(`groups.${group.titleKey}`),
-        items: group.actions.flatMap((action): EntityActionItem[] => {
-          const label = t(`items.${action.labelKey}`);
-          const description = t(`items.${action.descKey}`);
-          if (!action.wired) {
-            return [
-              {
-                id: action.id,
-                icon: action.icon,
-                label,
-                description,
-                unavailableReason: tu("unavailable"),
-              },
-            ];
-          }
-          const show =
-            (action.wired === "activate" && org.status === "inactive") ||
-            (action.wired === "suspend" && org.status === "active") ||
-            (action.wired === "restore" && org.status === "suspended");
-          if (!show) return [];
-          return [
-            {
-              id: action.id,
-              icon: action.icon,
-              label,
-              description,
-              children:
-                action.wired === "activate" ? (
-                  <OrganizationActivateButton orgId={orgId} status={org.status} />
-                ) : action.wired === "suspend" ? (
-                  <OrganizationSuspendDialog orgId={orgId} status={org.status} />
-                ) : (
-                  <OrganizationRestoreDialog orgId={orgId} status={org.status} />
-                ),
-            },
-          ];
-        }),
-      })),
-    [org.status, orgId, t, tu],
-  );
+  const rows: ActionRow[] = [
+    {
+      id: "activate",
+      icon: Shield,
+      labelKey: "activate",
+      descKey: "activateDesc",
+      show: org.status === "inactive",
+      control: <OrganizationActivateButton orgId={orgId} status={org.status} />,
+    },
+    {
+      id: "suspend",
+      icon: ShieldOff,
+      labelKey: "suspend",
+      descKey: "suspendDesc",
+      show: org.status === "active",
+      control: <OrganizationSuspendDialog orgId={orgId} status={org.status} />,
+    },
+    {
+      id: "restore",
+      icon: RotateCcw,
+      labelKey: "restore",
+      descKey: "restoreDesc",
+      show: org.status === "suspended",
+      control: <OrganizationRestoreDialog orgId={orgId} status={org.status} />,
+    },
+    {
+      id: "archive",
+      icon: Trash2,
+      labelKey: "delete",
+      descKey: "deleteDesc",
+      show: org.status !== "archived",
+      control: (
+        <OrganizationArchiveButton
+          orgId={orgId}
+          name={org.name}
+          status={org.status}
+          appearance="text"
+        />
+      ),
+    },
+  ];
 
-  return <EntityActionGroups groups={groups} />;
+  const visible = rows.filter((row) => row.show);
+  if (visible.length === 0) return null;
+
+  return (
+    <div className="flex flex-col gap-2">
+      {visible.map((row) => {
+        const Icon = row.icon;
+        return (
+          <div
+            key={row.id}
+            className="flex flex-wrap items-center gap-3 rounded-xl border border-border/60 p-3"
+          >
+            <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-foreground">{t(`items.${row.labelKey}`)}</p>
+              <p className="text-xs text-muted-foreground">{t(`items.${row.descKey}`)}</p>
+            </div>
+            {row.control}
+          </div>
+        );
+      })}
+    </div>
+  );
 }

@@ -144,6 +144,7 @@ WHERE (sqlc.narg(booking_id)::uuid IS NULL OR b.id = sqlc.narg(booking_id)::uuid
   AND (sqlc.narg(user_id)::uuid IS NULL OR c.user_id = sqlc.narg(user_id)::uuid)
   AND (sqlc.narg(organization_id)::uuid IS NULL OR o.id = sqlc.narg(organization_id)::uuid)
   AND (sqlc.narg(branch_id)::uuid IS NULL OR b.branch_id = sqlc.narg(branch_id)::uuid)
+  AND (sqlc.narg(court_id)::uuid IS NULL OR b.court_id = sqlc.narg(court_id)::uuid)
   AND (sqlc.narg(status_filter)::text IS NULL OR b.status = sqlc.narg(status_filter)::booking.booking_status)
   AND (sqlc.narg(range_start)::timestamptz IS NULL OR b.starts_at >= sqlc.narg(range_start)::timestamptz)
   AND (sqlc.narg(range_end)::timestamptz IS NULL OR b.starts_at < sqlc.narg(range_end)::timestamptz)
@@ -185,6 +186,7 @@ WHERE (sqlc.narg(booking_id)::uuid IS NULL OR b.id = sqlc.narg(booking_id)::uuid
   AND (sqlc.narg(user_id)::uuid IS NULL OR c.user_id = sqlc.narg(user_id)::uuid)
   AND (sqlc.narg(organization_id)::uuid IS NULL OR o.id = sqlc.narg(organization_id)::uuid)
   AND (sqlc.narg(branch_id)::uuid IS NULL OR b.branch_id = sqlc.narg(branch_id)::uuid)
+  AND (sqlc.narg(court_id)::uuid IS NULL OR b.court_id = sqlc.narg(court_id)::uuid)
   AND (sqlc.narg(status_filter)::text IS NULL OR b.status = sqlc.narg(status_filter)::booking.booking_status)
   AND (sqlc.narg(range_start)::timestamptz IS NULL OR b.starts_at >= sqlc.narg(range_start)::timestamptz)
   AND (sqlc.narg(range_end)::timestamptz IS NULL OR b.starts_at < sqlc.narg(range_end)::timestamptz)
@@ -220,6 +222,7 @@ WHERE (sqlc.narg(tenant_id)::uuid IS NULL OR b.tenant_id = sqlc.narg(tenant_id):
   AND (sqlc.narg(user_id)::uuid IS NULL OR c.user_id = sqlc.narg(user_id)::uuid)
   AND (sqlc.narg(organization_id)::uuid IS NULL OR o.id = sqlc.narg(organization_id)::uuid)
   AND (sqlc.narg(branch_id)::uuid IS NULL OR b.branch_id = sqlc.narg(branch_id)::uuid)
+  AND (sqlc.narg(court_id)::uuid IS NULL OR b.court_id = sqlc.narg(court_id)::uuid)
   AND (sqlc.narg(range_start)::timestamptz IS NULL OR b.starts_at >= sqlc.narg(range_start)::timestamptz)
   AND (sqlc.narg(range_end)::timestamptz IS NULL OR b.starts_at < sqlc.narg(range_end)::timestamptz)
   AND (

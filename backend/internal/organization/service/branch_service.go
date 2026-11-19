@@ -62,23 +62,23 @@ type BranchAddressInput struct {
 }
 
 type CreateBranchInput struct {
-	NameEn         string
-	NameVi         string
-	Code           string
-	Slug           string
-	Phone          string
-	Email          string
-	Timezone       string
-	Website        string
-	FacebookURL    string
-	GoogleMapsURL  string
-	FoundedYear    *int
-	ShortIntroEn   string
-	ShortIntroVi   string
-	DescriptionEn  string
-	DescriptionVi  string
-	Addresses      []BranchAddressInput
-	SportIDs       []uuid.UUID
+	NameEn        string
+	NameVi        string
+	Code          string
+	Slug          string
+	Phone         string
+	Email         string
+	Timezone      string
+	Website       string
+	FacebookURL   string
+	GoogleMapsURL string
+	FoundedYear   *int
+	ShortIntroEn  string
+	ShortIntroVi  string
+	DescriptionEn string
+	DescriptionVi string
+	Addresses     []BranchAddressInput
+	SportIDs      []uuid.UUID
 }
 
 type UpdateBranchInput struct {
@@ -94,13 +94,13 @@ type UpdateBranchInput struct {
 	GoogleMapsURL *string
 	// FoundedYear sets the year when non-nil. When Website is also set and FoundedYear is nil, clears the year
 	// (admin form always sends the profile-link block together).
-	FoundedYear    *int
-	ShortIntroEn   *string
-	ShortIntroVi   *string
-	DescriptionEn  *string
-	DescriptionVi  *string
-	Addresses      *[]BranchAddressInput
-	SportIDs       *[]uuid.UUID
+	FoundedYear   *int
+	ShortIntroEn  *string
+	ShortIntroVi  *string
+	DescriptionEn *string
+	DescriptionVi *string
+	Addresses     *[]BranchAddressInput
+	SportIDs      *[]uuid.UUID
 }
 
 func (s *BranchService) requireReader(ctx context.Context, orgID, actor uuid.UUID) error {
@@ -620,7 +620,7 @@ func (s *BranchService) Archive(ctx context.Context, branchID, actor uuid.UUID) 
 	if err != nil {
 		return err
 	}
-	if err := s.orgSvc.RequireOwner(ctx, orgID, actor); err != nil {
+	if err := s.orgSvc.RequireOwnerOrAdmin(ctx, orgID, actor); err != nil {
 		return err
 	}
 	org, err := s.orgs.FindByID(ctx, orgID)

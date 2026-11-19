@@ -14,6 +14,7 @@ import {
   type EntityFormBlock,
 } from "@/components/entity/metadata-form";
 import { ImageCropDialog } from "@/components/media/image-crop-dialog";
+import { OrganizationContentFields } from "@/components/organizations/organization-content-fields";
 import type { PopoverCommandOption } from "@/components/popover-command-select";
 import { useActivateOrganization } from "@/hooks/use-activate-organization";
 import { useCreateOrganization } from "@/hooks/use-create-organization";
@@ -77,6 +78,10 @@ const emptyValues: OrganizationFormValues = {
   email: "",
   phone: "",
   website: "",
+  short_intro_vi: "",
+  short_intro_en: "",
+  description_vi: "",
+  description_en: "",
   province_id: "",
   ward_id: "",
   address_line_1: "",
@@ -101,6 +106,10 @@ function valuesFromOrganization(
     email: organization.email ?? "",
     phone: organization.phone ?? "",
     website: organization.website ?? "",
+    short_intro_vi: organization.short_intro_vi ?? "",
+    short_intro_en: organization.short_intro_en ?? "",
+    description_vi: organization.description_vi ?? "",
+    description_en: organization.description_en ?? "",
     province_id: organization.headquarters?.province_id ?? "",
     ward_id: organization.headquarters?.ward_id ?? "",
     address_line_1: organization.headquarters?.address_line_1 ?? "",
@@ -138,6 +147,10 @@ function profileBody(
     email: values.email,
     phone: values.phone,
     website: values.website,
+    short_intro_vi: values.short_intro_vi,
+    short_intro_en: values.short_intro_en,
+    description_vi: values.description_vi,
+    description_en: values.description_en,
     headquarters,
   };
 }
@@ -177,6 +190,7 @@ export function OrganizationForm(props: OrganizationFormProps) {
         emailInvalid: t("emailInvalid"),
         websiteInvalid: t("websiteInvalid"),
         addressIncomplete: t("addressIncomplete"),
+        shortIntroTooLong: t("shortIntroTooLong"),
       }),
     [t],
   );
@@ -597,6 +611,7 @@ export function OrganizationForm(props: OrganizationFormProps) {
           }
         >
           <EntityMetadataForm blocks={blocks} />
+          <OrganizationContentFields />
           <ImageCropDialog
             open={cropTarget !== null}
             title={cropTarget === "banner" ? t("fieldBanner") : t("fieldLogo")}

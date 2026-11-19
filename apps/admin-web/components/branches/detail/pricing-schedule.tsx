@@ -5,7 +5,6 @@ import { Plus, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Controller, useFormContext, useWatch, type FieldPath } from "react-hook-form";
 
-import { softDirectorySecondaryBtn } from "@/components/data-list";
 import type { BranchPricingFormValues } from "@/lib/validation/branch-pricing";
 
 import { CurrencyAmountInput } from "./currency-amount-input";
@@ -245,7 +244,8 @@ export function PricingSchedule() {
           </div>
           <Button
             type="button"
-            className={softDirectorySecondaryBtn}
+            variant="outline"
+            size="sm"
             onClick={() => {
               const current = getValues("day_groups");
               commit(

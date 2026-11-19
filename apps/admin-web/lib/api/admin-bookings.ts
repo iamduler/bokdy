@@ -16,6 +16,7 @@ export type AdminBookingListParams = ListPageParams & {
   to?: string;
   organization_id?: string;
   branch_id?: string;
+  court_id?: string;
 };
 
 const BOOKING_ZONE = "+07:00";
@@ -43,6 +44,7 @@ function buildQuery(params: AdminBookingListParams): string {
   if (params.to) qs.set("to", params.to);
   if (params.organization_id) qs.set("organization_id", params.organization_id);
   if (params.branch_id) qs.set("branch_id", params.branch_id);
+  if (params.court_id) qs.set("court_id", params.court_id);
   appendListPageQuery(qs, params);
   const s = qs.toString();
   return s ? `?${s}` : "";
@@ -54,6 +56,7 @@ export type AdminBookingStatsParams = {
   to?: string;
   organization_id?: string;
   branch_id?: string;
+  court_id?: string;
 };
 
 export function listAdminBookings(params: AdminBookingListParams = {}) {
@@ -68,6 +71,7 @@ export function adminBookingDirectoryStats(params: AdminBookingStatsParams = {})
   if (params.to) qs.set("to", params.to);
   if (params.organization_id) qs.set("organization_id", params.organization_id);
   if (params.branch_id) qs.set("branch_id", params.branch_id);
+  if (params.court_id) qs.set("court_id", params.court_id);
   const s = qs.toString();
   return apiGo<AdminBookingDirectoryStats>(`admin/bookings/stats${s ? `?${s}` : ""}`);
 }

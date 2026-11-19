@@ -1101,6 +1101,40 @@ paths:
             image/webp: { schema: { type: string, format: binary } }
         "404":
           $ref: "#/components/responses/Error"
+  /api/v1/organizations/{id}/branches/archive:
+    post:
+      tags: [Branches]
+      summary: Archive branches
+      description: |
+        Any non-archived status → archived, one transaction per id.
+        An id outside the organization is `NOT_FOUND`. Already archived is `INVALID_STATUS`.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - $ref: "#/components/parameters/XOrganizationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BulkIdsRequest"
+      responses:
+        "200":
+          description: Per-id results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/BulkActionResult"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
   /api/v1/organizations/{id}/staff:
     get:
       tags: [Organizations]
@@ -1154,6 +1188,40 @@ paths:
         "403":
           $ref: "#/components/responses/Error"
         "409":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /api/v1/organizations/{id}/staff/remove:
+    post:
+      tags: [Organizations]
+      summary: Remove staff
+      description: |
+        Sets each member to resigned and revokes tenant roles, one transaction per id.
+        A resigned or unknown member is `NOT_FOUND`. The last owner stays and returns `VALIDATION`.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+        - $ref: "#/components/parameters/XOrganizationIdOptional"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BulkIdsRequest"
+      responses:
+        "200":
+          description: Per-id results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/BulkActionResult"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
           $ref: "#/components/responses/Error"
         "422":
           $ref: "#/components/responses/ValidationFailed"
@@ -2015,6 +2083,42 @@ paths:
           $ref: "#/components/responses/Error"
         "404":
           $ref: "#/components/responses/Error"
+  /api/v1/branches/{id}/courts/archive:
+    post:
+      tags: [Courts]
+      summary: Archive courts at a branch
+      description: |
+        Only `inactive` courts archive, one transaction per id.
+        A court outside this branch is `NOT_FOUND`. Any other status is `INVALID_STATUS`.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/BranchId"
+        - $ref: "#/components/parameters/XOrganizationId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BulkIdsRequest"
+      responses:
+        "200":
+          description: Per-id results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: "#/components/schemas/BulkActionResult"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
   /api/v1/branches/{id}/archive:
     post:
       tags: [Branches]
@@ -4298,6 +4402,32 @@ paths:
           $ref: "#/components/responses/Error"
         "422":
           $ref: "#/components/responses/ValidationFailed"
+  /api/v1/admin/branches/archive:
+    post:
+      tags: [Admin]
+      summary: Archive branches across organizations
+      description: Does not require one organization header. Each non-archived branch becomes archived.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BulkIdsRequest"
+      responses:
+        "200":
+          description: Per-id result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BulkActionResult"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
   /api/v1/admin/courts:
     get:
       tags: [Admin]
@@ -4398,6 +4528,32 @@ paths:
           $ref: "#/components/responses/Error"
         "422":
           $ref: "#/components/responses/ValidationFailed"
+  /api/v1/admin/courts/archive:
+    post:
+      tags: [Admin]
+      summary: Archive courts across organizations
+      description: Only inactive courts archive. Any other status is INVALID_STATUS.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BulkIdsRequest"
+      responses:
+        "200":
+          description: Per-id result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BulkActionResult"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
   /api/v1/admin/bookings:
     get:
       tags: [Admin]
@@ -4424,6 +4580,9 @@ paths:
           in: query
           schema: { type: string, format: uuid }
         - name: branch_id
+          in: query
+          schema: { type: string, format: uuid }
+        - name: court_id
           in: query
           schema: { type: string, format: uuid }
         - name: limit
@@ -4454,7 +4613,7 @@ paths:
     get:
       tags: [Admin]
       summary: Booking directory statistics
-      description: Counts ignore status so directory tabs stay stable. Search, date, organization, and branch filters still apply.
+      description: Counts ignore status so directory tabs stay stable. Search, date, organization, branch, and court filters still apply.
       security:
         - bearerAuth: []
       parameters:
@@ -4471,6 +4630,9 @@ paths:
           in: query
           schema: { type: string, format: uuid }
         - name: branch_id
+          in: query
+          schema: { type: string, format: uuid }
+        - name: court_id
           in: query
           schema: { type: string, format: uuid }
       responses:
@@ -4737,6 +4899,58 @@ paths:
       responses:
         "200":
           description: Organization restored
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminOrganization"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "404":
+          $ref: "#/components/responses/Error"
+        "409":
+          $ref: "#/components/responses/Error"
+  /api/v1/admin/organizations/archive:
+    post:
+      tags: [Admin]
+      summary: Archive organizations
+      description: Each id is archived on its own. Already archived or unknown ids are reported in failed.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BulkIdsRequest"
+      responses:
+        "200":
+          description: Per-id result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BulkActionResult"
+        "401":
+          $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
+        "422":
+          $ref: "#/components/responses/ValidationFailed"
+  /api/v1/admin/organizations/{id}/archive:
+    post:
+      tags: [Admin]
+      summary: Archive organization
+      description: |
+        Org `active`, `inactive`, or `suspended` → `archived`. Emits OrganizationArchived.
+        Archived is terminal.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/OrganizationId"
+      responses:
+        "200":
+          description: Organization archived
           content:
             application/json:
               schema:
@@ -5745,6 +5959,30 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ErrorDetail"
+    BulkIdsRequest:
+      type: object
+      required: [ids]
+      properties:
+        ids:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items: { type: string, format: uuid }
+    BulkActionResult:
+      type: object
+      required: [succeeded, failed]
+      properties:
+        succeeded:
+          type: array
+          items: { type: string, format: uuid }
+        failed:
+          type: array
+          items:
+            type: object
+            required: [id, code]
+            properties:
+              id: { type: string, format: uuid }
+              code: { type: string }
     ErrorDetail:
       type: object
       required: [field, code, message]
@@ -5825,11 +6063,16 @@ components:
         email: { type: string, format: email }
         phone: { type: string }
         website: { type: string }
+        short_intro_en: { type: string, maxLength: 200 }
+        short_intro_vi: { type: string, maxLength: 200 }
+        description_en: { type: string, description: Sanitized HTML }
+        description_vi: { type: string, description: Sanitized HTML }
         logo_file_id: { type: string, format: uuid }
         banner_file_id: { type: string, format: uuid }
         headquarters:
           $ref: "#/components/schemas/OrganizationHeadquarters"
         status: { type: string, enum: [active, inactive, suspended, archived] }
+        created_at: { type: string, format: date-time, description: UTC instant the organization was created }
         tenant_status: { type: string, enum: [trial, active, suspended, canceled], description: Present on admin organization reads }
     AdminOrganization:
       allOf:
@@ -5848,6 +6091,10 @@ components:
               type: string
               nullable: true
               description: Sport name for the request locale. Most courts, else most branch sports. Null when none.
+            staff_count:
+              type: integer
+              minimum: 0
+              description: Active staff. Present on the admin organization detail.
     AdminListPage:
       type: object
       required: [items, total, limit, offset]
@@ -6233,6 +6480,10 @@ components:
         email: { type: string, format: email }
         phone: { type: string }
         website: { type: string }
+        short_intro_en: { type: string, maxLength: 200 }
+        short_intro_vi: { type: string, maxLength: 200 }
+        description_en: { type: string }
+        description_vi: { type: string }
         headquarters:
           $ref: "#/components/schemas/OrganizationHeadquarters"
     UpdateOrganizationRequest:
@@ -6249,6 +6500,10 @@ components:
         email: { type: string, format: email }
         phone: { type: string }
         website: { type: string }
+        short_intro_en: { type: string, maxLength: 200 }
+        short_intro_vi: { type: string, maxLength: 200 }
+        description_en: { type: string }
+        description_vi: { type: string }
         headquarters:
           $ref: "#/components/schemas/OrganizationHeadquarters"
     OrganizationHeadquarters:

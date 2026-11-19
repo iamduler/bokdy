@@ -2859,6 +2859,10 @@ type OrganizationOrganization struct {
 	UpdatedAt        time.Time                      `json:"updated_at"`
 	DeletedAt        *time.Time                     `json:"deleted_at"`
 	BannerFileID     *uuid.UUID                     `json:"banner_file_id"`
+	ShortIntroEn     *string                        `json:"short_intro_en"`
+	ShortIntroVi     *string                        `json:"short_intro_vi"`
+	DescriptionEn    *string                        `json:"description_en"`
+	DescriptionVi    *string                        `json:"description_vi"`
 }
 
 type OrganizationOrganizationAddress struct {

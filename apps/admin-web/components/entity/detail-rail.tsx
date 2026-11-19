@@ -3,8 +3,6 @@
 import { cn } from "@bokdy/ui";
 import type { ReactNode } from "react";
 
-import { softContentMaxW } from "@/components/data-list";
-
 /** Sticky tab rail beside a scrolling detail column. */
 export function EntityDetailRail({
   subnav,
@@ -28,7 +26,7 @@ export function EntityDetailRail({
         {tabs}
       </aside>
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto soft-scrollbar">
-        <div className={cn("mx-auto w-full pb-4", softContentMaxW)}>{children}</div>
+        <div className="w-full pb-4">{children}</div>
       </div>
     </div>
     </>

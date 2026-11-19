@@ -157,6 +157,11 @@ func adminBookingQuery(c *gin.Context) (service.AdminBookingQuery, bool) {
 	}
 	query.OrganizationID = organizationID
 	query.BranchID = branchID
+	courtID, ok := parseBookingUUID(c, "court_id")
+	if !ok {
+		return query, false
+	}
+	query.CourtID = courtID
 	return query, true
 }
 

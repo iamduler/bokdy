@@ -4,9 +4,12 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { useTranslations } from "next-intl";
 import { useMemo } from "react";
 
+import { BranchArchiveButton } from "@/components/branches/branch-archive-button";
+import { createSelectionColumn } from "@/components/data-list";
 import { BRANCH_STATUS_TONE } from "@/components/branches/branch-status";
 import { DirectoryIdentityCell } from "@/components/data-list/directory-identity-cell";
 import { entityFileSrc } from "@/components/entity/avatar";
+import { RowEditButton } from "@/components/entity/row-edit-button";
 import { SoftStatusChip } from "@/components/entity/soft-status-chip";
 import type { AdminBranch } from "@/lib/api/admin-branches";
 import type { BranchStatus } from "@/lib/api/branches";
@@ -20,6 +23,10 @@ export function useBranchDirectoryColumns() {
 
   return useMemo<ColumnDef<AdminBranch, unknown>[]>(
     () => [
+      createSelectionColumn<AdminBranch>({
+        selectPage: t("selectPage"),
+        selectRow: t("selectRow"),
+      }),
       {
         id: "name",
         accessorKey: "name",
@@ -82,6 +89,24 @@ export function useBranchDirectoryColumns() {
             tone={BRANCH_STATUS_TONE[row.original.status as BranchStatus]}
           />
         ),
+      },
+      {
+        id: "actions",
+        header: t("columns.actions"),
+        enableSorting: false,
+        size: 96,
+        cell: ({ row }) =>
+          row.original.status === "archived" ? null : (
+            <div className="flex items-center justify-end gap-1">
+              <RowEditButton label={t("edit")} href={`/branches/${row.original.id}/edit`} />
+              <BranchArchiveButton
+                organizationId={row.original.organization_id}
+                branchId={row.original.id}
+                name={row.original.name}
+                status={row.original.status}
+              />
+            </div>
+          ),
       },
     ],
     [t],

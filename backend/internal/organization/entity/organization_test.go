@@ -33,8 +33,15 @@ func TestOrganizationTransitions(t *testing.T) {
 		t.Fatal("suspended guards")
 	}
 	inactive := &Organization{Status: OrganizationInactive}
-	if inactive.CanSuspend() || inactive.IsOperable() || inactive.BlocksActivate() {
+	if inactive.CanSuspend() || inactive.IsOperable() || inactive.BlocksActivate() || !inactive.CanArchive() {
 		t.Fatal("inactive guards")
+	}
+	archived := &Organization{Status: OrganizationArchived}
+	if archived.CanArchive() || !archived.BlocksActivate() {
+		t.Fatal("archived guards")
+	}
+	if !active.CanArchive() || !suspended.CanArchive() {
+		t.Fatal("archive from active and suspended")
 	}
 }
 

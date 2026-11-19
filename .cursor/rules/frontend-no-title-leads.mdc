@@ -1,0 +1,29 @@
+---
+description: Do not put a muted paragraph under a page or section title
+globs:
+  - apps/**/*.{tsx,ts}
+alwaysApply: true
+---
+
+# No title leads
+
+Do not place a muted paragraph under a page title or a section title to explain what the screen is doing.
+
+```tsx
+// ❌ BAD
+<h1>{t("formCreateTitle")}</h1>
+<p className="text-sm text-muted-foreground">{t("formCreateLead")}</p>
+
+<EntityFormSection title={t("sectionSchedule")}>
+  <p className="text-sm text-muted-foreground">{t("sectionScheduleLead")}</p>
+</EntityFormSection>
+
+// ✅ GOOD
+<h1>{t("formCreateTitle")}</h1>
+<FieldLabel required>{t("name")}</FieldLabel>
+<InfoHint text={t("nameHint")} />
+```
+
+Field help goes through `InfoHint`, or the `hint` prop on `EntityDetailPanel` / `EntitySectionHead`.
+
+Empty states, validation errors, and confirm-dialog copy stay. They are not title leads.

@@ -17,7 +17,8 @@
     "pageSummary": "{from}–{to} / {total}",
     "actions": "Thao tác",
     "selectAll": "Chọn tất cả",
-    "selectRow": "Chọn dòng"
+    "selectRow": "Chọn dòng",
+    "clearSelection": "Bỏ chọn"
   },
   "auth": {
     "adminEyebrow": "Truy cập quản trị",
@@ -112,6 +113,7 @@
       "courts": "Sân",
       "bookings": "Đặt sân",
       "holidays": "Ngày lễ",
+      "settings": "Cài đặt",
       "usersPlayers": "Người chơi",
       "usersOwners": "Chủ sân & nhân viên",
       "usersAdmins": "Quản trị viên",
@@ -155,7 +157,14 @@
       "profileEdit": "Sửa hồ sơ",
       "sessions": "Phiên đăng nhập",
       "holidays": "Ngày lễ",
+      "settings": "Cài đặt",
       "fallback": "Bokdy Admin"
+    }
+  },
+  "settings": {
+    "tabs": {
+      "aria": "Cài đặt",
+      "holidays": "Ngày lễ"
     }
   },
   "profile": {
@@ -336,7 +345,7 @@
       "risk": "Rủi ro",
       "status": "Trạng thái",
       "tenantStatus": "Tenant",
-      "actions": ""
+      "actions": "Thao tác"
     },
     "ownerUnavailable": "Chủ sở hữu chưa có",
     "regionSportsUnavailable": "Tỉnh / môn chưa có",
@@ -350,6 +359,9 @@
     "rowMenuUnavailable": "Thao tác khác chưa có — chưa có API.",
     "branchCount": "{count, plural, other {# chi nhánh}}",
     "bulkSelected": "Đã chọn {count}",
+    "selectPage": "Chọn trang",
+    "selectRow": "Chọn dòng",
+    "bulkFailed": "{count} mục không xóa được.",
     "bulkAssign": "Giao reviewer",
     "bulkApprove": "Duyệt",
     "bulkReject": "Từ chối",
@@ -374,6 +386,14 @@
     "slugTaken": "Slug này đã được dùng.",
     "fieldTaxCode": "Mã số thuế",
     "fieldWebsite": "Website",
+    "sectionIntro": "Giới thiệu",
+    "fieldShortIntroVi": "Giới thiệu ngắn (VN)",
+    "fieldShortIntroEn": "Giới thiệu ngắn (EN)",
+    "fieldShortIntroCount": "{count}/{max}",
+    "shortIntroTooLong": "Giới thiệu ngắn tối đa 200 ký tự.",
+    "fieldDescriptionVi": "Mô tả (VN)",
+    "fieldDescriptionEn": "Mô tả (EN)",
+    "fieldDescriptionPlaceholder": "Mô tả tổ chức…",
     "websiteInvalid": "Nhập URL đầy đủ, gồm https://.",
     "addressIncomplete": "Chọn tỉnh/thành và phường/xã.",
     "sectionIdentity": "Định danh",
@@ -508,7 +528,8 @@
     "detailMetrics": {
       "branches": "Chi nhánh",
       "courts": "Sân",
-      "staff": "Nhân viên",
+      "staff": "Nhân sự",
+      "founded": "Năm thành lập",
       "players": "Người chơi",
       "revenue": "Doanh thu/tháng",
       "occupancy": "Tỉ lệ sử dụng",
@@ -516,6 +537,10 @@
     },
     "detailOverview": {
       "editProfile": "Sửa hồ sơ",
+      "about": "Giới thiệu",
+      "aboutHint": "Câu giới thiệu, mô tả và thông tin liên hệ công khai.",
+      "profile": "Hồ sơ tổ chức",
+      "profileHint": "Định danh pháp lý, trạng thái tenant và chủ sở hữu.",
       "identity": "Định danh",
       "identityHint": "Thông tin pháp lý và trạng thái thuê bao tenant của tổ chức.",
       "contact": "Liên hệ",
@@ -623,6 +648,12 @@
       "colBranch": "Chi nhánh"
     },
     "court": {
+      "tabs": {
+        "ariaLabel": "Mục sân",
+        "navTitle": "Sân",
+        "overview": "Tổng quan",
+        "bookings": "Đặt sân"
+      },
       "createTitle": "Sân mới",
       "editTitle": "Sửa sân",
       "edit": "Sửa",
@@ -669,6 +700,10 @@
       "actionMaintenance": "Bảo trì",
       "actionCompleteMaintenance": "Hoàn tất bảo trì",
       "actionArchive": "Lưu trữ",
+      "delete": "Xóa",
+      "deleteTitle": "Xóa sân?",
+      "deleteConfirm": "Lưu trữ {name}. Sân không còn hoạt động.",
+      "deleted": "Đã xóa sân.",
       "archiveTitle": "Lưu trữ sân",
       "archiveHint": "Sân ở trạng thái đóng sẽ bị lưu trữ và ẩn khỏi danh sách hoạt động.",
       "maintenanceTitle": "Đưa sân vào bảo trì",
@@ -857,6 +892,8 @@
         "activateDesc": "Khôi phục hoạt động bình thường",
         "restore": "Kích hoạt lại",
         "restoreDesc": "Khôi phục từ trạng thái tạm khóa",
+        "delete": "Xóa tổ chức",
+        "deleteDesc": "Lưu trữ tổ chức. Thao tác này không xóa dữ liệu.",
         "auditLog": "Xem Audit Log",
         "auditLogDesc": "Lịch sử thay đổi toàn bộ tổ chức"
       }
@@ -878,6 +915,13 @@
     "submitRestore": "Khôi phục",
     "restoreSuccess": "Đã khôi phục tổ chức.",
     "restoreConflict": "Chỉ tổ chức đang tạm ngưng mới có thể khôi phục.",
+    "delete": "Xóa",
+    "deleteTitle": "Xóa tổ chức?",
+    "deleteConfirm": "Lưu trữ {name}. Tổ chức không còn hoạt động.",
+    "deleted": "Đã xóa tổ chức.",
+    "bulkDeleteTitle": "Xóa {count} tổ chức?",
+    "bulkDeleteConfirm": "Lưu trữ {count} tổ chức. Chúng không còn hoạt động.",
+    "bulkDeleted": "Đã xóa {count} tổ chức.",
     "status": {
       "active": "Hoạt động",
       "inactive": "Chưa kích hoạt",
@@ -895,6 +939,14 @@
       "fullView": "Xem đầy đủ",
       "editTitle": "Sửa chi nhánh",
       "editProfile": "Sửa chi nhánh",
+      "delete": "Xóa",
+      "deleteTitle": "Xóa chi nhánh?",
+      "deleteConfirm": "Lưu trữ {name}. Chi nhánh không còn hoạt động.",
+      "deleted": "Đã xóa chi nhánh.",
+      "cancel": "Hủy",
+      "bulkDeleteTitle": "Xóa {count} chi nhánh?",
+      "bulkDeleteConfirm": "Lưu trữ {count} chi nhánh. Các chi nhánh không còn hoạt động.",
+      "bulkDeleted": "Đã xóa {count} chi nhánh.",
       "backToList": "Danh sách chi nhánh",
       "empty": "Chưa có chi nhánh.",
       "emptyValue": "-",
@@ -1025,6 +1077,9 @@
         "title": "Danh sách sân",
         "addCourt": "Thêm sân",
         "empty": "Chi nhánh chưa có sân nào.",
+        "bulkDeleteTitle": "Xóa {count} sân?",
+        "bulkDeleteConfirm": "Lưu trữ {count} sân đã đóng. Sân khác trạng thái không được chọn.",
+        "bulkDeleted": "Đã xóa {count} sân.",
         "loadError": "Không tải được danh sách sân.",
         "emptyValue": "-",
         "colName": "Sân",
@@ -1166,11 +1221,9 @@
         "advancedCourt": "Giá theo sân",
         "advancedDiscount": "Giảm giá và phụ thu",
         "advancedOff": "Chưa áp dụng",
-        "contextLine": "{branch} · {sport}",
         "addWindow": "Thêm khung giờ",
         "removeWindow": "Xóa",
         "formCreateTitle": "Tạo bảng giá mới",
-        "formCreateLead": "Thiết lập giá cơ bản và các khung giờ áp dụng cho chi nhánh {branch}.",
         "backToPricing": "Quay lại bảng giá",
         "backToDetail": "Quay lại chi tiết",
         "saveDraft": "Lưu nháp",
@@ -1178,7 +1231,6 @@
         "checkOverlap": "Kiểm tra trùng lịch",
         "willActivate": "Sẽ kích hoạt",
         "sectionBasic": "Thông tin cơ bản",
-        "sectionBasicLead": "Đặt tên và chọn bộ môn áp dụng",
         "nameHint": "Tên dễ nhận biết khi quản lý và tạo lịch đặt sân.",
         "sportHint": "Bảng giá chỉ áp dụng cho sân thuộc bộ môn này.",
         "audienceApply": "Loại khách áp dụng",
@@ -1192,18 +1244,15 @@
         "activateAfterCreateLead": "Áp dụng ngay cho {sport} · {branch} · {audience}",
         "activateReplaces": "Nếu đã có bảng giá {audience} đang dùng, bảng giá cũ sẽ ngừng áp dụng.",
         "sectionDuration": "Cấu hình thời lượng",
-        "sectionDurationLead": "Chọn đơn vị tính và thời lượng khách có thể đặt",
         "durationChipLead": "Cho phép khách chọn một trong các thời lượng đã cấu hình.",
         "durationUnlimitedLead": "Khách có thể đặt liên tục theo bội số của slot, đến khi hết giờ trống.",
         "baseSlotTitle": "Giá cơ bản mỗi slot",
         "baseSlotLead": "Áp dụng khi không nằm trong khung giờ đặc biệt",
         "currencySuffix": "VND",
         "sectionSchedule": "Lịch giá định kỳ",
-        "sectionScheduleLead": "Mỗi nhóm ngày có hệ thống khung giờ và mức giá riêng",
         "daysApply": "Ngày áp dụng",
         "addWindowTo": "Thêm khung giờ vào {name}",
         "sectionHoliday": "Giá áp dụng ngày lễ/Tết",
-        "sectionHolidayLead": "Cấu hình mức giá được dùng cho mọi ngày đã đánh dấu là ngày lễ",
         "holidayManaged": "Ngày lễ được quản lý ở màn hình riêng",
         "holidayManagedLead": "Form này chỉ thiết lập mức giá. Danh sách ngày lễ được quản lý trong cấu hình ngày lễ.",
         "viewHolidays": "Xem cấu hình ngày lễ",
@@ -1367,6 +1416,8 @@
       "suspended": "Đã tạm ngưng"
     },
     "detailSubnav": {
+      "navTitle": "Thông tin người dùng",
+      "ariaLabel": "Các mục người dùng",
       "user": "Người dùng",
       "overview": "Tổng quan",
       "sessions": "Phiên hoạt động",
@@ -1648,7 +1699,11 @@
       "suspend": "Tạm khóa",
       "restore": "Khôi phục",
       "remove": "Gỡ bỏ",
-      "revoke": "Thu hồi lời mời"
+      "delete": "Xóa",
+      "revoke": "Thu hồi lời mời",
+      "bulkDeleteTitle": "Xóa {count} nhân sự?",
+      "bulkDeleteConfirm": "Gỡ {count} thành viên khỏi tổ chức. Họ sẽ mất quyền truy cập.",
+      "bulkDeleted": "Đã xóa {count} nhân sự."
     },
     "invite": {
       "cta": "Mời nhân sự",
@@ -1797,8 +1852,20 @@
       "organization": "Tổ chức",
       "address": "Địa chỉ",
       "courts": "Sân",
-      "status": "Trạng thái"
-    }
+      "status": "Trạng thái",
+      "actions": "Thao tác",
+      "delete": "Xóa"
+    },
+    "edit": "Sửa",
+    "selectPage": "Chọn trang",
+    "selectRow": "Chọn dòng",
+    "bulkSelected": "Đã chọn {count}",
+    "bulkDelete": "Xóa",
+    "bulkDeleteTitle": "Xóa {count} chi nhánh?",
+    "bulkDeleteConfirm": "Lưu trữ {count} chi nhánh. Chúng không còn hoạt động.",
+    "bulkDeleted": "Đã xóa {count} chi nhánh.",
+    "bulkFailed": "Không xóa được {count} chi nhánh.",
+    "cancel": "Hủy"
   },
   "courtDirectory": {
     "title": "Sân",
@@ -1843,7 +1910,18 @@
       "branch": "Chi nhánh",
       "sport": "Môn",
       "environment": "Môi trường",
-      "status": "Trạng thái"
-    }
+      "status": "Trạng thái",
+      "actions": "Thao tác"
+    },
+    "edit": "Sửa",
+    "selectPage": "Chọn trang",
+    "selectRow": "Chọn dòng",
+    "bulkSelected": "Đã chọn {count}",
+    "bulkDelete": "Xóa",
+    "bulkDeleteTitle": "Xóa {count} sân?",
+    "bulkDeleteConfirm": "Lưu trữ {count} sân đang ngưng. Sân ở trạng thái khác không chọn được.",
+    "bulkDeleted": "Đã xóa {count} sân.",
+    "bulkFailed": "Không xóa được {count} sân.",
+    "cancel": "Hủy"
   }
 }

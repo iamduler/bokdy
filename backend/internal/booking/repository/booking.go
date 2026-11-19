@@ -28,6 +28,7 @@ type AdminBookingFilter struct {
 	Status         *entity.Status
 	OrganizationID *uuid.UUID
 	BranchID       *uuid.UUID
+	CourtID        *uuid.UUID
 	From           *time.Time
 	To             *time.Time
 	Q              string
@@ -42,6 +43,7 @@ type AdminBookingStatsFilter struct {
 	UserID         *uuid.UUID
 	OrganizationID *uuid.UUID
 	BranchID       *uuid.UUID
+	CourtID        *uuid.UUID
 	From           *time.Time
 	To             *time.Time
 	Q              string

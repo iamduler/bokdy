@@ -5,7 +5,6 @@ export const BRANCH_DETAIL_TABS = [
   { id: "images", segment: "images" },
   { id: "courts", segment: "courts" },
   { id: "schedule", segment: "schedule" },
-  { id: "amenities", segment: "amenities" },
 ] as const;
 
 export type BranchDetailTabId = (typeof BRANCH_DETAIL_TABS)[number]["id"];

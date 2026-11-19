@@ -98,7 +98,7 @@ func (r *BookingRepo) ListAdmin(ctx context.Context, filter repository.AdminBook
 	params := dbsqlc.ListAdminBookingsParams{
 		BookingID: filter.BookingID,
 		TenantID:  filter.TenantID, UserID: filter.UserID,
-		OrganizationID: filter.OrganizationID, BranchID: filter.BranchID, StatusFilter: status,
+		OrganizationID: filter.OrganizationID, BranchID: filter.BranchID, CourtID: filter.CourtID, StatusFilter: status,
 		RangeStart: filter.From, RangeEnd: filter.To, Q: filter.Q,
 		SortKey: filter.Sort, SortDesc: filter.Desc,
 		RowOffset: int32(filter.Offset), RowLimit: int32(filter.Limit),
@@ -110,7 +110,7 @@ func (r *BookingRepo) ListAdmin(ctx context.Context, filter repository.AdminBook
 	total, err := r.q.CountAdminBookings(ctx, dbsqlc.CountAdminBookingsParams{
 		BookingID: params.BookingID,
 		TenantID:  params.TenantID, UserID: params.UserID,
-		OrganizationID: params.OrganizationID, BranchID: params.BranchID, StatusFilter: params.StatusFilter,
+		OrganizationID: params.OrganizationID, BranchID: params.BranchID, CourtID: params.CourtID, StatusFilter: params.StatusFilter,
 		RangeStart: params.RangeStart, RangeEnd: params.RangeEnd, Q: params.Q,
 	})
 	if err != nil {
@@ -143,7 +143,7 @@ func (r *BookingRepo) ListAdmin(ctx context.Context, filter repository.AdminBook
 func (r *BookingRepo) DirectoryStats(ctx context.Context, filter repository.AdminBookingStatsFilter) (repository.AdminBookingStats, error) {
 	row, err := r.q.AdminBookingDirectoryStats(ctx, dbsqlc.AdminBookingDirectoryStatsParams{
 		TenantID: filter.TenantID, UserID: filter.UserID,
-		OrganizationID: filter.OrganizationID, BranchID: filter.BranchID,
+		OrganizationID: filter.OrganizationID, BranchID: filter.BranchID, CourtID: filter.CourtID,
 		RangeStart: filter.From, RangeEnd: filter.To, Q: filter.Q,
 	})
 	if err != nil {

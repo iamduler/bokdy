@@ -2,9 +2,11 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { adminBranchKeys } from "@/hooks/use-admin-branches";
 import { adminOrganizationKeys } from "@/hooks/use-admin-organizations";
 import {
   archiveBranch,
+  archiveBranches,
   closeBranch,
   createBranch,
   getBranch,
@@ -42,6 +44,7 @@ function useInvalidateBranches(organizationId: string) {
   const queryClient = useQueryClient();
   return (id?: string) => {
     void queryClient.invalidateQueries({ queryKey: branchKeys.list(organizationId) });
+    void queryClient.invalidateQueries({ queryKey: adminBranchKeys.all });
     void queryClient.invalidateQueries({ queryKey: adminOrganizationKeys.detail(organizationId) });
     if (id) {
       void queryClient.invalidateQueries({ queryKey: branchKeys.detail(id) });
@@ -86,6 +89,16 @@ export function useMaintenanceBranch(organizationId: string, id: string) {
   return useMutation({
     mutationFn: () => maintenanceBranch(organizationId, id),
     onSuccess: () => invalidate(id),
+  });
+}
+
+export function useArchiveBranches(organizationId: string) {
+  const invalidate = useInvalidateBranches(organizationId);
+  return useMutation({
+    mutationFn: (ids: string[]) => archiveBranches(organizationId, ids),
+    onSuccess: (result) => {
+      if (result.succeeded.length > 0) invalidate();
+    },
   });
 }
 

@@ -1,20 +1,23 @@
 "use client";
 
+import { Button } from "@bokdy/ui";
 import {
   Building2,
   CalendarCheck,
   CalendarDays,
   LayoutDashboard,
   LayoutGrid,
+  ListChecks,
   Users,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useMemo, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 
 import {
   EntityDetailTabs,
   type EntityDetailTabItem,
 } from "@/components/entity/detail-tabs";
+import { OrganizationActionsDialog } from "@/components/organizations/detail/actions/organization-actions-dialog";
 import { usePathname } from "@/i18n/navigation";
 
 import { useOrganizationDetail } from "../organization-detail-context";
@@ -41,7 +44,9 @@ const TAB_ICONS: Record<OrgTabId, ReactNode> = {
 
 export function OrganizationOverviewTabs() {
   const t = useTranslations("organization.detailTabs");
+  const tActions = useTranslations("organization.detailActions");
   const { orgId } = useOrganizationDetail();
+  const [actionsOpen, setActionsOpen] = useState(false);
   const pathname = usePathname();
   const base = `/organizations/${orgId}`;
   // First segment after the org base, so nested routes (e.g. branches/:id/courts)
@@ -71,12 +76,27 @@ export function OrganizationOverviewTabs() {
   );
 
   return (
-    <EntityDetailTabs
-      tabs={tabs}
-      ariaLabel={t("ariaLabel")}
-      title={t("navTitle")}
-      variant="vertical"
-      className="p-2 md:p-2.5"
-    />
+    <>
+      <EntityDetailTabs
+        tabs={tabs}
+        ariaLabel={t("ariaLabel")}
+        title={t("navTitle")}
+        variant="vertical"
+        className="p-2 md:p-2.5"
+      />
+      <div className="border-t border-border/60 p-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="w-full"
+          onClick={() => setActionsOpen(true)}
+        >
+          <ListChecks className="size-4" aria-hidden />
+          {tActions("open")}
+        </Button>
+      </div>
+      <OrganizationActionsDialog open={actionsOpen} onOpenChange={setActionsOpen} />
+    </>
   );
 }

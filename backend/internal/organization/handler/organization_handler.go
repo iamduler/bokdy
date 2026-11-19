@@ -47,6 +47,10 @@ type createOrgRequest struct {
 	Email            string               `json:"email"`
 	Phone            string               `json:"phone"`
 	Website          string               `json:"website"`
+	ShortIntroEn     string               `json:"short_intro_en"`
+	ShortIntroVi     string               `json:"short_intro_vi"`
+	DescriptionEn    string               `json:"description_en"`
+	DescriptionVi    string               `json:"description_vi"`
 	Headquarters     *headquartersRequest `json:"headquarters"`
 }
 
@@ -60,6 +64,10 @@ type updateOrgRequest struct {
 	Email            *string              `json:"email"`
 	Phone            *string              `json:"phone"`
 	Website          *string              `json:"website"`
+	ShortIntroEn     *string              `json:"short_intro_en"`
+	ShortIntroVi     *string              `json:"short_intro_vi"`
+	DescriptionEn    *string              `json:"description_en"`
+	DescriptionVi    *string              `json:"description_vi"`
 	Headquarters     *headquartersRequest `json:"headquarters"`
 }
 
@@ -102,9 +110,14 @@ type orgDTO struct {
 	Email            string `json:"email,omitempty"`
 	Phone            string `json:"phone,omitempty"`
 	Website          string `json:"website,omitempty"`
+	ShortIntroEn     string `json:"short_intro_en,omitempty"`
+	ShortIntroVi     string `json:"short_intro_vi,omitempty"`
+	DescriptionEn    string `json:"description_en,omitempty"`
+	DescriptionVi    string `json:"description_vi,omitempty"`
 	LogoFileID       string `json:"logo_file_id,omitempty"`
 	BannerFileID     string `json:"banner_file_id,omitempty"`
 	Status           string `json:"status"`
+	CreatedAt        string `json:"created_at,omitempty"`
 	Headquarters     *hqDTO `json:"headquarters,omitempty"`
 }
 
@@ -168,6 +181,7 @@ func (h *OrganizationHandler) RegisterRoutes(rg *gin.RouterGroup, jwt gin.Handle
 		orgs.POST("/:id/media", h.UploadMedia)
 		rg.GET("/files/:id", jwt, h.DownloadFile)
 		orgs.GET("/:id/staff", h.ListStaff)
+		orgs.POST("/:id/staff/remove", h.RemoveStaffMany)
 		orgs.POST("/:id/staff", h.AddStaff)
 		orgs.PATCH("/:id/staff/:staffId", h.UpdateStaff)
 		orgs.POST("/:id/staff/:staffId/suspend", h.SuspendStaff)
@@ -203,7 +217,10 @@ func (h *OrganizationHandler) Create(c *gin.Context) {
 	org, err := h.orgs.Create(c.Request.Context(), uid, service.CreateOrganizationInput{
 		Name: req.Name, NameEn: req.NameEn, NameVi: req.NameVi, LegalName: req.LegalName,
 		OrganizationType: req.OrganizationType, Slug: req.Slug, Code: req.Code, TaxCode: req.TaxCode,
-		Email: req.Email, Phone: req.Phone, Website: req.Website, Headquarters: hq,
+		Email: req.Email, Phone: req.Phone, Website: req.Website,
+		ShortIntroEn: req.ShortIntroEn, ShortIntroVi: req.ShortIntroVi,
+		DescriptionEn: req.DescriptionEn, DescriptionVi: req.DescriptionVi,
+		Headquarters: hq,
 	})
 	if err != nil {
 		httpx.Error(c, err)
@@ -282,6 +299,8 @@ func (h *OrganizationHandler) Update(c *gin.Context) {
 	org, err := h.orgs.Update(c.Request.Context(), orgID, uid, service.UpdateOrganizationInput{
 		NameEn: req.NameEn, NameVi: req.NameVi, LegalName: req.LegalName, OrganizationType: req.OrganizationType,
 		Slug: req.Slug, TaxCode: req.TaxCode, Email: req.Email, Phone: req.Phone, Website: req.Website,
+		ShortIntroEn: req.ShortIntroEn, ShortIntroVi: req.ShortIntroVi,
+		DescriptionEn: req.DescriptionEn, DescriptionVi: req.DescriptionVi,
 		Headquarters: hq,
 	})
 	if err != nil {
@@ -302,7 +321,11 @@ func toOrgDTO(ctx context.Context, org *entity.Organization) orgDTO {
 		Name:   i18n.DisplayName(i18n.FromContext(ctx), org.NameEn, org.NameVi),
 		NameEn: org.NameEn, NameVi: org.NameVi, LegalName: org.LegalName,
 		OrganizationType: string(org.OrganizationType), Slug: org.Slug, TaxCode: org.TaxCode,
-		Email: org.Email, Phone: org.Phone, Website: org.Website, Status: string(org.Status),
+		Email: org.Email, Phone: org.Phone, Website: org.Website,
+		ShortIntroEn: org.ShortIntroEn, ShortIntroVi: org.ShortIntroVi,
+		DescriptionEn: org.DescriptionEn, DescriptionVi: org.DescriptionVi,
+		Status:    string(org.Status),
+		CreatedAt: org.CreatedAt.UTC().Format(time.RFC3339),
 	}
 	if org.LogoFileID != nil {
 		dto.LogoFileID = org.LogoFileID.String()

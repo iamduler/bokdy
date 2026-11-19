@@ -44,6 +44,7 @@ type Querier interface {
 	ConfirmTOTPMethod(ctx context.Context, arg ConfirmTOTPMethodParams) error
 	ConsumePasswordResetToken(ctx context.Context, id uuid.UUID) error
 	ConvertReservation(ctx context.Context, arg ConvertReservationParams) error
+	CountActiveStaffByOrganization(ctx context.Context, organizationID uuid.UUID) (int32, error)
 	CountAdminBookings(ctx context.Context, arg CountAdminBookingsParams) (int32, error)
 	CountAdminOwners(ctx context.Context) (int32, error)
 	CountAdminOwnersByStatus(ctx context.Context) (CountAdminOwnersByStatusRow, error)

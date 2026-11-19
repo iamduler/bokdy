@@ -42,43 +42,43 @@ type branchAddressRequest struct {
 }
 
 type createBranchRequest struct {
-	NameEn         string                 `json:"name_en"`
-	NameVi         string                 `json:"name_vi"`
-	Code           string                 `json:"code"`
-	Slug           string                 `json:"slug"`
-	Phone          string                 `json:"phone"`
-	Email          string                 `json:"email" binding:"omitempty,email"`
-	Timezone       string                 `json:"timezone"`
-	Website        string                 `json:"website"`
-	FacebookURL    string                 `json:"facebook_url"`
-	GoogleMapsURL  string                 `json:"google_maps_url"`
-	FoundedYear    *int                   `json:"founded_year"`
-	ShortIntroEn   string                 `json:"short_intro_en"`
-	ShortIntroVi   string                 `json:"short_intro_vi"`
-	DescriptionEn  string                 `json:"description_en"`
-	DescriptionVi  string                 `json:"description_vi"`
-	Addresses      []branchAddressRequest `json:"addresses"`
-	SportIDs       []string               `json:"sport_ids"`
+	NameEn        string                 `json:"name_en"`
+	NameVi        string                 `json:"name_vi"`
+	Code          string                 `json:"code"`
+	Slug          string                 `json:"slug"`
+	Phone         string                 `json:"phone"`
+	Email         string                 `json:"email" binding:"omitempty,email"`
+	Timezone      string                 `json:"timezone"`
+	Website       string                 `json:"website"`
+	FacebookURL   string                 `json:"facebook_url"`
+	GoogleMapsURL string                 `json:"google_maps_url"`
+	FoundedYear   *int                   `json:"founded_year"`
+	ShortIntroEn  string                 `json:"short_intro_en"`
+	ShortIntroVi  string                 `json:"short_intro_vi"`
+	DescriptionEn string                 `json:"description_en"`
+	DescriptionVi string                 `json:"description_vi"`
+	Addresses     []branchAddressRequest `json:"addresses"`
+	SportIDs      []string               `json:"sport_ids"`
 }
 
 type updateBranchRequest struct {
-	NameEn         *string                 `json:"name_en"`
-	NameVi         *string                 `json:"name_vi"`
-	Code           *string                 `json:"code"`
-	Slug           *string                 `json:"slug"`
-	Phone          *string                 `json:"phone"`
-	Email          *string                 `json:"email" binding:"omitempty,email"`
-	Timezone       *string                 `json:"timezone"`
-	Website        *string                 `json:"website"`
-	FacebookURL    *string                 `json:"facebook_url"`
-	GoogleMapsURL  *string                 `json:"google_maps_url"`
-	FoundedYear    *int                    `json:"founded_year"`
-	ShortIntroEn   *string                 `json:"short_intro_en"`
-	ShortIntroVi   *string                 `json:"short_intro_vi"`
-	DescriptionEn  *string                 `json:"description_en"`
-	DescriptionVi  *string                 `json:"description_vi"`
-	Addresses      *[]branchAddressRequest `json:"addresses"`
-	SportIDs       *[]string               `json:"sport_ids"`
+	NameEn        *string                 `json:"name_en"`
+	NameVi        *string                 `json:"name_vi"`
+	Code          *string                 `json:"code"`
+	Slug          *string                 `json:"slug"`
+	Phone         *string                 `json:"phone"`
+	Email         *string                 `json:"email" binding:"omitempty,email"`
+	Timezone      *string                 `json:"timezone"`
+	Website       *string                 `json:"website"`
+	FacebookURL   *string                 `json:"facebook_url"`
+	GoogleMapsURL *string                 `json:"google_maps_url"`
+	FoundedYear   *int                    `json:"founded_year"`
+	ShortIntroEn  *string                 `json:"short_intro_en"`
+	ShortIntroVi  *string                 `json:"short_intro_vi"`
+	DescriptionEn *string                 `json:"description_en"`
+	DescriptionVi *string                 `json:"description_vi"`
+	Addresses     *[]branchAddressRequest `json:"addresses"`
+	SportIDs      *[]string               `json:"sport_ids"`
 }
 
 type branchAddressDTO struct {
@@ -126,6 +126,7 @@ type branchDTO struct {
 
 func (h *BranchHandler) RegisterRoutes(rg *gin.RouterGroup, jwt gin.HandlerFunc) {
 	rg.GET("/reference/amenities", jwt, h.ListAmenities)
+	rg.POST("/organizations/:id/branches/archive", jwt, middleware.OptionalOrganization(), h.ArchiveMany)
 	branches := rg.Group("/branches", jwt, middleware.OptionalOrganization())
 	{
 		branches.POST("", h.Create)
@@ -331,7 +332,7 @@ func toCreateBranchInput(req createBranchRequest) (service.CreateBranchInput, er
 		NameEn: req.NameEn, NameVi: req.NameVi, Code: req.Code, Slug: req.Slug,
 		Phone: req.Phone, Email: req.Email, Timezone: req.Timezone,
 		Website: req.Website, FacebookURL: req.FacebookURL, GoogleMapsURL: req.GoogleMapsURL,
-		FoundedYear: req.FoundedYear,
+		FoundedYear:  req.FoundedYear,
 		ShortIntroEn: req.ShortIntroEn, ShortIntroVi: req.ShortIntroVi,
 		DescriptionEn: req.DescriptionEn, DescriptionVi: req.DescriptionVi,
 	}
@@ -353,7 +354,7 @@ func toUpdateBranchInput(req updateBranchRequest) (service.UpdateBranchInput, er
 		NameEn: req.NameEn, NameVi: req.NameVi, Code: req.Code, Slug: req.Slug,
 		Phone: req.Phone, Email: req.Email, Timezone: req.Timezone,
 		Website: req.Website, FacebookURL: req.FacebookURL, GoogleMapsURL: req.GoogleMapsURL,
-		FoundedYear: req.FoundedYear,
+		FoundedYear:  req.FoundedYear,
 		ShortIntroEn: req.ShortIntroEn, ShortIntroVi: req.ShortIntroVi,
 		DescriptionEn: req.DescriptionEn, DescriptionVi: req.DescriptionVi,
 	}

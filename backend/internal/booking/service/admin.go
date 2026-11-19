@@ -24,6 +24,7 @@ type AdminBookingQuery struct {
 	Status         *entity.Status
 	OrganizationID *uuid.UUID
 	BranchID       *uuid.UUID
+	CourtID        *uuid.UUID
 	From           *time.Time
 	To             *time.Time
 	LimitRaw       string
@@ -64,7 +65,7 @@ func (s *BookingService) AdminDirectoryStats(ctx context.Context, query AdminBoo
 		return repository.AdminBookingStats{}, apperr.New(apperr.CodeValidation, "to must be after from")
 	}
 	stats, err := s.repo.DirectoryStats(ctx, repository.AdminBookingStatsFilter{
-		OrganizationID: query.OrganizationID, BranchID: query.BranchID,
+		OrganizationID: query.OrganizationID, BranchID: query.BranchID, CourtID: query.CourtID,
 		From: query.From, To: query.To, Q: strings.TrimSpace(query.Q),
 	})
 	if err != nil {
@@ -131,7 +132,7 @@ func (s *BookingService) adminFilter(query AdminBookingQuery) (listpage.Query, r
 		return listpage.Query{}, repository.AdminBookingFilter{}, apperr.New(apperr.CodeValidation, "to must be after from")
 	}
 	return page, repository.AdminBookingFilter{
-		Status: query.Status, OrganizationID: query.OrganizationID, BranchID: query.BranchID,
+		Status: query.Status, OrganizationID: query.OrganizationID, BranchID: query.BranchID, CourtID: query.CourtID,
 		From: query.From, To: query.To,
 		Q: strings.TrimSpace(query.Q), Limit: page.Limit, Offset: page.Offset,
 		Sort: page.Sort, Desc: page.Desc,

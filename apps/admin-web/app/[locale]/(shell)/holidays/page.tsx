@@ -1,13 +1,14 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useRouter } from "@/i18n/navigation";
+import { useEffect } from "react";
 
-import { SystemHolidaysView } from "@/components/holidays/system-holidays-view";
-import { usePageShellTitle } from "@/components/shell/shell-title";
+export default function LegacyHolidaysPage() {
+  const router = useRouter();
 
-export default function SystemHolidaysPage() {
-  const t = useTranslations("organization.holidays");
-  usePageShellTitle(t("systemTitle"));
+  useEffect(() => {
+    router.replace("/settings");
+  }, [router]);
 
-  return <SystemHolidaysView />;
+  return null;
 }

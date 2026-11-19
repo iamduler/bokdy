@@ -28,6 +28,7 @@ type AdminOrganization struct {
 	OwnerDisplayName   string
 	PrimarySportNameEn string
 	PrimarySportNameVi string
+	StaffCount         int
 }
 
 type AdminListQuery struct {
@@ -237,6 +238,41 @@ func (s *OrganizationService) Suspend(ctx context.Context, orgID, actor uuid.UUI
 	return s.adminResult(ctx, org, tenant.Status)
 }
 
+func (s *OrganizationService) Archive(ctx context.Context, orgID, actor uuid.UUID) (*AdminOrganization, error) {
+	org, tenant, err := s.loadOrgTenant(ctx, orgID)
+	if err != nil {
+		return nil, err
+	}
+	if !org.CanArchive() {
+		return nil, orgerrors.ErrInvalidOrgStatus
+	}
+	now := time.Now().UTC()
+	var outboxID uuid.UUID
+	err = persistence.WithinTx(ctx, s.pool, func(tx pgx.Tx) error {
+		lockedOrg, lockedTenant, err := s.lockPair(ctx, tx, orgID)
+		if err != nil {
+			return err
+		}
+		if !lockedOrg.CanArchive() {
+			return orgerrors.ErrInvalidOrgStatus
+		}
+		if err := s.orgs.UpdateStatus(ctx, tx, lockedOrg.ID, entity.OrganizationArchived, now); err != nil {
+			return err
+		}
+		lockedOrg.Status = entity.OrganizationArchived
+		org = lockedOrg
+		tenant = lockedTenant
+		outboxID, err = events.Append(ctx, tx, s.orgStatusEvent("OrganizationArchived", lockedOrg, actor, now, nil))
+		return err
+	})
+	if err != nil {
+		return nil, wrapAdminTx(err, "archive organization")
+	}
+	events.AfterCommit(ctx, s.outbox, outboxID)
+	org.UpdatedAt = now
+	return s.adminResult(ctx, org, tenant.Status)
+}
+
 func (s *OrganizationService) Restore(ctx context.Context, orgID, actor uuid.UUID) (*AdminOrganization, error) {
 	org, _, err := s.loadOrgTenant(ctx, orgID)
 	if err != nil {
@@ -286,11 +322,16 @@ func (s *OrganizationService) adminResult(
 	if err != nil {
 		return nil, apperr.Wrap(err, apperr.CodeInternal, "count branches")
 	}
+	staffCount, err := s.orgs.CountActiveStaff(ctx, org.ID)
+	if err != nil {
+		return nil, apperr.Wrap(err, apperr.CodeInternal, "count staff")
+	}
 	dir, err := s.orgs.Directory(ctx, org.ID)
 	if err != nil {
 		return nil, apperr.Wrap(err, apperr.CodeInternal, "organization directory")
 	}
 	result := mapAdminOrganization(org, tenantStatus, branchCount, dir.CourtCount, dir.OwnerDisplayName, dir.PrimarySportNameEn, dir.PrimarySportNameVi)
+	result.StaffCount = staffCount
 	return &result, nil
 }
 

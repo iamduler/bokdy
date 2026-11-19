@@ -14,21 +14,16 @@ import {
   useUserDateTimePrefs,
 } from "@bokdy/ui";
 import {
-  CalendarCheck,
   IdCard,
   MapPin,
-  Receipt,
-  RotateCcw,
   Shield,
   SlidersHorizontal,
   UserRound,
-  Wallet,
 } from "lucide-react";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 
 import {
-  DataListStats,
   softContentMaxW,
   softDetailSectionGap,
 } from "@/components/data-list";
@@ -36,7 +31,6 @@ import { EntityDetailPanel } from "@/components/entity/detail-panel";
 import { SoftStatusChip } from "@/components/entity/soft-status-chip";
 import { useUserDetail } from "@/components/users/detail/user-detail-context";
 import { UserSecurityActions } from "@/components/users/detail/user-security-view";
-import { usePlayerSummary } from "@/hooks/use-admin-users";
 import { useProvinces, useWards } from "@/hooks/use-admin-units";
 import { useCountries } from "@/hooks/use-countries";
 import { useLocales } from "@/hooks/use-locales";
@@ -58,24 +52,6 @@ function optionLabel(
 ) {
   if (!value || !allowed.includes(value)) return "—";
   return label(value);
-}
-
-function formatSpendMinor(
-  minor: number | undefined,
-  currency: string | undefined,
-  locale: string,
-) {
-  if (minor == null) return "—";
-  const code = (currency || "VND").toUpperCase();
-  try {
-    return new Intl.NumberFormat(locale, {
-      style: "currency",
-      currency: code,
-      maximumFractionDigits: 0,
-    }).format(minor);
-  } catch {
-    return `${minor} ${code}`;
-  }
 }
 
 function VerificationChip({
@@ -113,10 +89,8 @@ export function UserOverviewView() {
   const tf = useTranslations("users.accountForm");
   const tu = useTranslations("users");
   const ts = useTranslations("users.security");
-  const locale = useLocale();
   const prefs = useUserDateTimePrefs();
-  const { user, audience, userId } = useUserDetail();
-  const summary = usePlayerSummary(audience === "players" ? userId : "");
+  const { user, audience } = useUserDetail();
   const locales = useLocales();
   const countries = useCountries();
   const provinces = useProvinces("current_v2");
@@ -207,20 +181,20 @@ export function UserOverviewView() {
     { label: t("addressLine"), value: shown(user.address_line) },
   ];
 
-  const spendCurrency =
-    summary.data?.currency_code || user.preferred_currency_code || undefined;
+  const isPlayer = audience === "players";
 
   return (
     <div
       className={cn(
-        "flex min-h-0 flex-1 flex-col overflow-auto soft-scrollbar p-4 md:p-6",
+        "flex min-h-0 flex-1 flex-col overflow-auto soft-scrollbar",
+        isPlayer ? "px-4 pt-4 pb-6 md:px-5" : "p-4 md:p-6",
         softDetailSectionGap,
       )}
     >
       <div
         className={cn(
           "mx-auto flex w-full flex-col",
-          softContentMaxW,
+          isPlayer ? undefined : softContentMaxW,
           softDetailSectionGap,
         )}
       >
@@ -280,41 +254,6 @@ export function UserOverviewView() {
           </EntityDetailPanel>
         ) : null}
 
-        {audience === "players" ? (
-          <DataListStats
-            isLoading={summary.isLoading}
-            items={[
-              {
-                key: "bookings",
-                label: t("bookings"),
-                value: summary.data?.booking_count ?? "—",
-                icon: <CalendarCheck className="size-4" aria-hidden />,
-                iconTone: "sky",
-              },
-              {
-                key: "transactions",
-                label: t("transactions"),
-                value: summary.data?.transaction_count ?? "—",
-                icon: <Receipt className="size-4" aria-hidden />,
-                iconTone: "amber",
-              },
-              {
-                key: "refunds",
-                label: t("refunds"),
-                value: summary.data?.refund_count ?? "—",
-                icon: <RotateCcw className="size-4" aria-hidden />,
-                iconTone: "rose",
-              },
-              {
-                key: "spend",
-                label: t("spend"),
-                value: formatSpendMinor(summary.data?.total_spend_minor, spendCurrency, locale),
-                icon: <Wallet className="size-4" aria-hidden />,
-                iconTone: "emerald",
-              },
-            ]}
-          />
-        ) : null}
       </div>
     </div>
   );

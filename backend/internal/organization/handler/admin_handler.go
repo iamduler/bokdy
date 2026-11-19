@@ -26,6 +26,7 @@ type adminOrgDTO struct {
 	CourtCount       int     `json:"court_count"`
 	OwnerDisplayName *string `json:"owner_display_name"`
 	PrimarySport     *string `json:"primary_sport"`
+	StaffCount       int     `json:"staff_count,omitempty"`
 }
 
 type adminDirectoryStatsDTO struct {
@@ -40,10 +41,12 @@ func (h *OrganizationHandler) RegisterAdminRoutes(admin *gin.RouterGroup) {
 	admin.GET("/health", h.AdminHealth)
 	admin.GET("/organizations", h.AdminList)
 	admin.GET("/organizations/stats", h.AdminDirectoryStats)
+	admin.POST("/organizations/archive", h.AdminArchiveMany)
 	admin.GET("/organizations/:id", h.AdminGet)
 	admin.POST("/organizations/:id/activate", h.AdminActivate)
 	admin.POST("/organizations/:id/suspend", h.AdminSuspend)
 	admin.POST("/organizations/:id/restore", h.AdminRestore)
+	admin.POST("/organizations/:id/archive", h.AdminArchive)
 	admin.POST("/kyc/:id/review", h.ReviewKYC)
 }
 
@@ -167,6 +170,42 @@ func (h *OrganizationHandler) AdminSuspend(c *gin.Context) {
 	httpx.OK(c, dto)
 }
 
+func (h *OrganizationHandler) AdminArchiveMany(c *gin.Context) {
+	uid, ok := requestctx.UserID(c.Request.Context())
+	if !ok {
+		httpx.Error(c, apperr.New(apperr.CodeUnauthorized, "unauthorized"))
+		return
+	}
+	ids, ok := httpx.ParseBulkIDs(c)
+	if !ok {
+		return
+	}
+	result, err := h.orgs.ArchiveMany(c.Request.Context(), uid, ids)
+	if err != nil {
+		httpx.Error(c, err)
+		return
+	}
+	httpx.OK(c, toBulkDTO(result))
+}
+
+func (h *OrganizationHandler) AdminArchive(c *gin.Context) {
+	uid, orgID, ok := adminUserAndOrg(c)
+	if !ok {
+		return
+	}
+	item, err := h.orgs.Archive(c.Request.Context(), orgID, uid)
+	if err != nil {
+		httpx.Error(c, err)
+		return
+	}
+	dto, err := h.toAdminOrgDTO(c, *item)
+	if err != nil {
+		httpx.Error(c, err)
+		return
+	}
+	httpx.OK(c, dto)
+}
+
 func (h *OrganizationHandler) AdminRestore(c *gin.Context) {
 	uid, orgID, ok := adminUserAndOrg(c)
 	if !ok {
@@ -262,6 +301,7 @@ func (h *OrganizationHandler) toAdminOrgDTO(c *gin.Context, row service.AdminOrg
 		orgDTO:       dto,
 		TenantStatus: string(row.TenantStatus),
 		BranchCount:  row.BranchCount,
+		StaffCount:   row.StaffCount,
 	}, row), nil
 }
 

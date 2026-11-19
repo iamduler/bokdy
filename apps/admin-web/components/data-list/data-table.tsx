@@ -96,6 +96,9 @@ type DataTableProps<TData> = {
   enableColumnResizing?: boolean;
   /** Optional mobile card list (shown below md). */
   mobileList?: ReactNode;
+  /** Sits on the left of the pagination row. */
+  footerLeading?: ReactNode;
+  enableRowSelection?: boolean | ((row: TData) => boolean);
 };
 
 /**
@@ -128,6 +131,8 @@ export function DataTable<TData>({
   className,
   enableColumnResizing = true,
   mobileList,
+  footerLeading,
+  enableRowSelection = true,
 }: DataTableProps<TData>) {
   const columnResizeMode: ColumnResizeMode = "onChange";
 
@@ -145,7 +150,10 @@ export function DataTable<TData>({
     manualSorting,
     rowCount: manualPagination ? rowCount : undefined,
     getRowId: (row) => getRowId(row),
-    enableRowSelection: true,
+    enableRowSelection:
+      typeof enableRowSelection === "function"
+        ? (row) => enableRowSelection(row.original)
+        : enableRowSelection,
     enableColumnResizing,
     columnResizeMode,
     defaultColumn: {
@@ -304,13 +312,17 @@ export function DataTable<TData>({
         onPreviousPage={() => table.previousPage()}
         onNextPage={() => table.nextPage()}
         labels={paginationLabels}
+        leading={footerLeading}
       />
     </div>
   );
 }
 
 /** Select-all / row checkbox column helper. */
-export function createSelectionColumn<TData>(): ColumnDef<TData, unknown> {
+export function createSelectionColumn<TData>(labels?: {
+  selectPage?: string;
+  selectRow?: string;
+}): ColumnDef<TData, unknown> {
   return {
     id: "select",
     size: 40,
@@ -328,17 +340,18 @@ export function createSelectionColumn<TData>(): ColumnDef<TData, unknown> {
               : false
         }
         onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
+        aria-label={labels?.selectPage ?? "Select page"}
       />
     ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
-        onClick={(e) => e.stopPropagation()}
-      />
-    ),
+    cell: ({ row }) =>
+      row.getCanSelect() ? (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label={labels?.selectRow ?? "Select row"}
+          onClick={(e) => e.stopPropagation()}
+        />
+      ) : null,
   };
 }
 

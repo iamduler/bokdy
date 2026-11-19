@@ -1,13 +1,15 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
   adminBranchDirectoryStats,
+  archiveAdminBranches,
   listAdminBranches,
   type AdminBranchListParams,
   type AdminBranchStatsParams,
 } from "@/lib/api/admin-branches";
+import { branchKeys } from "@/hooks/use-branches";
 
 export const adminBranchKeys = {
   all: ["admin", "branches"] as const,
@@ -26,5 +28,16 @@ export function useAdminBranchDirectoryStats(params: AdminBranchStatsParams) {
   return useQuery({
     queryKey: adminBranchKeys.stats(params),
     queryFn: () => adminBranchDirectoryStats(params),
+  });
+}
+
+export function useArchiveAdminBranches() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (ids: string[]) => archiveAdminBranches(ids),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: adminBranchKeys.all });
+      void queryClient.invalidateQueries({ queryKey: branchKeys.all });
+    },
   });
 }

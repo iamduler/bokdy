@@ -37,14 +37,15 @@ WHERE ($1::uuid IS NULL OR b.tenant_id = $1::uuid)
   AND ($2::uuid IS NULL OR c.user_id = $2::uuid)
   AND ($3::uuid IS NULL OR o.id = $3::uuid)
   AND ($4::uuid IS NULL OR b.branch_id = $4::uuid)
-  AND ($5::timestamptz IS NULL OR b.starts_at >= $5::timestamptz)
-  AND ($6::timestamptz IS NULL OR b.starts_at < $6::timestamptz)
+  AND ($5::uuid IS NULL OR b.court_id = $5::uuid)
+  AND ($6::timestamptz IS NULL OR b.starts_at >= $6::timestamptz)
+  AND ($7::timestamptz IS NULL OR b.starts_at < $7::timestamptz)
   AND (
-    $7::text = ''
-    OR lower(b.booking_no) LIKE '%' || lower($7::text) || '%'
-    OR lower(COALESCE(p.full_name, '')) LIKE '%' || lower($7::text) || '%'
-    OR lower(COALESCE(c.organization_name, '')) LIKE '%' || lower($7::text) || '%'
-    OR lower(COALESCE(email.value, '')) LIKE '%' || lower($7::text) || '%'
+    $8::text = ''
+    OR lower(b.booking_no) LIKE '%' || lower($8::text) || '%'
+    OR lower(COALESCE(p.full_name, '')) LIKE '%' || lower($8::text) || '%'
+    OR lower(COALESCE(c.organization_name, '')) LIKE '%' || lower($8::text) || '%'
+    OR lower(COALESCE(email.value, '')) LIKE '%' || lower($8::text) || '%'
   )
 `
 
@@ -53,6 +54,7 @@ type AdminBookingDirectoryStatsParams struct {
 	UserID         *uuid.UUID `json:"user_id"`
 	OrganizationID *uuid.UUID `json:"organization_id"`
 	BranchID       *uuid.UUID `json:"branch_id"`
+	CourtID        *uuid.UUID `json:"court_id"`
 	RangeStart     *time.Time `json:"range_start"`
 	RangeEnd       *time.Time `json:"range_end"`
 	Q              string     `json:"q"`
@@ -74,6 +76,7 @@ func (q *Queries) AdminBookingDirectoryStats(ctx context.Context, arg AdminBooki
 		arg.UserID,
 		arg.OrganizationID,
 		arg.BranchID,
+		arg.CourtID,
 		arg.RangeStart,
 		arg.RangeEnd,
 		arg.Q,
@@ -173,15 +176,16 @@ WHERE ($1::uuid IS NULL OR b.id = $1::uuid)
   AND ($3::uuid IS NULL OR c.user_id = $3::uuid)
   AND ($4::uuid IS NULL OR o.id = $4::uuid)
   AND ($5::uuid IS NULL OR b.branch_id = $5::uuid)
-  AND ($6::text IS NULL OR b.status = $6::booking.booking_status)
-  AND ($7::timestamptz IS NULL OR b.starts_at >= $7::timestamptz)
-  AND ($8::timestamptz IS NULL OR b.starts_at < $8::timestamptz)
+  AND ($6::uuid IS NULL OR b.court_id = $6::uuid)
+  AND ($7::text IS NULL OR b.status = $7::booking.booking_status)
+  AND ($8::timestamptz IS NULL OR b.starts_at >= $8::timestamptz)
+  AND ($9::timestamptz IS NULL OR b.starts_at < $9::timestamptz)
   AND (
-    $9::text = ''
-    OR lower(b.booking_no) LIKE '%' || lower($9::text) || '%'
-    OR lower(COALESCE(p.full_name, '')) LIKE '%' || lower($9::text) || '%'
-    OR lower(COALESCE(c.organization_name, '')) LIKE '%' || lower($9::text) || '%'
-    OR lower(COALESCE(email.value, '')) LIKE '%' || lower($9::text) || '%'
+    $10::text = ''
+    OR lower(b.booking_no) LIKE '%' || lower($10::text) || '%'
+    OR lower(COALESCE(p.full_name, '')) LIKE '%' || lower($10::text) || '%'
+    OR lower(COALESCE(c.organization_name, '')) LIKE '%' || lower($10::text) || '%'
+    OR lower(COALESCE(email.value, '')) LIKE '%' || lower($10::text) || '%'
   )
 `
 
@@ -191,6 +195,7 @@ type CountAdminBookingsParams struct {
 	UserID         *uuid.UUID `json:"user_id"`
 	OrganizationID *uuid.UUID `json:"organization_id"`
 	BranchID       *uuid.UUID `json:"branch_id"`
+	CourtID        *uuid.UUID `json:"court_id"`
 	StatusFilter   *string    `json:"status_filter"`
 	RangeStart     *time.Time `json:"range_start"`
 	RangeEnd       *time.Time `json:"range_end"`
@@ -204,6 +209,7 @@ func (q *Queries) CountAdminBookings(ctx context.Context, arg CountAdminBookings
 		arg.UserID,
 		arg.OrganizationID,
 		arg.BranchID,
+		arg.CourtID,
 		arg.StatusFilter,
 		arg.RangeStart,
 		arg.RangeEnd,
@@ -512,28 +518,29 @@ WHERE ($1::uuid IS NULL OR b.id = $1::uuid)
   AND ($3::uuid IS NULL OR c.user_id = $3::uuid)
   AND ($4::uuid IS NULL OR o.id = $4::uuid)
   AND ($5::uuid IS NULL OR b.branch_id = $5::uuid)
-  AND ($6::text IS NULL OR b.status = $6::booking.booking_status)
-  AND ($7::timestamptz IS NULL OR b.starts_at >= $7::timestamptz)
-  AND ($8::timestamptz IS NULL OR b.starts_at < $8::timestamptz)
+  AND ($6::uuid IS NULL OR b.court_id = $6::uuid)
+  AND ($7::text IS NULL OR b.status = $7::booking.booking_status)
+  AND ($8::timestamptz IS NULL OR b.starts_at >= $8::timestamptz)
+  AND ($9::timestamptz IS NULL OR b.starts_at < $9::timestamptz)
   AND (
-    $9::text = ''
-    OR lower(b.booking_no) LIKE '%' || lower($9::text) || '%'
-    OR lower(COALESCE(p.full_name, '')) LIKE '%' || lower($9::text) || '%'
-    OR lower(COALESCE(c.organization_name, '')) LIKE '%' || lower($9::text) || '%'
-    OR lower(COALESCE(email.value, '')) LIKE '%' || lower($9::text) || '%'
+    $10::text = ''
+    OR lower(b.booking_no) LIKE '%' || lower($10::text) || '%'
+    OR lower(COALESCE(p.full_name, '')) LIKE '%' || lower($10::text) || '%'
+    OR lower(COALESCE(c.organization_name, '')) LIKE '%' || lower($10::text) || '%'
+    OR lower(COALESCE(email.value, '')) LIKE '%' || lower($10::text) || '%'
   )
 ORDER BY
-  CASE WHEN $10::text = 'starts_at' AND NOT $11::bool THEN b.starts_at END ASC,
-  CASE WHEN $10::text = 'starts_at' AND $11::bool THEN b.starts_at END DESC,
-  CASE WHEN $10::text = 'status' AND NOT $11::bool THEN b.status::text END ASC,
-  CASE WHEN $10::text = 'status' AND $11::bool THEN b.status::text END DESC,
-  CASE WHEN $10::text = 'created_at' AND NOT $11::bool THEN b.created_at END ASC,
-  CASE WHEN $10::text = 'created_at' AND $11::bool THEN b.created_at END DESC,
-  CASE WHEN $10::text = 'total_amount' AND NOT $11::bool THEN b.total_amount END ASC,
-  CASE WHEN $10::text = 'total_amount' AND $11::bool THEN b.total_amount END DESC,
+  CASE WHEN $11::text = 'starts_at' AND NOT $12::bool THEN b.starts_at END ASC,
+  CASE WHEN $11::text = 'starts_at' AND $12::bool THEN b.starts_at END DESC,
+  CASE WHEN $11::text = 'status' AND NOT $12::bool THEN b.status::text END ASC,
+  CASE WHEN $11::text = 'status' AND $12::bool THEN b.status::text END DESC,
+  CASE WHEN $11::text = 'created_at' AND NOT $12::bool THEN b.created_at END ASC,
+  CASE WHEN $11::text = 'created_at' AND $12::bool THEN b.created_at END DESC,
+  CASE WHEN $11::text = 'total_amount' AND NOT $12::bool THEN b.total_amount END ASC,
+  CASE WHEN $11::text = 'total_amount' AND $12::bool THEN b.total_amount END DESC,
   b.id DESC
-OFFSET $12
-LIMIT $13
+OFFSET $13
+LIMIT $14
 `
 
 type ListAdminBookingsParams struct {
@@ -542,6 +549,7 @@ type ListAdminBookingsParams struct {
 	UserID         *uuid.UUID `json:"user_id"`
 	OrganizationID *uuid.UUID `json:"organization_id"`
 	BranchID       *uuid.UUID `json:"branch_id"`
+	CourtID        *uuid.UUID `json:"court_id"`
 	StatusFilter   *string    `json:"status_filter"`
 	RangeStart     *time.Time `json:"range_start"`
 	RangeEnd       *time.Time `json:"range_end"`
@@ -598,6 +606,7 @@ func (q *Queries) ListAdminBookings(ctx context.Context, arg ListAdminBookingsPa
 		arg.UserID,
 		arg.OrganizationID,
 		arg.BranchID,
+		arg.CourtID,
 		arg.StatusFilter,
 		arg.RangeStart,
 		arg.RangeEnd,

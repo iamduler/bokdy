@@ -1,6 +1,7 @@
 "use client";
 
 import { Button, cn, formatUserDateTime, Spinner, useUserDateTimePrefs } from "@bokdy/ui";
+import { Monitor } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { softDetailSectionGap } from "@/components/data-list";
@@ -41,15 +42,14 @@ export function UserSessionsView({ embedded = false }: { embedded?: boolean }) {
 
   const shell = embedded
     ? cn("flex flex-col", softDetailSectionGap)
-    : cn(
-        "flex min-h-0 flex-1 flex-col overflow-auto soft-scrollbar p-4 md:p-6",
-        softDetailSectionGap,
-      );
+    : cn("flex min-h-0 flex-1 flex-col p-4 md:p-6", softDetailSectionGap);
 
   return (
     <div className={shell}>
       <EntityDetailPanel
         title={isLoading ? undefined : t("count", { count: sessions.length })}
+        icon={<Monitor className="size-4" aria-hidden />}
+        tone="sky"
         actions={
           !isLoading && !isError ? (
             <Button

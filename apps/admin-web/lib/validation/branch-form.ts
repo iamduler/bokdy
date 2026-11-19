@@ -26,6 +26,7 @@ const formFields = z.object({
   latitude: z.string().trim(),
   longitude: z.string().trim(),
   status: z.string(),
+  amenity_ids: z.array(z.string()),
 });
 
 export type BranchFormValues = z.infer<typeof formFields>;

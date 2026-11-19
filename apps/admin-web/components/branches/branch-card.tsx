@@ -1,16 +1,18 @@
 "use client";
 
-import { Button, cn } from "@bokdy/ui";
-import { LayoutGrid, MapPin, Pencil } from "lucide-react";
+import { Checkbox, cn } from "@bokdy/ui";
+import { LayoutGrid, MapPin } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { EntityAvatar } from "@/components/entity/avatar";
+import { RowEditButton } from "@/components/entity/row-edit-button";
 import { SoftIconChip } from "@/components/entity/soft-icon-chip";
 import { SoftStatusChip } from "@/components/entity/soft-status-chip";
 import { Link } from "@/i18n/navigation";
 import { currentBranchAddress, type Branch } from "@/lib/api/branches";
 import type { Sport } from "@/lib/api/sports";
 
+import { BranchArchiveButton } from "./branch-archive-button";
 import { BranchSportsChips } from "./branch-sports-chips";
 import { BRANCH_STATUS_TONE } from "./branch-status";
 
@@ -19,9 +21,20 @@ type BranchCardProps = {
   orgId: string;
   sports: Sport[];
   onEdit: (branch: Branch) => void;
+  selected?: boolean;
+  selectLabel?: string;
+  onSelectedChange?: (selected: boolean) => void;
 };
 
-export function BranchCard({ branch, orgId, sports, onEdit }: BranchCardProps) {
+export function BranchCard({
+  branch,
+  orgId,
+  sports,
+  onEdit,
+  selected = false,
+  selectLabel,
+  onSelectedChange,
+}: BranchCardProps) {
   const t = useTranslations("organization.detailBranches");
   const tb = useTranslations("organization.branch");
   const address = currentBranchAddress(branch);
@@ -43,6 +56,14 @@ export function BranchCard({ branch, orgId, sports, onEdit }: BranchCardProps) {
         "hover:ring-2 hover:ring-sky-500/15",
       )}
     >
+      {onSelectedChange ? (
+        <Checkbox
+          checked={selected}
+          aria-label={selectLabel}
+          className="absolute top-3 left-3 z-20 bg-card"
+          onCheckedChange={(value) => onSelectedChange(value === true)}
+        />
+      ) : null}
       <Link
         href={detailHref}
         className="block outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
@@ -138,16 +159,15 @@ export function BranchCard({ branch, orgId, sports, onEdit }: BranchCardProps) {
         <div className="pb-4" />
       )}
 
-      <Button
-        type="button"
-        variant="outline"
-        size="icon"
-        className="absolute top-20 right-3 z-10 size-9 shrink-0 rounded-full border-border/60 bg-card shadow-none hover:bg-muted/40"
-        aria-label={tb("editProfile")}
-        onClick={() => onEdit(branch)}
-      >
-        <Pencil className="size-3.5" />
-      </Button>
+      <div className="absolute top-20 right-3 z-10 flex items-center gap-1">
+        <RowEditButton label={tb("editProfile")} onClick={() => onEdit(branch)} />
+        <BranchArchiveButton
+          organizationId={orgId}
+          branchId={branch.id}
+          name={branch.name}
+          status={branch.status}
+        />
+      </div>
     </div>
   );
 }

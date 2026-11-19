@@ -32,6 +32,7 @@ export function OrganizationRestoreDialog({ orgId, status }: OrganizationRestore
     <div className="space-y-2">
       <Button
         type="button"
+        size="sm"
         onClick={() => {
           setSuccess(false);
           setError(null);

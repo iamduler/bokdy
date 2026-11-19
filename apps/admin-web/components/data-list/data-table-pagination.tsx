@@ -1,6 +1,7 @@
 "use client";
 
 import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious, cn } from "@bokdy/ui";
+import type { ReactNode } from "react";
 
 type DataTablePaginationSummary = {
   from: number;
@@ -24,6 +25,7 @@ type DataTablePaginationProps = {
     next: string;
     summary: (params: DataTablePaginationSummary) => string;
   };
+  leading?: ReactNode;
   className?: string;
 };
 
@@ -37,6 +39,7 @@ export function DataTablePagination({
   onPreviousPage,
   onNextPage,
   labels,
+  leading,
   className,
 }: DataTablePaginationProps) {
   if (totalRows === 0) return null;
@@ -59,6 +62,8 @@ export function DataTablePagination({
         className,
       )}
     >
+      <div className="flex min-w-0 shrink-0 items-center">{leading}</div>
+      <div className="flex min-w-0 items-center justify-end gap-3">
       <p className="min-w-0 truncate text-sm text-muted-foreground">{summary}</p>
       <Pagination className="mx-0 w-auto justify-end">
         <PaginationContent>
@@ -89,6 +94,7 @@ export function DataTablePagination({
           </PaginationItem>
         </PaginationContent>
       </Pagination>
+      </div>
     </div>
   );
 }

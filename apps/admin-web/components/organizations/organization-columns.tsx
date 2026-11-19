@@ -4,17 +4,24 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { useTranslations } from "next-intl";
 import { useMemo } from "react";
 
+import { createSelectionColumn } from "@/components/data-list";
+import { RowEditButton } from "@/components/entity/row-edit-button";
 import { DirectoryIdentityCell } from "@/components/data-list/directory-identity-cell";
 import { entityFileSrc } from "@/components/entity/avatar";
 import { EntityUnavailableBadge } from "@/components/entity/unavailable";
+import { OrganizationArchiveButton } from "@/components/organizations/organization-archive-button";
 import { OrganizationStatusBadge } from "@/components/organizations/organization-status-badge";
 import type { AdminOrganization } from "@/lib/api/admin";
 
-export function useOrganizationColumns() {
+export function useOrganizationColumns(onEdit: (org: AdminOrganization) => void) {
   const t = useTranslations("organization");
 
   return useMemo<ColumnDef<AdminOrganization, unknown>[]>(
     () => [
+      createSelectionColumn<AdminOrganization>({
+        selectPage: t("selectPage"),
+        selectRow: t("selectRow"),
+      }),
       {
         id: "name",
         accessorKey: "name",
@@ -105,7 +112,27 @@ export function useOrganizationColumns() {
           />
         ),
       },
+      {
+        id: "actions",
+        header: t("columns.actions"),
+        enableSorting: false,
+        size: 96,
+        cell: ({ row }) =>
+          row.original.status === "archived" ? null : (
+            <div className="flex items-center justify-end gap-1">
+              <RowEditButton
+                label={t("detailOverview.editProfile")}
+                onClick={() => onEdit(row.original)}
+              />
+              <OrganizationArchiveButton
+                orgId={row.original.id}
+                name={row.original.name}
+                status={row.original.status}
+              />
+            </div>
+          ),
+      },
     ],
-    [t],
+    [onEdit, t],
   );
 }

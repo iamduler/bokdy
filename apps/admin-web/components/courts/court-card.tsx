@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@bokdy/ui";
+import { Checkbox, cn } from "@bokdy/ui";
 import { Home, Sun } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import type { ReactNode } from "react";
@@ -18,6 +18,10 @@ type CourtCardProps = {
   branchName?: string;
   /** Branch meta is for collections that span more than one branch. */
   showBranch?: boolean;
+  selected?: boolean;
+  selectLabel?: string;
+  onSelectedChange?: (selected: boolean) => void;
+  actions?: ReactNode;
 };
 
 function MetaCell({
@@ -42,7 +46,15 @@ function MetaCell({
   );
 }
 
-export function CourtCard({ court, branchName, showBranch = false }: CourtCardProps) {
+export function CourtCard({
+  court,
+  branchName,
+  showBranch = false,
+  selected = false,
+  selectLabel,
+  onSelectedChange,
+  actions,
+}: CourtCardProps) {
   const t = useTranslations("organization.court");
   const locale = useLocale();
   const { data: sports = [] } = useSports();
@@ -52,10 +64,30 @@ export function CourtCard({ court, branchName, showBranch = false }: CourtCardPr
   const detailHref = `/courts/${court.id}`;
 
   return (
+    <div className="relative">
+      {onSelectedChange ? (
+        <Checkbox
+          checked={selected}
+          aria-label={selectLabel}
+          className="absolute top-4 left-4 z-10 bg-card"
+          onCheckedChange={(value) => onSelectedChange(value === true)}
+          onClick={(event) => event.stopPropagation()}
+        />
+      ) : null}
+      {actions ? (
+        <div
+          className="absolute top-3 right-3 z-10 flex items-center gap-1"
+          onClick={(event) => event.stopPropagation()}
+        >
+          {actions}
+        </div>
+      ) : null}
     <Link
       href={detailHref}
       className={cn(
         "soft-elevated group block overflow-hidden rounded-2xl border-0 p-4 outline-none",
+        onSelectedChange && "pl-10",
+        actions && "pr-24",
         "transition-[box-shadow,ring] duration-200",
         "hover:ring-2 hover:ring-sky-500/15 focus-visible:ring-2 focus-visible:ring-primary/30",
       )}
@@ -92,5 +124,6 @@ export function CourtCard({ court, branchName, showBranch = false }: CourtCardPr
         ) : null}
       </div>
     </Link>
+    </div>
   );
 }

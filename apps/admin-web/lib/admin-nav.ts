@@ -27,6 +27,7 @@ export type AdminNavItemId =
   | "courts"
   | "bookings"
   | "holidays"
+  | "settings"
   | "usersPlayers"
   | "usersOwners"
   | "usersAdmins"
@@ -111,11 +112,11 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
         icon: "calendarCheck",
       },
       {
-        id: "holidays",
-        labelKey: "holidays",
-        href: "/holidays",
+        id: "settings",
+        labelKey: "settings",
+        href: "/settings",
         status: "ready",
-        icon: "calendar",
+        icon: "settings",
       },
       { id: "revenue", labelKey: "revenue", status: "missing", icon: "barChart3" },
       { id: "support", labelKey: "support", status: "missing", icon: "ticket" },

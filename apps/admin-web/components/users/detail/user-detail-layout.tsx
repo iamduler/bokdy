@@ -5,9 +5,11 @@ import { useParams } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { EntityDetailError, EntityDetailLoading } from "@/components/entity/detail-state";
+import { EntityDetailRail } from "@/components/entity/detail-rail";
 import { UserDetailProvider } from "@/components/users/detail/user-detail-context";
 import { UserDetailHeader } from "@/components/users/detail/user-detail-header";
 import { UserDetailSubnav } from "@/components/users/detail/user-detail-subnav";
+import { UserDetailTabs } from "@/components/users/detail/user-detail-tabs";
 import { useAdminUserDetail } from "@/hooks/use-admin-users";
 import { ApiError } from "@/lib/api/errors";
 import type { UserAudience } from "@/lib/api/admin-users";
@@ -57,10 +59,11 @@ export function UserDetailLayout({
 
   return (
     <UserDetailProvider user={user} userId={id} audience={audience}>
-      <div className="page-canvas flex min-h-full flex-1 flex-col overflow-hidden">
-        <UserDetailSubnav />
-        <UserDetailHeader />
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">{children}</div>
+      <div className="page-canvas flex h-full min-h-0 flex-col overflow-hidden">
+        <EntityDetailRail subnav={<UserDetailSubnav />} tabs={<UserDetailTabs />}>
+          <UserDetailHeader />
+          {children}
+        </EntityDetailRail>
       </div>
     </UserDetailProvider>
   );

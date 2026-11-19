@@ -8,6 +8,7 @@ import {
   listOrgInvitations,
   listOrgStaff,
   removeOrgStaff,
+  removeOrgStaffMany,
   removeOrgStaffRole,
   restoreOrgStaff,
   revokeOrgInvitation,
@@ -82,6 +83,16 @@ export function useRestoreOrgStaff(organizationId: string) {
   return useMutation({
     mutationFn: (staffId: string) => restoreOrgStaff(organizationId, staffId),
     onSuccess: invalidate,
+  });
+}
+
+export function useRemoveOrgStaffMany(organizationId: string) {
+  const invalidate = useInvalidateOrgStaff(organizationId);
+  return useMutation({
+    mutationFn: (ids: string[]) => removeOrgStaffMany(organizationId, ids),
+    onSuccess: (result) => {
+      if (result.succeeded.length > 0) invalidate();
+    },
   });
 }
 

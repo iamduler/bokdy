@@ -1,6 +1,7 @@
 import type { components } from "@bokdy/sdk/schema";
 
 import { apiGo } from "@/lib/api/client";
+import type { BulkActionResult } from "@/lib/api/branches";
 
 export type StaffMember = components["schemas"]["StaffMember"];
 export type StaffRole = components["schemas"]["StaffRole"];
@@ -63,6 +64,17 @@ export function restoreOrgStaff(organizationId: string, staffId: string) {
     method: "POST",
     headers: orgHeaders(organizationId),
   });
+}
+
+export function removeOrgStaffMany(organizationId: string, ids: string[]) {
+  return apiGo<BulkActionResult>(
+    `organizations/${encodeURIComponent(organizationId)}/staff/remove`,
+    {
+      method: "POST",
+      headers: orgHeaders(organizationId),
+      body: JSON.stringify({ ids }),
+    },
+  );
 }
 
 export function removeOrgStaff(organizationId: string, staffId: string) {

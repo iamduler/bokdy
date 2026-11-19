@@ -11,6 +11,7 @@ import (
 	"bokdy/internal/platform/httpx"
 	"bokdy/internal/platform/i18n"
 	"bokdy/internal/platform/listpage"
+	"bokdy/internal/platform/requestctx"
 
 	"github.com/gin-gonic/gin"
 )
@@ -43,6 +44,25 @@ type adminBranchStatsDTO struct {
 func (h *BranchHandler) RegisterAdminRoutes(admin *gin.RouterGroup) {
 	admin.GET("/branches", h.AdminList)
 	admin.GET("/branches/stats", h.AdminDirectoryStats)
+	admin.POST("/branches/archive", h.AdminArchiveMany)
+}
+
+func (h *BranchHandler) AdminArchiveMany(c *gin.Context) {
+	uid, ok := requestctx.UserID(c.Request.Context())
+	if !ok {
+		httpx.Error(c, apperr.New(apperr.CodeUnauthorized, "unauthorized"))
+		return
+	}
+	ids, ok := httpx.ParseBulkIDs(c)
+	if !ok {
+		return
+	}
+	result, err := h.branches.ArchiveManyAdmin(c.Request.Context(), uid, ids)
+	if err != nil {
+		httpx.Error(c, err)
+		return
+	}
+	httpx.OK(c, toBulkDTO(result))
 }
 
 func (h *BranchHandler) AdminList(c *gin.Context) {

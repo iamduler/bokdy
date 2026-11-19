@@ -86,6 +86,22 @@ export function archiveBranch(organizationId: string, id: string) {
   });
 }
 
+export type BulkActionResult = {
+  succeeded: string[];
+  failed: { id: string; code: string }[];
+};
+
+export function archiveBranches(organizationId: string, ids: string[]) {
+  return apiGo<BulkActionResult>(
+    `organizations/${encodeURIComponent(organizationId)}/branches/archive`,
+    {
+      method: "POST",
+      headers: orgHeaders(organizationId),
+      body: JSON.stringify({ ids }),
+    },
+  );
+}
+
 export function currentBranchAddress(branch: Branch): BranchAddress | undefined {
   return branch.addresses?.find((address) => address.division_scheme === "current_v2");
 }

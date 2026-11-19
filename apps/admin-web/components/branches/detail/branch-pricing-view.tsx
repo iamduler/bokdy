@@ -21,7 +21,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 
 import { sportLabel } from "@/components/branches/branch-sports-chips";
-import { DataListEmpty, DataListStats, softDirectoryPrimaryBtn } from "@/components/data-list";
+import { DataListEmpty, DataListStats } from "@/components/data-list";
 import { EntityDetailPanel } from "@/components/entity/detail-panel";
 import { SoftStatusChip } from "@/components/entity/soft-status-chip";
 import { PRICING_STATUS_TONE, pricingStatusKey } from "@/components/pricing-profiles/pricing-status";
@@ -110,12 +110,17 @@ export function BranchPricingView() {
 
   return (
     <BranchTabBody>
+      <DataListStats
+        items={stats}
+        isLoading={profiles.isLoading}
+        className="grid-cols-3 md:grid-cols-3"
+      />
       <EntityDetailPanel
         title={t("title")}
         icon={<Wallet className="size-4" aria-hidden />}
         tone="sky"
         actions={
-          <Button asChild size="sm" className={softDirectoryPrimaryBtn}>
+          <Button asChild size="sm">
             <Link href={`/branches/${branchId}/pricing/new`}>
               <Plus className="size-3.5" aria-hidden />
               {t("addList")}
@@ -137,7 +142,6 @@ export function BranchPricingView() {
           <DataListEmpty title={t("emptySports")} className="py-10" />
         ) : (
           <div className="space-y-4">
-            <DataListStats items={stats} className="grid-cols-3 md:grid-cols-3" />
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div className="min-w-0 overflow-x-auto soft-scrollbar">
                 <ToggleGroup
