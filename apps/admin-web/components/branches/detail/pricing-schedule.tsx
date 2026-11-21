@@ -46,12 +46,77 @@ export function PricingWindowCard({
   const { control } = useFormContext<BranchPricingFormValues>();
 
   return (
-    <div className="grid items-start gap-2 sm:grid-cols-[1.4fr_0.7fr_0.7fr_0.9fr_auto]">
+    <div className="flex flex-col gap-3 md:grid md:grid-cols-[minmax(0,0.7fr)_minmax(0,0.7fr)_minmax(0,1.4fr)_minmax(0,0.9fr)_auto] md:items-start md:gap-2">
+      <div className="flex items-end gap-2 md:contents">
+      <div className="grid min-w-0 flex-1 grid-cols-2 items-end gap-2 md:contents">
+      <Controller
+        control={control}
+        name={windowPath(base, "starts_at")}
+        render={({ field, fieldState }) => (
+          <div className="min-w-0 space-y-1.5 md:col-start-1 md:row-start-1">
+            <FieldLabel htmlFor={field.name} required>
+              {t("startsAt")}
+            </FieldLabel>
+            <TimePicker
+              id={field.name}
+              value={typeof field.value === "string" ? field.value : ""}
+              onChange={field.onChange}
+              onBlur={field.onBlur}
+              ref={field.ref}
+              placeholder={tc("pickTime")}
+              hourLabel={tc("hour")}
+              minuteLabel={tc("minute")}
+              aria-label={t("startsAt")}
+              aria-invalid={fieldState.invalid || undefined}
+              className="justify-center px-2 [&_svg]:hidden"
+            />
+            <FieldError>{fieldState.error?.message}</FieldError>
+          </div>
+        )}
+      />
+      <Controller
+        control={control}
+        name={windowPath(base, "ends_at")}
+        render={({ field, fieldState }) => (
+          <div className="min-w-0 space-y-1.5 md:col-start-2 md:row-start-1">
+            <FieldLabel htmlFor={field.name} required>
+              {t("endsAt")}
+            </FieldLabel>
+            <TimePicker
+              id={field.name}
+              value={typeof field.value === "string" ? field.value : ""}
+              onChange={field.onChange}
+              onBlur={field.onBlur}
+              ref={field.ref}
+              placeholder={tc("pickTime")}
+              hourLabel={tc("hour")}
+              minuteLabel={tc("minute")}
+              aria-label={t("endsAt")}
+              aria-invalid={fieldState.invalid || undefined}
+              className="justify-center px-2 [&_svg]:hidden"
+            />
+            <FieldError>{fieldState.error?.message}</FieldError>
+          </div>
+        )}
+      />
+      </div>
+      <Button
+        type="button"
+        size="icon"
+        variant="ghost"
+        className="shrink-0 md:col-start-5 md:row-start-1 md:mt-7"
+        aria-label={t("removeWindow")}
+        onClick={onRemove}
+      >
+        <Trash2 className="size-4" aria-hidden />
+      </Button>
+      </div>
+      <div className="grid grid-cols-2 items-end gap-2 md:contents">
       <Controller
         control={control}
         name={windowPath(base, "name")}
         render={({ field, fieldState }) => (
-          <div className="space-y-1.5">
+          <div className="min-w-0 space-y-1.5 md:col-start-3 md:row-start-1">
             <FieldLabel htmlFor={field.name}>{t("windowName")}</FieldLabel>
             <Input
               id={field.name}
@@ -67,57 +132,9 @@ export function PricingWindowCard({
       />
       <Controller
         control={control}
-        name={windowPath(base, "starts_at")}
-        render={({ field, fieldState }) => (
-          <div className="space-y-1.5">
-            <FieldLabel htmlFor={field.name} required>
-              {t("startsAt")}
-            </FieldLabel>
-            <TimePicker
-              id={field.name}
-              value={typeof field.value === "string" ? field.value : ""}
-              onChange={field.onChange}
-              onBlur={field.onBlur}
-              ref={field.ref}
-              placeholder={tc("pickTime")}
-              hourLabel={tc("hour")}
-              minuteLabel={tc("minute")}
-              aria-label={t("startsAt")}
-              aria-invalid={fieldState.invalid || undefined}
-            />
-            <FieldError>{fieldState.error?.message}</FieldError>
-          </div>
-        )}
-      />
-      <Controller
-        control={control}
-        name={windowPath(base, "ends_at")}
-        render={({ field, fieldState }) => (
-          <div className="space-y-1.5">
-            <FieldLabel htmlFor={field.name} required>
-              {t("endsAt")}
-            </FieldLabel>
-            <TimePicker
-              id={field.name}
-              value={typeof field.value === "string" ? field.value : ""}
-              onChange={field.onChange}
-              onBlur={field.onBlur}
-              ref={field.ref}
-              placeholder={tc("pickTime")}
-              hourLabel={tc("hour")}
-              minuteLabel={tc("minute")}
-              aria-label={t("endsAt")}
-              aria-invalid={fieldState.invalid || undefined}
-            />
-            <FieldError>{fieldState.error?.message}</FieldError>
-          </div>
-        )}
-      />
-      <Controller
-        control={control}
         name={windowPath(base, "amount")}
         render={({ field, fieldState }) => (
-          <div className="space-y-1.5">
+          <div className="min-w-0 space-y-1.5 md:col-start-4 md:row-start-1">
             <FieldLabel htmlFor={field.name} required>
               {t("pricePerSlot")}
             </FieldLabel>
@@ -136,9 +153,7 @@ export function PricingWindowCard({
           </div>
         )}
       />
-      <Button type="button" size="icon" variant="ghost" className="mt-7" aria-label={t("removeWindow")} onClick={onRemove}>
-        <Trash2 className="size-4" aria-hidden />
-      </Button>
+      </div>
     </div>
   );
 }
@@ -161,7 +176,7 @@ export function PricingSchedule() {
       {groups.length === 0 ? <p className="text-sm text-muted-foreground">{t("scheduleEmpty")}</p> : null}
       {groups.map((group, index) => (
         <section key={index} className="space-y-3 rounded-xl border border-border/70 p-3">
-          <div className="flex flex-wrap items-end gap-x-4 gap-y-2">
+          <div className="flex items-end gap-2">
             <span className="mb-1.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">
               {index + 1}
             </span>
@@ -169,7 +184,7 @@ export function PricingSchedule() {
               control={control}
               name={`day_groups.${index}.name`}
               render={({ field, fieldState }) => (
-                <div className="w-full max-w-xs space-y-1.5">
+                <div className="min-w-0 flex-1 space-y-1.5">
                   <FieldLabel htmlFor={field.name}>{t("groupName")}</FieldLabel>
                   <Input
                     id={field.name}
@@ -187,47 +202,52 @@ export function PricingSchedule() {
               type="button"
               size="icon"
               variant="ghost"
-              className="mb-0.5"
+              className="mb-0.5 shrink-0"
               aria-label={t("removeGroup")}
               onClick={() => commit(getValues("day_groups").filter((_, i) => i !== index))}
             >
               <Trash2 className="size-4" aria-hidden />
             </Button>
-            <Controller
-              control={control}
-              name={`day_groups.${index}.weekdays`}
-              render={({ field, fieldState }) => (
-                <div className="min-w-0 space-y-1.5 pb-1.5">
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <FieldLabel required className="mr-1 text-xs font-normal text-muted-foreground">
-                      {t("daysApply")}
-                    </FieldLabel>
+          </div>
+          <Controller
+            control={control}
+            name={`day_groups.${index}.weekdays`}
+            render={({ field, fieldState }) => (
+              <div className="min-w-0 space-y-1.5">
+                <div className="flex min-w-0 items-center gap-1.5">
+                  <FieldLabel required className="mr-1 shrink-0 text-xs font-normal text-muted-foreground">
+                    {t("daysApply")}
+                  </FieldLabel>
+                  <div className="min-w-0 flex-1 overflow-x-auto soft-scrollbar">
                     <ToggleGroup
                       type="multiple"
                       value={field.value.map(String)}
                       onValueChange={(next) => field.onChange(next.map((value) => Number(value)))}
-                      className="gap-1.5"
+                      className="inline-flex w-max flex-nowrap gap-1.5"
                     >
                       {WEEKDAYS.map((day) => (
                         <ToggleGroupItem
                           key={day}
                           value={String(day)}
-                          className="h-auto rounded-md border px-2 py-1 text-xs font-medium data-[state=off]:border-border data-[state=off]:bg-background data-[state=off]:text-muted-foreground data-[state=on]:border-primary data-[state=on]:bg-primary/10 data-[state=on]:text-primary"
+                          className="h-auto shrink-0 rounded-md border px-2 py-1 text-xs font-medium whitespace-nowrap data-[state=off]:border-border data-[state=off]:bg-background data-[state=off]:text-muted-foreground data-[state=on]:border-primary data-[state=on]:bg-primary/10 data-[state=on]:text-primary"
                         >
                           {tw(String(day))}
                         </ToggleGroupItem>
                       ))}
                     </ToggleGroup>
                   </div>
-                  <FieldError>{fieldState.error?.message}</FieldError>
                 </div>
-              )}
-            />
-          </div>
-          <div className="space-y-2">
+                <FieldError>{fieldState.error?.message}</FieldError>
+              </div>
+            )}
+          />
+          <div>
             {group.windows.map((_, windowIndex) => (
-              <PricingWindowCard
+              <div
                 key={windowIndex}
+                className={windowIndex > 0 ? "mt-3 border-t border-border/70 pt-3 md:mt-2 md:border-0 md:pt-0" : undefined}
+              >
+              <PricingWindowCard
                 base={`day_groups.${index}.windows.${windowIndex}`}
                 onRemove={() => {
                   const current = getValues("day_groups");
@@ -240,6 +260,7 @@ export function PricingSchedule() {
                   );
                 }}
               />
+              </div>
             ))}
           </div>
           <Button

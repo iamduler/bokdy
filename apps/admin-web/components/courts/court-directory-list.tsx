@@ -10,7 +10,7 @@ import { useCourtDirectoryColumns } from "@/components/courts/court-directory-co
 import { COURT_STATUS_TONE } from "@/components/courts/court-status";
 import { DATA_LIST_PAGE_SIZE, DataTable } from "@/components/data-list";
 import { BulkDeleteBar } from "@/components/entity/bulk-delete-bar";
-import { EntityAvatar, entityFileSrc } from "@/components/entity/avatar";
+import { EntityAvatar } from "@/components/entity/avatar";
 import { RowEditButton } from "@/components/entity/row-edit-button";
 import { SoftStatusChip } from "@/components/entity/soft-status-chip";
 import { useArchiveAdminCourts } from "@/hooks/use-admin-courts";
@@ -143,16 +143,11 @@ function CourtCard({
           <Link href={`/courts/${court.id}`} className="flex min-w-0 flex-1 items-start gap-3">
             <EntityAvatar name={court.name} size="sm" />
             <div className="min-w-0 flex-1">
-              <p className="font-semibold text-foreground">{court.name}</p>
-              <p className="text-xs text-muted-foreground">{court.code}</p>
-              <div className="flex min-w-0 items-center gap-2">
-                <EntityAvatar
-                  name={court.branch_name}
-                  size="sm"
-                  src={entityFileSrc(court.branch_logo_file_id)}
-                />
-                <span className="truncate text-xs text-muted-foreground">{court.branch_name}</span>
-              </div>
+              <p className="truncate font-semibold text-foreground">{court.name}</p>
+              <p className="truncate text-xs text-muted-foreground">{court.code}</p>
+              {court.branch_name ? (
+                <p className="truncate text-xs text-muted-foreground">{court.branch_name}</p>
+              ) : null}
             </div>
           </Link>
           {court.status === "archived" ? null : (
@@ -165,27 +160,20 @@ function CourtCard({
             status={court.status}
           />
         </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <SoftStatusChip
-              label={t(`status.${court.status}`)}
-              tone={COURT_STATUS_TONE[court.status as CourtStatus]}
-            />
-            <span className="text-xs text-muted-foreground">
-              {t(`environment.${court.environment}`)}
-            </span>
-          </div>
-          <div className="flex min-w-0 items-center gap-2">
-            <EntityAvatar
-              name={court.organization_name}
-              size="sm"
-              src={entityFileSrc(court.organization_logo_file_id)}
-            />
-            <span className="truncate text-xs text-muted-foreground">
-              {court.organization_name}
-              {" · "}
-              {court.sport_name || t("emptyValue")}
-            </span>
-          </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <SoftStatusChip
+            label={t(`status.${court.status}`)}
+            tone={COURT_STATUS_TONE[court.status as CourtStatus]}
+          />
+          <span className="text-xs text-muted-foreground">
+            {t(`environment.${court.environment}`)}
+          </span>
+        </div>
+        <p className="truncate text-xs text-muted-foreground">
+          {court.organization_name}
+          {" · "}
+          {court.sport_name || t("emptyValue")}
+        </p>
         </CardContent>
       </Card>
   );

@@ -21,8 +21,9 @@ import { CalendarDays } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
-import { DataListEmpty } from "@/components/data-list";
+import { DataListEmpty, softDetailPanelPad } from "@/components/data-list";
 import { EntityDetailPanel } from "@/components/entity/detail-panel";
+import { SectionAddButton } from "@/components/entity/section-add-button";
 import { PopoverCommandSelect } from "@/components/popover-command-select";
 import { ApiError, errorMessageKey } from "@/lib/api/errors";
 import type { BranchHoliday, HolidayEffect } from "@/lib/api/pricing";
@@ -107,31 +108,25 @@ export function BranchHolidaysView() {
 
   return (
     <BranchTabBody>
-      <EntityDetailPanel title={t("title")} hint={t("branchHint")} icon={<CalendarDays className="size-4" aria-hidden />} tone="sky">
+      <EntityDetailPanel
+        title={t("title")}
+        hint={t("branchHint")}
+        icon={<CalendarDays className="size-4" aria-hidden />}
+        tone="sky"
+        className={softDetailPanelPad}
+        actions={
+          !query.isLoading && !query.isError ? (
+            <SectionAddButton label={t("addRow")} onClick={addRow} />
+          ) : null
+        }
+      >
         {query.isLoading ? (
           <BranchTabLoading />
         ) : query.isError ? (
           <BranchTabError message={t("loadError")} onRetry={() => void query.refetch()} retryDisabled={query.isFetching} />
         ) : (
           <div className="space-y-4">
-            {isEmpty ? (
-              <DataListEmpty
-                title={t("empty")}
-                className="py-10"
-                action={
-                  <div className="flex flex-wrap justify-center gap-2">
-                    <Button type="button" size="sm" onClick={addRow}>
-                      {t("addRow")}
-                    </Button>
-                    {dirty ? (
-                      <Button type="button" size="sm" disabled={save.isPending} onClick={() => void onSave()}>
-                        {t("save")}
-                      </Button>
-                    ) : null}
-                  </div>
-                }
-              />
-            ) : null}
+            {isEmpty ? <DataListEmpty title={t("empty")} className="py-10" /> : null}
             {inherited.map((holiday) => (
               <div key={`${holiday.source}-${holiday.holiday_on}`} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border/70 px-3 py-2">
                 <div>
@@ -152,6 +147,71 @@ export function BranchHolidaysView() {
               </div>
             ))}
             {overlay.length > 0 ? (
+              <ul className="divide-y divide-border/40 md:hidden">
+                {overlay.map((row, index) => (
+                  <li key={index} className="space-y-2 py-3">
+                    <DatePicker
+                      value={row.holiday_on}
+                      onChange={(value) => {
+                        const next = [...overlay];
+                        next[index] = { ...row, holiday_on: value };
+                        setOverlay(next);
+                        setErrors((current) =>
+                          current.map((error, i) => (i === index && error ? { ...error, date: !value } : error)),
+                        );
+                      }}
+                      locale={locale}
+                      placeholder={tc("pickDate")}
+                      aria-label={t("date")}
+                      aria-invalid={errors[index]?.date || undefined}
+                      className="w-full"
+                    />
+                    {errors[index]?.date ? <FieldError>{t("dateRequired")}</FieldError> : null}
+                    <Input
+                      value={row.name}
+                      aria-label={t("name")}
+                      aria-invalid={errors[index]?.name || undefined}
+                      onChange={(event) => {
+                        const value = event.target.value;
+                        const next = [...overlay];
+                        next[index] = { ...row, name: value };
+                        setOverlay(next);
+                        setErrors((current) =>
+                          current.map((error, i) => (i === index && error ? { ...error, name: !value.trim() } : error)),
+                        );
+                      }}
+                    />
+                    {errors[index]?.name ? <FieldError>{t("nameRequired")}</FieldError> : null}
+                    <PopoverCommandSelect
+                      value={row.effect}
+                      onValueChange={(value) => {
+                        const next = [...overlay];
+                        next[index] = { ...row, effect: value as HolidayEffect };
+                        setOverlay(next);
+                      }}
+                      options={effectOptions}
+                      aria-label={t("effect")}
+                      searchable={false}
+                      align="start"
+                      className="w-full border border-input bg-background"
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setOverlay(overlay.filter((_, i) => i !== index));
+                        setErrors((current) => current.filter((_, i) => i !== index));
+                      }}
+                    >
+                      {t("remove")}
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            {overlay.length > 0 ? (
+              <div className="hidden md:block">
               <Table className="min-w-[42rem]">
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
@@ -240,12 +300,10 @@ export function BranchHolidaysView() {
                   ))}
                 </TableBody>
               </Table>
+              </div>
             ) : null}
             {isEmpty ? null : (
               <div className="flex flex-wrap gap-2">
-                <Button type="button" size="sm" variant="outline" onClick={addRow}>
-                  {t("addRow")}
-                </Button>
                 <Button type="button" size="sm" disabled={!dirty || save.isPending} onClick={() => void onSave()}>
                   {t("save")}
                 </Button>

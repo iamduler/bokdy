@@ -22,7 +22,7 @@ import {
   cn,
   toast,
 } from "@bokdy/ui";
-import { ArrowLeft, Check, Plus } from "lucide-react";
+import { Check, Plus } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
@@ -35,7 +35,7 @@ import {
   PRICING_STATUS_TONE,
   pricingStatusKey,
 } from "@/components/pricing-profiles/pricing-status";
-import { usePageShellActions, usePageShellLeading } from "@/components/shell/shell-title";
+import { usePageShellActions } from "@/components/shell/shell-title";
 import { Link } from "@/i18n/navigation";
 import { EntityActionDialog } from "@/components/entity/action-dialog";
 import { useBranch } from "@/hooks/use-branches";
@@ -174,7 +174,6 @@ export function BranchPricingForm({
   sportOptions = [],
   initialSportId = "",
   suggestedBase,
-  onDone,
   onSaved,
 }: {
   organizationId: string;
@@ -183,11 +182,9 @@ export function BranchPricingForm({
   sportOptions?: { id: string; label: string; suggestedBase: number | null }[];
   initialSportId?: string;
   suggestedBase?: number | null;
-  onDone?: () => void;
   onSaved?: (profile: BranchPricingProfile) => void;
 }) {
   const t = useTranslations("organization.branchDetail.pricing");
-  const tShell = useTranslations("shell");
   const te = useTranslations("errors");
   const locale = useLocale();
   const creating = !profile;
@@ -375,20 +372,6 @@ export function BranchPricingForm({
   const holidays = watchedHolidays ?? [];
   const statusKey = profile ? pricingStatusKey(profile) : null;
   const audienceLabel = t(`audience.${watchedAudience}`);
-  const shellBack = usePageShellLeading(
-    creating ? (
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        className="size-9 rounded-full text-muted-foreground hover:bg-muted/70"
-        aria-label={tShell("menuBack")}
-        onClick={() => onDone?.()}
-      >
-        <ArrowLeft className="size-4" />
-      </Button>
-    ) : null,
-  );
   const shellActions = usePageShellActions(
     <>
       {creating ? (
@@ -451,7 +434,7 @@ export function BranchPricingForm({
     <FormProvider {...form}>
       <form
         id={formId}
-        className="space-y-5"
+        className="space-y-5 pb-28 md:pb-0"
         noValidate
         onSubmit={form.handleSubmit(
           (values) => submit(values, creating ? "create" : "save"),
@@ -461,7 +444,6 @@ export function BranchPricingForm({
           },
         )}
       >
-        {shellBack}
         {shellActions}
         <header className="min-w-0 space-y-1">
           <div className="flex flex-wrap items-center gap-2">
@@ -763,15 +745,19 @@ export function BranchPricingForm({
           {holidays.length === 0 ? (
             <p className="text-sm text-muted-foreground">{t("holidayEmpty")}</p>
           ) : null}
-          <div className="space-y-2">
+          <div>
             {holidays.map((_, index) => (
-              <PricingWindowCard
+              <div
                 key={index}
-                base={`holiday_windows.${index}`}
-                onRemove={() =>
-                  replaceHolidays(holidays.filter((_, i) => i !== index))
-                }
-              />
+                className={index > 0 ? "mt-3 border-t border-border/70 pt-3 md:mt-2 md:border-0 md:pt-0" : undefined}
+              >
+                <PricingWindowCard
+                  base={`holiday_windows.${index}`}
+                  onRemove={() =>
+                    replaceHolidays(holidays.filter((_, i) => i !== index))
+                  }
+                />
+              </div>
             ))}
           </div>
           <Button

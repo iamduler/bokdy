@@ -3,7 +3,7 @@
 import { Button, cn } from "@bokdy/ui";
 import { useTranslations } from "next-intl";
 
-import { DataTableSkeleton, softDetailSectionGap } from "@/components/data-list";
+import { DataTableSkeleton, softDetailSectionGap, softDetailTabBody } from "@/components/data-list";
 
 export function BranchTabLoading() {
   return <DataTableSkeleton rows={4} columns={4} className="px-0" />;
@@ -34,7 +34,7 @@ export function BranchTabError({
 /** Wrapper shared by every branch tab body (scrolls inside the layout). */
 export function BranchTabBody({ children }: { children: React.ReactNode }) {
   return (
-    <div className={cn("flex flex-col p-5 pt-2 md:px-6", softDetailSectionGap)}>
+    <div className={cn("flex flex-col", softDetailTabBody, softDetailSectionGap)}>
       {children}
     </div>
   );

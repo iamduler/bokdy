@@ -1,0 +1,53 @@
+---
+description: Admin mobile layout — phone below md, compact lists, shell actions, covers, and config dividers
+globs: apps/admin-web/**/*.tsx
+alwaysApply: false
+---
+
+# Admin mobile layout
+
+Phone is below `md` (768px). Tablet is `md` up to `lg`. Desktop is `lg` (1024px) and up. Use these CSS breakpoints. Do not branch layout on `useIsMobile`; it starts false and the first paint is the desktop rail.
+
+## Shell and headers
+
+- Phone navigation is `AdminMobileNav`. Vertical detail tabs become `PopoverCommandSelect` below `md` (`detail-tabs.tsx`). Settings pill tabs stay pills.
+- Create/edit actions go through `usePageShellActions`. Below `md` the slot is the fixed footer, and the page keeps `pb-28 md:pb-0`. From `md` the slot sits in the header row between the brand and search/bell/account. Do not absolute-center it over that chrome.
+- Do not put a Back button in the shell header. The breadcrumb already leaves the page.
+- A section "Thêm" on a title row is `SectionAddButton` (`icon-sm` + tooltip). An empty state keeps a labeled button. A directory title CTA stays labeled.
+
+## Lists
+
+- Directory lists: compact cards below `md`, table from `md`. Detail-tab collections use `mobileListUntil="lg"` (compact rows below `lg`, table from `lg`).
+- An empty list hides the wide table on that compact breakpoint. `DataTable` does this when `rows.length === 0`. Do not leave table headers on screen with the empty state clipped beside them.
+- A phone card shows one avatar, for the record itself. Related org or branch marks stay in the desktop table; the card shows those names as text.
+- Actions on a card are buttons. The whole card is not one link.
+
+## Detail
+
+- Overview shell: `flex w-full flex-col gap-3 px-0 pb-4 pt-0 md:gap-5 md:px-5 md:pb-6 md:pt-4`. Panels use `softDetailPanelPad`. Tab bodies use `softDetailTabBody`.
+- The hero is `EntityCoverSplit`. Keep the 3:1 cover. Below `lg` the banner is first; `media={null}` hides the empty gradient below `lg`. Extra height is letterbox around the banner.
+- A profile field is a horizontal row, label then value. Do not repeat the name the hero already shows.
+- Search is full width below `sm`. Other filters are `grid grid-cols-2 gap-2 sm:flex`.
+- A chip row that must stay one line scrolls. The parent is `min-w-0 overflow-x-auto`, the group is `inline-flex w-max flex-nowrap`, and each item is `shrink-0 whitespace-nowrap`. Do not add `max-w-full` to that group.
+
+## Repeated configuration blocks
+
+One configuration may stack onto two rows on the phone (for example times and delete, then name and price). Do not draw a line between those rows.
+
+When there is more than one configuration, separate them on the phone only:
+
+```tsx
+// ❌ BAD — line between the two rows of one block
+<div className="flex flex-col">
+  <TimeRow />
+  <div className="h-px bg-border md:hidden" />
+  <NameRow />
+</div>
+
+// ✅ GOOD — line only before the next block
+<div className={index > 0 ? "mt-3 border-t border-border/70 pt-3 md:mt-2 md:border-0 md:pt-0" : undefined}>
+  <ConfigBlock />
+</div>
+```
+
+A time field shows `HH:mm` through `TimePicker`. Do not append seconds.

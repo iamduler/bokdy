@@ -16,11 +16,11 @@ export function EntityDetailRail({
   return (
     <>
       {subnav}
-    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden p-3 pt-2 md:flex-row md:p-4 md:pt-2">
+    <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden p-2 pt-1.5 md:flex-row md:gap-3 md:p-4 md:pt-2">
       <aside
         className={cn(
-          "soft-elevated h-fit max-h-full w-full shrink-0 overflow-hidden rounded-md border-0 bg-card",
-          "md:sticky md:top-0 md:w-52 md:self-start md:overflow-y-auto",
+          "soft-elevated h-fit w-full shrink-0 overflow-hidden rounded-md border-0 bg-card",
+          "md:sticky md:top-0 md:max-h-full md:w-52 md:self-start md:overflow-y-auto",
         )}
       >
         {tabs}

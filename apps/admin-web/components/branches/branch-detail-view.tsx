@@ -8,7 +8,7 @@ import type { ReactNode } from "react";
 import { useBranchDetail } from "@/components/branches/detail/branch-detail-context";
 import { BranchAmenitiesView } from "@/components/branches/detail/branch-amenities-view";
 import { BranchDetailHero } from "@/components/branches/detail/branch-detail-hero";
-import { softDetailSectionGap } from "@/components/data-list";
+import { softDetailPanelPad } from "@/components/data-list";
 import { EntityDetailPanel } from "@/components/entity/detail-panel";
 import { MapPicker } from "@/components/maps/map-picker";
 import { useDistricts, useProvinces, useWards } from "@/hooks/use-admin-units";
@@ -116,6 +116,7 @@ export function BranchOverviewView() {
       hint={tb("hints.contact")}
       icon={<Mail className="size-4" aria-hidden />}
       tone="sky"
+      className={softDetailPanelPad}
     >
       <ProfileRow label={t("fieldEmail")} value={branch.email || empty} />
       <ProfileRow label={t("fieldPhone")} value={branch.phone || empty} />
@@ -129,6 +130,7 @@ export function BranchOverviewView() {
       hint={tb("hints.links")}
       icon={<Link2 className="size-4" aria-hidden />}
       tone="rose"
+      className={softDetailPanelPad}
     >
       <ProfileRow
         label={tb("fieldWebsite")}
@@ -153,20 +155,17 @@ export function BranchOverviewView() {
 
   return (
     <div
-      className={cn(
-        "flex w-full flex-col px-4 pb-6 pt-3 md:px-5 md:pt-4",
-        softDetailSectionGap,
-      )}
+      className="flex w-full flex-col gap-3 px-0 pb-4 pt-0 md:gap-5 md:px-5 md:pb-6 md:pt-4"
     >
       <BranchDetailHero />
 
-      <div className={cn("grid grid-cols-1 items-stretch lg:grid-cols-2", softDetailSectionGap)}>
+      <div className="grid grid-cols-1 items-stretch gap-3 md:gap-5 lg:grid-cols-2">
         <EntityDetailPanel
           title={tb("fieldDescription")}
           hint={tb("hints.description")}
           icon={<FileText className="size-4" aria-hidden />}
           tone="amber"
-          className="h-full"
+          className={cn("h-full", softDetailPanelPad)}
         >
           {shortIntro ? (
             <h2 className="text-2xl font-semibold leading-snug text-foreground">{shortIntro}</h2>
@@ -181,17 +180,14 @@ export function BranchOverviewView() {
       </div>
 
       <div
-        className={cn(
-          "grid grid-cols-1 items-stretch lg:grid-cols-2",
-          softDetailSectionGap,
-        )}
+        className="grid grid-cols-1 items-stretch gap-3 md:gap-5 lg:grid-cols-2"
       >
         <EntityDetailPanel
           title={tb("map")}
           hint={tb("hints.map")}
           icon={<MapPin className="size-4" aria-hidden />}
           tone="sky"
-          className="flex min-h-40 flex-col lg:h-full lg:min-h-0"
+          className={cn("flex min-h-40 flex-col lg:h-full lg:min-h-0", softDetailPanelPad)}
         >
           {hasCoords ? (
             <div className="relative min-h-40 flex-1 overflow-hidden rounded-xl">
@@ -208,20 +204,21 @@ export function BranchOverviewView() {
           )}
         </EntityDetailPanel>
 
-        <div className={cn("flex h-full flex-col", softDetailSectionGap)}>
+        <div className="flex h-full flex-col gap-3 md:gap-5">
           {contactPanel}
           {linksPanel}
         </div>
       </div>
 
       <div
-        className={cn("grid grid-cols-1 lg:grid-cols-2", softDetailSectionGap)}
+        className="grid grid-cols-1 gap-3 md:gap-5 lg:grid-cols-2"
       >
         <EntityDetailPanel
           title={tb("addressCurrent")}
           hint={tb("hints.addressCurrent")}
           icon={<MapPin className="size-4" aria-hidden />}
           tone="amber"
+          className={softDetailPanelPad}
         >
           <ProfileRow
             label={t("fieldProvince")}
@@ -239,6 +236,7 @@ export function BranchOverviewView() {
           hint={tb("hints.addressFormer")}
           icon={<MapPin className="size-4" aria-hidden />}
           tone="rose"
+          className={softDetailPanelPad}
         >
           <ProfileRow
             label={t("fieldProvince")}

@@ -1,16 +1,16 @@
 "use client";
 
-import { Card, CardContent, useUserDateTimePrefs } from "@bokdy/ui";
+import { useUserDateTimePrefs } from "@bokdy/ui";
 import type { OnChangeFn, PaginationState, SortingState } from "@tanstack/react-table";
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { useAdminBookingColumns } from "@/components/bookings/admin-booking-columns";
 import { bookingFormatters } from "@/components/bookings/booking-format";
-import { DATA_LIST_PAGE_SIZE, DataTable } from "@/components/data-list";
+import { DATA_LIST_PAGE_SIZE, DataListEmpty, DataTable } from "@/components/data-list";
 import { EntityAvatar, entityFileSrc } from "@/components/entity/avatar";
+import { EntityRelationLink } from "@/components/entity/relation-link";
 import { SoftStatusChip } from "@/components/entity/soft-status-chip";
-import { Link } from "@/i18n/navigation";
 import type { AdminBooking, AdminBookingStatus } from "@/lib/api/admin-bookings";
 
 const BOOKING_STATUS_TONE = {
@@ -35,7 +35,6 @@ type AdminBookingListProps = {
   onRetry: () => void;
   showOrganization?: boolean;
   emptyTitle?: string;
-  mobileCards?: boolean;
 };
 
 export function AdminBookingList({
@@ -51,7 +50,6 @@ export function AdminBookingList({
   onRetry,
   showOrganization = false,
   emptyTitle,
-  mobileCards = false,
 }: AdminBookingListProps) {
   const t = useTranslations("adminBookings");
   const tc = useTranslations("common");
@@ -88,36 +86,38 @@ export function AdminBookingList({
       onRetry={onRetry}
       retryLabel={isFetching ? tc("loading") : tc("retry")}
       emptyTitle={emptyTitle ?? t("empty")}
+      mobileListUntil="lg"
       mobileList={
-        mobileCards && rows.length > 0 ? (
-          <div className="space-y-3 p-4">
-            {rows.map((row) => (
-              <Link
-                key={row.id}
-                href={`/organizations/${row.organization_id}/bookings/${row.id}`}
-                className="block"
-              >
-                <Card className="soft-elevated border-border/40 shadow-none">
-                  <CardContent className="space-y-2 p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="font-semibold text-foreground">{row.booking_no}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {row.customer_name ?? t("none")}
-                        </p>
-                      </div>
+        rows.length === 0 ? (
+          <DataListEmpty title={emptyTitle ?? t("empty")} className="py-10" />
+        ) : (
+          <ul className="divide-y divide-border/40">
+            {rows.map((row) => {
+              const href = `/organizations/${row.organization_id}/bookings/${row.id}`;
+              const meta = [format.when(row.starts_at), format.money(row.total_amount)]
+                .filter(Boolean)
+                .join(" · ");
+              return (
+                <li key={row.id} className="flex items-start gap-3 py-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <EntityRelationLink href={href} className="min-w-0 truncate">
+                        {row.booking_no}
+                      </EntityRelationLink>
                       <SoftStatusChip
                         label={t(`statusLabel.${row.status}`)}
                         tone={BOOKING_STATUS_TONE[row.status]}
+                        size="sm"
                       />
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      {format.when(row.starts_at)}
-                      {" · "}
-                      {format.money(row.total_amount)}
+                    <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                      {row.customer_name ?? t("none")}
                     </p>
+                    {meta ? (
+                      <p className="mt-0.5 truncate text-xs text-muted-foreground">{meta}</p>
+                    ) : null}
                     {row.branch_name ? (
-                      <div className="flex min-w-0 items-center gap-2">
+                      <div className="mt-1 flex min-w-0 items-center gap-2">
                         <EntityAvatar
                           name={row.branch_name}
                           size="sm"
@@ -127,7 +127,7 @@ export function AdminBookingList({
                       </div>
                     ) : null}
                     {showOrganization && row.organization_name ? (
-                      <div className="flex min-w-0 items-center gap-2">
+                      <div className="mt-1 flex min-w-0 items-center gap-2">
                         <EntityAvatar
                           name={row.organization_name}
                           size="sm"
@@ -138,12 +138,12 @@ export function AdminBookingList({
                         </span>
                       </div>
                     ) : null}
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
-        ) : undefined
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )
       }
     />
   );

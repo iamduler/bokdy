@@ -5,11 +5,11 @@
  */
 
 import { BokdyMark } from "@bokdy/brand";
-import { SidebarTrigger } from "@bokdy/ui";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import { AudienceSegment } from "@/components/shell/audience-segment";
+import { AdminMobileNav } from "@/components/shell/admin-mobile-nav";
 import { NotificationBell } from "@/components/shell/notification-bell";
 import { QuickSearchButton } from "@/components/shell/quick-search-button";
 import { useShellTitle } from "@/components/shell/shell-title";
@@ -51,8 +51,8 @@ export function AdminHeader({
   return (
     <header className="sticky top-0 z-40 w-full shrink-0 bg-transparent">
       <div className="soft-chrome-bar relative mx-4 my-2 flex h-14 items-center gap-3 border-0 px-4 md:h-16 md:px-4">
-        <div className="flex min-w-0 flex-1 items-center gap-3">
-          <SidebarTrigger className="md:hidden" aria-label={t("openMenu")} />
+        <div className="flex min-w-0 shrink-0 items-center gap-2 md:gap-3">
+          <AdminMobileNav />
 
           <Link
             href="/dashboard"
@@ -85,15 +85,13 @@ export function AdminHeader({
           />
         </div>
 
-        {/* Viewport-centered portal for page actions (e.g. form save) */}
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <div
-            ref={setActionSlot}
-            className="pointer-events-auto flex items-center gap-2 empty:hidden"
-          />
-        </div>
+        {/* Form actions: fixed footer below md, in the free space between brand and tools from md. */}
+        <div
+          ref={setActionSlot}
+          className="pointer-events-auto fixed inset-x-0 bottom-0 z-40 flex flex-wrap items-center justify-end gap-2 border-t border-border/60 bg-card px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] empty:hidden md:static md:inset-auto md:z-auto md:min-w-0 md:flex-1 md:flex-nowrap md:justify-center md:overflow-x-auto md:border-0 md:bg-transparent md:p-0"
+        />
 
-        <div className="relative z-10 flex shrink-0 items-center gap-1.5 md:gap-2">
+        <div className="relative z-10 ml-auto flex shrink-0 items-center gap-1.5 md:gap-2">
           <QuickSearchButton />
           <NotificationBell placement="header" />
           <UserMenu

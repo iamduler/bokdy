@@ -5,19 +5,14 @@
  */
 
 import { Button, cn, Tooltip, TooltipContent, TooltipTrigger } from "@bokdy/ui";
-import { ArrowLeft, Ban, Pencil, RotateCcw, UserCheck } from "lucide-react";
+import { Ban, Pencil, RotateCcw, UserCheck } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
-import {
-  softContentMaxW,
-  softDirectoryPrimaryBtn,
-  softDirectorySecondaryBtn,
-} from "@/components/data-list";
 import { EntityAvatar, entityFileSrc } from "@/components/entity/avatar";
 import { EntityCoverSplit } from "@/components/entity/cover-split";
 import { EntityRelationLink } from "@/components/entity/relation-link";
-import { usePageShellLeading, usePageShellTitle } from "@/components/shell/shell-title";
+import { usePageShellTitle } from "@/components/shell/shell-title";
 import { UserSuspendDialog } from "@/components/users/detail/user-suspend-dialog";
 import {
   useUserDetail,
@@ -26,7 +21,6 @@ import {
 import { UserStatusBadge } from "@/components/users/shared/user-status-badge";
 import { UserAccountFormSheet } from "@/components/users/user-account-form-sheet";
 import { useActivateUser, usePlayerSummary, useRestoreUser } from "@/hooks/use-admin-users";
-import { Link, usePathname } from "@/i18n/navigation";
 import { staffRoleLabel } from "@/lib/users/staff-role-label";
 
 function padCount(value: number): string {
@@ -52,13 +46,21 @@ function formatSpendMinor(
   }
 }
 
+/** Page title for every user detail tab. The cover lives on the overview. */
 export function UserDetailHeader() {
+  const { user } = useUserDetail();
+
+  usePageShellTitle(userDisplayName(user));
+
+  return null;
+}
+
+/** Identity card and cover for the user overview. */
+export function UserDetailHero() {
   const t = useTranslations("users.detail");
   const to = useTranslations("users.overview");
   const tu = useTranslations("users");
-  const tShell = useTranslations("shell");
   const locale = useLocale();
-  const pathname = usePathname();
   const { user, userId, audience } = useUserDetail();
   const restore = useRestoreUser();
   const activate = useActivateUser();
@@ -68,259 +70,137 @@ export function UserDetailHeader() {
   const [bannerFailed, setBannerFailed] = useState(false);
   const name = userDisplayName(user);
   const org = user.primary_organization;
-  const base = `/users/${audience}/${userId}`;
-  const isOverview =
-    pathname === base || pathname === `${base}/` || !pathname.startsWith(`${base}/`);
-  const isPlayerOverview = isOverview && audience === "players";
-
-  usePageShellTitle(name);
+  const isPlayer = audience === "players";
 
   useEffect(() => {
     setBannerFailed(false);
   }, [user.banner_file_id]);
 
-  const back = usePageShellLeading(
-    <Button
-      asChild
-      variant="ghost"
-      size="icon"
-      className="size-9 rounded-full text-muted-foreground hover:bg-muted/70"
-    >
-      <Link href={`/users/${audience}`} aria-label={tShell("menuBack")}>
-        <ArrowLeft className="size-4" />
-      </Link>
-    </Button>,
-  );
-
   const bannerSrc =
     user.banner_file_id && !bannerFailed ? entityFileSrc(user.banner_file_id) : undefined;
   const avatarSrc = user.avatar_file_id ? entityFileSrc(user.avatar_file_id) : undefined;
   const email = user.email?.trim() ?? "";
+  const role = user.staff_role ? staffRoleLabel(tu, user.staff_role) : "";
   const spendCurrency = summary.data?.currency_code || user.preferred_currency_code || undefined;
-  const metric = (value: number | undefined) =>
-    summary.data ? padCount(value ?? 0) : "—";
+  const metric = (value: number | undefined) => (summary.data ? padCount(value ?? 0) : "—");
 
   return (
     <>
-      {back}
-      {isPlayerOverview ? (
-        <div className="shrink-0 px-4 pt-3 md:px-5 md:pt-4">
-          <EntityCoverSplit
-            mediaClassName={
-              !bannerSrc
-                ? "bg-linear-to-br from-sky-500/20 via-sky-500/5 to-muted bg-[radial-gradient(ellipse_at_30%_20%,rgba(56,189,248,0.18),transparent_55%)]"
-                : undefined
-            }
-            media={
-              bannerSrc ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={bannerSrc}
-                  alt=""
-                  className="absolute inset-0 size-full object-cover"
-                  onError={() => setBannerFailed(true)}
-                />
-              ) : null
-            }
-          >
-            <div className="flex items-start gap-3 pr-20">
-              <EntityAvatar name={name} src={avatarSrc} className="size-12" />
-              <div className="min-w-0 flex-1">
-                <h1 className="truncate text-lg font-semibold tracking-tight text-foreground">
-                  {name}
-                </h1>
-                <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                  <UserStatusBadge status={user.status} />
-                </div>
-                {email ? (
-                  <p className="mt-1 truncate text-xs text-muted-foreground">{email}</p>
+      <EntityCoverSplit
+        mediaClassName={
+          !bannerSrc
+            ? "bg-linear-to-br from-sky-500/20 via-sky-500/5 to-muted bg-[radial-gradient(ellipse_at_30%_20%,rgba(56,189,248,0.18),transparent_55%)]"
+            : undefined
+        }
+        media={
+          bannerSrc ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={bannerSrc}
+              alt=""
+              className="absolute inset-0 size-full object-cover"
+              onError={() => setBannerFailed(true)}
+            />
+          ) : null
+        }
+      >
+        <div className="flex items-start gap-3 pr-20">
+          <EntityAvatar name={name} src={avatarSrc} className="size-12" />
+          <div className="min-w-0 flex-1">
+            <h1 className="truncate text-lg font-semibold tracking-tight text-foreground">{name}</h1>
+            <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+              <UserStatusBadge status={user.status} />
+            </div>
+            {isPlayer ? (
+              email ? <p className="mt-1 truncate text-xs text-muted-foreground">{email}</p> : null
+            ) : email || org?.id || role ? (
+              <p className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                {email ? <span className="min-w-0 truncate">{email}</span> : null}
+                {org?.id ? (
+                  <EntityRelationLink href={`/organizations/${org.id}`}>
+                    {org.name || org.id}
+                  </EntityRelationLink>
                 ) : null}
-              </div>
-            </div>
-            <div className="absolute top-3 right-3 flex items-center gap-1.5">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    size="icon-sm"
-                    aria-label={t("edit")}
-                    onClick={() => setEditing(true)}
-                  >
-                    <Pencil className="size-4" aria-hidden />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{t("edit")}</TooltipContent>
-              </Tooltip>
-              {user.status === "pending" ? (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      type="button"
-                      size="icon-sm"
-                      variant="outline"
-                      aria-label={t("activate")}
-                      onClick={() => activate.mutate(userId)}
-                      disabled={activate.isPending}
-                    >
-                      <UserCheck className="size-4" aria-hidden />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>{t("activate")}</TooltipContent>
-                </Tooltip>
-              ) : user.status === "active" ? (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      type="button"
-                      size="icon-sm"
-                      variant="destructive"
-                      aria-label={t("suspend")}
-                      onClick={() => setSuspendOpen(true)}
-                    >
-                      <Ban className="size-4" aria-hidden />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>{t("suspend")}</TooltipContent>
-                </Tooltip>
-              ) : user.status === "suspended" ? (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      type="button"
-                      size="icon-sm"
-                      variant="outline"
-                      aria-label={t("restore")}
-                      onClick={() => restore.mutate(userId)}
-                      disabled={restore.isPending}
-                    >
-                      <RotateCcw className="size-4" aria-hidden />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>{t("restore")}</TooltipContent>
-                </Tooltip>
-              ) : null}
-            </div>
-            <div className="mt-auto grid grid-cols-2 border-t border-border/60">
-              <Metric value={metric(summary.data?.booking_count)} label={to("bookings")} edge="start" />
-              <Metric value={metric(summary.data?.transaction_count)} label={to("transactions")} />
-              <Metric
-                value={metric(summary.data?.refund_count)}
-                label={to("refunds")}
-                edge="start"
-                row="last"
-              />
-              <Metric
-                value={
-                  summary.data
-                    ? formatSpendMinor(summary.data.total_spend_minor, spendCurrency, locale)
-                    : "—"
-                }
-                label={to("spend")}
-                row="last"
-              />
-            </div>
-          </EntityCoverSplit>
-        </div>
-      ) : isOverview ? (
-        <div className="shrink-0 px-4 pt-3 md:px-5 md:pt-4">
-          <div className={cn("soft-elevated mx-auto overflow-hidden rounded-3xl border-0", softContentMaxW)}>
-            <div
-              className={cn(
-                "relative aspect-3/1 w-full overflow-hidden",
-                !bannerSrc &&
-                  "bg-linear-to-br from-sky-500/20 via-sky-500/5 to-muted bg-[radial-gradient(ellipse_at_30%_20%,rgba(56,189,248,0.18),transparent_55%)]",
-              )}
-            >
-              {bannerSrc ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={bannerSrc}
-                  alt=""
-                  className="size-full object-cover"
-                  onError={() => setBannerFailed(true)}
-                />
-              ) : null}
-            </div>
-
-            <div className="relative px-4 pb-3 md:px-5">
-              <div className="-mt-10 mb-2 flex items-end gap-3 md:-mt-12 md:gap-4">
-                <div className="relative size-24 shrink-0 overflow-hidden rounded-full border-2 border-card bg-card shadow-sm md:size-28">
-                  <EntityAvatar
-                    name={name}
-                    size="lg"
-                    src={avatarSrc}
-                    className="size-full rounded-none"
-                  />
-                </div>
-
-                <div className="flex min-w-0 flex-1 flex-wrap items-end justify-between gap-2 pb-0.5">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h1 className="truncate text-xl font-semibold tracking-tight text-foreground md:text-2xl">
-                        {name}
-                      </h1>
-                      <UserStatusBadge status={user.status} />
-                    </div>
-                    <p className="mt-1.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
-                      {user.email ? <span className="break-all">{user.email}</span> : null}
-                      {org?.id ? (
-                        <EntityRelationLink href={`/organizations/${org.id}`}>
-                          {org.name || org.id}
-                        </EntityRelationLink>
-                      ) : null}
-                      {user.staff_role ? <span>{staffRoleLabel(tu, user.staff_role)}</span> : null}
-                    </p>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      type="button"
-                      size="lg"
-                      className={cn(softDirectoryPrimaryBtn, "shrink-0")}
-                      onClick={() => setEditing(true)}
-                    >
-                      <Pencil className="size-4" aria-hidden />
-                      {t("edit")}
-                    </Button>
-                    {user.status === "pending" ? (
-                      <Button
-                        type="button"
-                        size="lg"
-                        className={cn(softDirectorySecondaryBtn, "shrink-0")}
-                        onClick={() => activate.mutate(userId)}
-                        disabled={activate.isPending}
-                      >
-                        {t("activate")}
-                      </Button>
-                    ) : user.status === "active" ? (
-                      <Button
-                        type="button"
-                        size="lg"
-                        variant="destructive"
-                        className="h-11 shrink-0 gap-2 rounded-xl text-sm font-semibold"
-                        onClick={() => setSuspendOpen(true)}
-                      >
-                        {t("suspend")}
-                      </Button>
-                    ) : user.status === "suspended" ? (
-                      <Button
-                        type="button"
-                        size="lg"
-                        className={cn(softDirectorySecondaryBtn, "shrink-0")}
-                        onClick={() => restore.mutate(userId)}
-                        disabled={restore.isPending}
-                      >
-                        {t("restore")}
-                      </Button>
-                    ) : null}
-                  </div>
-                </div>
-              </div>
-            </div>
+                {role ? <span>{role}</span> : null}
+              </p>
+            ) : null}
           </div>
         </div>
-      ) : null}
-
+        <div className="absolute top-3 right-3 flex items-center gap-1.5">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button type="button" size="icon-sm" aria-label={t("edit")} onClick={() => setEditing(true)}>
+                <Pencil className="size-4" aria-hidden />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{t("edit")}</TooltipContent>
+          </Tooltip>
+          {user.status === "pending" ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  size="icon-sm"
+                  variant="outline"
+                  aria-label={t("activate")}
+                  onClick={() => activate.mutate(userId)}
+                  disabled={activate.isPending}
+                >
+                  <UserCheck className="size-4" aria-hidden />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t("activate")}</TooltipContent>
+            </Tooltip>
+          ) : user.status === "active" ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  size="icon-sm"
+                  variant="destructive"
+                  aria-label={t("suspend")}
+                  onClick={() => setSuspendOpen(true)}
+                >
+                  <Ban className="size-4" aria-hidden />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t("suspend")}</TooltipContent>
+            </Tooltip>
+          ) : user.status === "suspended" ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  size="icon-sm"
+                  variant="outline"
+                  aria-label={t("restore")}
+                  onClick={() => restore.mutate(userId)}
+                  disabled={restore.isPending}
+                >
+                  <RotateCcw className="size-4" aria-hidden />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t("restore")}</TooltipContent>
+            </Tooltip>
+          ) : null}
+        </div>
+        {isPlayer ? (
+          <div className="mt-auto grid grid-cols-2 border-t border-border/60">
+            <Metric value={metric(summary.data?.booking_count)} label={to("bookings")} edge="start" />
+            <Metric value={metric(summary.data?.transaction_count)} label={to("transactions")} />
+            <Metric value={metric(summary.data?.refund_count)} label={to("refunds")} edge="start" row="last" />
+            <Metric
+              value={
+                summary.data
+                  ? formatSpendMinor(summary.data.total_spend_minor, spendCurrency, locale)
+                  : "—"
+              }
+              label={to("spend")}
+              row="last"
+            />
+          </div>
+        ) : null}
+      </EntityCoverSplit>
       <UserSuspendDialog open={suspendOpen} onClose={() => setSuspendOpen(false)} userId={userId} />
       <UserAccountFormSheet
         open={editing}

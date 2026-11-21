@@ -8,7 +8,7 @@ import { Suspense, type ReactNode } from "react";
 import { AdminBookingFilters } from "@/components/bookings/admin-booking-filters";
 import { AdminBookingList } from "@/components/bookings/admin-booking-list";
 import { useAdminBookingListController } from "@/components/bookings/use-admin-booking-list";
-import { softDetailSectionGap } from "@/components/data-list";
+import { softDetailPanelPad, softDetailSectionGap, softDetailTabBody } from "@/components/data-list";
 import { EntityCollectionPanel } from "@/components/entity/collection-panel";
 import type { AdminBookingListParams, AdminBookingPage } from "@/lib/api/admin-bookings";
 
@@ -87,6 +87,7 @@ function AdminBookingListScreenContent({
       from={list.from}
       to={list.to}
       onChange={list.onFilterChange}
+      embedded={layout === "panel"}
       className={
         layout === "panel"
           ? "w-full border-0 p-0 md:px-0"
@@ -99,11 +100,12 @@ function AdminBookingListScreenContent({
 
   if (layout === "panel") {
     return (
-      <div className={cn("flex flex-col p-5 pt-2 md:px-6", softDetailSectionGap)}>
+      <div className={cn("flex flex-col", softDetailTabBody, softDetailSectionGap)}>
         <EntityCollectionPanel
           title={t("orgTitle")}
           icon={<CalendarCheck className="size-4" aria-hidden />}
           tone="sky"
+          className={softDetailPanelPad}
           toolbar={filters}
         >
           {listView}

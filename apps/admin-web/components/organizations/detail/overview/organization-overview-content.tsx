@@ -52,8 +52,8 @@ export function OrganizationOverviewContent() {
   const phone = org.phone?.trim();
 
   return (
-    <div className={cn("grid grid-cols-1 items-start lg:grid-cols-2", softDetailSectionGap)}>
-      <section className="soft-elevated rounded-3xl p-5 md:p-6">
+    <div className={cn("grid grid-cols-1 items-start md:grid-cols-2", softDetailSectionGap)}>
+      <section className="soft-elevated rounded-3xl p-3 md:p-6">
         <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
           {to("about")}
         </p>
@@ -63,7 +63,7 @@ export function OrganizationOverviewContent() {
         {description ? (
           <RichTextView html={description} className={cn("text-muted-foreground", intro && "mt-3")} />
         ) : null}
-        <div className={cn("flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground", (intro || description) && "mt-6")}>
+        <div className={cn("flex flex-col gap-2 text-sm text-muted-foreground sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4 sm:gap-y-2", (intro || description) && "mt-4 md:mt-6")}>
           <ContactItem icon={<MapPin className="size-4 shrink-0" aria-hidden />} text={address || empty} />
           <ContactItem icon={<Mail className="size-4 shrink-0" aria-hidden />} text={email || empty} />
           <ContactItem icon={<Phone className="size-4 shrink-0" aria-hidden />} text={phone || empty} />
@@ -73,6 +73,7 @@ export function OrganizationOverviewContent() {
         title={to("profile")}
         icon={<Building2 className="size-4" aria-hidden />}
         tone="emerald"
+        className="p-3 md:p-5"
       >
         <ProfileRow label={t("fieldLegalName")} value={org.legal_name || empty} />
         <ProfileRow label={t("fieldTaxCode")} value={org.tax_code || empty} />
@@ -105,7 +106,7 @@ export function OrganizationOverviewContent() {
 
 function ContactItem({ icon, text }: { icon: ReactNode; text: string }) {
   return (
-    <span className="inline-flex min-w-0 items-center gap-1.5">
+    <span className="inline-flex w-full min-w-0 items-center gap-1.5 sm:w-auto">
       {icon}
       <span className="min-w-0">{text}</span>
     </span>
@@ -122,7 +123,7 @@ function ProfileRow({
   emphasize?: boolean;
 }) {
   return (
-    <div className="flex items-start gap-4 border-b border-border/40 py-3 last:border-0">
+    <div className="flex items-start gap-3 border-b border-border/40 py-2 last:border-0 md:gap-4 md:py-3">
       <span className="w-36 shrink-0 text-sm text-muted-foreground">{label}</span>
       <span className={cn("min-w-0 flex-1 text-sm text-foreground", emphasize && "font-medium")}>{value}</span>
     </div>

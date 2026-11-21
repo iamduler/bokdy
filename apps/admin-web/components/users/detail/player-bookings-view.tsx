@@ -16,6 +16,7 @@ export function PlayerBookingsView() {
     <AdminBookingListScreen
       pathname={`/users/players/${userId}/bookings`}
       showOrganization
+      layout="panel"
       useList={usePlayerBookingList}
     />
   );

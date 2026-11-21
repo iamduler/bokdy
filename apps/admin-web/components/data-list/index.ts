@@ -21,6 +21,12 @@ export const softContentMaxW = "max-w-5xl";
 /** Vertical gap between Soft detail sections (hero ↔ panels, panel ↔ panel / grid). */
 export const softDetailSectionGap = "gap-4 md:gap-5";
 
+/** Detail-tab page inset. Cards inside carry their own padding. */
+export const softDetailTabBody = "px-0 pt-1 pb-3 md:px-6 md:pt-2";
+
+/** Detail collection card padding. */
+export const softDetailPanelPad = "p-3 md:p-5";
+
 /** Soft UI title-row primary CTA (sky fill + soft-cta shadow). */
 export const softDirectoryPrimaryBtn =
   "soft-btn-primary h-11 gap-2 rounded-xl text-sm font-semibold";

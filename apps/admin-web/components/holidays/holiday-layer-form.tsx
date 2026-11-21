@@ -15,7 +15,7 @@ import {
   toast,
 } from "@bokdy/ui";
 import { useLocale, useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
 
 import { DataListEmpty } from "@/components/data-list";
 import { PopoverCommandSelect } from "@/components/popover-command-select";
@@ -23,6 +23,8 @@ import { ApiError, errorMessageKey } from "@/lib/api/errors";
 import type { HolidayEffect, HolidayOverlayInput } from "@/lib/api/pricing";
 
 export type HolidayDraft = { holiday_on: string; name: string; effect: HolidayEffect };
+
+export type HolidayLayerFormHandle = { addRow: () => void };
 
 type RowErrors = { date?: boolean; name?: boolean };
 
@@ -33,17 +35,15 @@ function rowErrors(rows: HolidayDraft[]): RowErrors[] {
   }));
 }
 
-export function HolidayLayerForm({
-  rows,
-  showEffect,
-  pending,
-  onSave,
-}: {
-  rows: HolidayDraft[];
-  showEffect: boolean;
-  pending: boolean;
-  onSave: (rows: HolidayOverlayInput[]) => Promise<unknown>;
-}) {
+export const HolidayLayerForm = forwardRef<
+  HolidayLayerFormHandle,
+  {
+    rows: HolidayDraft[];
+    showEffect: boolean;
+    pending: boolean;
+    onSave: (rows: HolidayOverlayInput[]) => Promise<unknown>;
+  }
+>(function HolidayLayerForm({ rows, showEffect, pending, onSave }, ref) {
   const t = useTranslations("organization.holidays");
   const tc = useTranslations("common");
   const te = useTranslations("errors");
@@ -88,6 +88,8 @@ export function HolidayLayerForm({
     setDraft((current) => [...current, { holiday_on: "", name: "", effect: "include" }]);
   }
 
+  useImperativeHandle(ref, () => ({ addRow }));
+
   async function save() {
     const nextErrors = rowErrors(draft);
     setErrors(nextErrors);
@@ -104,25 +106,56 @@ export function HolidayLayerForm({
 
   return (
     <div className="space-y-3">
-      {draft.length === 0 ? (
-        <DataListEmpty
-          title={t("empty")}
-          className="py-10"
-          action={
-            <div className="flex flex-wrap justify-center gap-2">
-              <Button type="button" size="sm" onClick={addRow}>
-                {t("addRow")}
-              </Button>
-              {dirty ? (
-                <Button type="button" size="sm" disabled={pending} onClick={() => void save()}>
-                  {t("save")}
-                </Button>
+      {draft.length === 0 ? <DataListEmpty title={t("empty")} className="py-10" /> : null}
+      {draft.length > 0 ? (
+        <ul className="divide-y divide-border/40 md:hidden">
+          {draft.map((row, index) => (
+            <li key={index} className="space-y-2 py-3">
+              <DatePicker
+                value={row.holiday_on}
+                onChange={(value) => update(index, { holiday_on: value })}
+                locale={locale}
+                placeholder={tc("pickDate")}
+                aria-label={t("date")}
+                aria-invalid={errors[index]?.date || undefined}
+                className="w-full"
+              />
+              {errors[index]?.date ? <FieldError>{t("dateRequired")}</FieldError> : null}
+              <Input
+                value={row.name}
+                aria-label={t("name")}
+                aria-invalid={errors[index]?.name || undefined}
+                onChange={(event) => update(index, { name: event.target.value })}
+              />
+              {errors[index]?.name ? <FieldError>{t("nameRequired")}</FieldError> : null}
+              {showEffect ? (
+                <PopoverCommandSelect
+                  value={row.effect}
+                  onValueChange={(value) => update(index, { effect: value as HolidayEffect })}
+                  options={effectOptions}
+                  aria-label={t("effect")}
+                  searchable={false}
+                  align="start"
+                  className="w-full border border-input bg-background"
+                />
               ) : null}
-            </div>
-          }
-        />
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setDraft(draft.filter((_, i) => i !== index));
+                  setErrors((current) => current.filter((_, i) => i !== index));
+                }}
+              >
+                {t("remove")}
+              </Button>
+            </li>
+          ))}
+        </ul>
       ) : null}
       {draft.length > 0 ? (
+        <div className="hidden md:block">
         <Table className={showEffect ? "min-w-[42rem]" : "min-w-[32rem]"}>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
@@ -196,12 +229,10 @@ export function HolidayLayerForm({
             ))}
           </TableBody>
         </Table>
+        </div>
       ) : null}
       {draft.length === 0 ? null : (
         <div className="flex flex-wrap gap-2">
-          <Button type="button" size="sm" variant="outline" onClick={addRow}>
-            {t("addRow")}
-          </Button>
           <Button type="button" size="sm" disabled={!dirty || pending} onClick={() => void save()}>
             {t("save")}
           </Button>
@@ -209,4 +240,4 @@ export function HolidayLayerForm({
       )}
     </div>
   );
-}
+});

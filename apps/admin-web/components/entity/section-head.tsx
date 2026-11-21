@@ -30,7 +30,7 @@ export function EntitySectionHead({
   return (
     <div
       className={cn(
-        "mb-4 flex min-w-0 items-center gap-3",
+        "mb-3 flex min-w-0 items-center gap-2 sm:mb-4 sm:gap-3",
         className,
       )}
     >
@@ -42,7 +42,7 @@ export function EntitySectionHead({
         {hint ? <InfoHint text={hint} /> : null}
       </div>
       {actions ? (
-        <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>
+        <div className="flex shrink-0 flex-nowrap items-center gap-2">{actions}</div>
       ) : null}
     </div>
   );

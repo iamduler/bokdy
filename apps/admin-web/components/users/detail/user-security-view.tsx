@@ -5,7 +5,9 @@ import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 
 import {
+  softDetailPanelPad,
   softDetailSectionGap,
+  softDetailTabBody,
   softDirectorySecondaryBtn,
 } from "@/components/data-list";
 import { useUserDetail } from "@/components/users/detail/user-detail-context";
@@ -63,19 +65,20 @@ export function UserSecurityView() {
   return (
     <div
       className={cn(
-        "flex min-h-0 flex-1 flex-col overflow-auto soft-scrollbar p-4 md:p-6",
+        "flex flex-col",
+        softDetailTabBody,
         softDetailSectionGap,
       )}
     >
       <div className="grid gap-3 md:grid-cols-3">
         {cards.map((c) => (
-          <div key={c.label} className="soft-elevated rounded-2xl border-0 p-4">
+          <div key={c.label} className={cn("soft-elevated rounded-2xl border-0", softDetailPanelPad)}>
             <p className="text-xs text-muted-foreground">{c.label}</p>
             <div className="mt-2 text-sm font-semibold">{c.value}</div>
           </div>
         ))}
       </div>
-      <div className="soft-elevated rounded-2xl border-0 border-destructive/20 bg-destructive/5 p-4">
+      <div className={cn("soft-elevated rounded-2xl border-0 border-destructive/20 bg-destructive/5", softDetailPanelPad)}>
         <p className="mb-3 font-semibold text-destructive">{t("dangerZone")}</p>
         <UserSecurityActions
           extra={

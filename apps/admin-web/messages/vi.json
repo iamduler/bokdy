@@ -702,6 +702,12 @@
       "sectionIdentity": "Thông tin sân",
       "sectionCode": "Mã hệ thống",
       "sectionDescription": "Mô tả",
+      "hints": {
+        "identity": "Mã, chi nhánh và thông số của sân.",
+        "description": "Mô tả công khai trên hồ sơ sân.",
+        "amenities": "Tiện ích gắn với sân.",
+        "gallery": "Ảnh và video của sân."
+      },
       "sectionImages": "Hình ảnh",
       "sectionStatus": "Trạng thái",
       "actionOpen": "Mở sân",

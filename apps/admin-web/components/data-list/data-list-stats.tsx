@@ -37,6 +37,8 @@ type DataListStatsProps = {
   items: DataListStatItem[];
   isLoading?: boolean;
   className?: string;
+  /** Directory lists use the tighter cards. Dashboard keeps the large default. */
+  density?: "default" | "compact";
 };
 
 /** Soft UI KPI card row — shared by every directory module. */
@@ -44,18 +46,43 @@ export function DataListStats({
   items,
   isLoading,
   className,
+  density = "default",
 }: DataListStatsProps) {
+  const compact = density === "compact";
   return (
     <div
       className={cn(
-        "grid shrink-0 grid-cols-2 gap-3 md:grid-cols-4 md:gap-4",
+        "grid shrink-0 grid-cols-2 lg:grid-cols-4",
+        compact ? "gap-2" : "gap-3 lg:gap-4",
         className,
       )}
     >
       {items.map((item) => {
+        const value = (
+          <p
+            className={cn(
+              "font-bold tracking-tight tabular-nums",
+              compact ? "shrink-0 text-lg" : "text-2xl md:text-[1.75rem]",
+              item.tone ?? "text-foreground",
+            )}
+          >
+            {isLoading ? "—" : item.value}
+          </p>
+        );
+        const secondary =
+          item.secondary ? (
+            <p
+              className={cn(
+                "min-w-0 truncate text-xs",
+                item.secondaryTone ?? "text-muted-foreground",
+              )}
+            >
+              {item.secondary}
+            </p>
+          ) : null;
         const card = (
           <>
-            <div className="flex min-w-0 items-center gap-2.5">
+            <div className={cn("flex min-w-0 items-center", compact ? "gap-2" : "gap-2.5")}>
               {item.icon ? (
                 <SoftIconChip
                   icon={item.icon}
@@ -64,38 +91,38 @@ export function DataListStats({
                   backgroundColor={item.iconBackground}
                 />
               ) : null}
-              <p className="truncate text-sm font-medium text-muted-foreground">
+              <p
+                className={cn(
+                  "min-w-0 line-clamp-2 font-medium text-muted-foreground",
+                  compact ? "text-xs leading-tight" : "text-sm leading-snug",
+                )}
+              >
                 {item.label}
               </p>
             </div>
-            <div className="min-w-0">
-              <p
-                className={cn(
-                  "text-2xl font-bold tracking-tight tabular-nums md:text-[1.75rem]",
-                  item.tone ?? "text-foreground",
-                )}
-              >
-                {isLoading ? "—" : item.value}
-              </p>
-              {item.secondary || item.badge ? (
-                <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                  {item.secondary ? (
-                    <p
-                      className={cn(
-                        "truncate text-xs",
-                        item.secondaryTone ?? "text-muted-foreground",
-                      )}
-                    >
-                      {item.secondary}
-                    </p>
-                  ) : null}
-                  {item.badge}
-                </div>
-              ) : null}
-            </div>
+            {compact ? (
+              <div className="flex min-w-0 items-baseline gap-2">
+                {value}
+                {secondary}
+                {item.badge}
+              </div>
+            ) : (
+              <div className="min-w-0">
+                {value}
+                {item.secondary || item.badge ? (
+                  <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                    {secondary}
+                    {item.badge}
+                  </div>
+                ) : null}
+              </div>
+            )}
           </>
         );
-        const cardClass = "soft-elevated flex min-w-0 flex-col gap-2 border-0 px-5 py-4";
+        const cardClass = cn(
+          "soft-elevated flex min-w-0 flex-col border-0",
+          compact ? "gap-1 px-3 py-2.5" : "gap-2 px-4 py-4 sm:px-5",
+        );
         if (item.href) {
           return (
             <Link key={item.key} href={item.href} className={cardClass}>

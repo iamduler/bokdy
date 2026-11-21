@@ -4,7 +4,7 @@ import { Button, cn, formatUserDateTime, Spinner, useUserDateTimePrefs } from "@
 import { Monitor } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-import { softDetailSectionGap } from "@/components/data-list";
+import { softDetailPanelPad, softDetailSectionGap, softDetailTabBody } from "@/components/data-list";
 import { EntityDetailPanel } from "@/components/entity/detail-panel";
 import {
   SoftStatusChip,
@@ -42,7 +42,7 @@ export function UserSessionsView({ embedded = false }: { embedded?: boolean }) {
 
   const shell = embedded
     ? cn("flex flex-col", softDetailSectionGap)
-    : cn("flex min-h-0 flex-1 flex-col p-4 md:p-6", softDetailSectionGap);
+    : cn("flex flex-col", softDetailTabBody, softDetailSectionGap);
 
   return (
     <div className={shell}>
@@ -50,6 +50,7 @@ export function UserSessionsView({ embedded = false }: { embedded?: boolean }) {
         title={isLoading ? undefined : t("count", { count: sessions.length })}
         icon={<Monitor className="size-4" aria-hidden />}
         tone="sky"
+        className={softDetailPanelPad}
         actions={
           !isLoading && !isError ? (
             <Button

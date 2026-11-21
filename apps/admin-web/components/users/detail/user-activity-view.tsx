@@ -4,7 +4,7 @@ import { Button, cn, formatUserDateTime, Spinner, useUserDateTimePrefs } from "@
 import { History } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-import { softDetailSectionGap } from "@/components/data-list";
+import { softDetailPanelPad, softDetailSectionGap, softDetailTabBody } from "@/components/data-list";
 import { EntityDetailPanel } from "@/components/entity/detail-panel";
 import { useUserDetail } from "@/components/users/detail/user-detail-context";
 import { useUserActivity } from "@/hooks/use-admin-users";
@@ -18,7 +18,7 @@ export function UserActivityView({ embedded = false }: { embedded?: boolean }) {
 
   const shell = embedded
     ? cn("flex flex-col", softDetailSectionGap)
-    : cn("flex min-h-0 flex-1 flex-col p-4 md:p-6", softDetailSectionGap);
+    : cn("flex flex-col", softDetailTabBody, softDetailSectionGap);
 
   return (
     <div className={shell}>
@@ -26,6 +26,7 @@ export function UserActivityView({ embedded = false }: { embedded?: boolean }) {
         title={t("title")}
         icon={<History className="size-4" aria-hidden />}
         tone="amber"
+        className={softDetailPanelPad}
       >
         {isLoading ? (
           <p className="flex items-center gap-2 text-sm text-muted-foreground">

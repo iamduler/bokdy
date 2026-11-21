@@ -5,7 +5,7 @@ import { Images, Play } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 
-import { DataListEmpty } from "@/components/data-list";
+import { DataListEmpty, softDetailPanelPad } from "@/components/data-list";
 import { EntityDetailPanel } from "@/components/entity/detail-panel";
 import {
   MediaLightbox,
@@ -23,6 +23,7 @@ type CourtGalleryStripProps = {
 /** Read-only gallery for the court overview (manage media from the edit form). */
 export function CourtGalleryStrip({ organizationId, courtId }: CourtGalleryStripProps) {
   const t = useTranslations("organization.court.images");
+  const hints = useTranslations("organization.court.hints");
   const gallery = useCourtGallery(organizationId, courtId);
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
 
@@ -49,17 +50,19 @@ export function CourtGalleryStrip({ organizationId, courtId }: CourtGalleryStrip
   return (
     <EntityDetailPanel
       title={t("title")}
+      hint={hints("gallery")}
       icon={<Images className="size-4" aria-hidden />}
       tone="amber"
+      className={softDetailPanelPad}
     >
       {gallery.isLoading ? (
-        <p className="mt-3 flex items-center gap-2 text-sm text-muted-foreground"><Spinner />{t("loading")}</p>
+        <p className="flex items-center gap-2 text-sm text-muted-foreground"><Spinner />{t("loading")}</p>
       ) : gallery.isError ? (
-        <p className="mt-3 text-sm text-destructive">{t("loadError")}</p>
+        <p className="text-sm text-destructive">{t("loadError")}</p>
       ) : items.length === 0 ? (
         <DataListEmpty title={t("empty")} className="py-8" />
       ) : (
-        <ul className="mt-3 flex gap-3 overflow-x-auto pb-1 soft-scrollbar">
+        <ul className="flex gap-3 overflow-x-auto pb-1 soft-scrollbar">
           {items.map((item, index) => {
             const kind = mediaKindFromMime(item.mime_type);
             const src = courtGalleryFileSrc(item);

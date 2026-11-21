@@ -23,13 +23,11 @@ import {
 import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 
-import {
-  softContentMaxW,
-  softDetailSectionGap,
-} from "@/components/data-list";
+import { softDetailPanelPad } from "@/components/data-list";
 import { EntityDetailPanel } from "@/components/entity/detail-panel";
 import { SoftStatusChip } from "@/components/entity/soft-status-chip";
 import { useUserDetail } from "@/components/users/detail/user-detail-context";
+import { UserDetailHero } from "@/components/users/detail/user-detail-header";
 import { UserSecurityActions } from "@/components/users/detail/user-security-view";
 import { useProvinces, useWards } from "@/hooks/use-admin-units";
 import { useCountries } from "@/hooks/use-countries";
@@ -184,77 +182,63 @@ export function UserOverviewView() {
   const isPlayer = audience === "players";
 
   return (
-    <div
-      className={cn(
-        "flex min-h-0 flex-1 flex-col overflow-auto soft-scrollbar",
-        isPlayer ? "px-4 pt-4 pb-6 md:px-5" : "p-4 md:p-6",
-        softDetailSectionGap,
-      )}
-    >
-      <div
-        className={cn(
-          "mx-auto flex w-full flex-col",
-          isPlayer ? undefined : softContentMaxW,
-          softDetailSectionGap,
-        )}
-      >
-        {user.status === "suspended" ? (
-          <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm">
-            <p className="font-semibold text-destructive">{t("suspendedNotice")}</p>
-            {user.suspend_reason?.trim() ? (
-              <p className="mt-2 text-destructive/90">
-                <span className="font-medium">{t("suspendReason")}: </span>
-                {user.suspend_reason.trim()}
-              </p>
-            ) : null}
-          </div>
-        ) : null}
+    <div className="flex w-full flex-col gap-3 px-0 pb-4 pt-0 md:gap-5 md:px-5 md:pb-6 md:pt-4">
+      <UserDetailHero />
 
-        <div className={cn("grid sm:grid-cols-2", softDetailSectionGap)}>
-          <ProfilePanel
-            title={t("contact")}
-            hint={t("hints.contact")}
-            icon={<UserRound className="size-4" aria-hidden />}
-            tone="sky"
-            fields={contact}
-          />
-          <ProfilePanel
-            title={t("personal")}
-            hint={t("hints.personal")}
-            icon={<IdCard className="size-4" aria-hidden />}
-            tone="emerald"
-            fields={personal}
-          />
-          <ProfilePanel
-            title={t("preferences")}
-            hint={t("hints.preferences")}
-            icon={<SlidersHorizontal className="size-4" aria-hidden />}
-            tone="amber"
-            fields={preferences}
-          />
-          <ProfilePanel
-            title={t("address")}
-            hint={t("hints.address")}
-            icon={<MapPin className="size-4" aria-hidden />}
-            tone="sky"
-            fields={address}
-          />
+      {user.status === "suspended" ? (
+        <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm">
+          <p className="font-semibold text-destructive">{t("suspendedNotice")}</p>
+          {user.suspend_reason?.trim() ? (
+            <p className="mt-2 text-destructive/90">
+              <span className="font-medium">{t("suspendReason")}: </span>
+              {user.suspend_reason.trim()}
+            </p>
+          ) : null}
         </div>
+      ) : null}
 
-        {audience === "players" ? (
-          <EntityDetailPanel
-            title={ts("dangerZone")}
-            hint={t("hints.security")}
-            icon={<Shield className="size-4" aria-hidden />}
-            tone="rose"
-          >
-            <div className="mt-3">
-              <UserSecurityActions />
-            </div>
-          </EntityDetailPanel>
-        ) : null}
-
+      <div className="grid grid-cols-1 items-stretch gap-3 md:gap-5 lg:grid-cols-2">
+        <ProfilePanel
+          title={t("contact")}
+          hint={t("hints.contact")}
+          icon={<UserRound className="size-4" aria-hidden />}
+          tone="sky"
+          fields={contact}
+        />
+        <ProfilePanel
+          title={t("personal")}
+          hint={t("hints.personal")}
+          icon={<IdCard className="size-4" aria-hidden />}
+          tone="emerald"
+          fields={personal}
+        />
+        <ProfilePanel
+          title={t("preferences")}
+          hint={t("hints.preferences")}
+          icon={<SlidersHorizontal className="size-4" aria-hidden />}
+          tone="amber"
+          fields={preferences}
+        />
+        <ProfilePanel
+          title={t("address")}
+          hint={t("hints.address")}
+          icon={<MapPin className="size-4" aria-hidden />}
+          tone="sky"
+          fields={address}
+        />
       </div>
+
+      {isPlayer ? (
+        <EntityDetailPanel
+          title={ts("dangerZone")}
+          hint={t("hints.security")}
+          icon={<Shield className="size-4" aria-hidden />}
+          tone="rose"
+          className={softDetailPanelPad}
+        >
+          <UserSecurityActions />
+        </EntityDetailPanel>
+      ) : null}
     </div>
   );
 }
@@ -273,23 +257,25 @@ function ProfilePanel({
   fields: { label: string; value: ReactNode }[];
 }) {
   return (
-    <EntityDetailPanel title={title} hint={hint} icon={icon} tone={tone}>
-      <div className="mt-3 grid gap-3 sm:grid-cols-2">
-        {fields.map((field) => (
-          <ProfileRow key={field.label} label={field.label} value={field.value} />
-        ))}
-      </div>
+    <EntityDetailPanel
+      title={title}
+      hint={hint}
+      icon={icon}
+      tone={tone}
+      className={cn("h-full", softDetailPanelPad)}
+    >
+      {fields.map((field) => (
+        <ProfileRow key={field.label} label={field.label} value={field.value} />
+      ))}
     </EntityDetailPanel>
   );
 }
 
 function ProfileRow({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <div className="min-w-0">
-      <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
-        {label}
-      </p>
-      <div className="mt-0.5 text-sm text-foreground">{value}</div>
+    <div className="flex items-start gap-3 border-b border-border/40 py-1.5 last:border-0">
+      <span className="w-28 shrink-0 text-xs text-muted-foreground">{label}</span>
+      <span className="min-w-0 flex-1 text-sm text-foreground">{value}</span>
     </div>
   );
 }

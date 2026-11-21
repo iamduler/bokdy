@@ -16,13 +16,14 @@ import {
   cn,
   toast,
 } from "@bokdy/ui";
-import { BadgeCheck, Copy, FilePen, Pencil, Plus, Search, Wallet } from "lucide-react";
+import { BadgeCheck, Copy, FilePen, Pencil, Search, Wallet } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 
 import { sportLabel } from "@/components/branches/branch-sports-chips";
-import { DataListEmpty, DataListStats } from "@/components/data-list";
+import { DataListEmpty, DataListStats, softDetailPanelPad } from "@/components/data-list";
 import { EntityDetailPanel } from "@/components/entity/detail-panel";
+import { SectionAddButton } from "@/components/entity/section-add-button";
 import { SoftStatusChip } from "@/components/entity/soft-status-chip";
 import { PRICING_STATUS_TONE, pricingStatusKey } from "@/components/pricing-profiles/pricing-status";
 import { useBranchPricingProfiles, useDuplicateBranchPricing } from "@/hooks/use-pricing";
@@ -113,19 +114,16 @@ export function BranchPricingView() {
       <DataListStats
         items={stats}
         isLoading={profiles.isLoading}
-        className="grid-cols-3 md:grid-cols-3"
+        density="compact"
+        className="lg:grid-cols-3"
       />
       <EntityDetailPanel
         title={t("title")}
         icon={<Wallet className="size-4" aria-hidden />}
         tone="sky"
+        className={softDetailPanelPad}
         actions={
-          <Button asChild size="sm">
-            <Link href={`/branches/${branchId}/pricing/new`}>
-              <Plus className="size-3.5" aria-hidden />
-              {t("addList")}
-            </Link>
-          </Button>
+          <SectionAddButton label={t("addList")} href={`/branches/${branchId}/pricing/new`} />
         }
       >
         {profiles.isLoading ? (
@@ -150,7 +148,7 @@ export function BranchPricingView() {
                   onValueChange={(next) => {
                     if (next) setFilter(next as typeof filter);
                   }}
-                  className="inline-flex w-max max-w-full flex-nowrap items-center rounded-full border border-border/60 bg-card p-1 shadow-sm"
+                  className="inline-flex w-max flex-nowrap items-center rounded-full border border-border/60 bg-card p-1 shadow-sm"
                 >
                   {FILTERS.map((item) => {
                     const label =
@@ -161,7 +159,7 @@ export function BranchPricingView() {
                       <ToggleGroupItem
                         key={item}
                         value={item}
-                        className="h-auto rounded-full px-3.5 py-1.5 text-xs font-semibold data-[state=off]:bg-transparent data-[state=off]:text-muted-foreground data-[state=on]:bg-sky-500 data-[state=on]:text-white data-[state=on]:shadow-sm"
+                        className="h-auto shrink-0 whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-semibold data-[state=off]:bg-transparent data-[state=off]:text-muted-foreground data-[state=on]:bg-sky-500 data-[state=on]:text-white data-[state=on]:shadow-sm"
                       >
                         {label}
                       </ToggleGroupItem>
@@ -184,6 +182,27 @@ export function BranchPricingView() {
                 </InputGroupAddon>
               </InputGroup>
             </div>
+            {rows.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{t("emptyFilter")}</p>
+            ) : (
+              <ul className="divide-y divide-border/40 lg:hidden">
+                {rows.map((profile) => {
+                  const sport = sports.find((item) => item.id === profile.sport_id);
+                  return (
+                    <ProfileCompact
+                      key={profile.id}
+                      profile={profile}
+                      sportName={sport ? sportLabel(sport, locale) : profile.sport_id}
+                      locale={locale}
+                      duplicating={duplicate.isPending}
+                      onDuplicate={() => void onDuplicate(profile.id)}
+                    />
+                  );
+                })}
+              </ul>
+            )}
+            {rows.length === 0 ? null : (
+            <div className="hidden lg:block">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -197,33 +216,95 @@ export function BranchPricingView() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {rows.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-muted-foreground">
-                      {t("emptyFilter")}
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  rows.map((profile) => {
-                    const sport = sports.find((item) => item.id === profile.sport_id);
-                    return (
-                      <ProfileRow
-                        key={profile.id}
-                        profile={profile}
-                        sportName={sport ? sportLabel(sport, locale) : profile.sport_id}
-                        locale={locale}
-                        duplicating={duplicate.isPending}
-                        onDuplicate={() => void onDuplicate(profile.id)}
-                      />
-                    );
-                  })
-                )}
+                {rows.map((profile) => {
+                  const sport = sports.find((item) => item.id === profile.sport_id);
+                  return (
+                    <ProfileRow
+                      key={profile.id}
+                      profile={profile}
+                      sportName={sport ? sportLabel(sport, locale) : profile.sport_id}
+                      locale={locale}
+                      duplicating={duplicate.isPending}
+                      onDuplicate={() => void onDuplicate(profile.id)}
+                    />
+                  );
+                })}
               </TableBody>
             </Table>
+            </div>
+            )}
           </div>
         )}
       </EntityDetailPanel>
     </BranchTabBody>
+  );
+}
+
+function ProfileCompact({
+  profile,
+  sportName,
+  locale,
+  duplicating,
+  onDuplicate,
+}: {
+  profile: BranchPricingProfile;
+  sportName: string;
+  locale: string;
+  duplicating: boolean;
+  onDuplicate: () => void;
+}) {
+  const t = useTranslations("organization.branchDetail.pricing");
+  const status = pricingStatusKey(profile);
+  const price =
+    profile.base_amount == null
+      ? t("emptyValue")
+      : profile.base_amount === 0
+        ? t("freePrice")
+        : `${formatAmount(locale, profile.base_amount)} ${t("currencySuffix")}`;
+  const detail = [
+    t(`audience.${profile.customer_type}`),
+    price,
+    t("minutes", { count: profile.slot_unit_minutes }),
+  ].join(" · ");
+  return (
+    <li className="flex items-start gap-3 py-3">
+      <div className="min-w-0 flex-1">
+        <div className="flex min-w-0 items-center gap-2">
+          <Link
+            href={`/pricing-profiles/${profile.id}`}
+            className="min-w-0 truncate font-medium text-foreground outline-none focus-visible:underline"
+          >
+            {profile.name}
+          </Link>
+          {status === "activeDraft" ? (
+            <SoftStatusChip label={t("activeBadge")} tone="emerald" size="sm" />
+          ) : (
+            <SoftStatusChip label={t(status)} tone={PRICING_STATUS_TONE[status]} size="sm" />
+          )}
+        </div>
+        <p className="mt-0.5 truncate text-xs text-muted-foreground">
+          {profile.code} · {sportName}
+        </p>
+        <p className="mt-0.5 truncate text-xs text-muted-foreground">{detail}</p>
+      </div>
+      <div className="flex shrink-0 gap-1">
+        <Button asChild variant="ghost" size="icon-sm" aria-label={t("edit")}>
+          <Link href={`/pricing-profiles/${profile.id}/edit`}>
+            <Pencil className="size-4" aria-hidden />
+          </Link>
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          aria-label={t("duplicate")}
+          disabled={duplicating}
+          onClick={onDuplicate}
+        >
+          <Copy className="size-4" aria-hidden />
+        </Button>
+      </div>
+    </li>
   );
 }
 

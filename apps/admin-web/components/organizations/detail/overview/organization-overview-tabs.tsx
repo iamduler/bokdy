@@ -80,24 +80,26 @@ export function OrganizationOverviewTabs() {
 
   return (
     <>
-      <EntityDetailTabs
-        tabs={tabs}
-        ariaLabel={t("ariaLabel")}
-        title={t("navTitle")}
-        variant="vertical"
-        className="p-2 md:p-2.5"
-      />
-      <div className="border-t border-border/60 p-2">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="w-full"
-          onClick={() => setActionsOpen(true)}
-        >
-          <ListChecks className="size-4" aria-hidden />
-          {tActions("open")}
-        </Button>
+      <div className="flex items-center gap-1 p-2 md:flex-col md:items-stretch md:gap-0 md:p-0">
+        <EntityDetailTabs
+          tabs={tabs}
+          ariaLabel={t("ariaLabel")}
+          title={t("navTitle")}
+          variant="vertical"
+          className="min-w-0 flex-1 p-0 md:flex-none md:p-2.5"
+        />
+        <div className="shrink-0 md:border-t md:border-border/60 md:p-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="md:w-full"
+            onClick={() => setActionsOpen(true)}
+          >
+            <ListChecks className="size-4" aria-hidden />
+            {tActions("open")}
+          </Button>
+        </div>
       </div>
       <OrganizationActionsDialog open={actionsOpen} onOpenChange={setActionsOpen} />
     </>

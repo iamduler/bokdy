@@ -61,7 +61,7 @@ export function EntityFormFrame({
         {portaled}
         <form
           id={ENTITY_FORM_ID}
-          className={inline ? "min-h-0 flex-1 overflow-y-auto" : "w-full"}
+          className={inline ? "min-h-0 flex-1 overflow-y-auto" : "w-full pb-28 md:pb-0"}
           onSubmit={onSubmit}
           noValidate
         >

@@ -25,7 +25,9 @@ import {
   DataListStats,
   DataTablePagination,
   DataTableSkeleton,
+  softDetailPanelPad,
   softDetailSectionGap,
+  softDetailTabBody,
 } from "@/components/data-list";
 import { FilterSearchField } from "@/components/data-list/filter-search-field";
 import { FilterSelect } from "@/components/data-list/filter-select";
@@ -34,6 +36,7 @@ import { ConfirmActionDialog } from "@/components/entity/confirm-action-dialog";
 import { useBulkSelection } from "@/components/entity/use-bulk-selection";
 import { entityInitials } from "@/components/entity/avatar";
 import { EntityCollectionPanel } from "@/components/entity/collection-panel";
+import { SectionAddButton } from "@/components/entity/section-add-button";
 import { SoftChip } from "@/components/entity/soft-chip";
 import { useClientCollectionPage } from "@/components/entity/use-client-collection-page";
 import { useOrganizationDetail } from "@/components/organizations/detail/organization-detail-context";
@@ -242,7 +245,10 @@ export function TeamView() {
     }
   };
 
-  function inviteButton() {
+  function inviteButton(placement: "header" | "empty" = "empty") {
+    if (placement === "header") {
+      return <SectionAddButton label={t("invite.cta")} onClick={() => setInviteOpen(true)} />;
+    }
     return (
       <Button type="button" size="sm" onClick={() => setInviteOpen(true)}>
         <Plus className="size-3.5" aria-hidden />
@@ -253,10 +259,10 @@ export function TeamView() {
 
   return (
     <>
-      <div className={cn("flex flex-col p-5 pt-2 md:px-6", softDetailSectionGap)}>
+      <div className={cn("flex flex-col", softDetailTabBody, softDetailSectionGap)}>
         <DataListStats
           isLoading={isLoading}
-          className="grid-cols-3 md:grid-cols-3"
+          density="compact"
           items={[
             {
               key: "owners",
@@ -285,23 +291,33 @@ export function TeamView() {
           title={t("title")}
           icon={<Users className="size-4" aria-hidden />}
           tone="sky"
-          actions={inviteButton()}
+          className={softDetailPanelPad}
+          actions={inviteButton("header")}
           toolbar={
             hasRows ? (
               <>
-                <FilterSearchField value={query} onChange={setQuery} label={t("search")} />
-                <FilterSelect
-                  value={filterRole}
-                  onValueChange={setFilterRole}
-                  options={roleOptions}
-                  ariaLabel={t("filterRole")}
+                <FilterSearchField
+                  value={query}
+                  onChange={setQuery}
+                  label={t("search")}
+                  className="w-full min-w-0 sm:w-auto sm:min-w-[12rem] sm:flex-1"
                 />
-                <FilterSelect
-                  value={filterStatus}
-                  onValueChange={setFilterStatus}
-                  options={statusOptions}
-                  ariaLabel={t("filterStatus")}
-                />
+                <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
+                  <FilterSelect
+                    value={filterRole}
+                    onValueChange={setFilterRole}
+                    options={roleOptions}
+                    ariaLabel={t("filterRole")}
+                    className="w-full min-w-0 sm:w-auto sm:min-w-[8.5rem]"
+                  />
+                  <FilterSelect
+                    value={filterStatus}
+                    onValueChange={setFilterStatus}
+                    options={statusOptions}
+                    ariaLabel={t("filterStatus")}
+                    className="w-full min-w-0 sm:w-auto sm:min-w-[8.5rem]"
+                  />
+                </div>
               </>
             ) : null
           }
@@ -365,6 +381,105 @@ export function TeamView() {
             <div className={cn("flex flex-col", softDetailSectionGap)}>
               {shown === 0 ? <DataListEmpty className="py-10" title={t("emptyFiltered")} /> : null}
               {shown > 0 ? (
+                <>
+                <ul className="divide-y divide-border/40 lg:hidden">
+                  {pageItems.map((row) => {
+                    if (row.kind === "invitation") {
+                      const inv = row.invitation;
+                      return (
+                        <li key={`inv-${inv.id}`} className="flex items-start gap-3 py-3">
+                          <span className="size-4 shrink-0" aria-hidden />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex min-w-0 items-center gap-2">
+                              <p className="min-w-0 truncate text-sm font-medium">{inv.email}</p>
+                              <SoftChip label={t("status.pending")} tone={STAFF_STATUS_TONE.pending} size="sm" />
+                            </div>
+                            <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                              {t(`roles.${inv.role_code}`)}
+                            </p>
+                          </div>
+                          <DropdownMenu modal={false}>
+                            <DropdownMenuTrigger asChild>
+                              <Button type="button" variant="ghost" size="icon-sm" aria-label={t("actions.more")}>
+                                <MoreHorizontal className="size-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem variant="destructive" onSelect={() => void runRevoke(inv)}>
+                                {t("actions.revoke")}
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </li>
+                      );
+                    }
+                    const member = row.member;
+                    const label = memberLabel(member);
+                    const role = primaryRole(member);
+                    const roleLabel =
+                      member.roles.length > 0
+                        ? member.roles.map((item) => t(`roles.${item.code}`)).join(" · ")
+                        : t(`roles.${role}`);
+                    const meta = [roleLabel, branchName(member.branch_id)].filter(Boolean).join(" · ");
+                    return (
+                      <li key={member.id} className="flex items-start gap-3 py-3">
+                        {member.status === "resigned" ? (
+                          <span className="size-4 shrink-0" aria-hidden />
+                        ) : (
+                          <Checkbox
+                            checked={selection.selectedSet.has(member.id)}
+                            aria-label={tOrg("selectRow")}
+                            className="mt-0.5"
+                            onCheckedChange={() => selection.toggle(member.id)}
+                          />
+                        )}
+                        <button
+                          type="button"
+                          className="min-w-0 flex-1 text-left"
+                          onClick={() => setEditMember(member)}
+                        >
+                          <div className="flex min-w-0 items-center gap-2">
+                            <p className="min-w-0 truncate text-sm font-medium">{label}</p>
+                            <SoftChip
+                              label={t(`status.${member.status}`)}
+                              tone={STAFF_STATUS_TONE[member.status]}
+                              size="sm"
+                            />
+                          </div>
+                          <p className="mt-0.5 truncate text-xs text-muted-foreground">{meta}</p>
+                        </button>
+                        <DropdownMenu modal={false}>
+                          <DropdownMenuTrigger asChild>
+                            <Button type="button" variant="ghost" size="icon-sm" aria-label={t("actions.more")}>
+                              <MoreHorizontal className="size-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onSelect={() => setEditMember(member)}>
+                              {t("actions.edit")}
+                            </DropdownMenuItem>
+                            {member.status === "active" ? (
+                              <DropdownMenuItem onSelect={() => void runStaffAction("suspend", member)}>
+                                {t("actions.suspend")}
+                              </DropdownMenuItem>
+                            ) : null}
+                            {member.status === "suspended" ? (
+                              <DropdownMenuItem onSelect={() => void runStaffAction("restore", member)}>
+                                {t("actions.restore")}
+                              </DropdownMenuItem>
+                            ) : null}
+                            {member.status !== "resigned" ? (
+                              <DropdownMenuItem variant="destructive" onSelect={() => setRemoveTarget(member)}>
+                                {t("actions.delete")}
+                              </DropdownMenuItem>
+                            ) : null}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </li>
+                    );
+                  })}
+                </ul>
+                <div className="hidden lg:block">
                 <Table>
                   <TableHeader>
                     <TableRow className="border-border/40 hover:bg-transparent">
@@ -512,6 +627,8 @@ export function TeamView() {
                     })}
                   </TableBody>
                 </Table>
+                </div>
+                </>
               ) : null}
             </div>
           ) : null}

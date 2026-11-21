@@ -1,8 +1,9 @@
 "use client";
 
-import { Button, Spinner } from "@bokdy/ui";
+import { Button, cn, Spinner } from "@bokdy/ui";
 import { useTranslations } from "next-intl";
 
+import { softDetailPanelPad, softDetailSectionGap, softDetailTabBody } from "@/components/data-list";
 import { useUserDetail } from "@/components/users/detail/user-detail-context";
 import { useOwnerOrganizations } from "@/hooks/use-admin-users";
 import { Link } from "@/i18n/navigation";
@@ -16,12 +17,17 @@ export function UserOrganizationsView() {
   const { data: orgs = [], isLoading, isError, refetch, isFetching } = useOwnerOrganizations(userId);
 
   if (isLoading) {
-    return <p className="flex items-center gap-2 p-4 text-sm text-muted-foreground md:p-6"><Spinner />{tc("loading")}</p>;
+    return (
+      <p className={cn("flex items-center gap-2 text-sm text-muted-foreground", softDetailTabBody)}>
+        <Spinner />
+        {tc("loading")}
+      </p>
+    );
   }
 
   if (isError) {
     return (
-      <div className="m-4 space-y-2 rounded-lg border border-destructive/30 p-4 md:m-6">
+      <div className={cn("space-y-2", softDetailTabBody)}>
         <p className="text-sm text-destructive">{t("loadError")}</p>
         <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
           {tc("retry")}
@@ -31,11 +37,11 @@ export function UserOrganizationsView() {
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-auto soft-scrollbar p-4 md:p-6">
-      <p className="mb-4 text-sm font-semibold">{t("count", { count: orgs.length })}</p>
-      <div className="grid gap-3 md:grid-cols-2">
+    <div className={cn("flex flex-col", softDetailTabBody, softDetailSectionGap)}>
+      <p className="text-sm font-semibold">{t("count", { count: orgs.length })}</p>
+      <div className="grid grid-cols-1 gap-3 md:gap-5 lg:grid-cols-2">
         {orgs.map((o) => (
-          <div key={o.staff_id} className="rounded-md border border-border bg-card/60 p-4">
+          <div key={o.staff_id} className={cn("soft-elevated rounded-2xl border-0", softDetailPanelPad)}>
             <div className="flex items-start justify-between gap-2">
               <div>
                 <p className="font-bold">{o.name ?? o.name_en}</p>

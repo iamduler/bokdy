@@ -94,8 +94,9 @@ type DataTableProps<TData> = {
   emptyAction?: ReactNode;
   className?: string;
   enableColumnResizing?: boolean;
-  /** Optional mobile card list (shown below md). */
+  /** Optional compact list. Hidden from this breakpoint up. Directories stay at md. */
   mobileList?: ReactNode;
+  mobileListUntil?: "md" | "lg";
   /** Sits on the left of the pagination row. */
   footerLeading?: ReactNode;
   enableRowSelection?: boolean | ((row: TData) => boolean);
@@ -131,6 +132,7 @@ export function DataTable<TData>({
   className,
   enableColumnResizing = true,
   mobileList,
+  mobileListUntil = "md",
   footerLeading,
   enableRowSelection = true,
 }: DataTableProps<TData>) {
@@ -183,15 +185,28 @@ export function DataTable<TData>({
   }
 
   const rows = table.getRowModel().rows;
+  const compactClass = mobileListUntil === "lg" ? "lg:hidden" : "md:hidden";
+  const tableClass = mobileListUntil === "lg" ? "hidden lg:block" : "hidden md:block";
+  const hideTableOnSmall = Boolean(mobileList) || rows.length === 0;
 
   return (
     <div className={cn("flex min-h-0 flex-1 flex-col", className)}>
-      {mobileList ? <div className="md:hidden">{mobileList}</div> : null}
+      {mobileList ? <div className={compactClass}>{mobileList}</div> : null}
+      {rows.length === 0 && !mobileList ? (
+        <div className={compactClass}>
+          <DataListEmpty
+            title={emptyTitle}
+            description={emptyDescription}
+            action={emptyAction}
+            className="py-6"
+          />
+        </div>
+      ) : null}
 
       <div
         className={cn(
           "min-h-0 flex-1 overflow-x-hidden overflow-y-auto soft-scrollbar",
-          mobileList && "hidden md:block",
+          hideTableOnSmall && tableClass,
         )}
       >
         {/* Parent scrolls Y only — no nested Table overflow, no idle H-scrollbar. */}

@@ -97,24 +97,22 @@ export function DataListLayout({
   return (
     <div
       className={cn(
-        "flex min-h-0 flex-1 flex-col gap-5 overflow-hidden px-3 py-3 md:gap-4 md:px-4 md:py-4",
+        "flex min-h-0 flex-1 flex-col gap-3 overflow-hidden px-3 py-3 md:gap-4 md:px-4 md:py-4",
         className,
       )}
     >
-      <div className="flex shrink-0 flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div className="min-w-0">
-          <h1 className="mt-0.5 text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
-            {title}
-          </h1>
-        </div>
-        <div className="flex shrink-0 flex-wrap items-center gap-3">
+      <div className="flex shrink-0 items-center justify-between gap-3">
+        <h1 className="mt-0.5 min-w-0 truncate text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
+          {title}
+        </h1>
+        <div className="flex shrink-0 flex-nowrap items-center gap-3">
           {actions}
           {secondaryAction}
           {primaryAction}
         </div>
       </div>
 
-      <DataListStats items={stats} isLoading={statsLoading} />
+      <DataListStats items={stats} isLoading={statsLoading} density="compact" />
 
       <div className="soft-elevated flex min-h-0 flex-1 flex-col overflow-hidden rounded-3xl border-0">
         <div className="flex shrink-0 flex-col gap-3 border-b border-border/40 px-4 py-3.5 md:flex-row md:items-center md:justify-between md:px-6 md:py-4">
@@ -126,7 +124,7 @@ export function DataListLayout({
                 if (next) onStatusChange(next === "__all" ? "" : next);
               }}
               aria-label={statusAriaLabel}
-              className="inline-flex w-max max-w-full flex-nowrap items-center rounded-full border border-border/60 bg-card p-1 shadow-sm"
+              className="inline-flex w-max flex-nowrap items-center rounded-full border border-border/60 bg-card p-1 shadow-sm"
             >
               {statusTabs.map((tab) => {
                 const active = (statusValue || "__all") === (tab.value || "__all");

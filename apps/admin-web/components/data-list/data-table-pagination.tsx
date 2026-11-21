@@ -58,12 +58,12 @@ export function DataTablePagination({
   return (
     <div
       className={cn(
-        "flex shrink-0 items-center justify-between gap-3 border-t border-border/40 bg-card px-4 py-3 md:px-6",
+        "flex shrink-0 flex-col gap-2 border-t border-border/40 bg-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3 md:px-6",
         className,
       )}
     >
-      <div className="flex min-w-0 shrink-0 items-center">{leading}</div>
-      <div className="flex min-w-0 items-center justify-end gap-3">
+      <div className="flex min-w-0 items-center empty:hidden">{leading}</div>
+      <div className="flex min-w-0 items-center justify-between gap-3 sm:justify-end">
       <p className="min-w-0 truncate text-sm text-muted-foreground">{summary}</p>
       <Pagination className="mx-0 w-auto justify-end">
         <PaginationContent>

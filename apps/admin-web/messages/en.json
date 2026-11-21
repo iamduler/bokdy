@@ -702,6 +702,12 @@
       "sectionIdentity": "Court details",
       "sectionCode": "System code",
       "sectionDescription": "Description",
+      "hints": {
+        "identity": "Code, branch, and court specifications.",
+        "description": "Public description on the court profile.",
+        "amenities": "Amenities attached to this court.",
+        "gallery": "Photos and videos of the court."
+      },
       "sectionImages": "Images",
       "sectionStatus": "Status",
       "actionOpen": "Open court",

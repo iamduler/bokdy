@@ -50,7 +50,6 @@ export function BranchPricingCreateView({ sportId }: { sportId: string }) {
           sportOptions={sportOptions}
           initialSportId={selected?.id ?? ""}
           suggestedBase={selected?.suggestedBase}
-          onDone={() => router.push(`/branches/${branchId}/pricing`)}
           onSaved={(profile) => router.push(`/pricing-profiles/${profile.id}`)}
         />
       )}

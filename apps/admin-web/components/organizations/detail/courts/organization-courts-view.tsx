@@ -4,7 +4,7 @@ import { cn } from "@bokdy/ui";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 
-import { softDetailSectionGap } from "@/components/data-list";
+import { softDetailSectionGap, softDetailTabBody } from "@/components/data-list";
 import { CourtCollection } from "@/components/courts/court-collection";
 import { CourtFormSheet } from "@/components/courts/court-form-sheet";
 import { useArchiveAdminCourts } from "@/hooks/use-admin-courts";
@@ -22,7 +22,7 @@ export function OrganizationCourtsView() {
   const [sheetOpen, setSheetOpen] = useState(false);
 
   return (
-    <div className={cn("flex flex-col p-5 pt-2 md:px-6", softDetailSectionGap)}>
+    <div className={cn("flex flex-col", softDetailTabBody, softDetailSectionGap)}>
       <CourtCollection
         courts={data}
         isLoading={isLoading}

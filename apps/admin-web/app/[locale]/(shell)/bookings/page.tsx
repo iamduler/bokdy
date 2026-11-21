@@ -132,7 +132,6 @@ function BookingsPageContent() {
           isFetching={isFetching}
           onRetry={() => void refetch()}
           showOrganization
-          mobileCards
           emptyTitle={hasFilters ? t("emptyFilter") : t("empty")}
         />
       </BookingDirectoryToolbar>

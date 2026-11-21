@@ -7,7 +7,11 @@
 import { cn } from "@bokdy/ui";
 import type { ReactNode } from "react";
 
-import { Link } from "@/i18n/navigation";
+import {
+  PopoverCommandSelect,
+  type PopoverCommandOption,
+} from "@/components/popover-command-select";
+import { Link, useRouter } from "@/i18n/navigation";
 
 export type EntityDetailTabItem = {
   id: string;
@@ -115,6 +119,92 @@ function tabClassName(
   );
 }
 
+function DetailTabLink({
+  tab,
+  variant,
+}: {
+  tab: EntityDetailTabItem;
+  variant: NonNullable<EntityDetailTabsProps["variant"]>;
+}) {
+  const classNameTab = tabClassName(tab, variant);
+  const content: ReactNode = (
+    <TabLabel
+      label={tab.label}
+      count={tab.count}
+      active={tab.active}
+      variant={variant}
+      icon={tab.icon}
+    />
+  );
+
+  if (tab.disabled || !tab.href) {
+    return (
+      <button
+        type="button"
+        role="tab"
+        disabled
+        aria-selected={false}
+        className={classNameTab}
+      >
+        {content}
+      </button>
+    );
+  }
+
+  return (
+    <Link
+      href={tab.href}
+      role="tab"
+      aria-selected={tab.active}
+      className={classNameTab}
+    >
+      {content}
+    </Link>
+  );
+}
+
+function DetailTabCombobox({
+  tabs,
+  ariaLabel,
+}: {
+  tabs: EntityDetailTabItem[];
+  ariaLabel?: string;
+}) {
+  const router = useRouter();
+  const active = tabs.find((tab) => tab.active && tab.href);
+  const options: PopoverCommandOption[] = tabs.flatMap((tab) =>
+    tab.href && !tab.disabled
+      ? [
+          {
+            value: tab.href,
+            label: typeof tab.count === "number" ? `${tab.label} ${tab.count}` : tab.label,
+            keywords: tab.label,
+            leading: tab.icon ? (
+              <span className="inline-flex size-4 items-center justify-center [&_svg]:size-4" aria-hidden>
+                {tab.icon}
+              </span>
+            ) : undefined,
+          },
+        ]
+      : [],
+  );
+
+  return (
+    <PopoverCommandSelect
+      className="h-9 w-full min-w-0 px-2.5"
+      aria-label={ariaLabel}
+      align="start"
+      value={active?.href ?? ""}
+      options={options}
+      placeholder={ariaLabel}
+      onValueChange={(href) => {
+        if (!href || href === active?.href) return;
+        router.push(href);
+      }}
+    />
+  );
+}
+
 /** Soft UI detail tabs — pill, underline, or vertical rail. */
 export function EntityDetailTabs({
   tabs,
@@ -125,73 +215,55 @@ export function EntityDetailTabs({
 }: EntityDetailTabsProps) {
   const isVertical = variant === "vertical";
 
+  if (isVertical) {
+    return (
+      <>
+        <div className={cn("w-full min-w-0 md:hidden", className)}>
+          <DetailTabCombobox tabs={tabs} ariaLabel={ariaLabel} />
+        </div>
+        <div className={cn("hidden w-full min-w-0 flex-col gap-2 p-2 md:flex", className)}>
+          {title ? (
+            <p className="px-3 pt-1 text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
+              {title}
+            </p>
+          ) : null}
+          <div
+            role="tablist"
+            aria-label={ariaLabel}
+            aria-orientation="vertical"
+            className="flex w-full min-w-0 flex-col items-stretch gap-0.5"
+          >
+            {tabs.map((tab) => (
+              <DetailTabLink key={tab.id} tab={tab} variant={variant} />
+            ))}
+          </div>
+        </div>
+      </>
+    );
+  }
+
   return (
     <div
       className={cn(
-        isVertical
-          ? "flex w-full min-w-0 flex-col gap-2 overflow-hidden p-2"
-          : "shrink-0 overflow-x-auto soft-scrollbar",
+        "shrink-0 overflow-x-auto soft-scrollbar",
         variant === "underline" && "border-b border-border/50 px-4 md:px-6",
         variant === "pill" && "px-4 pb-2.5",
         className,
       )}
     >
-      {isVertical && title ? (
-        <p className="hidden px-3 pt-1 text-[10px] font-semibold tracking-wider text-muted-foreground uppercase md:block">
-          {title}
-        </p>
-      ) : null}
       <div
         role="tablist"
         aria-label={ariaLabel}
-        aria-orientation={isVertical ? "vertical" : "horizontal"}
+        aria-orientation="horizontal"
         className={cn(
-          isVertical
-            ? "flex w-full min-w-0 flex-col items-stretch gap-0.5"
-            : "inline-flex w-max max-w-full items-center",
+          "inline-flex w-max max-w-full items-center",
           variant === "pill" &&
             "rounded-full border border-border/60 bg-card p-1 shadow-sm",
         )}
       >
-        {tabs.map((tab) => {
-          const classNameTab = tabClassName(tab, variant);
-          const content: ReactNode = (
-            <TabLabel
-              label={tab.label}
-              count={tab.count}
-              active={tab.active}
-              variant={variant}
-              icon={tab.icon}
-            />
-          );
-
-          if (tab.disabled || !tab.href) {
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                role="tab"
-                disabled
-                aria-selected={false}
-                className={classNameTab}
-              >
-                {content}
-              </button>
-            );
-          }
-
-          return (
-            <Link
-              key={tab.id}
-              href={tab.href}
-              role="tab"
-              aria-selected={tab.active}
-              className={classNameTab}
-            >
-              {content}
-            </Link>
-          );
-        })}
+        {tabs.map((tab) => (
+          <DetailTabLink key={tab.id} tab={tab} variant={variant} />
+        ))}
       </div>
     </div>
   );

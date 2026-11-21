@@ -155,18 +155,11 @@ function BranchCard({
           <Link href={`/branches/${branch.id}`} className="flex min-w-0 flex-1 items-start gap-3">
             <EntityAvatar name={branch.name} size="sm" src={entityFileSrc(branch.logo_file_id)} />
             <div className="min-w-0 flex-1">
-              <p className="font-semibold text-foreground">{branch.name}</p>
-              <p className="text-xs text-muted-foreground">{branch.code}</p>
-              <div className="flex min-w-0 items-center gap-2">
-                <EntityAvatar
-                  name={branch.organization_name}
-                  size="sm"
-                  src={entityFileSrc(branch.organization_logo_file_id)}
-                />
-                <span className="truncate text-xs text-muted-foreground">
-                  {branch.organization_name}
-                </span>
-              </div>
+              <p className="truncate font-semibold text-foreground">{branch.name}</p>
+              <p className="truncate text-xs text-muted-foreground">{branch.code}</p>
+              {branch.organization_name ? (
+                <p className="truncate text-xs text-muted-foreground">{branch.organization_name}</p>
+              ) : null}
             </div>
           </Link>
           {branch.status === "archived" ? null : (

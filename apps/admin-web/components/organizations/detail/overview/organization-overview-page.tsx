@@ -2,8 +2,6 @@
 
 import { cn } from "@bokdy/ui";
 
-import { softDetailSectionGap } from "@/components/data-list";
-
 import { OrganizationOverviewContent } from "./organization-overview-content";
 import { OrganizationOverviewHeader } from "./organization-overview-header";
 
@@ -11,8 +9,7 @@ export function OrganizationOverviewPage() {
   return (
     <div
       className={cn(
-        "flex w-full flex-col px-4 pb-6 pt-3 md:px-5 md:pt-4",
-        softDetailSectionGap,
+        "flex w-full flex-col gap-3 px-0 pb-4 pt-0 md:gap-5 md:px-5 md:pb-6 md:pt-4",
       )}
     >
       <OrganizationOverviewHeader />

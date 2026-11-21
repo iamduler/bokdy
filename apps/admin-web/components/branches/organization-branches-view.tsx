@@ -28,6 +28,7 @@ import { FilterSearchField } from "@/components/data-list/filter-search-field";
 import { FilterSelect } from "@/components/data-list/filter-select";
 import { BulkDeleteBar } from "@/components/entity/bulk-delete-bar";
 import { EntityCollectionPanel } from "@/components/entity/collection-panel";
+import { SectionAddButton } from "@/components/entity/section-add-button";
 import { useBulkSelection } from "@/components/entity/use-bulk-selection";
 import { CollectionViewToggle } from "@/components/entity/collection-view-toggle";
 import { EntityRelationLink } from "@/components/entity/relation-link";
@@ -180,6 +181,77 @@ function BranchList({
   );
 }
 
+function BranchCompactList({
+  branches,
+  sports,
+  locale,
+  onEdit,
+  selected,
+  onToggle,
+}: {
+  branches: Branch[];
+  sports: Sport[];
+  locale: string;
+  onEdit: (branch: Branch) => void;
+  selected: Set<string>;
+  onToggle: (id: string) => void;
+}) {
+  const t = useTranslations("organization.detailBranches");
+  const tb = useTranslations("organization.branch");
+  const to = useTranslations("organization");
+
+  return (
+    <ul className="divide-y divide-border/40">
+      {branches.map((branch) => {
+        const address = currentBranchAddress(branch)?.address_line_1?.trim();
+        const sportsLabel = sportNames(sports, branch.sport_ids, locale);
+        const meta = [sportsLabel, t("courtCount", { count: branch.court_count ?? 0 })]
+          .filter(Boolean)
+          .join(" · ");
+        return (
+          <li key={branch.id} className="flex items-start gap-3 py-3">
+            {branch.status === "archived" ? (
+              <span className="size-4 shrink-0" aria-hidden />
+            ) : (
+              <Checkbox
+                checked={selected.has(branch.id)}
+                aria-label={to("selectRow")}
+                className="mt-0.5"
+                onCheckedChange={() => onToggle(branch.id)}
+              />
+            )}
+            <div className="min-w-0 flex-1">
+              <div className="flex min-w-0 items-center gap-2">
+                <EntityRelationLink href={`/branches/${branch.id}`} className="min-w-0 truncate">
+                  {branch.name}
+                </EntityRelationLink>
+                <SoftStatusChip
+                  label={tb(`status.${branch.status}`)}
+                  tone={BRANCH_STATUS_TONE[branch.status]}
+                  size="sm"
+                />
+              </div>
+              <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                {address || tb("noAddress")}
+              </p>
+              <p className="mt-0.5 truncate text-xs text-muted-foreground">{meta}</p>
+            </div>
+            <div className="flex shrink-0 items-center gap-1">
+              <RowEditButton label={tb("editProfile")} onClick={() => onEdit(branch)} />
+              <BranchArchiveButton
+                organizationId={branch.organization_id}
+                branchId={branch.id}
+                name={branch.name}
+                status={branch.status}
+              />
+            </div>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 export function OrganizationBranchesView() {
   const t = useTranslations("organization.detailBranches");
   const tb = useTranslations("organization.branch");
@@ -243,7 +315,10 @@ export function OrganizationBranchesView() {
     [locale, sports, t],
   );
 
-  function addButton() {
+  function addButton(placement: "header" | "empty" = "empty") {
+    if (placement === "header") {
+      return <SectionAddButton label={t("addBranch")} onClick={openCreate} />;
+    }
     return (
       <Button type="button" size="sm" onClick={openCreate}>
         <Plus className="size-3.5" aria-hidden />
@@ -254,34 +329,44 @@ export function OrganizationBranchesView() {
 
   return (
     <>
-      <div className={cn("flex flex-col p-5 pt-2 md:px-6", softDetailSectionGap)}>
+      <div className={cn("flex flex-col px-0 pt-1 pb-3 md:px-6 md:pt-2", softDetailSectionGap)}>
         <EntityCollectionPanel
           title={t("title")}
           icon={<Building2 className="size-4" aria-hidden />}
           tone="sky"
+          className="p-3 md:p-5"
           actions={
             <div className="flex items-center gap-2">
               <CollectionViewToggle mode={mode} onChange={setMode} />
-              {addButton()}
+              {addButton("header")}
             </div>
           }
           toolbar={
             branches.length > 0 ? (
               <>
-                <FilterSearchField value={query} onChange={setQuery} label={t("search")} />
-                <FilterSelect
-                  value={filterStatus}
-                  onValueChange={setFilterStatus}
-                  options={statusOptions}
-                  ariaLabel={t("filterStatus")}
+                <FilterSearchField
+                  value={query}
+                  onChange={setQuery}
+                  label={t("search")}
+                  className="w-full min-w-0 sm:w-auto sm:min-w-[12rem] sm:flex-1"
                 />
-                <FilterSelect
-                  value={filterSport}
-                  onValueChange={setFilterSport}
-                  options={sportOptions}
-                  ariaLabel={t("filterSport")}
-                  searchable
-                />
+                <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
+                  <FilterSelect
+                    value={filterStatus}
+                    onValueChange={setFilterStatus}
+                    options={statusOptions}
+                    ariaLabel={t("filterStatus")}
+                    className="w-full min-w-0 sm:w-auto sm:min-w-[8.5rem]"
+                  />
+                  <FilterSelect
+                    value={filterSport}
+                    onValueChange={setFilterSport}
+                    options={sportOptions}
+                    ariaLabel={t("filterSport")}
+                    searchable
+                    className="w-full min-w-0 sm:w-auto sm:min-w-[8.5rem]"
+                  />
+                </div>
               </>
             ) : null
           }
@@ -341,7 +426,7 @@ export function OrganizationBranchesView() {
             />
           ) : null}
           {!isLoading && !isError && filtered.length > 0 && mode === "grid" ? (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-3">
               {pageItems.map((branch) => (
                 <BranchCard
                   key={branch.id}
@@ -359,19 +444,33 @@ export function OrganizationBranchesView() {
             </div>
           ) : null}
           {!isLoading && !isError && filtered.length > 0 && mode === "list" ? (
-            <BranchList
-              branches={pageItems}
-              sports={sports}
-              locale={locale}
-              onEdit={(item) => setSheet({ mode: "edit", branch: item })}
-              selected={selection.selectedSet}
-              pageSelected={pageItems
-                .filter((branch) => branch.status !== "archived")
-                .every((branch) => selection.selectedSet.has(branch.id)) &&
-                pageItems.some((branch) => branch.status !== "archived")}
-              onToggle={selection.toggle}
-              onTogglePage={selection.toggleMany}
-            />
+            <>
+              <div className="lg:hidden">
+                <BranchCompactList
+                  branches={pageItems}
+                  sports={sports}
+                  locale={locale}
+                  onEdit={(item) => setSheet({ mode: "edit", branch: item })}
+                  selected={selection.selectedSet}
+                  onToggle={selection.toggle}
+                />
+              </div>
+              <div className="hidden lg:block">
+                <BranchList
+                  branches={pageItems}
+                  sports={sports}
+                  locale={locale}
+                  onEdit={(item) => setSheet({ mode: "edit", branch: item })}
+                  selected={selection.selectedSet}
+                  pageSelected={pageItems
+                    .filter((branch) => branch.status !== "archived")
+                    .every((branch) => selection.selectedSet.has(branch.id)) &&
+                    pageItems.some((branch) => branch.status !== "archived")}
+                  onToggle={selection.toggle}
+                  onTogglePage={selection.toggleMany}
+                />
+              </div>
+            </>
           ) : null}
         </EntityCollectionPanel>
       </div>

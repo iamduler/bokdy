@@ -20,6 +20,7 @@ import {
   DataListEmpty,
   DataTablePagination,
   DataTableSkeleton,
+  softDetailPanelPad,
 } from "@/components/data-list";
 import { FilterSearchField } from "@/components/data-list/filter-search-field";
 import { FilterSelect } from "@/components/data-list/filter-select";
@@ -29,6 +30,7 @@ import { CourtFormSheet } from "@/components/courts/court-form-sheet";
 import { COURT_STATUS_TONE } from "@/components/courts/court-status";
 import { BulkDeleteBar } from "@/components/entity/bulk-delete-bar";
 import { EntityCollectionPanel } from "@/components/entity/collection-panel";
+import { SectionAddButton } from "@/components/entity/section-add-button";
 import { useBulkSelection } from "@/components/entity/use-bulk-selection";
 import { CollectionViewToggle } from "@/components/entity/collection-view-toggle";
 import { EntityRelationLink } from "@/components/entity/relation-link";
@@ -179,7 +181,10 @@ export function CourtCollection({
     [branches, t],
   );
 
-  function addButton() {
+  function addButton(placement: "header" | "empty" = "empty") {
+    if (placement === "header") {
+      return <SectionAddButton label={t("addCourt")} onClick={onCreate} />;
+    }
     return (
       <Button type="button" size="sm" onClick={onCreate}>
         <Plus className="size-3.5" aria-hidden />
@@ -193,37 +198,48 @@ export function CourtCollection({
       title={t("title")}
       icon={<LayoutGrid className="size-4" aria-hidden />}
       tone="sky"
+      className={softDetailPanelPad}
       actions={
         <div className="flex items-center gap-2">
           <CollectionViewToggle mode={mode} onChange={setMode} />
-          {addButton()}
+          {addButton("header")}
         </div>
       }
       toolbar={
         source.length > 0 ? (
           <>
-            <FilterSearchField value={query} onChange={setQuery} label={t("search")} />
-            {showBranch ? (
+            <FilterSearchField
+              value={query}
+              onChange={setQuery}
+              label={t("search")}
+              className="w-full min-w-0 sm:w-auto sm:min-w-[12rem] sm:flex-1"
+            />
+            <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
+              {showBranch ? (
+                <FilterSelect
+                  value={filterBranch}
+                  onValueChange={setFilterBranch}
+                  options={branchOptions}
+                  ariaLabel={t("filterBranch")}
+                  searchable
+                  className="w-full min-w-0 sm:w-auto sm:min-w-[8.5rem]"
+                />
+              ) : null}
               <FilterSelect
-                value={filterBranch}
-                onValueChange={setFilterBranch}
-                options={branchOptions}
-                ariaLabel={t("filterBranch")}
-                searchable
+                value={filterStatus}
+                onValueChange={setFilterStatus}
+                options={statusOptions}
+                ariaLabel={t("filterStatus")}
+                className="w-full min-w-0 sm:w-auto sm:min-w-[8.5rem]"
               />
-            ) : null}
-            <FilterSelect
-              value={filterStatus}
-              onValueChange={setFilterStatus}
-              options={statusOptions}
-              ariaLabel={t("filterStatus")}
-            />
-            <FilterSelect
-              value={filterEnv}
-              onValueChange={setFilterEnv}
-              options={envOptions}
-              ariaLabel={t("filterEnvironment")}
-            />
+              <FilterSelect
+                value={filterEnv}
+                onValueChange={setFilterEnv}
+                options={envOptions}
+                ariaLabel={t("filterEnvironment")}
+                className="w-full min-w-0 sm:w-auto sm:min-w-[8.5rem]"
+              />
+            </div>
           </>
         ) : null
       }
@@ -284,7 +300,7 @@ export function CourtCollection({
         />
       ) : null}
       {!isLoading && !isError && filtered.length > 0 && mode === "grid" ? (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-3">
           {pageItems.map((court) => (
             <CourtCard
               key={court.id}
@@ -311,6 +327,58 @@ export function CourtCollection({
         </div>
       ) : null}
       {!isLoading && !isError && filtered.length > 0 && mode === "list" ? (
+        <>
+        <ul className="divide-y divide-border/40 lg:hidden">
+          {pageItems.map((court) => {
+            const sport = sports.find((item) => item.id === court.sport_id);
+            const surface = court.surface ?? "unspecified";
+            const meta = [
+              sport ? sportLabel(sport, locale) : "",
+              tc(`surface.${surface}`),
+              tc(`environment.${court.environment}`),
+              showBranch ? branchName.get(court.branch_id) : "",
+            ]
+              .filter(Boolean)
+              .join(" · ");
+            return (
+              <li key={court.id} className="flex items-start gap-3 py-3">
+                {onArchiveSelected && court.status === "inactive" ? (
+                  <Checkbox
+                    checked={selection.selectedSet.has(court.id)}
+                    aria-label={tOrg("selectRow")}
+                    className="mt-0.5"
+                    onCheckedChange={() => selection.toggle(court.id)}
+                  />
+                ) : onArchiveSelected ? (
+                  <span className="size-4 shrink-0" aria-hidden />
+                ) : null}
+                <div className="min-w-0 flex-1">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <EntityRelationLink href={`/courts/${court.id}`} className="min-w-0 truncate">
+                      {court.name}
+                    </EntityRelationLink>
+                    <SoftStatusChip
+                      label={tc(`status.${court.status}`)}
+                      tone={COURT_STATUS_TONE[court.status]}
+                      size="sm"
+                    />
+                  </div>
+                  <p className="mt-0.5 truncate text-xs text-muted-foreground">{court.code}</p>
+                  {meta ? (
+                    <p className="mt-0.5 truncate text-xs text-muted-foreground">{meta}</p>
+                  ) : null}
+                </div>
+                <CourtRowActions
+                  court={court}
+                  organizationId={organizationId}
+                  editLabel={tc("editCourt")}
+                  onEdit={() => setEditing(court)}
+                />
+              </li>
+            );
+          })}
+        </ul>
+        <div className="hidden lg:block">
         <Table>
           <TableHeader>
             <TableRow>
@@ -394,6 +462,8 @@ export function CourtCollection({
             })}
           </TableBody>
         </Table>
+        </div>
+        </>
       ) : null}
       {editing ? (
         <CourtFormSheet

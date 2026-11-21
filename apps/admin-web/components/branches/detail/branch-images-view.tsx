@@ -17,6 +17,7 @@ import { useRef, useState } from "react";
 
 import { DataListEmpty } from "@/components/data-list";
 import { EntityDetailPanel } from "@/components/entity/detail-panel";
+import { SectionAddButton } from "@/components/entity/section-add-button";
 import { MediaLightbox, type MediaPreviewItem } from "@/components/entity/media-lightbox";
 import {
   useBranchGallery,
@@ -91,15 +92,12 @@ export function BranchImagesView() {
         tone="amber"
         actions={
           <>
-            <Button
-              type="button"
-              size="sm"
+            <SectionAddButton
+              label={upload.isPending ? t("uploading") : t("upload")}
               disabled={busy}
+              icon={<ImagePlus className="size-4" aria-hidden />}
               onClick={() => inputRef.current?.click()}
-            >
-              <ImagePlus className="size-4" aria-hidden />
-              {upload.isPending ? t("uploading") : t("upload")}
-            </Button>
+            />
             <input
               ref={inputRef}
               type="file"

@@ -3,6 +3,7 @@
 import { Sparkles } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 
+import { softDetailPanelPad } from "@/components/data-list";
 import { EntityDetailPanel } from "@/components/entity/detail-panel";
 import { SoftChip } from "@/components/entity/soft-chip";
 import { useAmenityCatalog, useBranchAmenityIds } from "@/hooks/use-amenities";
@@ -34,7 +35,7 @@ export function BranchAmenitiesView() {
       hint={t("hint")}
       icon={<Sparkles className="size-4" aria-hidden />}
       tone="rose"
-      className="h-full"
+      className={`h-full ${softDetailPanelPad}`}
     >
       {loading ? (
         <BranchTabLoading />

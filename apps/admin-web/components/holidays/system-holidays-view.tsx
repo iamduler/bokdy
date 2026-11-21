@@ -3,13 +3,20 @@
 import { Spinner } from "@bokdy/ui";
 import { CalendarDays } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { useRef } from "react";
 
 import { EntityDetailPanel } from "@/components/entity/detail-panel";
-import { HolidayLayerForm, type HolidayDraft } from "@/components/holidays/holiday-layer-form";
+import { SectionAddButton } from "@/components/entity/section-add-button";
+import {
+  HolidayLayerForm,
+  type HolidayDraft,
+  type HolidayLayerFormHandle,
+} from "@/components/holidays/holiday-layer-form";
 import { useCalendarHolidays, useReplaceCalendarHolidays } from "@/hooks/use-pricing";
 
 export function SystemHolidaysView() {
   const t = useTranslations("organization.holidays");
+  const formRef = useRef<HolidayLayerFormHandle>(null);
   const query = useCalendarHolidays();
   const save = useReplaceCalendarHolidays();
   const rows: HolidayDraft[] = (query.data?.holidays ?? []).map((holiday) => ({
@@ -25,6 +32,11 @@ export function SystemHolidaysView() {
         hint={t("systemHint")}
         icon={<CalendarDays className="size-4" aria-hidden />}
         tone="sky"
+        actions={
+          query.isSuccess ? (
+            <SectionAddButton label={t("addRow")} onClick={() => formRef.current?.addRow()} />
+          ) : null
+        }
       >
         {query.isLoading ? (
           <p className="flex items-center gap-2 text-sm text-muted-foreground"><Spinner />{t("loading")}</p>
@@ -32,6 +44,7 @@ export function SystemHolidaysView() {
           <p className="text-sm text-destructive">{t("loadError")}</p>
         ) : (
           <HolidayLayerForm
+            ref={formRef}
             rows={rows}
             showEffect={false}
             pending={save.isPending}

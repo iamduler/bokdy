@@ -4,7 +4,7 @@ import { Button, cn, formatUserDateTime, Spinner, useUserDateTimePrefs } from "@
 import { Download, History } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-import { softDetailSectionGap } from "@/components/data-list";
+import { softDetailPanelPad, softDetailSectionGap, softDetailTabBody } from "@/components/data-list";
 import { EntityDetailPanel } from "@/components/entity/detail-panel";
 import { EntityUnavailableButton } from "@/components/entity/unavailable";
 import { useOrganizationDetail } from "@/components/organizations/detail/organization-detail-context";
@@ -20,8 +20,9 @@ export function OrganizationActivityView() {
   const { data: events = [], isLoading, isError, refetch, isFetching } = useOrganizationActivity(orgId);
 
   return (
-    <div className={cn("flex flex-col p-5 pt-2 md:px-6", softDetailSectionGap)}>
+    <div className={cn("flex flex-col", softDetailTabBody, softDetailSectionGap)}>
       <EntityDetailPanel
+        className={softDetailPanelPad}
         title={t("title")}
         icon={<History className="size-4" aria-hidden />}
         tone="sky"
@@ -55,7 +56,7 @@ export function OrganizationActivityView() {
                   {index < events.length - 1 ? <span className="mt-1 w-px flex-1 bg-border" /> : null}
                 </div>
                 <div className={cn("min-w-0 flex-1", index < events.length - 1 && "pb-4")}>
-                  <div className="flex items-baseline justify-between gap-3">
+                  <div className="flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
                     <p className="min-w-0 text-sm font-medium text-foreground">{eventLabel(t, event)}</p>
                     <p className="shrink-0 text-xs text-muted-foreground tabular-nums">
                       {formatUserDateTime(event.created_at, prefs)}

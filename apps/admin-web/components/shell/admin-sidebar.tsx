@@ -5,6 +5,7 @@
  */
 
 import {
+  cn,
   Sidebar,
   SidebarContent,
   SidebarGroup,
@@ -27,19 +28,24 @@ import {
 function NavItem({ item }: { item: AdminNavItem }) {
   const t = useTranslations("shell");
   const pathname = usePathname();
-  const { setOpenMobile } = useSidebar();
+  const { isMobile, setOpenMobile } = useSidebar();
   const label = t(`nav.${item.labelKey}`);
   const active = isNavItemActive(pathname, item.href);
 
   if (!item.href) return null;
 
   return (
-    <SidebarMenuItem>
+    <SidebarMenuItem className={isMobile ? "w-full" : undefined}>
       <SidebarMenuButton
         tooltip={label}
         isActive={active}
         asChild
-        className="size-10 justify-center rounded-full p-0 data-[active=true]:bg-primary data-[active=true]:text-primary-foreground [&>span]:sr-only"
+        className={cn(
+          "rounded-full data-[active=true]:bg-primary data-[active=true]:text-primary-foreground",
+          isMobile
+            ? "h-10 w-full justify-start gap-2 px-3"
+            : "size-10 justify-center p-0 [&>span]:sr-only",
+        )}
       >
         <Link
           href={item.href}
@@ -56,7 +62,10 @@ function NavItem({ item }: { item: AdminNavItem }) {
 
 /** Soft UI content-height icon rail (no Help / theme / logout). */
 export function AdminSidebar() {
+  const { isMobile } = useSidebar();
   const groups = visibleAdminNavGroups();
+
+  if (isMobile) return null;
 
   return (
     <Sidebar
@@ -68,7 +77,7 @@ export function AdminSidebar() {
         {groups.map((group) => (
           <SidebarGroup key={group.id} className="p-1">
             <SidebarGroupContent>
-              <SidebarMenu className="items-center gap-1">
+              <SidebarMenu className={isMobile ? "w-full items-stretch gap-1" : "items-center gap-1"}>
                 {group.items.map((item) => (
                   <NavItem key={item.id} item={item} />
                 ))}
